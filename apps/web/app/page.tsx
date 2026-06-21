@@ -51,7 +51,7 @@ export default function LandingPage() {
           <SignalLogo /> SIGNAL
         </Link>
         <div style={{ display:'flex', alignItems:'center', gap:24, fontSize:13, fontWeight:500 }}>
-          {[['#portfolio','Portfolio'],['#signals','Signals'],['#algo','Algo Builder'],['#paper','Paper Trade'],['#pricing','Pricing']].map(([h,l]) => (
+          {[['#portfolio','Portfolio'],['#signals','Signals'],['#etf-mf','ETF & MF'],['#algo','Algo Builder'],['#paper','Paper Trade'],['#pricing','Pricing']].map(([h,l]) => (
             <a key={h} href={h} style={{ color:'var(--dim)', transition:'color 0.2s' }} onMouseOver={e=>(e.currentTarget.style.color='var(--txt)')} onMouseOut={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>
           ))}
         </div>
@@ -303,6 +303,114 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* ETF & Mutual Funds */}
+      <section id="etf-mf" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+        <div style={{ maxWidth:1200, margin:'0 auto' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+            <div>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--ylw)', marginBottom:12 }}>ETF &amp; Mutual Funds</div>
+              <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>Your SIPs and ETFs,<br/>now intelligent.</h2>
+              <p style={{ fontSize:16, color:'var(--dim)', lineHeight:1.65, maxWidth:580, marginBottom:28 }}>SIGNAL tracks your complete wealth picture — not just direct equity. Mutual funds, index ETFs, sectoral ETFs, and SIP portfolios are ML-classified and signal-analysed alongside your stocks.</p>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {[
+                  { title:'MF Signal Engine', desc:'Analyses NAV history, AMC category performance, and benchmark tracking. Classifies each fund as: Continue SIP · Pause · Switch Fund · Redeem.' },
+                  { title:'ETF Premium/Discount Tracker', desc:'For NIFTYBEES, GOLDBEES, BANKBEES and 50+ ETFs — tracks live premium/discount to NAV so you always buy at fair value.' },
+                  { title:'SIP Optimizer', desc:"Recommends whether to pause, continue, or increase your SIP based on index P/E valuation, market cycle, and fund's alpha vs. benchmark." },
+                ].map(c => (
+                  <div key={c.title} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'14px 18px' }}>
+                    <div style={{ fontSize:13, fontWeight:700, marginBottom:5 }}>{c.title}</div>
+                    <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.55 }}>{c.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:22 }}>
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
+                <div><div style={{ fontSize:15, fontWeight:800 }}>MF &amp; ETF Portfolio</div><div style={{ fontSize:12, color:'var(--dim)' }}>Abhay Vittal · 3 funds</div></div>
+                <div style={{ textAlign:'right' }}><div style={{ fontSize:22, fontWeight:900, color:'var(--grn)' }}>+24.5%</div><div style={{ fontSize:11, color:'var(--dim)' }}>overall returns</div></div>
+              </div>
+              <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.07),rgba(23,64,245,0.05))', border:'1px solid rgba(0,212,160,0.18)', borderRadius:12, padding:'14px 16px', marginBottom:14 }}>
+                <div style={{ fontSize:11, color:'var(--dim)', marginBottom:3 }}>Total Invested</div>
+                <div style={{ fontSize:24, fontWeight:900, letterSpacing:-0.5 }}>₹1,23,000</div>
+                <div style={{ display:'flex', justifyContent:'space-between', marginTop:6 }}>
+                  <span style={{ fontSize:12, color:'var(--dim)' }}>Current Value</span>
+                  <span style={{ fontSize:14, fontWeight:800, color:'var(--grn)' }}>₹1,53,140 <span style={{ fontSize:11 }}>▲ +₹30,140</span></span>
+                </div>
+              </div>
+              {[
+                { icon:'MI', ibg:'rgba(0,122,255,0.12)', ic:'#007AFF', name:'Mirae Asset Large Cap', sub:'Direct Growth · SIP ₹3,000/mo', ret:'+16.3%', sig:'Continue SIP ✓', sbg:'rgba(0,212,160,0.1)', sc:'var(--grn)' },
+                { icon:'NB', ibg:'rgba(255,184,0,0.12)', ic:'var(--ylw)', name:'NIFTYBEES (ETF)', sub:'NIFTY 50 Index · 180 units', ret:'+12.0%', sig:'Add on dips ↓', sbg:'rgba(23,64,245,0.1)', sc:'var(--bluL)' },
+                { icon:'SB', ibg:'rgba(139,92,246,0.12)', ic:'var(--pur)', name:'SBI Small Cap Fund', sub:'Direct Growth · SIP ₹2,000/mo', ret:'+40.0%', sig:'🚀 Top performer', sbg:'rgba(255,92,26,0.1)', sc:'var(--org)' },
+              ].map(f => (
+                <div key={f.name} style={{ display:'flex', alignItems:'center', gap:12, padding:'12px 0', borderTop:'1px solid var(--bdr)' }}>
+                  <div style={{ width:38, height:38, borderRadius:10, background:f.ibg, color:f.ic, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:800, flexShrink:0 }}>{f.icon}</div>
+                  <div style={{ flex:1 }}><div style={{ fontSize:13, fontWeight:700 }}>{f.name}</div><div style={{ fontSize:11, color:'var(--dim)' }}>{f.sub}</div></div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontSize:13, fontWeight:800, color:'var(--grn)' }}>{f.ret}</div>
+                    <div style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:5, background:f.sbg, color:f.sc, marginTop:3 }}>{f.sig}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Account Aggregator */}
+      <section id="aa" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+        <div style={{ maxWidth:1200, margin:'0 auto' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:22 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+                <div style={{ width:9, height:9, borderRadius:'50%', background:'var(--grn)', flexShrink:0 }}/>
+                <span style={{ fontSize:13, fontWeight:700 }}>Jaitik · AA sync complete</span>
+                <span style={{ fontSize:11, color:'var(--grn)', marginLeft:'auto' }}>4 institutions linked</span>
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+                {[
+                  { logo:'SBI', lc:'#E63946', name:'Savings Bank', val:'₹2.1L' },
+                  { logo:'HDFC', lc:'#387ED1', name:'FD Portfolio', val:'₹5.0L' },
+                  { logo:'mSt', lc:'var(--org)', name:'Stocks & ETF', val:'₹8.4L' },
+                  { logo:'MF', lc:'var(--pur)', name:'Mutual Funds', val:'₹3.2L' },
+                ].map(inst => (
+                  <div key={inst.logo} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:12, padding:'14px 16px' }}>
+                    <div style={{ fontSize:16, fontWeight:900, color:inst.lc, marginBottom:4 }}>{inst.logo}</div>
+                    <div style={{ fontSize:11, color:'var(--dim)', marginBottom:2 }}>{inst.name}</div>
+                    <div style={{ fontSize:16, fontWeight:800 }}>{inst.val}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ padding:14, background:'linear-gradient(135deg,rgba(0,212,160,0.06),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.15)', borderRadius:12 }}>
+                <div style={{ fontSize:11, color:'var(--dim)', marginBottom:6 }}>Total Wealth Tracked by SIGNAL</div>
+                <div style={{ fontSize:28, fontWeight:900, letterSpacing:-1 }}>₹18,70,000</div>
+                <div style={{ display:'flex', gap:16, marginTop:8, fontSize:12 }}>
+                  <span style={{ color:'var(--grn)' }}>▲ +12.4% YoY</span>
+                  <span style={{ color:'var(--dim)' }}>Across all instruments</span>
+                </div>
+              </div>
+              <div style={{ marginTop:12, fontSize:11, color:'var(--dim)', lineHeight:1.6 }}>🔒 Secured by RBI Account Aggregator framework · Consent ID: AA-2024-JT-****</div>
+            </div>
+            <div>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--grn)', marginBottom:12 }}>Account Aggregator (AA)</div>
+              <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>One tap to sync<br/>every investment<br/>you&apos;ve ever made.</h2>
+              <p style={{ fontSize:16, color:'var(--dim)', lineHeight:1.65, maxWidth:580, marginBottom:28 }}>Like IndMoney and Smallcase, SIGNAL uses India&apos;s RBI-regulated Account Aggregator framework — a government-authorised data-sharing system that lets you securely share your financial data across institutions with a single consent.</p>
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {[
+                  { title:'What AA brings in automatically', desc:'NSE/BSE stocks · Mutual funds (all AMCs) · Fixed deposits · NPS pension · EPF · PPF · Insurance policies — all in one SIGNAL dashboard.' },
+                  { title:'Consent-based. Government-authorised.', desc:"SIGNAL registers as a Financial Information User (FIU) with ReBIT (RBI's subsidiary). You give consent via your bank's AA app — we never see your passwords or credentials." },
+                  { title:'Revoke anytime', desc:"Your consent is time-limited and purpose-limited. Revoke from your bank's app at any time. SIGNAL cannot read data after consent is revoked." },
+                ].map(c => (
+                  <div key={c.title} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'14px 18px' }}>
+                    <div style={{ fontSize:13, fontWeight:700, marginBottom:5 }}>{c.title}</div>
+                    <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.55 }}>{c.desc}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Algo Builder */}
       <section id="algo" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
@@ -470,6 +578,48 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* US Markets */}
+      <section id="us-markets" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+        <div style={{ maxWidth:1200, margin:'0 auto' }}>
+          <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:24, marginBottom:40 }}>
+            <div>
+              <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+                <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--bluL)' }}>US Markets</div>
+                <span style={{ fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:20, background:'rgba(255,184,0,0.12)', border:'1px solid rgba(255,184,0,0.3)', color:'var(--ylw)' }}>Coming Soon</span>
+              </div>
+              <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>Invest in the US.<br/>From India.</h2>
+              <p style={{ fontSize:16, color:'var(--dim)', lineHeight:1.65, maxWidth:580 }}>SIGNAL is extending to US markets — giving Indian investors ML-powered signals on S&amp;P 500 and NASDAQ stocks, via LRS (Liberalised Remittance Scheme) compatible brokers like Vested, INDmoney, and Interactive Brokers.</p>
+            </div>
+          </div>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
+            {[
+              { icon:'🇺🇸', title:'Phase 1 — Indian LRS Users', desc:'S&P 500 + NASDAQ 100 stocks. SIGNAL adapts its RF model for US market microstructure — different liquidity, options flow, Fed rate sensitivity, and earnings seasonality.' },
+              { icon:'🌍', title:'Phase 2 — Global Launch', desc:'Expand to Singapore, UAE, UK, and US resident investors. Multi-currency portfolio tracking. Localised tax implications (LTCG/STCG for India, capital gains for US).' },
+              { icon:'🔬', title:'Adapted ML Parameters', desc:'US signals use: Options flow (Put/Call ratio) · Institutional dark pool data · Fed FOMC calendar · Earnings whispers · Short interest % — alongside standard technical indicators.' },
+            ].map(c => (
+              <div key={c.title} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:22 }}>
+                <div style={{ fontSize:20, marginBottom:10 }}>{c.icon}</div>
+                <div style={{ fontSize:14, fontWeight:700, marginBottom:6 }}>{c.title}</div>
+                <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6 }}>{c.desc}</div>
+              </div>
+            ))}
+          </div>
+          <div style={{ marginTop:24, padding:'20px 24px', background:'rgba(23,64,245,0.05)', border:'1px solid rgba(23,64,245,0.2)', borderRadius:14, display:'flex', alignItems:'center', gap:20, flexWrap:'wrap' }}>
+            <div style={{ flex:1 }}>
+              <div style={{ fontSize:14, fontWeight:700, marginBottom:4 }}>Get US Markets early access</div>
+              <div style={{ fontSize:13, color:'var(--dim)' }}>We&apos;ll notify you when US stock signals go live. Harshit, Jaitik, and 200+ others are already on the waitlist.</div>
+            </div>
+            <div style={{ display:'flex', gap:10, flexShrink:0, flexWrap:'wrap' }}>
+              <input type="email" placeholder="your@email.com"
+                style={{ height:44, borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, padding:'0 14px', fontFamily:'inherit', outline:'none', width:220 }}
+                onFocus={e => e.currentTarget.style.borderColor='var(--blu)'}
+                onBlur={e => e.currentTarget.style.borderColor='var(--bdr)'}/>
+              <button style={{ height:44, padding:'0 20px', borderRadius:10, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Join Waitlist →</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Pricing */}
       <section id="pricing" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
@@ -527,6 +677,52 @@ export default function LandingPage() {
             <p style={{ fontSize:12.5, color:'rgba(255,184,0,0.7)', lineHeight:1.7 }}>
               <strong style={{ color:'var(--ylw)' }}>⚠️ SEBI DISCLAIMER:</strong> SIGNAL is <strong>NOT registered with SEBI</strong>. All signals, picks, algo strategies, and analysis are for <strong>informational and educational purposes only</strong>. Not financial advice. Past accuracy is not a guarantee of future results. <strong>Consult a SEBI-registered advisor before investing.</strong>
             </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Download App */}
+      <section id="download" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+        <div style={{ maxWidth:1200, margin:'0 auto' }}>
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+            <div>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--grn)', marginBottom:12 }}>Mobile App</div>
+              <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>SIGNAL in<br/>your pocket</h2>
+              <p style={{ fontSize:16, color:'var(--dim)', lineHeight:1.65, maxWidth:520, marginBottom:32 }}>The full platform — signals, portfolio analysis, algo builder, paper trading — on iOS and Android. Launching soon. Sign up on the website now for early access.</p>
+              <div style={{ display:'flex', flexDirection:'column', gap:12, maxWidth:240 }}>
+                <a href="#" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 22px', borderRadius:14, background:'var(--txt)', color:'var(--bg)', textDecoration:'none' }}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 12c0-3-1.7-5.6-4.3-6.9l.8-1.4c.2-.3 0-.7-.3-.8-.3-.1-.7 0-.8.3l-.8 1.4C11.4 4.2 10.7 4 10 4s-1.4.2-2.1.6l-.8-1.4c-.2-.3-.5-.4-.8-.3-.3.1-.5.5-.3.8l.8 1.4C4.2 6.4 2.5 9 2.5 12h15z"/><path d="M2.5 12v6.5c0 .6.4 1 1 1H4c.6 0 1-.4 1-1v-.5h10v.5c0 .6.4 1 1 1h.5c.6 0 1-.4 1-1V12H2.5z"/><circle cx="7" cy="15" r="1.2" fill="white"/><circle cx="13" cy="15" r="1.2" fill="white"/></svg>
+                  <div><div style={{ fontSize:10, opacity:0.5, marginBottom:1 }}>Coming soon</div><div style={{ fontSize:16, fontWeight:800 }}>Google Play</div></div>
+                </a>
+                <a href="#" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 22px', borderRadius:14, background:'var(--txt)', color:'var(--bg)', textDecoration:'none' }}>
+                  <svg width="20" height="24" viewBox="0 0 20 24" fill="currentColor"><path d="M10 0C7.8 0 5.8 2 5.8 4h8.4C14.2 2 12.2 0 10 0z" opacity="0.4"/><path d="M15 5.5H5C3 5.5 1.5 7 1.5 9v9c0 2 1.5 3.5 3.5 3.5h10c2 0 3.5-1.5 3.5-3.5V9c0-2-1.5-3.5-3.5-3.5z"/><rect x="8.5" y="17" width="3" height="1.5" rx="0.75" fill="white" opacity="0.7"/></svg>
+                  <div><div style={{ fontSize:10, opacity:0.5, marginBottom:1 }}>Coming soon</div><div style={{ fontSize:16, fontWeight:800 }}>App Store</div></div>
+                </a>
+              </div>
+            </div>
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:32 }}>
+              <div style={{ fontSize:16, fontWeight:700, marginBottom:6 }}>🔔 Get notified at launch</div>
+              <div style={{ fontSize:13, color:'var(--dim)', marginBottom:20, lineHeight:1.6 }}>Be first to download when the iOS and Android apps go live. One email — no spam ever.</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:10, marginBottom:24 }}>
+                <input type="email" placeholder="your@email.com"
+                  style={{ height:46, borderRadius:11, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:14, padding:'0 14px', fontFamily:'inherit', outline:'none', width:'100%' }}
+                  onFocus={e => e.currentTarget.style.borderColor='var(--blu)'}
+                  onBlur={e => e.currentTarget.style.borderColor='var(--bdr)'}/>
+                <button style={{ height:46, borderRadius:11, background:'linear-gradient(135deg,var(--grn),#00A87D)', border:'none', color:'#001A12', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Notify Me When App Launches</button>
+              </div>
+              <div style={{ display:'flex', border:'1px solid var(--bdr)', borderRadius:12, overflow:'hidden' }}>
+                {[
+                  { val:'iOS', sub:'App Store', vc:'var(--grn)' },
+                  { val:'Android', sub:'Play Store', vc:'var(--grn)', br:true },
+                  { val:'Free', sub:'to download', vc:'var(--bluL)' },
+                ].map((item, i) => (
+                  <div key={item.val} style={{ flex:1, padding:14, textAlign:'center', borderRight: i < 2 ? '1px solid var(--bdr)' : 'none' }}>
+                    <div style={{ fontSize:16, fontWeight:900, color:item.vc }}>{item.val}</div>
+                    <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{item.sub}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </section>
