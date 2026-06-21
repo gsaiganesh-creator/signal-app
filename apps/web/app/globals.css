@@ -1,10 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
-:root {
+:root, [data-theme="dark"] {
   --bg: #070D1A; --surf: #0E1628; --surf2: #162038; --bdr: #1C2E4A;
   --txt: #FFFFFF; --dim: #7A8BAA; --dim2: #3A4E6A;
   --blu: #1740F5; --bluL: #4F6FFA; --org: #FF5C1A; --orgL: #FF7D46;
   --grn: #00D4A0; --red: #FF3B5C; --ylw: #FFB800; --pur: #8B5CF6;
+}
+
+[data-theme="light"] {
+  --bg: #F2F5FB; --surf: #FFFFFF; --surf2: #E8EDF7; --bdr: #C8D4E8;
+  --txt: #0A1525; --dim: #4A5C7A; --dim2: #8A9EBB;
+  --blu: #1740F5; --bluL: #3558E0; --org: #E84D0E; --orgL: #FF5C1A;
+  --grn: #009B75; --red: #D42847; --ylw: #B88000; --pur: #6D28D9;
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
