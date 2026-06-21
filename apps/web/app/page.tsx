@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 const SignalLogo = () => (
   <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
@@ -54,7 +55,8 @@ export default function LandingPage() {
             <a key={h} href={h} style={{ color:'var(--dim)', transition:'color 0.2s' }} onMouseOver={e=>(e.currentTarget.style.color='var(--txt)')} onMouseOut={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>
           ))}
         </div>
-        <div style={{ display:'flex', gap:10 }}>
+        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+          <ThemeToggle />
           <Link href="/sign-in" style={{ height:36, padding:'0 16px', borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center' }}>Sign In</Link>
           <Link href="/sign-in" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center' }}>Get Started Free →</Link>
         </div>
