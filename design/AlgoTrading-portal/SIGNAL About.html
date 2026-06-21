@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — About & Founders</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root {
+      --bg:#070D1A; --surf:#0E1628; --surf2:#162038; --bdr:#1C2E4A;
+      --txt:#FFFFFF; --dim:#7A8BAA; --dim2:#3A4E6A;
+      --blu:#1740F5; --bluL:#4F6FFA; --org:#FF5C1A;
+      --grn:#00D4A0; --red:#FF3B5C; --ylw:#FFB800; --pur:#8B5CF6;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--txt); font-family:'Inter',system-ui,sans-serif; }
+
+    /* SEBI banner */
+    .sebi-banner { background:rgba(255,184,0,0.07); border-bottom:1px solid rgba(255,184,0,0.18);
+                   padding:8px clamp(16px,5vw,80px); text-align:center; }
+    .sebi-banner span { font-size:11.5px; color:rgba(255,184,0,0.8); }
+
+    /* Nav */
+    nav { display:flex; align-items:center; justify-content:space-between;
+          height:62px; padding:0 clamp(16px,5vw,80px);
+          background:rgba(7,13,26,0.92); backdrop-filter:blur(20px);
+          border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:100; }
+    .nav-logo { display:flex; align-items:center; gap:9px; font-size:19px; font-weight:900;
+                letter-spacing:-0.5px; text-decoration:none; color:var(--txt); }
+    .nav-links { display:flex; gap:24px; align-items:center; }
+    .nav-links a { font-size:13px; font-weight:500; color:var(--dim); text-decoration:none; transition:color 0.2s; }
+    .nav-links a:hover { color:var(--txt); }
+    .nav-links a.active { color:var(--bluL); font-weight:600; }
+    .nav-cta { display:flex; gap:10px; }
+    .btn-ghost   { height:36px; padding:0 16px; border-radius:9px; background:transparent; border:1px solid var(--bdr); color:var(--txt); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+    .btn-primary { height:36px; padding:0 18px; border-radius:9px; background:var(--blu); border:none; color:#fff; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+
+    /* Shared */
+    .wrap { max-width:1100px; margin:0 auto; padding:0 clamp(20px,5vw,80px); }
+    .section { padding:72px 0; }
+    .bdr-top { border-top:1px solid var(--bdr); }
+    .eyebrow { font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; margin-bottom:12px; }
+    .section-title { font-size:clamp(30px,4.5vw,52px); font-weight:900; letter-spacing:-1.5px; line-height:1.05; margin-bottom:16px; }
+    .section-sub { font-size:16px; color:var(--dim); line-height:1.7; max-width:600px; }
+    p { font-size:15px; line-height:1.75; color:#C4D0E8; }
+
+    /* Hero */
+    .hero { padding:80px clamp(20px,5vw,80px) 64px; position:relative; overflow:hidden; }
+    .hero-glow { position:absolute; top:-200px; left:50%; transform:translateX(-50%); width:700px; height:700px; border-radius:50%; background:radial-gradient(circle,rgba(23,64,245,0.12) 0%,transparent 65%); pointer-events:none; }
+    .glow-2 { position:absolute; bottom:-100px; right:-50px; width:400px; height:400px; border-radius:50%; background:radial-gradient(circle,rgba(0,212,160,0.07) 0%,transparent 65%); pointer-events:none; }
+
+    /* Mission block */
+    .mission-grid { display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:center; }
+    .mission-quote { font-size:clamp(22px,3vw,34px); font-weight:800; letter-spacing:-0.8px; line-height:1.25; color:var(--txt); margin-bottom:20px; }
+    .mission-quote span { color:var(--blu); }
+    .mission-stats { display:flex; flex-direction:column; gap:12px; }
+    .ms-row { display:flex; align-items:center; gap:14px; padding:14px 16px; background:var(--surf); border:1px solid var(--bdr); border-radius:13px; }
+    .ms-val { font-size:24px; font-weight:900; letter-spacing:-0.5px; min-width:80px; }
+    .ms-lbl { font-size:13px; color:var(--dim); line-height:1.5; }
+
+    /* Founder card */
+    .founder-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .founder-card { background:var(--surf); border:1px solid var(--bdr); border-radius:20px; padding:32px; position:relative; overflow:hidden; }
+    .founder-card.primary { border-color:rgba(23,64,245,0.3); background:linear-gradient(145deg,rgba(23,64,245,0.06),var(--surf)); }
+    .fc-glow { position:absolute; top:-60px; right:-60px; width:200px; height:200px; border-radius:50%; background:radial-gradient(circle,rgba(23,64,245,0.15) 0%,transparent 65%); }
+    .founder-av { width:80px; height:80px; border-radius:20px; display:flex; align-items:center; justify-content:center; font-size:26px; font-weight:900; color:#fff; margin-bottom:18px; flex-shrink:0; }
+    .founder-name  { font-size:22px; font-weight:900; letter-spacing:-0.5px; margin-bottom:4px; }
+    .founder-role  { font-size:13px; font-weight:700; margin-bottom:16px; }
+    .founder-bio   { font-size:14px; color:var(--dim); line-height:1.7; margin-bottom:20px; }
+    .founder-links { display:flex; gap:10px; flex-wrap:wrap; }
+    .f-link { display:inline-flex; align-items:center; gap:6px; height:34px; padding:0 14px;
+              border-radius:8px; font-size:12px; font-weight:700; text-decoration:none; transition:opacity 0.2s; }
+    .f-link:hover { opacity:0.8; }
+    .f-link-x  { background:#000; border:1px solid #333; color:#fff; }
+    .f-link-li { background:rgba(10,102,194,0.15); border:1px solid rgba(10,102,194,0.3); color:#0A66C2; }
+    .f-link-gh { background:var(--surf2); border:1px solid var(--bdr); color:var(--txt); }
+    .f-link-mail { background:rgba(23,64,245,0.1); border:1px solid rgba(23,64,245,0.25); color:var(--bluL); }
+
+    /* Placeholder founder */
+    .founder-card.placeholder { border-style:dashed; background:transparent; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; min-height:280px; cursor:pointer; transition:border-color 0.2s; }
+    .founder-card.placeholder:hover { border-color:var(--dim); }
+    .ph-icon { width:64px; height:64px; border-radius:16px; background:var(--surf2); border:1px solid var(--bdr); display:flex; align-items:center; justify-content:center; font-size:24px; margin:0 auto 14px; }
+    .ph-title { font-size:16px; font-weight:700; margin-bottom:6px; }
+    .ph-sub   { font-size:13px; color:var(--dim); line-height:1.55; }
+
+    /* Values */
+    .values-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .val-card { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:22px; }
+    .val-icon  { font-size:24px; margin-bottom:12px; }
+    .val-title { font-size:15px; font-weight:800; margin-bottom:7px; }
+    .val-desc  { font-size:13px; color:var(--dim); line-height:1.65; }
+
+    /* Story timeline */
+    .story-line { display:flex; flex-direction:column; gap:0; }
+    .story-item { display:flex; gap:20px; }
+    .story-left { display:flex; flex-direction:column; align-items:center; width:44px; flex-shrink:0; }
+    .story-dot  { width:12px; height:12px; border-radius:50%; flex-shrink:0; margin-top:4px; }
+    .story-line-v { width:2px; flex:1; min-height:28px; background:var(--bdr); margin:6px 0; }
+    .story-body { flex:1; padding-bottom:28px; }
+    .story-date { font-size:11px; font-weight:700; color:var(--dim); margin-bottom:4px; letter-spacing:0.5px; text-transform:uppercase; }
+    .story-title { font-size:15px; font-weight:700; margin-bottom:5px; }
+    .story-desc  { font-size:13px; color:var(--dim); line-height:1.65; }
+
+    /* Contact */
+    .contact-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .contact-card { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:20px; text-align:center; }
+    .cc-icon  { font-size:22px; margin-bottom:10px; }
+    .cc-label { font-size:11px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:5px; }
+    .cc-val   { font-size:14px; font-weight:700; color:var(--bluL); text-decoration:none; }
+    .cc-sub   { font-size:12px; color:var(--dim2); margin-top:4px; }
+
+    /* CTA */
+    .cta-block { background:linear-gradient(135deg,rgba(23,64,245,0.09),rgba(0,212,160,0.05)); border:1px solid rgba(23,64,245,0.22); border-radius:20px; padding:48px; text-align:center; }
+    .cta-block h2 { font-size:clamp(24px,3.5vw,40px); font-weight:900; letter-spacing:-1px; margin-bottom:12px; }
+    .cta-block p { font-size:15px; color:var(--dim); margin-bottom:28px; max-width:480px; margin-left:auto; margin-right:auto; }
+    .cta-btns { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+    .btn-xl-primary { height:52px; padding:0 32px; border-radius:13px; background:linear-gradient(135deg,var(--blu),var(--bluL)); border:none; color:#fff; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit; box-shadow:0 8px 24px rgba(23,64,245,0.35); }
+    .btn-xl-ghost   { height:52px; padding:0 28px; border-radius:13px; background:transparent; border:1px solid var(--bdr); color:var(--txt); font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+    /* Footer */
+    footer { border-top:1px solid var(--bdr); padding:36px clamp(20px,5vw,80px); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+    .footer-logo { font-size:18px; font-weight:900; }
+    .footer-links { display:flex; gap:20px; flex-wrap:wrap; }
+    .footer-links a { font-size:12px; color:var(--dim); text-decoration:none; }
+    .footer-copy { font-size:11.5px; color:var(--dim2); }
+
+    @media(max-width:900px) {
+      .mission-grid,.founder-grid { grid-template-columns:1fr; }
+      .values-grid,.contact-grid  { grid-template-columns:1fr 1fr; }
+      .nav-links { display:none; }
+    }
+    @media(max-width:600px) {
+      .values-grid,.contact-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sebi-banner">
+  <span>⚠️ <strong>NOT SEBI REGISTERED</strong> — All signals are for informational purposes only. Not financial advice. Trade at your own risk.</span>
+</div>
+
+<nav>
+  <a class="nav-logo" href="SIGNAL Landing Page.html">
+    <svg width="24" height="24" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div class="nav-links">
+    <a href="SIGNAL Landing Page.html">Home</a>
+    <a href="SIGNAL Track Record.html">Track Record</a>
+    <a href="SIGNAL ML Parameters.html">ML Signals</a>
+    <a href="SIGNAL Landing Page.html#pricing">Pricing</a>
+    <a href="#" class="active">About</a>
+  </div>
+  <div class="nav-cta">
+    <button class="btn-ghost" onclick="location.href='SIGNAL Sign In.html'">Sign In</button>
+    <button class="btn-primary" onclick="location.href='SIGNAL Sign In.html'">Start Free →</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="glow-2"></div>
+  <div class="wrap" style="position:relative;z-index:1;text-align:center;">
+    <div class="eyebrow" style="color:var(--bluL);">Our Story</div>
+    <h1 style="font-size:clamp(36px,6vw,72px);font-weight:900;letter-spacing:-2.5px;line-height:1.0;margin-bottom:20px;">Built by a trader,<br><span style="color:var(--blu);">for traders</span><br>who are <span style="color:var(--org);">done overpaying.</span></h1>
+    <p style="font-size:17px;color:var(--dim);line-height:1.7;max-width:620px;margin:0 auto;">SIGNAL started as a frustration — paying ₹5,000/month to a Telegram channel with zero accountability, zero accuracy data, and zero personalisation. So we built the alternative.</p>
+  </div>
+</section>
+
+<!-- Mission -->
+<section class="section bdr-top">
+  <div class="wrap">
+    <div class="mission-grid">
+      <div>
+        <div class="eyebrow" style="color:var(--org);">Our Mission</div>
+        <div class="mission-quote">"Give every Indian trader access to <span>institutional-grade</span> ML signals — transparently, affordably, and accountably."</div>
+        <p style="color:var(--dim);font-size:14px;line-height:1.75;margin-bottom:20px;">The Indian stock market has 10 crore+ retail investors. Most of them pay for Telegram calls with no track record, or rely on tips from friends. SIGNAL changes that — with ML-powered signals, public accuracy stats, and prices starting at ₹199/month.</p>
+        <p style="color:var(--dim);font-size:14px;line-height:1.75;">Every signal SIGNAL fires is posted publicly on Twitter. Every week's accuracy is published. Nothing is hidden, nothing is deleted. That's the standard we hold ourselves to — and the one we believe every signal service should meet.</p>
+      </div>
+      <div class="mission-stats">
+        <div class="ms-row">
+          <div class="ms-val" style="color:var(--grn);">71.4%</div>
+          <div class="ms-lbl">Signal accuracy over the last 90 days — publicly verified on Twitter</div>
+        </div>
+        <div class="ms-row">
+          <div class="ms-val">142</div>
+          <div class="ms-lbl">Total signals fired in 90 days — every one posted publicly before outcome</div>
+        </div>
+        <div class="ms-row">
+          <div class="ms-val" style="color:var(--blu);">15</div>
+          <div class="ms-lbl">ML parameters — RSI, MACD, EMA, Delivery %, FII/DII flow, and more</div>
+        </div>
+        <div class="ms-row">
+          <div class="ms-val" style="color:var(--org);">10×</div>
+          <div class="ms-lbl">Cheaper than premium Telegram channels — at a fraction of the price</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Founders -->
+<section class="section bdr-top" id="founders">
+  <div class="wrap">
+    <div class="eyebrow" style="color:var(--pur);">The Team</div>
+    <div class="section-title">Who's building SIGNAL</div>
+    <p class="section-sub" style="margin-bottom:36px;">A small, focused team building the algo trading platform we always wished existed.</p>
+
+    <div class="founder-grid">
+
+      <!-- Sai Ganesh Gella -->
+      <div class="founder-card primary">
+        <div class="fc-glow"></div>
+        <div style="position:relative;z-index:1;">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+            <div class="founder-av" style="background:linear-gradient(135deg,var(--blu),var(--org));">SG</div>
+            <div>
+              <div class="founder-name">Sai Ganesh Gella</div>
+              <div class="founder-role" style="color:var(--bluL);">Co-Founder &amp; CEO</div>
+            </div>
+          </div>
+          <p class="founder-bio">More details coming soon — watch this space.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
+            <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(23,64,245,0.1);color:var(--bluL);border:1px solid rgba(23,64,245,0.25);">Product &amp; Strategy</span>
+            <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);border:1px solid rgba(0,212,160,0.25);">NSE/BSE Trading</span>
+            <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(255,92,26,0.1);color:var(--org);border:1px solid rgba(255,92,26,0.25);">ML Signals</span>
+          </div>
+          <div class="founder-links">
+            <a href="#" class="f-link f-link-x"><span style="font-weight:900;font-size:14px;">&#120143;</span> @signal_in</a>
+            <a href="#" class="f-link f-link-li">in LinkedIn</a>
+            <a href="mailto:saiganesh@getsignal.in" class="f-link f-link-mail">✉ saiganesh@getsignal.in</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sai Kumar Bethala -->
+      <div class="founder-card" style="border-color:rgba(0,212,160,0.25);background:linear-gradient(145deg,rgba(0,212,160,0.05),var(--surf));">
+        <div style="position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(0,212,160,0.12) 0%,transparent 65%);"></div>
+        <div style="position:relative;z-index:1;">
+          <div style="display:flex;align-items:center;gap:16px;margin-bottom:18px;">
+            <div class="founder-av" style="background:linear-gradient(135deg,var(--grn),#00875A);">SK</div>
+            <div>
+              <div class="founder-name">Sai Kumar Bethala</div>
+              <div class="founder-role" style="color:var(--grn);">Co-Founder &amp; CTO</div>
+            </div>
+          </div>
+          <p class="founder-bio">More details coming soon — watch this space.</p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:20px;">
+            <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);border:1px solid rgba(0,212,160,0.25);">Engineering</span>
+            <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(139,92,246,0.1);color:var(--pur);border:1px solid rgba(139,92,246,0.25);">Backend &amp; API</span>
+            <span style="font-size:11px;font-weight:700;padding:3px 9px;border-radius:5px;background:rgba(23,64,245,0.1);color:var(--bluL);border:1px solid rgba(23,64,245,0.25);">Infrastructure</span>
+          </div>
+          <div class="founder-links">
+            <a href="#" class="f-link f-link-x"><span style="font-weight:900;font-size:14px;">&#120143;</span> Twitter</a>
+            <a href="#" class="f-link f-link-li">in LinkedIn</a>
+            <a href="mailto:saikumar@getsignal.in" class="f-link f-link-mail">✉ saikumar@getsignal.in</a>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Our story timeline -->
+<section class="section bdr-top" id="story">
+  <div class="wrap">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:flex-start;">
+      <div>
+        <div class="eyebrow" style="color:var(--grn);">Origin Story</div>
+        <div class="section-title" style="font-size:clamp(24px,3.5vw,40px);">Why we built this</div>
+        <p style="margin-bottom:16px;">In 2023, Vaasudev was paying ₹4,500/month to a popular Telegram stock advisory channel. After 6 months, he tallied the actual results: 52% accuracy on their calls — barely better than a coin flip, at an annual cost of ₹54,000.</p>
+        <p style="margin-bottom:16px;">The frustrating part wasn't the accuracy. It was that they never published their accuracy. They only shared the wins on social media. The losses were quietly forgotten.</p>
+        <p>SIGNAL was built to answer one question: <strong style="color:var(--txt);">What if a trading signal service published every single call — wins and losses — and let the data speak for itself?</strong></p>
+      </div>
+      <div class="story-line">
+        <div class="story-item">
+          <div class="story-left"><div class="story-dot" style="background:var(--dim);"></div><div class="story-line-v"></div></div>
+          <div class="story-body">
+            <div class="story-date">2023 — The frustration</div>
+            <div class="story-title">₹54,000 spent on Telegram calls</div>
+            <div class="story-desc">6 months · 52% accuracy · zero published track record. Started building own ML model on weekends.</div>
+          </div>
+        </div>
+        <div class="story-item">
+          <div class="story-left"><div class="story-dot" style="background:var(--org);"></div><div class="story-line-v"></div></div>
+          <div class="story-body">
+            <div class="story-date">Jan 2024 — First model</div>
+            <div class="story-title">Random Forest v1 — 61% accuracy</div>
+            <div class="story-desc">Trained on 3Y NSE data · 8 indicators · First signal posted publicly on Twitter. Small following started.</div>
+          </div>
+        </div>
+        <div class="story-item">
+          <div class="story-left"><div class="story-dot" style="background:var(--blu);"></div><div class="story-line-v"></div></div>
+          <div class="story-body">
+            <div class="story-date">Jul 2024 — v2 model</div>
+            <div class="story-title">Added Delivery % · FII/DII flow</div>
+            <div class="story-desc">Accuracy improved to 68%. Twitter community growing. First DMs asking "how do I get your signals?"</div>
+          </div>
+        </div>
+        <div class="story-item">
+          <div class="story-left"><div class="story-dot" style="background:var(--grn);"></div><div class="story-line-v"></div></div>
+          <div class="story-body">
+            <div class="story-date">Mar 2025 — v3 model</div>
+            <div class="story-title">71.4% accuracy · 15 parameters</div>
+            <div class="story-desc">Added Twitter sentiment, sector momentum. Backtested 5 years. Decided to build a proper product.</div>
+          </div>
+        </div>
+        <div class="story-item">
+          <div class="story-left"><div class="story-dot" style="background:var(--pur);"></div><div class="story-line-v"></div></div>
+          <div class="story-body">
+            <div class="story-date">Jun 2026 — SIGNAL launches</div>
+            <div class="story-title">Website + App · Free to start</div>
+            <div class="story-desc">Full platform live — signals, algo builder, paper trading, broker sync. ₹199/month. Fully public track record.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Values -->
+<section class="section bdr-top">
+  <div class="wrap">
+    <div class="eyebrow" style="color:var(--bluL);">Our Principles</div>
+    <div class="section-title" style="margin-bottom:32px;">What we stand for</div>
+    <div class="values-grid">
+      <div class="val-card">
+        <div class="val-icon">📊</div>
+        <div class="val-title">Radical transparency</div>
+        <div class="val-desc">Every signal is posted publicly before the outcome. Every week's accuracy — including bad weeks — is published. No cherry-picking, no hiding losses.</div>
+      </div>
+      <div class="val-card">
+        <div class="val-icon">🤖</div>
+        <div class="val-title">Data over opinion</div>
+        <div class="val-desc">No human analyst calls. No "gut feel". Every signal comes from a quantitative model — the same model every time, with no emotion, no bias.</div>
+      </div>
+      <div class="val-card">
+        <div class="val-icon">💰</div>
+        <div class="val-title">Accessible pricing</div>
+        <div class="val-desc">₹199/month for serious trading signals. Not ₹5,000. Not ₹20,000. We believe great tools shouldn't be reserved for traders with deep pockets.</div>
+      </div>
+      <div class="val-card">
+        <div class="val-icon">🛡️</div>
+        <div class="val-title">User-first data</div>
+        <div class="val-desc">Your portfolio data belongs to you. We use RBI's Account Aggregator framework — consent-based, revokable anytime. We never see your broker passwords.</div>
+      </div>
+      <div class="val-card">
+        <div class="val-icon">⚠️</div>
+        <div class="val-title">Honest about limits</div>
+        <div class="val-desc">We are NOT SEBI registered. We clearly say that — everywhere, always. No ML model is perfect. Trade responsibly, size your positions carefully.</div>
+      </div>
+      <div class="val-card">
+        <div class="val-icon">🇮🇳</div>
+        <div class="val-title">Built for India first</div>
+        <div class="val-desc">Delivery %, FII/DII flow, NSE circuit limits — SIGNAL uses India-specific data that global algo platforms ignore. Built for NSE/BSE from the ground up.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Contact -->
+<section class="section bdr-top" id="contact">
+  <div class="wrap">
+    <div class="eyebrow" style="color:var(--org);">Get in Touch</div>
+    <div class="section-title" style="margin-bottom:8px;">We'd love to hear from you</div>
+    <p class="section-sub" style="margin-bottom:32px;">Questions about the platform, partnership inquiries, or just want to talk trading — reach out.</p>
+    <div class="contact-grid">
+      <div class="contact-card">
+        <div class="cc-icon">✉️</div>
+        <div class="cc-label">General enquiries</div>
+        <a href="mailto:hello@getsignal.in" class="cc-val">hello@getsignal.in</a>
+        <div class="cc-sub">Response within 24 hours</div>
+      </div>
+      <div class="contact-card">
+        <div class="cc-icon">🛟</div>
+        <div class="cc-label">Customer support</div>
+        <a href="mailto:support@getsignal.in" class="cc-val">support@getsignal.in</a>
+        <div class="cc-sub">Pro users: WhatsApp support</div>
+      </div>
+      <div class="contact-card">
+        <div class="cc-icon">🤝</div>
+        <div class="cc-label">Partnerships &amp; press</div>
+        <a href="mailto:partnerships@getsignal.in" class="cc-val">partnerships@getsignal.in</a>
+        <div class="cc-sub">Broker integrations, media</div>
+      </div>
+    </div>
+    <div style="margin-top:24px;background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:20px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px;">Follow for live signals on Twitter / X</div>
+        <div style="font-size:13px;color:var(--dim);">Every signal posted the moment it fires. Weekly scorecards. Full transparency.</div>
+      </div>
+      <a href="#" style="display:inline-flex;align-items:center;gap:8px;height:42px;padding:0 20px;border-radius:10px;background:#000;border:1px solid #333;color:#fff;font-size:14px;font-weight:700;text-decoration:none;white-space:nowrap;flex-shrink:0;"><span style="font-size:18px;font-weight:900;">𝕏</span> @signal_in</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section bdr-top">
+  <div class="wrap">
+    <div class="cta-block">
+      <h2>Ready to trade smarter?</h2>
+      <p>Join traders who use data and accountability over expensive, unverified Telegram calls.</p>
+      <div class="cta-btns">
+        <button class="btn-xl-primary" onclick="location.href='SIGNAL Sign In.html'">Start Free — No Card Needed →</button>
+        <button class="btn-xl-ghost" onclick="location.href='SIGNAL Track Record.html'">View Track Record</button>
+      </div>
+      <div style="margin-top:20px;font-size:12px;color:var(--dim2);">Built by Sai Ganesh Gella &amp; Sai Kumar Bethala &nbsp;·&nbsp; ⚠️ NOT SEBI registered · Not financial advice · Trade at your own risk</div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-logo">SIGNAL</div>
+  <div class="footer-links">
+    <a href="SIGNAL Landing Page.html">Home</a>
+    <a href="SIGNAL Track Record.html">Track Record</a>
+    <a href="SIGNAL ML Parameters.html">ML Signals</a>
+    <a href="SIGNAL Landing Page.html#pricing">Pricing</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+  </div>
+  <div class="footer-copy">© 2026 SIGNAL · Sai Ganesh Gella &amp; Sai Kumar Bethala · NOT SEBI registered</div>
+</footer>
+
+</body>
+</html>

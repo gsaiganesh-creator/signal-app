@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Technical Roadmap</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+    body { margin: 0; background: #F8F9FC; font-family: 'Inter', system-ui, sans-serif; color: #0A1628; }
+
+    .doc { box-sizing: border-box; max-width: 8.5in; margin: 0 auto; background: inherit;
+           padding: 48px clamp(24px, 5vw, 0.75in) 96px; }
+    .doc-frame { width: 100%; border-collapse: collapse; }
+    .doc-frame td { padding: 0; }
+    .running-hdr, .running-ftr, .hdr-space, .ftr-space { display: none; }
+    h1, h2, h3 { text-wrap: balance; }
+    p, li { text-wrap: pretty; }
+
+    @page { size: letter; margin: 0; }
+    @media print {
+      html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      html, body { margin: 0; padding: 0; }
+      .doc { max-width: none !important; margin: 0 !important;
+             padding: 0 0.75in !important; box-shadow: none !important; border: none !important; }
+      #dc-root, .sc-host { height: auto !important; }
+      .hdr-space, .ftr-space { display: table-cell; height: 0.75in !important; }
+      .running-hdr, .running-ftr { display: flex !important; justify-content: space-between;
+             align-items: baseline; position: fixed !important; left: 0; right: 0; margin: 0 !important;
+             font-size: 11px; letter-spacing: 0.05em; text-transform: uppercase; }
+      .running-hdr { top: 0; padding: 0.35in 0.75in 0 !important; }
+      .running-ftr { bottom: 0; padding: 0 0.75in 0.35in !important; }
+      h1, h2, h3, h4, h5, h6 { break-after: avoid; }
+      figure, pre, blockquote, img, svg, tr { break-inside: avoid; }
+      p, li { orphans: 3; widows: 3; }
+      .screen-only { display: none !important; }
+      .card, .arch-row, .phase-row, .data-card { break-inside: avoid; }
+    }
+
+    /* ── Core typography ──────────────────────────────────────── */
+    h1 { font-size: 32px; font-weight: 800; line-height: 1.15; letter-spacing: -0.8px; margin: 0 0 6px; color: #0A1628; }
+    h2 { font-size: 19px; font-weight: 700; color: #0A1628; margin: 40px 0 16px; letter-spacing: -0.3px;
+         padding-bottom: 8px; border-bottom: 2px solid #E2E8F4; }
+    h3 { font-size: 14px; font-weight: 700; color: #0A1628; margin: 0 0 6px; }
+    p { font-size: 14px; line-height: 1.65; color: #334155; margin: 0 0 12px; }
+    ul, ol { padding-left: 20px; margin: 0 0 12px; }
+    li { font-size: 14px; line-height: 1.7; color: #334155; }
+    li + li { margin-top: 3px; }
+    strong { font-weight: 600; color: #0A1628; }
+    a { color: #1740F5; text-decoration: none; }
+
+    /* ── Eyebrow / meta ───────────────────────────────────────── */
+    .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+               color: #1740F5; margin: 0 0 10px; }
+    .subtitle { font-size: 15px; color: #5A6A8A; margin: 0 0 32px; line-height: 1.5; }
+    .meta-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 32px; }
+    .meta-item { font-size: 12px; color: #8A9AB8; }
+    .meta-item strong { color: #334155; font-weight: 600; }
+
+    /* ── Divider ──────────────────────────────────────────────── */
+    hr { border: none; border-top: 1px solid #E2E8F4; margin: 32px 0; }
+
+    /* ── Cards ────────────────────────────────────────────────── */
+    .card-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-bottom: 20px; }
+    .card-grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 14px; margin-bottom: 20px; }
+    .card { background: #fff; border: 1px solid #E2E8F4; border-radius: 12px; padding: 16px 18px; }
+    .card-accent { border-left: 3px solid #1740F5; }
+    .card-orange { border-left: 3px solid #FF5C1A; }
+    .card-green { border-left: 3px solid #00D4A0; }
+    .card-purple { border-left: 3px solid #8B5CF6; }
+    .card-red { border-left: 3px solid #FF3B5C; }
+    .card-label { font-size: 10px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase;
+                  color: #8A9AB8; margin-bottom: 5px; }
+    .card-value { font-size: 22px; font-weight: 800; color: #0A1628; line-height: 1.2; }
+    .card-sub { font-size: 11.5px; color: #5A6A8A; margin-top: 3px; }
+
+    /* ── Architecture diagram ─────────────────────────────────── */
+    .arch-row { display: flex; gap: 0; align-items: stretch; margin-bottom: 10px; }
+    .arch-box { flex: 1; background: #fff; border: 1px solid #E2E8F4; border-radius: 10px;
+                padding: 12px 14px; font-size: 12.5px; font-weight: 600; color: #0A1628; text-align: center; }
+    .arch-box .arch-sub { font-size: 10.5px; font-weight: 400; color: #8A9AB8; display: block; margin-top: 2px; }
+    .arch-arrow { display: flex; align-items: center; padding: 0 6px; color: #C4CDD8; font-size: 18px; flex-shrink: 0; }
+    .arch-highlight { background: #EFF3FF; border-color: #1740F5; color: #1740F5; }
+    .arch-orange { background: #FFF4EF; border-color: #FF5C1A; color: #FF5C1A; }
+    .arch-green { background: #EDFCF7; border-color: #00D4A0; color: #00875A; }
+    .arch-purple { background: #F5F0FF; border-color: #8B5CF6; color: #6D3EC1; }
+
+    /* ── Phase timeline ───────────────────────────────────────── */
+    .phase-row { display: flex; gap: 14px; margin-bottom: 12px; align-items: flex-start; }
+    .phase-badge { width: 36px; height: 36px; border-radius: 10px; display: flex; align-items: center;
+                   justify-content: center; font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .phase-content { flex: 1; }
+    .phase-title { font-size: 14px; font-weight: 700; color: #0A1628; margin: 0 0 3px; }
+    .phase-desc { font-size: 13px; color: #5A6A8A; margin: 0; line-height: 1.55; }
+    .phase-tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px;
+                 border-radius: 5px; margin-left: 7px; vertical-align: middle; }
+
+    /* ── Data source table ────────────────────────────────────── */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+    thead th { background: #F2F6FF; font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+               text-transform: uppercase; color: #5A6A8A; padding: 9px 12px; text-align: left;
+               border-bottom: 1px solid #E2E8F4; }
+    tbody td { padding: 9px 12px; border-bottom: 1px solid #F0F4FA; color: #334155; vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #F8FAFF; }
+    .tag { display: inline-block; font-size: 10.5px; font-weight: 700; padding: 2px 8px;
+           border-radius: 5px; white-space: nowrap; }
+    .tag-free { background: #EDFCF7; color: #00875A; }
+    .tag-paid { background: #FFF4EF; color: #C74400; }
+    .tag-realtime { background: #EFF3FF; color: #1740F5; }
+    .tag-daily { background: #F5F0FF; color: #6D3EC1; }
+
+    /* ── ML feature grid ─────────────────────────────────────── */
+    .data-card { background: #fff; border: 1px solid #E2E8F4; border-radius: 10px;
+                 padding: 14px 16px; margin-bottom: 10px; }
+    .data-card-header { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+    .data-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center;
+                 justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .data-card ul { margin: 0; padding-left: 18px; }
+    .data-card li { font-size: 13px; color: #5A6A8A; }
+
+    /* ── Callout ──────────────────────────────────────────────── */
+    .callout { border-radius: 10px; padding: 14px 16px; margin-bottom: 16px; }
+    .callout-blue { background: #EFF3FF; border: 1px solid #C5D3FF; }
+    .callout-orange { background: #FFF4EF; border: 1px solid #FFD4BE; }
+    .callout-yellow { background: #FFFBEA; border: 1px solid #FFE88A; }
+    .callout p { margin: 0; font-size: 13px; line-height: 1.6; }
+    .callout strong { color: #0A1628; }
+
+    /* ── Stack badges ─────────────────────────────────────────── */
+    .stack-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .stack-badge { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 7px;
+                   background: #F2F6FF; border: 1px solid #C5D3FF; color: #1740F5; }
+    .stack-badge.alt { background: #FFF4EF; border-color: #FFD4BE; color: #C74400; }
+    .stack-badge.grn { background: #EDFCF7; border-color: #A0EDD8; color: #00875A; }
+    .stack-badge.pur { background: #F5F0FF; border-color: #D4BCFF; color: #6D3EC1; }
+    .stack-badge.neu { background: #F4F6FA; border-color: #DDE2EE; color: #334155; }
+  </style>
+</head>
+<body>
+<main class="doc">
+  <table class="doc-frame" role="presentation">
+    <thead><tr><td class="hdr-space"></td></tr></thead>
+    <tbody><tr><td>
+
+      <div class="eyebrow">SIGNAL App · Technical Roadmap</div>
+      <h1>From Prototype to Production</h1>
+      <p class="subtitle">App Store deployment, cloud database architecture, and ML data strategy — a practical guide for the SIGNAL team.</p>
+      <div class="meta-row">
+        <div class="meta-item"><strong>Version</strong> 1.0</div>
+        <div class="meta-item"><strong>Date</strong> June 2026</div>
+        <div class="meta-item"><strong>Status</strong> Planning</div>
+        <div class="meta-item"><strong>Audience</strong> Founders · Engineering · Data Science</div>
+      </div>
+
+      <hr>
+
+      <!-- ══ SECTION 1: App Store ══════════════════════════════ -->
+      <h2>1 · Deploying to App Store &amp; Play Store</h2>
+
+      <p>Your current prototype is a React/HTML web app. You have three paths to native app stores — each with different effort, cost, and user experience trade-offs.</p>
+
+      <div class="card-grid">
+        <div class="card card-accent">
+          <div class="card-label">Recommended</div>
+          <div class="card-value" style="font-size:17px;">React Native</div>
+          <div class="card-sub">Rewrite UI in RN — same component model as your prototype. Best long-term. 10–14 weeks.</div>
+        </div>
+        <div class="card card-orange">
+          <div class="card-label">Fastest Launch</div>
+          <div class="card-value" style="font-size:17px;">Capacitor.js</div>
+          <div class="card-sub">Wrap your existing HTML/React in a native shell. Ships in 2–3 weeks. Some UX limitations.</div>
+        </div>
+        <div class="card card-green">
+          <div class="card-label">No App Store</div>
+          <div class="card-value" style="font-size:17px;">PWA</div>
+          <div class="card-sub">Progressive Web App — installable from browser, no store listing. Fast but limited push notifications on iOS.</div>
+        </div>
+      </div>
+
+      <h3>Recommended Path: Capacitor → React Native</h3>
+      <p>Start with <strong>Capacitor</strong> (by Ionic) to get your first App Store listing quickly using existing code, then migrate to <strong>React Native</strong> for a polished native experience in v2.</p>
+
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#1740F5;">1</div>
+        <div class="phase-content">
+          <p class="phase-title">Capacitor Wrapper — Weeks 1–3 <span class="phase-tag" style="background:#EFF3FF;color:#1740F5;">Fast</span></p>
+          <p class="phase-desc">Install Capacitor, add <code>capacitor.config.ts</code>, build the web app, run <code>npx cap add ios</code> and <code>npx cap add android</code>. Open in Xcode + Android Studio, sign with certificates, and submit. Your HTML prototype becomes a native app with minimal changes.</p>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#FF5C1A;">2</div>
+        <div class="phase-content">
+          <p class="phase-title">App Store Requirements — Weeks 2–4</p>
+          <p class="phase-desc">Apple requires a <strong>Privacy Policy URL</strong>, <strong>SEBI / financial disclaimer</strong> in the app description, app screenshots at exact dimensions (6.7", 6.1", iPad), and review of any investment-related keywords. Google Play is faster (~3 days review vs Apple's 1–2 weeks). You'll need a <strong>DPIIT Startup certificate</strong> or company PAN for Indian developer accounts.</p>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#00875A;">3</div>
+        <div class="phase-content">
+          <p class="phase-title">React Native Migration — Months 2–4 <span class="phase-tag" style="background:#EDFCF7;color:#00875A;">Long-term</span></p>
+          <p class="phase-desc">Convert screens to React Native components. Your design system, color tokens, and component logic carry over directly. Use <strong>Expo</strong> (managed workflow) for easier deploys, or bare React Native for full control.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-yellow">
+        <p>⚠️ <strong>SEBI Compliance Note:</strong> Apple and Google both scrutinise financial apps carefully. Your app must clearly display "not SEBI registered" and "not investment advice" disclosures. Avoid words like "guaranteed returns" or "sure-shot signals" in App Store copy — these cause rejections.</p>
+      </div>
+
+      <h3>Tech Stack for Production App</h3>
+      <div class="stack-row">
+        <span class="stack-badge">React Native</span>
+        <span class="stack-badge">Expo</span>
+        <span class="stack-badge alt">TypeScript</span>
+        <span class="stack-badge grn">Zustand / Redux</span>
+        <span class="stack-badge pur">React Navigation</span>
+        <span class="stack-badge neu">React Query</span>
+        <span class="stack-badge neu">Reanimated 3</span>
+        <span class="stack-badge alt">Socket.io (live prices)</span>
+      </div>
+
+      <hr>
+
+      <!-- ══ SECTION 2: Cloud DB ════════════════════════════════ -->
+      <h2>2 · Cloud Database Architecture</h2>
+
+      <p>SIGNAL needs to store several distinct types of data. These have very different read/write patterns — no single database fits all. The right architecture combines a fast NoSQL DB for user data with a time-series DB for market prices.</p>
+
+      <h3>Architecture Overview</h3>
+      <div class="arch-row">
+        <div class="arch-box arch-highlight">Mobile App<span class="arch-sub">React Native</span></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box arch-orange">API Gateway<span class="arch-sub">AWS API GW / Supabase</span></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box arch-purple">Backend<span class="arch-sub">Node.js / FastAPI</span></div>
+      </div>
+      <div class="arch-row">
+        <div class="arch-box arch-highlight">User DB<span class="arch-sub">Firestore / Supabase</span></div>
+        <div class="arch-arrow">+</div>
+        <div class="arch-box arch-orange">Market Data DB<span class="arch-sub">TimescaleDB / InfluxDB</span></div>
+        <div class="arch-arrow">+</div>
+        <div class="arch-box arch-green">ML Results<span class="arch-sub">PostgreSQL</span></div>
+        <div class="arch-arrow">+</div>
+        <div class="arch-box arch-purple">Cache<span class="arch-sub">Redis</span></div>
+      </div>
+
+      <h3>What to Store — Data Collections</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Collection</th>
+            <th>What it holds</th>
+            <th>DB choice</th>
+            <th>Update freq.</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>users</strong></td>
+            <td>Profile, preferences, trading mode, plan tier</td>
+            <td>Firestore / Supabase</td>
+            <td><span class="tag tag-daily">On change</span></td>
+          </tr>
+          <tr>
+            <td><strong>portfolios</strong></td>
+            <td>Holdings per user, demat account links, avg cost, qty</td>
+            <td>Firestore / Supabase</td>
+            <td><span class="tag tag-daily">On sync</span></td>
+          </tr>
+          <tr>
+            <td><strong>trades</strong></td>
+            <td>Buy/sell history, P&L per trade, broker source</td>
+            <td>PostgreSQL</td>
+            <td><span class="tag tag-daily">On upload</span></td>
+          </tr>
+          <tr>
+            <td><strong>ohlcv_data</strong></td>
+            <td>NSE/BSE OHLCV candles — 1min, 5min, daily for all stocks</td>
+            <td>TimescaleDB</td>
+            <td><span class="tag tag-realtime">Every minute</span></td>
+          </tr>
+          <tr>
+            <td><strong>ml_signals</strong></td>
+            <td>Generated buy/sell signals, confidence score, model version</td>
+            <td>PostgreSQL</td>
+            <td><span class="tag tag-daily">3× daily</span></td>
+          </tr>
+          <tr>
+            <td><strong>signal_outcomes</strong></td>
+            <td>What actually happened after each signal — for retraining</td>
+            <td>PostgreSQL</td>
+            <td><span class="tag tag-daily">End of day</span></td>
+          </tr>
+          <tr>
+            <td><strong>sentiment_raw</strong></td>
+            <td>Raw tweets/posts mentioning each stock, before NLP scoring</td>
+            <td>MongoDB</td>
+            <td><span class="tag tag-realtime">Every 15 min</span></td>
+          </tr>
+          <tr>
+            <td><strong>sentiment_scores</strong></td>
+            <td>Processed sentiment per stock: score, volume, change vs yesterday</td>
+            <td>Redis + PostgreSQL</td>
+            <td><span class="tag tag-realtime">Every 15 min</span></td>
+          </tr>
+          <tr>
+            <td><strong>alerts</strong></td>
+            <td>User-set price alerts, signal alerts, circuit alerts</td>
+            <td>Redis (queue) + Firestore</td>
+            <td><span class="tag tag-realtime">Real-time</span></td>
+          </tr>
+          <tr>
+            <td><strong>news_feed</strong></td>
+            <td>Scraped/API news articles tagged by stock and sentiment</td>
+            <td>MongoDB</td>
+            <td><span class="tag tag-daily">Hourly</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Fastest Start: Supabase (Recommended for MVP)</h3>
+      <p><strong>Supabase</strong> gives you PostgreSQL + Auth + Realtime subscriptions + Storage in one hosted service with a generous free tier. It's the fastest path to a production backend. Add <strong>TimescaleDB extension</strong> inside Supabase for time-series OHLCV data.</p>
+      <div class="stack-row">
+        <span class="stack-badge grn">Supabase (Postgres + Auth + Realtime)</span>
+        <span class="stack-badge alt">Redis Cloud (caching + alerts)</span>
+        <span class="stack-badge pur">Firebase FCM (push notifications)</span>
+        <span class="stack-badge neu">AWS S3 (exports + ML model storage)</span>
+      </div>
+
+      <div class="callout callout-blue">
+        <p>💡 <strong>Start small:</strong> For the first 6 months, Supabase free tier (~500 MB, 2 GB egress) is enough for a beta with 500–1,000 users. Upgrade to Pro (₹1,700/mo) when you scale. TimescaleDB on Supabase handles millions of OHLCV rows without breaking a sweat.</p>
+      </div>
+
+      <hr>
+
+      <!-- ══ SECTION 3: ML Data Strategy ═══════════════════════ -->
+      <h2>3 · ML Data Strategy — What to Capture &amp; How to Train</h2>
+
+      <p>SIGNAL's core value proposition is ML-powered signals. The quality of your model depends entirely on the quality, volume, and diversity of your training data. Here's a structured plan.</p>
+
+      <h3>The ML Pipeline — End to End</h3>
+      <div class="arch-row">
+        <div class="arch-box arch-highlight">Ingest<span class="arch-sub">APIs + Scrapers</span></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box arch-orange">Store<span class="arch-sub">TimescaleDB + Mongo</span></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box arch-purple">Feature Eng.<span class="arch-sub">Python / Pandas</span></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box arch-green">Train<span class="arch-sub">XGBoost / LSTM</span></div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-box arch-highlight">Deploy<span class="arch-sub">FastAPI endpoint</span></div>
+      </div>
+      <div class="arch-row" style="margin-top:8px;">
+        <div class="arch-box" style="background:#F4F6FA;color:#5A6A8A;font-size:11.5px;">NSE/BSE Historical<br>5–10 years OHLCV</div>
+        <div class="arch-arrow">+</div>
+        <div class="arch-box" style="background:#F4F6FA;color:#5A6A8A;font-size:11.5px;">Twitter/X Sentiment<br>stock mentions daily</div>
+        <div class="arch-arrow">+</div>
+        <div class="arch-box" style="background:#F4F6FA;color:#5A6A8A;font-size:11.5px;">FII/DII Flows<br>NSE public data</div>
+        <div class="arch-arrow">+</div>
+        <div class="arch-box" style="background:#F4F6FA;color:#5A6A8A;font-size:11.5px;">Signal Outcomes<br>ground truth labels</div>
+      </div>
+
+      <h3 style="margin-top:24px;">Data You Must Capture — Feature Groups</h3>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-icon" style="background:#EFF3FF;">📈</div>
+          <h3 style="margin:0; color:#1740F5;">Price &amp; Volume (Technical)</h3>
+        </div>
+        <ul>
+          <li>OHLCV candles at 1-min, 5-min, 15-min, 1-hour, daily for all NSE/BSE stocks</li>
+          <li>Derived indicators: RSI(14), MACD(12,26,9), EMA(20/50/200), Bollinger Bands(20), ADX, ATR, Stochastic</li>
+          <li>Volume ratio (today's vol / 30-day avg), Delivery % (from NSE bhavcopy)</li>
+          <li>52-week high/low distance, day's range as % of ATR</li>
+          <li><strong>Source:</strong> Zerodha Kite API, NSEpy, Alpha Vantage — start collecting from Day 1</li>
+        </ul>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-icon" style="background:#FFF4EF;">𝕏</div>
+          <h3 style="margin:0; color:#FF5C1A;">Social Sentiment</h3>
+        </div>
+        <ul>
+          <li>Twitter/X mentions per stock — hourly count, rolling 24h, 7-day baseline</li>
+          <li>Sentiment score per post (FinBERT or custom NLP): bullish / bearish / neutral</li>
+          <li>Net sentiment ratio: (bullish − bearish) / total mentions</li>
+          <li>Momentum: is sentiment accelerating? (compare to 7-day moving average of mentions)</li>
+          <li>Reddit (r/IndianStockMarket), Telegram channels, NSE forum</li>
+          <li><strong>Source:</strong> Twitter API v2 (Basic plan ~₹8,000/mo), Reddit API (free)</li>
+        </ul>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-icon" style="background:#EDFCF7;">🏛️</div>
+          <h3 style="margin:0; color:#00875A;">Institutional Flows</h3>
+        </div>
+        <ul>
+          <li>FII / DII net buy-sell data (NSE publishes this daily — free)</li>
+          <li>Promoter shareholding changes (from quarterly BSE filings)</li>
+          <li>Options data: Open Interest, PCR (Put-Call Ratio), max pain, OI buildup</li>
+          <li>Block deals and bulk deals (NSE publishes daily — free)</li>
+          <li>Ace investor portfolio changes (quarterly BSE disclosures — free)</li>
+          <li><strong>Source:</strong> NSE India data portal (all free), BSE filings API</li>
+        </ul>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-icon" style="background:#F5F0FF;">📰</div>
+          <h3 style="margin:0; color:#8B5CF6;">News &amp; Events (NLP)</h3>
+        </div>
+        <ul>
+          <li>Financial news headlines tagged to stock symbols (ET, Moneycontrol, LiveMint)</li>
+          <li>NLP score per headline: impact (positive/negative/neutral) + magnitude</li>
+          <li>Earnings surprise: actual PAT vs consensus estimate (beat/miss %)</li>
+          <li>Corporate announcements from NSE/BSE (dividends, buybacks, QIP, results date)</li>
+          <li>Global cues: S&P 500, Nikkei, crude oil — daily open/close, direction</li>
+          <li><strong>Source:</strong> NewsAPI (₹0 for 100 req/day), Moneycontrol RSS, NSE corporate filings</li>
+        </ul>
+      </div>
+
+      <div class="data-card">
+        <div class="data-card-header">
+          <div class="data-icon" style="background:#FFF4EF;">🎯</div>
+          <h3 style="margin:0; color:#FF5C1A;">Training Labels — Ground Truth (Most Critical)</h3>
+        </div>
+        <ul>
+          <li><strong>For classification:</strong> Did price rise ≥3% within 5 trading days of signal? → BUY=1, else=0</li>
+          <li><strong>For regression:</strong> Actual % return after N days from signal date</li>
+          <li>Store <em>every signal you generate</em> with timestamp + stock + price at signal time</li>
+          <li>After N days, run a job that records the outcome — this becomes your ground truth label</li>
+          <li>Track model version with each signal — lets you compare v1 vs v2 accuracy scientifically</li>
+          <li><strong>This is the most valuable data you will ever collect — start Day 1, even with a simple rule-based system</strong></li>
+        </ul>
+      </div>
+
+      <h3>ML Model Architecture</h3>
+      <div class="card-grid-2">
+        <div class="card card-accent">
+          <div class="card-label">Signal Generation (Core)</div>
+          <h3>XGBoost Classifier</h3>
+          <p style="font-size:13px; color:#5A6A8A; margin:0;">Best for tabular financial data. Input: 50–80 features (technical + sentiment + flow). Output: BUY / HOLD / SELL + confidence 0–100. Fast to train, interpretable. Start here.</p>
+        </div>
+        <div class="card card-purple">
+          <div class="card-label">Price Forecasting (v2)</div>
+          <h3>LSTM / Transformer</h3>
+          <p style="font-size:13px; color:#5A6A8A; margin:0;">Sequential model for time-series price prediction. Input: 60-day OHLCV + indicators. Output: predicted price range for next 5 days. More complex — build after XGBoost is working.</p>
+        </div>
+        <div class="card card-orange">
+          <div class="card-label">Sentiment NLP</div>
+          <h3>FinBERT</h3>
+          <p style="font-size:13px; color:#5A6A8A; margin:0;">Pre-trained BERT model fine-tuned on financial text. Classify each tweet/headline as bullish/bearish/neutral. Use Hugging Face's <code>ProsusAI/finbert</code> — works out-of-the-box, fine-tune on Indian market text.</p>
+        </div>
+        <div class="card card-green">
+          <div class="card-label">Ensemble (v3)</div>
+          <h3>Stacking Model</h3>
+          <p style="font-size:13px; color:#5A6A8A; margin:0;">Combine XGBoost (technical) + FinBERT (sentiment) + LSTM (price) into a meta-learner. Each model votes with a confidence weight. Most accurate but most complex — this is the long-term goal.</p>
+        </div>
+      </div>
+
+      <h3>Data Sources — Free vs Paid</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Data need</th>
+            <th>💸 Paid option</th>
+            <th>✅ Free alternative</th>
+            <th>Trade-off</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Historical OHLCV</strong></td>
+            <td>Zerodha Kite API <span class="tag tag-paid">₹2,000/mo</span></td>
+            <td><strong>NSEpy + yfinance</strong> <span class="tag tag-free">Free</span></td>
+            <td>No real-time; 15-min delay. Fine for EOD signals.</td>
+          </tr>
+          <tr>
+            <td><strong>Real-time prices</strong></td>
+            <td>Kite / Upstox API <span class="tag tag-paid">₹2,000/mo</span></td>
+            <td><strong>NSE official site scrape</strong> <span class="tag tag-free">Free</span></td>
+            <td>Scraping is fragile; use API once you have paying users.</td>
+          </tr>
+          <tr>
+            <td><strong>Social sentiment</strong></td>
+            <td>Twitter/X API <span class="tag tag-paid">₹8,000/mo</span></td>
+            <td><strong>StockTwits API + Reddit API</strong> <span class="tag tag-free">Free</span></td>
+            <td>StockTwits is finance-only, very relevant. Reddit r/IndianStockMarket is highly active.</td>
+          </tr>
+          <tr>
+            <td><strong>Telegram channels</strong></td>
+            <td>—</td>
+            <td><strong>Telethon Python lib</strong> <span class="tag tag-free">Free</span></td>
+            <td>Read public Telegram stock channels (Nifty Tips, etc.) — rich Indian market signal source.</td>
+          </tr>
+          <tr>
+            <td><strong>Financial news</strong></td>
+            <td>Bloomberg / Refinitiv <span class="tag tag-paid">₹50,000+/mo</span></td>
+            <td><strong>NewsAPI free + RSS (ET, Mint, MC)</strong> <span class="tag tag-free">Free</span></td>
+            <td>100 req/day free on NewsAPI; RSS feeds are unlimited and near real-time.</td>
+          </tr>
+          <tr>
+            <td><strong>Fundamentals</strong></td>
+            <td>Screener.in Pro <span class="tag tag-paid">₹1,500/mo</span></td>
+            <td><strong>Screener.in free + BSE filings scrape</strong> <span class="tag tag-free">Free</span></td>
+            <td>Free tier covers PE, P/B, ROE for all listed stocks. BSE XML filings have full data.</td>
+          </tr>
+          <tr>
+            <td><strong>FII/DII flows</strong></td>
+            <td>—</td>
+            <td><strong>NSE India data portal</strong> <span class="tag tag-free">Free</span></td>
+            <td>NSE publishes FII/DII, OI, block deals daily as CSV — fully free, no API key needed.</td>
+          </tr>
+          <tr>
+            <td><strong>ML model training</strong></td>
+            <td>AWS EC2 GPU <span class="tag tag-paid">₹6,000/mo</span></td>
+            <td><strong>Google Colab + Kaggle</strong> <span class="tag tag-free">Free GPU</span></td>
+            <td>Free T4/A100 GPU on Colab. Run training notebooks weekly, save model to Drive.</td>
+          </tr>
+          <tr>
+            <td><strong>NLP / FinBERT inference</strong></td>
+            <td>OpenAI API <span class="tag tag-paid">₹2,000/mo</span></td>
+            <td><strong>Hugging Face Inference API</strong> <span class="tag tag-free">Free tier</span></td>
+            <td>Free 30K tokens/mo on HF. <code>ProsusAI/finbert</code> runs great for stock sentiment.</td>
+          </tr>
+          <tr>
+            <td><strong>SIGNAL user signals</strong></td>
+            <td colspan="2">Your own data — log every signal + outcome from Day 1</td>
+            <td><span class="tag tag-free">Own data · priceless</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>12-Month Data Collection Roadmap</h3>
+
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#1740F5;">M1–2</div>
+        <div class="phase-content">
+          <p class="phase-title">Build the data pipeline foundation</p>
+          <p class="phase-desc">Set up daily NSE bhavcopy ingestion → TimescaleDB. Backfill 5 years of OHLCV for NIFTY 500 stocks. Compute and store all technical indicators. Stand up Supabase for user data. Start logging every rule-based signal with timestamp + price.</p>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#FF5C1A;">M3–4</div>
+        <div class="phase-content">
+          <p class="phase-title">Add sentiment + news ingestion</p>
+          <p class="phase-desc">Integrate Twitter API for stock mention tracking. Run FinBERT on every mention — store bullish/bearish/neutral scores. Set up NewsAPI pipeline for headline scoring. Now you have multi-modal features: price + sentiment + news.</p>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#8B5CF6;">M5–6</div>
+        <div class="phase-content">
+          <p class="phase-title">Train your first XGBoost model</p>
+          <p class="phase-desc">By now you have 5 years of labeled historical data (OHLCV + indicators) to train on. Use 80/20 train-test split. Define label: did price rise ≥3% within 5 days? Evaluate with Precision, Recall, F1. Deploy as a FastAPI endpoint.</p>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#00875A;">M7–12</div>
+        <div class="phase-content">
+          <p class="phase-title">Collect live signal outcomes + retrain monthly</p>
+          <p class="phase-desc">Your most powerful feedback loop: every signal your app generates is a data point. After 5 trading days, record what actually happened. Retrain monthly with this real-world data. Each retraining cycle makes the model better. After 6 months of live data, your model will significantly outperform v1.</p>
+        </div>
+      </div>
+
+      <div class="callout callout-orange">
+        <p>🔑 <strong>The most important insight:</strong> Don't wait for "perfect" data before training. Start with a simple rule-based system (RSI + EMA crossover), log every signal it generates, track outcomes religiously, and use that as your initial training set. Your app's own signal history — even from a simple algorithm — is more valuable than any third-party dataset because it reflects your specific stock universe, user base, and market regime.</p>
+      </div>
+
+      <hr>
+
+      <h2>4 · Cost-Effective Bootstrap Stack</h2>
+
+      <p>The original estimates assumed paid APIs from Day 1. Here's the lean version — nearly ₹0 to launch, paying only for what you actually need as you grow. The trick is substituting paid APIs with free alternatives that are <em>good enough</em> for beta, then upgrading only when revenue justifies it.</p>
+
+      <div class="card-grid">
+        <div class="card card-green">
+          <div class="card-label">Bootstrap MVP · ~500 users</div>
+          <div class="card-value">₹500<span style="font-size:13px;font-weight:500;color:#5A6A8A;">/mo</span></div>
+          <div class="card-sub">100% free stack + Apple/Google dev account amortised. All free-tier services.</div>
+        </div>
+        <div class="card card-accent">
+          <div class="card-label">Early Growth · 5K users</div>
+          <div class="card-value">₹4,000<span style="font-size:13px;font-weight:500;color:#5A6A8A;">/mo</span></div>
+          <div class="card-sub">Add Kite API for real-time + Supabase Pro. Still no Twitter API needed.</div>
+        </div>
+        <div class="card card-orange">
+          <div class="card-label">Scale · 50K users</div>
+          <div class="card-value">₹20,000<span style="font-size:13px;font-weight:500;color:#5A6A8A;">/mo</span></div>
+          <div class="card-sub">AWS EC2 spot + RDS + full data stack. 75% cheaper than original estimate.</div>
+        </div>
+      </div>
+
+      <h3>The Zero-Cost Launch Stack</h3>
+      <table>
+        <thead>
+          <tr><th>Layer</th><th>Service</th><th>Free tier limit</th><th>When to upgrade</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>Database</strong></td>
+            <td>Supabase Free</td>
+            <td>500 MB · 50K MAU · 2 GB egress</td>
+            <td>At 1,000+ active users → Pro ₹1,700/mo</td>
+          </tr>
+          <tr>
+            <td><strong>Backend API</strong></td>
+            <td>Railway.app Free</td>
+            <td>500 hrs/mo · 512 MB RAM</td>
+            <td>At scale → Hobby ₹400/mo</td>
+          </tr>
+          <tr>
+            <td><strong>Cache / Queues</strong></td>
+            <td>Upstash Redis Free</td>
+            <td>10K commands/day · 256 MB</td>
+            <td>At heavy alerting load → Pay-as-you-go ₹0.2/10K cmds</td>
+          </tr>
+          <tr>
+            <td><strong>Push notifications</strong></td>
+            <td>Firebase FCM</td>
+            <td>Unlimited (truly free forever)</td>
+            <td>Never — FCM is always free</td>
+          </tr>
+          <tr>
+            <td><strong>File / model storage</strong></td>
+            <td>Cloudflare R2</td>
+            <td>10 GB · 1M read ops/mo</td>
+            <td>At ML model proliferation → $0.015/GB</td>
+          </tr>
+          <tr>
+            <td><strong>Auth</strong></td>
+            <td>Supabase Auth (included)</td>
+            <td>50K MAU free</td>
+            <td>Never separately — bundled with Supabase</td>
+          </tr>
+          <tr>
+            <td><strong>ML training</strong></td>
+            <td>Google Colab + Kaggle</td>
+            <td>Free GPU (T4 / P100) weekly</td>
+            <td>When retraining daily → AWS spot ₹2/hr</td>
+          </tr>
+          <tr>
+            <td><strong>Sentiment NLP</strong></td>
+            <td>Hugging Face Inference API</td>
+            <td>30K tokens/mo free</td>
+            <td>Run locally on Colab instead — always free</td>
+          </tr>
+          <tr>
+            <td><strong>Market data (historical)</strong></td>
+            <td>NSEpy + yfinance</td>
+            <td>Unlimited historical, 15-min delayed</td>
+            <td>At real-time need → Kite API ₹2,000/mo</td>
+          </tr>
+          <tr>
+            <td><strong>Sentiment data</strong></td>
+            <td>StockTwits API + Reddit API + Telegram</td>
+            <td>Unlimited public posts</td>
+            <td>Only if you need Twitter → ₹8,000/mo</td>
+          </tr>
+          <tr>
+            <td><strong>App hosting (web)</strong></td>
+            <td>Vercel / Netlify</td>
+            <td>Unlimited deploys · 100 GB bandwidth</td>
+            <td>Never for frontend — always free</td>
+          </tr>
+          <tr>
+            <td><strong>Dev accounts</strong></td>
+            <td>Apple + Google</td>
+            <td>One-time: Apple ₹8,000/yr · Google ₹1,700 once</td>
+            <td>Fixed cost — budget ₹700/mo amortised</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Cost Upgrade Triggers — Pay Only When You Must</h3>
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#00875A;">₹0</div>
+        <div class="phase-content">
+          <p class="phase-title">Day 1 → First 500 users</p>
+          <p class="phase-desc">100% free stack. NSEpy for data, StockTwits for sentiment, Supabase free, Railway free, Colab for ML. App Store dev accounts = only real cost (~₹700/mo amortised). <strong>Total: ~₹700/mo.</strong></p>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#1740F5;">₹2K</div>
+        <div class="phase-content">
+          <p class="phase-title">500 → 2,000 users — Add real-time data</p>
+          <p class="phase-desc">Upgrade to Kite API (₹2,000/mo) for live prices and intraday signals. Supabase still on free tier. By this point you have 200+ paying users generating ₹40,000+/mo in revenue. <strong>Total: ~₹2,700/mo.</strong></p>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#FF5C1A;">₹6K</div>
+        <div class="phase-content">
+          <p class="phase-title">2,000 → 10,000 users — Upgrade DB + hosting</p>
+          <p class="phase-desc">Supabase Pro (₹1,700/mo) + Railway Hobby (₹400/mo) + Upstash paid (₹800/mo) + Kite API. Revenue at this point: ₹2L+/mo. Infrastructure is still less than 5% of revenue. <strong>Total: ~₹5,000–6,000/mo.</strong></p>
+        </div>
+      </div>
+      <div class="phase-row">
+        <div class="phase-badge" style="background:#8B5CF6;">₹20K</div>
+        <div class="phase-content">
+          <p class="phase-title">10,000+ users — Full production stack</p>
+          <p class="phase-desc">AWS EC2 spot instances for ML inference, RDS PostgreSQL, ElastiCache Redis, CloudFront CDN. Twitter API only if sentiment is a core differentiator and you can A/B test it drives retention. <strong>Total: ₹15,000–20,000/mo.</strong></p>
+        </div>
+      </div>
+
+      <div class="callout callout-green" style="background:#EDFCF7;border:1px solid #A0EDD8;">
+        <p>💰 <strong>Revenue vs cost reality check:</strong> With just <strong>100 paying Starter users (₹199/mo)</strong> you cover the entire bootstrap stack for a year. At 500 paying users you're generating ₹1L/mo against ₹700 in infra costs — a 99.3% gross margin on infrastructure. Spend your first ₹10,000 on user acquisition, not cloud bills.</p>
+      </div>
+
+      <div class="callout callout-yellow">
+        <p>⚡ <strong>The single biggest cost myth in fintech startups:</strong> Founders assume they need Bloomberg-grade data from Day 1. They don't. NSE's own free bhavcopy data + yfinance is enough to train a signal model that beats most retail traders. Upgrade to premium data sources only after you've proven your model works on free data.</p>
+      </div>
+
+    </td></tr></tbody>
+    <tfoot><tr><td class="ftr-space"></td></tr></tfoot>
+  </table>
+</main>
+</body>
+</html>

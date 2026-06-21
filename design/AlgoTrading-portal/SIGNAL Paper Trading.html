@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Paper Trading</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+    :root {
+      --bg:#070D1A; --surf:#0E1628; --surf2:#162038; --bdr:#1C2E4A;
+      --txt:#FFFFFF; --dim:#7A8BAA; --dim2:#3A4E6A;
+      --blu:#1740F5; --bluL:#4F6FFA; --org:#FF5C1A;
+      --grn:#00D4A0; --red:#FF3B5C; --ylw:#FFB800; --pur:#8B5CF6;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--txt); font-family:'Inter',system-ui,sans-serif; min-height:100vh; }
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+    @keyframes growbar { from{width:0;} }
+
+    nav { display:flex; align-items:center; height:58px; padding:0 clamp(16px,3vw,32px);
+          background:var(--surf); border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:100; gap:0; }
+    .nav-logo { display:flex; align-items:center; gap:8px; font-size:18px; font-weight:900; letter-spacing:-0.5px; text-decoration:none; color:var(--txt); margin-right:28px; }
+    .nav-links { display:flex; align-items:center; gap:2px; flex:1; }
+    .nav-link { height:34px; padding:0 13px; border-radius:8px; font-size:13px; font-weight:500; color:var(--dim); text-decoration:none; display:flex; align-items:center; gap:6px; transition:all 0.15s; }
+    .nav-link:hover { background:var(--surf2); color:var(--txt); }
+    .nav-link.active { background:rgba(139,92,246,0.12); color:var(--pur); font-weight:600; }
+    .nav-right { display:flex; align-items:center; gap:10px; }
+    .plan-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:6px; background:rgba(255,92,26,0.12); border:1px solid rgba(255,92,26,0.25); color:var(--org); }
+    .user-chip { display:flex; align-items:center; gap:8px; padding:4px 12px 4px 4px; border-radius:20px; background:var(--surf2); border:1px solid var(--bdr); cursor:pointer; }
+    .user-av { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--blu),var(--org)); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#fff; }
+
+    .page { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 58px); }
+    .sidebar { background:var(--surf); border-right:1px solid var(--bdr); padding:16px 10px; display:flex; flex-direction:column; gap:4px; }
+    .sb-section { font-size:10px; font-weight:700; color:var(--dim2); letter-spacing:1px; text-transform:uppercase; padding:12px 10px 6px; }
+    .sb-link { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:9px; font-size:13px; font-weight:500; color:var(--dim); text-decoration:none; cursor:pointer; transition:all 0.15s; }
+    .sb-link:hover { background:var(--surf2); color:var(--txt); }
+    .sb-link.active { background:rgba(139,92,246,0.1); color:var(--pur); font-weight:600; }
+
+    .main { padding:24px clamp(16px,3vw,32px); }
+
+    /* Strategy tab selector */
+    .strat-tabs { display:flex; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
+    .strat-tab { padding:10px 20px; border-radius:12px; background:var(--surf); border:1px solid var(--bdr);
+                  cursor:pointer; transition:all 0.18s; }
+    .strat-tab.active { border-color:var(--pur); background:rgba(139,92,246,0.08); }
+    .strat-tab-name { font-size:13px; font-weight:700; }
+    .strat-tab-sub  { font-size:11px; color:var(--dim); margin-top:2px; }
+    .strat-tab.active .strat-tab-name { color:var(--pur); }
+
+    /* Main content grid */
+    .pt-grid { display:grid; grid-template-columns:1fr 320px; gap:16px; }
+
+    /* Performance cards */
+    .perf-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+    .perf-card { background:var(--surf); border:1px solid var(--bdr); border-radius:13px; padding:16px; }
+    .pc-label  { font-size:11px; color:var(--dim); margin-bottom:5px; }
+    .pc-val    { font-size:24px; font-weight:900; letter-spacing:-0.5px; }
+    .pc-sub    { font-size:11px; color:var(--dim); margin-top:4px; }
+
+    /* Equity curve fake */
+    .equity-card { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:18px; margin-bottom:16px; }
+    .eq-header   { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+
+    /* Signal log table */
+    .log-card  { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:18px; margin-bottom:16px; }
+    .log-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .log-table th { font-size:10.5px; font-weight:700; color:var(--dim); padding:7px 10px; text-align:left; border-bottom:1px solid var(--bdr); text-transform:uppercase; letter-spacing:0.4px; }
+    .log-table td { padding:9px 10px; border-bottom:1px solid rgba(28,46,74,0.5); }
+    .log-table tr:last-child td { border-bottom:none; }
+    .log-table tr:hover td { background:rgba(255,255,255,0.02); }
+    .sig-dot  { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:5px; }
+
+    /* Parameters editor */
+    .param-editor { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:18px; margin-bottom:16px; }
+    .param-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--bdr); }
+    .param-row:last-child { border-bottom:none; }
+    .param-name { font-size:13px; font-weight:600; }
+    .param-input { height:34px; padding:0 12px; border-radius:8px; background:var(--surf2); border:1px solid var(--bdr); color:var(--txt); font-size:13px; font-weight:700; font-family:inherit; outline:none; width:100px; text-align:right; }
+    .param-input:focus { border-color:var(--pur); }
+
+    /* Timeline bar */
+    .timeline-bar { height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; margin:8px 0; }
+    .timeline-fill { height:100%; border-radius:3px; animation:growbar 1s ease-out forwards; }
+
+    /* Action buttons */
+    .cta-go-live { width:100%; height:48px; border-radius:12px; background:linear-gradient(135deg,var(--grn),#00A87D); border:none; color:#001A12; font-size:15px; font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:10px; }
+    .cta-edit    { width:100%; height:44px; border-radius:12px; background:rgba(139,92,246,0.1); border:1px solid rgba(139,92,246,0.3); color:var(--pur); font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; margin-bottom:10px; }
+    .cta-stop    { width:100%; height:44px; border-radius:12px; background:transparent; border:1px solid rgba(255,59,92,0.3); color:var(--red); font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+    @media(max-width:1000px) { .perf-grid { grid-template-columns:1fr 1fr; } }
+    @media(max-width:900px)  { .page { grid-template-columns:1fr; } .sidebar { display:none; } .pt-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Signals.html">📈 Signals</a>
+    <a class="nav-link" href="#">💼 Portfolio</a>
+    <a class="nav-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+    <a class="nav-link active" href="#">🧪 Paper Trade</a>
+    <a class="nav-link" href="SIGNAL ML Parameters.html" target="_blank">🔬 ML Params</a>
+  </div>
+  <div class="nav-right">
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">VA</div><span style="font-size:12px;font-weight:600;">Vaasudev A.</span></div>
+  </div>
+</nav>
+
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals</a>
+  <a class="sb-link" href="#">💼 My Portfolio</a>
+  <a class="sb-link" href="#">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link active" href="#">🧪 Paper Trading</a>
+  <a class="sb-link" href="#">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="#">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="#">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="#">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="#">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+
+<main class="main">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Paper Trading</div>
+      <div style="font-size:13px;color:var(--dim);margin-top:3px;">Test strategies risk-free with live NSE/BSE data · Virtual capital ₹1,00,000 per strategy</div>
+    </div>
+    <a href="SIGNAL Algo Builder.html" style="height:36px;padding:0 18px;border-radius:9px;background:var(--blu);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;text-decoration:none;">+ New Strategy</a>
+  </div>
+
+  <!-- Strategy tabs -->
+  <div class="strat-tabs">
+    <div class="strat-tab active" onclick="switchStrat(0,this)">
+      <div class="strat-tab-name">RSI + EMA Momentum</div>
+      <div class="strat-tab-sub" style="color:var(--grn);">+8.4% · Day 6/7 · 71% win</div>
+    </div>
+    <div class="strat-tab" onclick="switchStrat(1,this)">
+      <div class="strat-tab-name">Momentum Breakout</div>
+      <div class="strat-tab-sub">+2.1% · Day 2/7 · 60% win</div>
+    </div>
+    <div class="strat-tab" style="border-style:dashed;opacity:0.6;" onclick="location.href='SIGNAL Algo Builder.html'">
+      <div class="strat-tab-name" style="color:var(--dim);">+ Add strategy</div>
+      <div class="strat-tab-sub">From Algo Builder</div>
+    </div>
+  </div>
+
+  <!-- Content for strategy 1 (default shown) -->
+  <div id="strat-panel-0">
+    <div class="pt-grid">
+      <div>
+        <!-- Performance -->
+        <div class="perf-grid">
+          <div class="perf-card">
+            <div class="pc-label">Virtual Portfolio</div>
+            <div class="pc-val" style="color:var(--grn);">₹1,08,420</div>
+            <div class="pc-sub">Started at ₹1,00,000</div>
+          </div>
+          <div class="perf-card">
+            <div class="pc-label">Paper Returns</div>
+            <div class="pc-val" style="color:var(--grn);">+8.4%</div>
+            <div class="pc-sub">+₹8,420 virtual P&amp;L</div>
+          </div>
+          <div class="perf-card">
+            <div class="pc-label">Win Rate</div>
+            <div class="pc-val" style="color:var(--grn);">71%</div>
+            <div class="pc-sub">5 wins · 2 losses</div>
+          </div>
+          <div class="perf-card">
+            <div class="pc-label">Time Running</div>
+            <div class="pc-val">Day 6/7</div>
+            <div class="pc-sub">1 day remaining</div>
+          </div>
+        </div>
+
+        <!-- Equity curve -->
+        <div class="equity-card">
+          <div class="eq-header">
+            <div style="font-size:14px;font-weight:700;">Virtual Equity Curve</div>
+            <span style="font-size:11px;color:var(--grn);font-weight:700;">▲ +₹8,420 (8.4%)</span>
+          </div>
+          <svg width="100%" height="100" viewBox="0 0 600 100" preserveAspectRatio="none">
+            <defs>
+              <linearGradient id="ecg" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#00D4A0" stop-opacity="0.2"/>
+                <stop offset="100%" stop-color="#00D4A0" stop-opacity="0"/>
+              </linearGradient>
+            </defs>
+            <path d="M0,80 L60,78 L100,82 L140,70 L180,65 L220,62 L260,58 L300,52 L340,48 L380,45 L420,42 L460,38 L500,36 L560,32 L600,28 L600,100 L0,100 Z" fill="url(#ecg)"/>
+            <path d="M0,80 L60,78 L100,82 L140,70 L180,65 L220,62 L260,58 L300,52 L340,48 L380,45 L420,42 L460,38 L500,36 L560,32 L600,28" fill="none" stroke="#00D4A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="600" cy="28" r="4" fill="#00D4A0"/>
+          </svg>
+          <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim2);margin-top:6px;">
+            <span>Jun 13</span><span>Jun 14</span><span>Jun 16</span><span>Jun 17</span><span>Jun 18</span><span>Jun 19</span>
+          </div>
+        </div>
+
+        <!-- Signal log -->
+        <div class="log-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:14px;font-weight:700;">Signal Log</div>
+            <span style="font-size:11px;color:var(--dim);">7 signals fired</span>
+          </div>
+          <table class="log-table">
+            <thead><tr>
+              <th>Date &amp; Time</th><th>Stock</th><th>Signal</th><th>Entry</th><th>Exit</th><th>P&amp;L</th><th>Status</th>
+            </tr></thead>
+            <tbody>
+              <tr>
+                <td style="color:var(--dim2);font-size:11px;">Jun 19 · 09:31</td>
+                <td style="font-weight:700;">RELIANCE</td>
+                <td><span class="sig-dot" style="background:var(--grn);"></span>BUY</td>
+                <td>₹2,880</td>
+                <td>—</td>
+                <td style="color:var(--ylw);font-weight:700;">Running</td>
+                <td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,184,0,0.1);color:var(--ylw);font-weight:700;">OPEN</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--dim2);font-size:11px;">Jun 18 · 14:22</td>
+                <td style="font-weight:700;">INFY</td>
+                <td><span class="sig-dot" style="background:var(--red);"></span>SELL</td>
+                <td>₹1,450</td>
+                <td>₹1,498</td>
+                <td style="color:var(--grn);font-weight:700;">+₹2,340</td>
+                <td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--dim2);font-size:11px;">Jun 17 · 10:15</td>
+                <td style="font-weight:700;">SBIN</td>
+                <td><span class="sig-dot" style="background:var(--grn);"></span>BUY</td>
+                <td>₹808</td>
+                <td>₹838</td>
+                <td style="color:var(--grn);font-weight:700;">+₹1,800</td>
+                <td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--dim2);font-size:11px;">Jun 17 · 09:45</td>
+                <td style="font-weight:700;">WIPRO</td>
+                <td><span class="sig-dot" style="background:var(--grn);"></span>BUY</td>
+                <td>₹492</td>
+                <td>₹482</td>
+                <td style="color:var(--red);font-weight:700;">-₹600</td>
+                <td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,59,92,0.1);color:var(--red);font-weight:700;">⛔ SL</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--dim2);font-size:11px;">Jun 16 · 11:30</td>
+                <td style="font-weight:700;">TCS</td>
+                <td><span class="sig-dot" style="background:var(--grn);"></span>BUY</td>
+                <td>₹3,820</td>
+                <td>₹3,945</td>
+                <td style="color:var(--grn);font-weight:700;">+₹3,750</td>
+                <td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td>
+              </tr>
+              <tr>
+                <td style="color:var(--dim2);font-size:11px;">Jun 13 · 09:35</td>
+                <td style="font-weight:700;">HDFCBANK</td>
+                <td><span class="sig-dot" style="background:var(--grn);"></span>BUY</td>
+                <td>₹1,610</td>
+                <td>₹1,572</td>
+                <td style="color:var(--red);font-weight:700;">-₹2,280</td>
+                <td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,59,92,0.1);color:var(--red);font-weight:700;">⛔ SL</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Parameter editor -->
+        <div class="param-editor">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+            <div style="font-size:14px;font-weight:700;">Edit Parameters</div>
+            <span style="font-size:12px;color:var(--dim);">Changes apply to new signals only</span>
+          </div>
+          <div class="param-row">
+            <div><div class="param-name">RSI Buy threshold</div><div style="font-size:11px;color:var(--dim);">Trigger BUY when RSI falls below this value</div></div>
+            <input class="param-input" type="number" value="35" min="10" max="50">
+          </div>
+          <div class="param-row">
+            <div><div class="param-name">RSI Sell threshold</div><div style="font-size:11px;color:var(--dim);">Trigger SELL when RSI rises above this value</div></div>
+            <input class="param-input" type="number" value="70" min="50" max="90">
+          </div>
+          <div class="param-row">
+            <div><div class="param-name">Stop Loss %</div><div style="font-size:11px;color:var(--dim);">Exit if price drops this % from entry</div></div>
+            <input class="param-input" type="text" value="2.5%">
+          </div>
+          <div class="param-row">
+            <div><div class="param-name">Target %</div><div style="font-size:11px;color:var(--dim);">Take profit at this % gain from entry</div></div>
+            <input class="param-input" type="text" value="6.0%">
+          </div>
+          <div class="param-row">
+            <div><div class="param-name">Volume filter</div><div style="font-size:11px;color:var(--dim);">Minimum volume vs 20-day average</div></div>
+            <input class="param-input" type="text" value="1.5×">
+          </div>
+          <button onclick="saveParams()" style="margin-top:14px;height:38px;padding:0 20px;border-radius:9px;background:var(--blu);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Save &amp; Apply Parameters</button>
+          <span id="save-msg" style="font-size:12px;color:var(--grn);margin-left:12px;"></span>
+        </div>
+      </div>
+
+      <!-- Right panel -->
+      <div>
+        <!-- Status card -->
+        <div style="background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.25);border-radius:14px;padding:18px;margin-bottom:14px;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+            <span style="width:8px;height:8px;border-radius:50%;background:var(--pur);display:inline-block;animation:blink 2s infinite;"></span>
+            <span style="font-size:13px;font-weight:700;color:var(--pur);">Running · Day 6 of 7</span>
+          </div>
+          <div style="font-size:11px;color:var(--dim);margin-bottom:8px;">Strategy duration</div>
+          <div class="timeline-bar"><div class="timeline-fill" style="width:85.7%;background:var(--pur);"></div></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--dim2);">
+            <span>Jun 13</span><span>Day 6/7</span><span>Jun 20</span>
+          </div>
+          <div style="margin-top:14px;padding:12px;background:rgba(0,0,0,0.2);border-radius:10px;">
+            <div style="font-size:11px;color:var(--dim);margin-bottom:4px;">Next signal check</div>
+            <div style="font-size:18px;font-weight:900;font-family:'JetBrains Mono',monospace;" id="countdown">09:15:00</div>
+            <div style="font-size:11px;color:var(--dim);margin-top:2px;">at market open tomorrow</div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:18px;margin-bottom:14px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Actions</div>
+          <button class="cta-go-live" onclick="goLive()">🚀 Go Live with Real Money</button>
+          <button class="cta-edit">✏️ Edit Parameters</button>
+          <button class="cta-stop" onclick="confirm('Stop this paper trade?')">⏹ Stop Paper Trade</button>
+        </div>
+
+        <!-- Strategy config summary -->
+        <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:18px;margin-bottom:14px;">
+          <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Strategy Config</div>
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--dim);">Type</span><span style="font-weight:700;">Momentum</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--dim);">Universe</span><span style="font-weight:700;">NIFTY 50</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--dim);">Indicators</span><span style="font-weight:700;">RSI, EMA, Volume, Del%</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--dim);">Stop Loss</span><span style="font-weight:700;color:var(--red);">2.5%</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--dim);">Target</span><span style="font-weight:700;color:var(--grn);">6.0%</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--dim);">Virtual Capital</span><span style="font-weight:700;">₹1,00,000</span></div>
+            <div style="display:flex;justify-content:space-between;font-size:12px;"><span style="color:var(--dim);">Current Value</span><span style="font-weight:700;color:var(--grn);">₹1,08,420</span></div>
+          </div>
+        </div>
+
+        <div style="background:rgba(255,184,0,0.05);border:1px solid rgba(255,184,0,0.18);border-radius:12px;padding:14px;">
+          <p style="font-size:11.5px;color:rgba(255,184,0,0.8);line-height:1.7;">💡 <strong>Tip:</strong> Run for at least 1 week before going live. A 65%+ win rate over 10+ signals is a healthy sign. Past paper performance doesn't guarantee live results.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Strategy 2 panel (hidden) -->
+  <div id="strat-panel-1" style="display:none;">
+    <div class="perf-grid">
+      <div class="perf-card"><div class="pc-label">Virtual Portfolio</div><div class="pc-val" style="color:var(--grn);">₹1,02,100</div><div class="pc-sub">Started at ₹1,00,000</div></div>
+      <div class="perf-card"><div class="pc-label">Paper Returns</div><div class="pc-val" style="color:var(--grn);">+2.1%</div><div class="pc-sub">+₹2,100 virtual P&amp;L</div></div>
+      <div class="perf-card"><div class="pc-label">Win Rate</div><div class="pc-val" style="color:var(--ylw);">60%</div><div class="pc-sub">3 wins · 2 losses</div></div>
+      <div class="perf-card"><div class="pc-label">Time Running</div><div class="pc-val">Day 2/7</div><div class="pc-sub">5 days remaining</div></div>
+    </div>
+    <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:24px;text-align:center;margin-top:8px;">
+      <div style="font-size:15px;font-weight:700;margin-bottom:8px;">Momentum Breakout strategy — Day 2</div>
+      <div style="font-size:13px;color:var(--dim);line-height:1.7;max-width:400px;margin:0 auto;">Early stage — only 5 signals fired. Need at least 7–10 signals for a reliable win rate reading. Check back in 3–4 days.</div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+function switchStrat(idx, btn) {
+  document.querySelectorAll('.strat-tab').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('strat-panel-0').style.display = idx === 0 ? '' : 'none';
+  document.getElementById('strat-panel-1').style.display = idx === 1 ? '' : 'none';
+}
+function saveParams() {
+  const msg = document.getElementById('save-msg');
+  msg.textContent = '✅ Parameters saved!';
+  setTimeout(() => msg.textContent = '', 3000);
+}
+function goLive() {
+  if(confirm('Ready to deploy this strategy with real money?\n\nMake sure you have:\n✓ Tested for at least 7 days\n✓ Consistent win rate above 60%\n✓ Connected your broker via API\n\nNot SEBI registered. Trade at your own risk.')) {
+    alert('Deploy guide opened! Follow the step-by-step instructions to connect via mStock / Zerodha API.');
+  }
+}
+</script>
+</body>
+</html>

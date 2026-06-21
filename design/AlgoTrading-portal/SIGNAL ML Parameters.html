@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — ML Signal Parameters Explained</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    :root {
+      --bg:#070D1A; --surf:#0E1628; --surf2:#162038; --bdr:#1C2E4A;
+      --txt:#FFFFFF; --dim:#7A8BAA; --dim2:#3A4E6A;
+      --blu:#1740F5; --bluL:#4F6FFA; --org:#FF5C1A;
+      --grn:#00D4A0; --red:#FF3B5C; --ylw:#FFB800; --pur:#8B5CF6;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--txt); font-family:'Inter',system-ui,sans-serif; }
+
+    /* Nav */
+    nav { display:flex; align-items:center; justify-content:space-between;
+          padding:0 clamp(16px,5vw,80px); height:62px;
+          background:rgba(7,13,26,0.95); border-bottom:1px solid var(--bdr);
+          position:sticky; top:0; z-index:100; }
+    .nav-logo { font-size:20px; font-weight:900; letter-spacing:-0.5px; text-decoration:none; color:var(--txt); display:flex; align-items:center; gap:10px; }
+    .nav-back  { font-size:13px; color:var(--dim); text-decoration:none; display:flex; align-items:center; gap:6px; }
+    .nav-back:hover { color:var(--txt); }
+
+    /* Header */
+    .page-header { padding:64px clamp(20px,6vw,120px) 40px; max-width:1200px; margin:0 auto; }
+    .eyebrow { font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--bluL); margin-bottom:12px; }
+    h1 { font-size:clamp(32px,5vw,60px); font-weight:900; letter-spacing:-2px; line-height:1.0; margin-bottom:16px; }
+    .header-sub { font-size:16px; color:var(--dim); line-height:1.7; max-width:640px; margin-bottom:32px; }
+
+    /* Model overview */
+    .model-overview { display:grid; grid-template-columns:repeat(5,1fr); gap:10px; margin-bottom:16px; }
+    .model-stat { background:var(--surf); border:1px solid var(--bdr); border-radius:12px; padding:16px; text-align:center; }
+    .model-stat-val { font-size:22px; font-weight:900; letter-spacing:-0.5px; }
+    .model-stat-lbl { font-size:11px; color:var(--dim); margin-top:4px; }
+
+    /* Category filter */
+    .cat-filter { display:flex; gap:8px; flex-wrap:wrap; padding:0 clamp(20px,6vw,120px); max-width:1200px; margin:0 auto 32px; }
+    .cat-btn { height:34px; padding:0 14px; border-radius:8px; font-size:12px; font-weight:700;
+                background:transparent; border:1px solid var(--bdr); color:var(--dim);
+                cursor:pointer; font-family:inherit; transition:all 0.18s; }
+    .cat-btn.active { color:#fff; border-color:transparent; }
+    .cat-btn[data-cat="all"].active  { background:var(--blu); }
+    .cat-btn[data-cat="momentum"].active   { background:#FF5C1A; }
+    .cat-btn[data-cat="trend"].active      { background:#1740F5; }
+    .cat-btn[data-cat="volatility"].active { background:#8B5CF6; }
+    .cat-btn[data-cat="volume"].active     { background:#00D4A0; color:#001A12; }
+    .cat-btn[data-cat="sentiment"].active  { background:#FFB800; color:#1A0F00; }
+    .cat-btn[data-cat="fundamental"].active{ background:#FF3B5C; }
+
+    /* Parameter cards */
+    .params-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:16px;
+                    padding:0 clamp(20px,6vw,120px) 80px; max-width:1200px; margin:0 auto; }
+    .param-card { background:var(--surf); border:1px solid var(--bdr); border-radius:16px;
+                   padding:24px; transition:border-color 0.2s; }
+    .param-card:hover { border-color:var(--dim2); }
+    .param-header { display:flex; align-items:flex-start; gap:14px; margin-bottom:16px; }
+    .param-icon { width:44px; height:44px; border-radius:12px; display:flex; align-items:center;
+                   justify-content:center; font-size:18px; flex-shrink:0; }
+    .param-name { font-size:17px; font-weight:800; letter-spacing:-0.3px; margin-bottom:3px; }
+    .param-full { font-size:12px; color:var(--dim); }
+    .cat-tag { display:inline-flex; align-items:center; gap:5px; font-size:10.5px; font-weight:700;
+                padding:3px 9px; border-radius:5px; margin-left:auto; flex-shrink:0; white-space:nowrap; }
+
+    /* Weight bar */
+    .weight-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; }
+    .weight-label { font-size:11px; color:var(--dim); white-space:nowrap; width:80px; }
+    .weight-track { flex:1; height:6px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+    .weight-fill  { height:100%; border-radius:3px; }
+    .weight-pct   { font-size:12px; font-weight:700; width:36px; text-align:right; }
+
+    .param-section { margin-bottom:12px; }
+    .param-section-title { font-size:11px; font-weight:700; color:var(--dim); letter-spacing:0.5px;
+                            text-transform:uppercase; margin-bottom:5px; }
+    .param-section-body  { font-size:13px; color:#C4D0E8; line-height:1.65; }
+    .param-signal-box { background:var(--surf2); border:1px solid var(--bdr); border-radius:10px;
+                          padding:12px 14px; margin-top:10px; font-family:'JetBrains Mono',monospace; font-size:12px; }
+    .sig-buy  { color:var(--grn); font-weight:700; }
+    .sig-sell { color:var(--red); font-weight:700; }
+    .sig-hold { color:var(--ylw); font-weight:700; }
+    .sig-val  { color:var(--bluL); }
+
+    /* US note */
+    .us-note { background:rgba(255,184,0,0.05); border:1px solid rgba(255,184,0,0.18);
+                border-radius:10px; padding:10px 14px; margin-top:10px; }
+    .us-note p { font-size:12px; color:rgba(255,184,0,0.8); line-height:1.6; }
+
+    /* Summary table */
+    .summary-section { padding:0 clamp(20px,6vw,120px) 80px; max-width:1200px; margin:0 auto; }
+    .summary-section h2 { font-size:26px; font-weight:800; letter-spacing:-0.8px; margin-bottom:20px; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead th { background:var(--surf2); font-size:11px; font-weight:700; letter-spacing:0.5px;
+               text-transform:uppercase; color:var(--dim); padding:10px 14px;
+               text-align:left; border-bottom:1px solid var(--bdr); }
+    tbody td { padding:10px 14px; border-bottom:1px solid rgba(28,46,74,0.6); color:#C4D0E8; }
+    tbody tr:hover td { background:rgba(255,255,255,0.02); }
+
+    @media(max-width:800px) {
+      .params-grid { grid-template-columns:1fr; }
+      .model-overview { grid-template-columns:repeat(3,1fr); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="SIGNAL Landing Page.html">
+    <svg width="24" height="24" viewBox="0 0 26 26" fill="none">
+      <rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.18"/>
+      <polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/>
+    </svg>
+    SIGNAL
+  </a>
+  <a class="nav-back" href="SIGNAL Landing Page.html">← Back to homepage</a>
+</nav>
+
+<!-- Header -->
+<div class="page-header">
+  <div class="eyebrow">ML Transparency</div>
+  <h1>Signal Parameters<br><span style="color:var(--bluL);">Explained</span></h1>
+  <p class="header-sub">Every signal SIGNAL generates is based on a combination of 15 technical, fundamental, volume, and sentiment parameters fed into a Random Forest classifier. Here's exactly what we look at — and why each parameter matters.</p>
+
+  <div style="background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.2);border-radius:12px;padding:14px 18px;max-width:680px;">
+    <p style="font-size:13px;color:rgba(255,184,0,0.85);line-height:1.7;">⚠️ <strong>NOT SEBI registered.</strong> These parameters are used for informational and educational purposes only. This is not financial advice. Trade at your own risk.</p>
+  </div>
+
+  <div class="model-overview" style="margin-top:28px;">
+    <div class="model-stat"><div class="model-stat-val" style="color:var(--bluL);">15</div><div class="model-stat-lbl">Parameters</div></div>
+    <div class="model-stat"><div class="model-stat-val" style="color:var(--grn);">200</div><div class="model-stat-lbl">RF Trees</div></div>
+    <div class="model-stat"><div class="model-stat-val" style="color:var(--org);">5Y</div><div class="model-stat-lbl">Training Data</div></div>
+    <div class="model-stat"><div class="model-stat-val" style="color:var(--grn);">71.4%</div><div class="model-stat-lbl">Accuracy (90d)</div></div>
+    <div class="model-stat"><div class="model-stat-val" style="color:var(--pur);">3-day</div><div class="model-stat-lbl">Prediction Horizon</div></div>
+  </div>
+</div>
+
+<!-- Category filter -->
+<div class="cat-filter">
+  <button class="cat-btn active" data-cat="all" onclick="filterCat('all',this)">All Parameters</button>
+  <button class="cat-btn" data-cat="momentum" onclick="filterCat('momentum',this)">Momentum</button>
+  <button class="cat-btn" data-cat="trend" onclick="filterCat('trend',this)">Trend</button>
+  <button class="cat-btn" data-cat="volatility" onclick="filterCat('volatility',this)">Volatility</button>
+  <button class="cat-btn" data-cat="volume" onclick="filterCat('volume',this)">Volume</button>
+  <button class="cat-btn" data-cat="sentiment" onclick="filterCat('sentiment',this)">Sentiment</button>
+  <button class="cat-btn" data-cat="fundamental" onclick="filterCat('fundamental',this)">Fundamental</button>
+</div>
+
+<!-- Parameter Cards -->
+<div class="params-grid" id="params-grid">
+
+  <!-- 1. RSI -->
+  <div class="param-card" data-cat="momentum">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(255,92,26,0.12);">📈</div>
+      <div><div class="param-name">RSI</div><div class="param-full">Relative Strength Index (14-period)</div></div>
+      <div class="cat-tag" style="background:rgba(255,92,26,0.12);color:var(--org);">Momentum</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:88%;background:var(--org);"></div></div>
+      <span class="weight-pct" style="color:var(--org);">High</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Measures the speed and magnitude of recent price changes on a 0–100 scale. Calculated as the average gain vs. average loss over the last 14 candles.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">RSI is the single most reliable momentum indicator for Indian equities. It identifies stocks that are oversold (about to bounce) or overbought (about to correct), with NSE historical backtests showing 68% directional accuracy when RSI crosses key levels.</div>
+    </div>
+    <div class="param-signal-box">
+      RSI <span class="sig-val">&lt; 35</span> → <span class="sig-buy">BUY signal</span> (oversold)<br>
+      RSI <span class="sig-val">&gt; 70</span> → <span class="sig-sell">SELL signal</span> (overbought)<br>
+      RSI <span class="sig-val">35–70</span> → <span class="sig-hold">HOLD / neutral</span>
+    </div>
+    <div class="us-note"><p>🇺🇸 <strong>US markets:</strong> Same thresholds work but US stocks tend to stay overbought longer (RSI 70–85) in bull markets. SIGNAL adjusts dynamically.</p></div>
+  </div>
+
+  <!-- 2. MACD -->
+  <div class="param-card" data-cat="trend">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(23,64,245,0.12);">〰️</div>
+      <div><div class="param-name">MACD</div><div class="param-full">Moving Average Convergence Divergence (12,26,9)</div></div>
+      <div class="cat-tag" style="background:rgba(23,64,245,0.12);color:var(--bluL);">Trend</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:80%;background:var(--bluL);"></div></div>
+      <span class="weight-pct" style="color:var(--bluL);">High</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">The difference between a 12-period EMA and 26-period EMA, smoothed by a 9-period signal line. The histogram shows the strength and direction of momentum shifts.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">MACD crossovers (MACD crossing above signal line) are highly reliable on daily NSE charts. Divergence between MACD and price is one of the strongest early-reversal signals the RF model picks up.</div>
+    </div>
+    <div class="param-signal-box">
+      MACD <span class="sig-val">crosses above</span> signal → <span class="sig-buy">BUY</span><br>
+      MACD <span class="sig-val">crosses below</span> signal → <span class="sig-sell">SELL</span><br>
+      Histogram <span class="sig-val">expanding</span> → trend strengthening
+    </div>
+  </div>
+
+  <!-- 3. EMA -->
+  <div class="param-card" data-cat="trend">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(23,64,245,0.12);">📉</div>
+      <div><div class="param-name">EMA 20 / 50 / 200</div><div class="param-full">Exponential Moving Averages</div></div>
+      <div class="cat-tag" style="background:rgba(23,64,245,0.12);color:var(--bluL);">Trend</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:75%;background:var(--bluL);"></div></div>
+      <span class="weight-pct" style="color:var(--bluL);">High</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Exponential moving averages give more weight to recent prices. EMA20 = short-term trend. EMA50 = medium-term. EMA200 = long-term bull/bear market indicator.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">EMA crossovers ("golden cross" EMA20 &gt; EMA50) are the backbone of momentum strategies. The RF model uses relative price position vs. all 3 EMAs as features, giving it a multi-timeframe trend picture.</div>
+    </div>
+    <div class="param-signal-box">
+      Price <span class="sig-val">&gt; EMA20 &gt; EMA50</span> → <span class="sig-buy">Strong uptrend</span><br>
+      EMA20 <span class="sig-val">crosses above</span> EMA50 → <span class="sig-buy">Golden cross BUY</span><br>
+      Price <span class="sig-val">&lt; EMA200</span> → <span class="sig-sell">Bear territory — caution</span>
+    </div>
+  </div>
+
+  <!-- 4. Bollinger Bands -->
+  <div class="param-card" data-cat="volatility">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(139,92,246,0.12);">🎯</div>
+      <div><div class="param-name">Bollinger Bands</div><div class="param-full">BB (20, 2σ) — Upper / Middle / Lower</div></div>
+      <div class="cat-tag" style="background:rgba(139,92,246,0.12);color:var(--pur);">Volatility</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:65%;background:var(--pur);"></div></div>
+      <span class="weight-pct" style="color:var(--pur);">Medium</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">A 20-period moving average with upper and lower bands at 2 standard deviations. When bands squeeze, a breakout is imminent. When they expand, volatility is high.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">BB %B (position within the band) and bandwidth (band width / midline) are powerful features for the RF model. Stocks touching the lower band with high RSI divergence are strong mean-reversion candidates.</div>
+    </div>
+    <div class="param-signal-box">
+      Price <span class="sig-val">touches lower band</span> + RSI low → <span class="sig-buy">Mean reversion BUY</span><br>
+      Bandwidth <span class="sig-val">squeezing</span> → breakout imminent — watch closely<br>
+      Price <span class="sig-val">above upper band</span> → <span class="sig-sell">Overbought — reduce</span>
+    </div>
+  </div>
+
+  <!-- 5. ADX -->
+  <div class="param-card" data-cat="trend">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(23,64,245,0.12);">💪</div>
+      <div><div class="param-name">ADX</div><div class="param-full">Average Directional Index (14-period)</div></div>
+      <div class="cat-tag" style="background:rgba(23,64,245,0.12);color:var(--bluL);">Trend Strength</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:58%;background:var(--bluL);"></div></div>
+      <span class="weight-pct" style="color:var(--bluL);">Medium</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Measures the strength of a trend (not direction) on a 0–100 scale. Below 20 = no trend. 20–40 = developing trend. Above 40 = strong trend. Combines +DI and -DI to determine direction.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">SIGNAL uses ADX to filter out false signals. A BUY signal from RSI + EMA is far more reliable when ADX &gt; 25, confirming the trend has real momentum behind it rather than being a random sideways fluctuation.</div>
+    </div>
+    <div class="param-signal-box">
+      ADX <span class="sig-val">&gt; 25</span> + +DI &gt; -DI → <span class="sig-buy">Confirm BUY</span><br>
+      ADX <span class="sig-val">&lt; 20</span> → choppy market, signals less reliable<br>
+      ADX <span class="sig-val">&gt; 40</span> → very strong trend, ride it
+    </div>
+  </div>
+
+  <!-- 6. ATR -->
+  <div class="param-card" data-cat="volatility">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(139,92,246,0.12);">📐</div>
+      <div><div class="param-name">ATR</div><div class="param-full">Average True Range (14-period)</div></div>
+      <div class="cat-tag" style="background:rgba(139,92,246,0.12);color:var(--pur);">Volatility</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:55%;background:var(--pur);"></div></div>
+      <span class="weight-pct" style="color:var(--pur);">Medium</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Measures average daily price range (high − low) over 14 days. High ATR = high volatility. Used to set dynamic stop losses and targets proportional to the stock's natural movement.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">SIGNAL sets stop losses at 1.5× ATR and targets at 3× ATR below/above entry, ensuring a minimum 2:1 risk-reward. This ATR-based position sizing is why SIGNAL's drawdowns stay controlled even in volatile markets.</div>
+    </div>
+    <div class="param-signal-box">
+      Stop Loss = Entry − <span class="sig-val">1.5 × ATR</span><br>
+      Target    = Entry + <span class="sig-val">3.0 × ATR</span><br>
+      Min Risk/Reward = <span class="sig-buy">2:1</span>
+    </div>
+  </div>
+
+  <!-- 7. Volume OBV -->
+  <div class="param-card" data-cat="volume">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(0,212,160,0.12);">📊</div>
+      <div><div class="param-name">OBV</div><div class="param-full">On Balance Volume</div></div>
+      <div class="cat-tag" style="background:rgba(0,212,160,0.12);color:var(--grn);color:#001A12;">Volume</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:62%;background:var(--grn);"></div></div>
+      <span class="weight-pct" style="color:var(--grn);">Medium</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Running total of volume: adds volume on up-days, subtracts on down-days. Tracks the flow of money into/out of a stock even when price appears flat.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">Volume is the "fuel" behind price moves. When OBV rises while price is flat, institutions are silently accumulating. This divergence is one of the most profitable early signals in SIGNAL's model — especially on NSE midcaps.</div>
+    </div>
+    <div class="param-signal-box">
+      OBV <span class="sig-val">rising</span> + Price flat → <span class="sig-buy">Accumulation BUY</span><br>
+      OBV <span class="sig-val">falling</span> + Price rising → <span class="sig-sell">Distribution SELL</span><br>
+      OBV <span class="sig-val">confirms</span> price breakout → high-confidence signal
+    </div>
+  </div>
+
+  <!-- 8. Delivery % -->
+  <div class="param-card" data-cat="volume">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(0,212,160,0.12);">📦</div>
+      <div><div class="param-name">Delivery %</div><div class="param-full">NSE Delivery Volume Percentage</div></div>
+      <div class="cat-tag" style="background:rgba(0,212,160,0.12);color:var(--grn);color:#001A12;">Volume · India-specific</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:70%;background:var(--grn);"></div></div>
+      <span class="weight-pct" style="color:var(--grn);">High</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Unique to NSE/BSE: the % of total traded volume that results in actual delivery (not squared-off intraday). High delivery = genuine buying conviction. Low delivery = speculative froth.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">This is SIGNAL's most India-specific edge. Global algo platforms don't have this data. When delivery % spikes above 70% on a breakout day, it almost always signals institutional buying — one of the highest-conviction BUY signals in the model.</div>
+    </div>
+    <div class="param-signal-box">
+      Delivery <span class="sig-val">&gt; 65%</span> + price rising → <span class="sig-buy">Institutional BUY ★</span><br>
+      Delivery <span class="sig-val">&lt; 25%</span> + price rising → <span class="sig-hold">Speculative — caution</span><br>
+      Delivery <span class="sig-val">&gt; 80%</span> on breakout → <span class="sig-buy">Highest conviction BUY</span>
+    </div>
+    <div class="us-note"><p>🇺🇸 <strong>US markets:</strong> Equivalent data = Dark pool volume + Short interest %. SIGNAL tracks these via FINRA data for US signals.</p></div>
+  </div>
+
+  <!-- 9. Stochastic -->
+  <div class="param-card" data-cat="momentum">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(255,92,26,0.12);">🔄</div>
+      <div><div class="param-name">Stochastic Oscillator</div><div class="param-full">%K (14) and %D (3) — Fast Stoch</div></div>
+      <div class="cat-tag" style="background:rgba(255,92,26,0.12);color:var(--org);">Momentum</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:50%;background:var(--org);"></div></div>
+      <span class="weight-pct" style="color:var(--org);">Medium</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Compares closing price to its high-low range over 14 periods. Like RSI but more sensitive to short-term price swings. %K crossing %D gives buy/sell signals.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">Stochastic adds a faster, more sensitive momentum layer. When RSI and Stochastic both show oversold simultaneously, the RF model assigns a much higher probability to a bounce — double confirmation.</div>
+    </div>
+    <div class="param-signal-box">
+      %K <span class="sig-val">crosses above</span> %D below 20 → <span class="sig-buy">Oversold BUY</span><br>
+      %K <span class="sig-val">crosses below</span> %D above 80 → <span class="sig-sell">Overbought SELL</span>
+    </div>
+  </div>
+
+  <!-- 10. Volume Surge -->
+  <div class="param-card" data-cat="volume">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(0,212,160,0.12);">⚡</div>
+      <div><div class="param-name">Volume Surge</div><div class="param-full">Volume vs. 20-day Average Volume Ratio</div></div>
+      <div class="cat-tag" style="background:rgba(0,212,160,0.12);color:var(--grn);color:#001A12;">Volume</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:72%;background:var(--grn);"></div></div>
+      <span class="weight-pct" style="color:var(--grn);">High</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">The ratio of today's volume to the 20-day average volume. A ratio of 2× means today's volume is twice the average — a significant surge worth paying attention to.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">Volume surges on breakout days are one of the most reliable breakout-confirmation signals. Stocks with 2× or more volume surges on price breakouts have a 73% continuation rate in SIGNAL's backtests.</div>
+    </div>
+    <div class="param-signal-box">
+      Vol ratio <span class="sig-val">&gt; 2×</span> + price breakout → <span class="sig-buy">High-confidence BUY</span><br>
+      Vol ratio <span class="sig-val">&gt; 3×</span> → major institutional move underway<br>
+      Vol ratio <span class="sig-val">&lt; 0.5×</span> → low conviction — ignore signal
+    </div>
+  </div>
+
+  <!-- 11. FII/DII Flow -->
+  <div class="param-card" data-cat="fundamental">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(255,59,92,0.12);">🏦</div>
+      <div><div class="param-name">FII / DII Flow</div><div class="param-full">Foreign &amp; Domestic Institutional Investor Activity</div></div>
+      <div class="cat-tag" style="background:rgba(255,59,92,0.12);color:var(--red);">Fundamental · India</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:60%;background:var(--red);"></div></div>
+      <span class="weight-pct" style="color:var(--red);">Medium</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Daily net buying/selling by Foreign Institutional Investors (FIIs) and Domestic Institutional Investors (DIIs) on NSE. Published daily by NSE/SEBI. FII inflows = bullish macro. FII outflows = risk-off sentiment.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">FII activity is the single biggest macro driver of Indian equity markets. When FIIs buy consistently for 3+ days, it creates a tailwind for large-cap signals. SIGNAL uses a rolling 5-day FII net flow as a macro filter.</div>
+    </div>
+    <div class="param-signal-box">
+      FII 5d net <span class="sig-val">&gt; +₹3,000Cr</span> → <span class="sig-buy">Macro bullish — boost all BUY signals</span><br>
+      FII 5d net <span class="sig-val">&lt; -₹3,000Cr</span> → <span class="sig-sell">Macro bearish — tighten stops</span>
+    </div>
+  </div>
+
+  <!-- 12. Twitter Sentiment -->
+  <div class="param-card" data-cat="sentiment">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(255,184,0,0.12);">𝕏</div>
+      <div><div class="param-name">Twitter / X Sentiment</div><div class="param-full">NLP Sentiment Score — 24h rolling window</div></div>
+      <div class="cat-tag" style="background:rgba(255,184,0,0.12);color:var(--ylw);">Sentiment</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:45%;background:var(--ylw);"></div></div>
+      <span class="weight-pct" style="color:var(--ylw);">Medium</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Real-time NLP analysis of tweets mentioning a stock's NSE ticker over the last 24 hours. Outputs a bullish % score, post volume, and 24h sentiment trend (improving/deteriorating).</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">Retail investor sentiment on Twitter is a leading indicator for small/midcap NSE stocks, often moving 6–12 hours before the price. Used as a secondary confirmation — never a primary signal on its own.</div>
+    </div>
+    <div class="param-signal-box">
+      Bullish% <span class="sig-val">&gt; 75%</span> + volume spike → <span class="sig-buy">Sentiment confirms BUY</span><br>
+      Bullish% <span class="sig-val">&lt; 30%</span> → <span class="sig-sell">Negative sentiment — adds to SELL weight</span><br>
+      Low tweet volume → sentiment score <span class="sig-hold">discounted</span>
+    </div>
+    <div class="us-note"><p>🇺🇸 <strong>US markets:</strong> Reddit WSB sentiment + StockTwits + analyst Twitter accounts are additional sources. SIGNAL assigns higher weight to verified analyst accounts.</p></div>
+  </div>
+
+  <!-- 13. Beta -->
+  <div class="param-card" data-cat="fundamental">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(255,59,92,0.12);">⚖️</div>
+      <div><div class="param-name">Beta &amp; Volatility</div><div class="param-full">52-week Beta vs. NIFTY 50 + Historical Volatility</div></div>
+      <div class="cat-tag" style="background:rgba(255,59,92,0.12);color:var(--red);">Risk / Fundamental</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:40%;background:var(--red);"></div></div>
+      <span class="weight-pct" style="color:var(--red);">Lower</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Beta measures a stock's sensitivity to NIFTY 50 moves. Beta 1.5 = 50% more volatile than the index. Historical Volatility (HV) = annualised standard deviation of daily returns.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">Used primarily for risk calibration and position sizing recommendations. High-beta stocks get tighter stop losses. SIGNAL also uses beta to normalise signals across stocks of different risk profiles.</div>
+    </div>
+    <div class="param-signal-box">
+      Beta <span class="sig-val">&gt; 1.5</span> → stop loss tightened, smaller position size<br>
+      Beta <span class="sig-val">&lt; 0.8</span> → defensive stock, good for long-term holds
+    </div>
+  </div>
+
+  <!-- 14. Earnings Impact -->
+  <div class="param-card" data-cat="fundamental">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(255,59,92,0.12);">📋</div>
+      <div><div class="param-name">Earnings Impact</div><div class="param-full">Quarterly Results Calendar + Historical Earnings Reaction</div></div>
+      <div class="cat-tag" style="background:rgba(255,59,92,0.12);color:var(--red);">Fundamental</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:48%;background:var(--red);"></div></div>
+      <span class="weight-pct" style="color:var(--red);">Medium</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">SIGNAL tracks the NSE earnings calendar and each stock's historical price reaction to quarterly results (beat/miss). Earnings within 7 days dramatically changes signal confidence.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">Earnings events are binary risk events. SIGNAL shows an "earnings flag" on every signal when results are due within 7 days, and adjusts confidence accordingly. Stocks that historically beat estimates by 10%+ get a positive earnings bias.</div>
+    </div>
+    <div class="param-signal-box">
+      Results <span class="sig-val">&lt; 5 days away</span> → <span class="sig-hold">EARNINGS FLAG — hold or reduce</span><br>
+      Historical beat rate <span class="sig-val">&gt; 70%</span> → earnings bullish bias added<br>
+      Post-results gap-up <span class="sig-val">&gt; 5%</span> → momentum signal boost
+    </div>
+  </div>
+
+  <!-- 15. Sector Momentum -->
+  <div class="param-card" data-cat="fundamental">
+    <div class="param-header">
+      <div class="param-icon" style="background:rgba(255,59,92,0.12);">🏭</div>
+      <div><div class="param-name">Sector Momentum</div><div class="param-full">NIFTY Sectoral Index Performance + Sector Rotation</div></div>
+      <div class="cat-tag" style="background:rgba(255,59,92,0.12);color:var(--red);">Macro / Sector</div>
+    </div>
+    <div class="weight-row">
+      <span class="weight-label">Model weight</span>
+      <div class="weight-track"><div class="weight-fill" style="width:52%;background:var(--red);"></div></div>
+      <span class="weight-pct" style="color:var(--red);">Medium</span>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">What it is</div>
+      <div class="param-section-body">Relative performance of NIFTY sectoral indices (IT, Bank, Auto, Pharma, Metal, FMCG, Realty) over 5, 10, and 20 days. Identifies which sectors are in favour and which are rotating out.</div>
+    </div>
+    <div class="param-section">
+      <div class="param-section-title">Why SIGNAL uses it</div>
+      <div class="param-section-body">An individual stock BUY signal is 2× more reliable when its sector index is also in an uptrend. Sector momentum acts as a tailwind multiplier in the RF model — stocks swimming with the tide, not against it.</div>
+    </div>
+    <div class="param-signal-box">
+      Sector 10d return <span class="sig-val">&gt; +3%</span> → sector tailwind, <span class="sig-buy">boost BUY weight</span><br>
+      Sector 10d return <span class="sig-val">&lt; -3%</span> → sector headwind, <span class="sig-hold">reduce position size</span><br>
+      Sector rotation <span class="sig-val">into IT</span> → higher weight for TCS, INFY signals
+    </div>
+    <div class="us-note"><p>🇺🇸 <strong>US markets:</strong> S&amp;P 500 GICS sector ETFs (XLK, XLF, XLV, etc.) used instead. Fed rate sensitivity by sector is an additional modifier.</p></div>
+  </div>
+
+</div>
+
+<!-- Summary Table -->
+<div class="summary-section">
+  <h2>All Parameters at a Glance</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Parameter</th>
+        <th>Category</th>
+        <th>Primary use</th>
+        <th>India-specific</th>
+        <th>US adaptation</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>1</td><td><strong>RSI (14)</strong></td><td>Momentum</td><td>Overbought / Oversold detection</td><td>—</td><td>Higher thresholds in bull runs</td></tr>
+      <tr><td>2</td><td><strong>MACD (12,26,9)</strong></td><td>Trend</td><td>Trend direction + crossovers</td><td>—</td><td>Works as-is</td></tr>
+      <tr><td>3</td><td><strong>EMA 20/50/200</strong></td><td>Trend</td><td>Multi-timeframe trend structure</td><td>—</td><td>Works as-is</td></tr>
+      <tr><td>4</td><td><strong>Bollinger Bands</strong></td><td>Volatility</td><td>Mean reversion + breakout</td><td>—</td><td>Works as-is</td></tr>
+      <tr><td>5</td><td><strong>ADX (14)</strong></td><td>Trend Strength</td><td>Filter weak/choppy signals</td><td>—</td><td>Works as-is</td></tr>
+      <tr><td>6</td><td><strong>ATR (14)</strong></td><td>Volatility</td><td>Dynamic stop loss + target setting</td><td>—</td><td>Works as-is</td></tr>
+      <tr><td>7</td><td><strong>OBV</strong></td><td>Volume</td><td>Accumulation / distribution detection</td><td>—</td><td>Works as-is</td></tr>
+      <tr><td>8</td><td><strong>Delivery %</strong></td><td>Volume</td><td>Institutional buying confirmation</td><td>✅ NSE/BSE only</td><td>Dark pool + short interest %</td></tr>
+      <tr><td>9</td><td><strong>Stochastic (14,3)</strong></td><td>Momentum</td><td>Short-term momentum reversals</td><td>—</td><td>Works as-is</td></tr>
+      <tr><td>10</td><td><strong>Volume Surge</strong></td><td>Volume</td><td>Breakout confirmation</td><td>—</td><td>Works as-is</td></tr>
+      <tr><td>11</td><td><strong>FII / DII Flow</strong></td><td>Macro</td><td>Institutional macro filter</td><td>✅ NSE daily data</td><td>S&P COT report + options flow</td></tr>
+      <tr><td>12</td><td><strong>Twitter Sentiment</strong></td><td>Sentiment</td><td>Retail sentiment confirmation</td><td>Partial</td><td>+ Reddit WSB, StockTwits</td></tr>
+      <tr><td>13</td><td><strong>Beta + HV</strong></td><td>Risk</td><td>Position sizing + stop calibration</td><td>—</td><td>VIX correlation added</td></tr>
+      <tr><td>14</td><td><strong>Earnings Impact</strong></td><td>Fundamental</td><td>Earnings event risk flag</td><td>—</td><td>Earnings Whispers + guidance</td></tr>
+      <tr><td>15</td><td><strong>Sector Momentum</strong></td><td>Macro</td><td>Sector tailwind multiplier</td><td>NIFTY sectors</td><td>GICS sector ETFs + Fed rate sens.</td></tr>
+    </tbody>
+  </table>
+
+  <div style="margin-top:28px;background:rgba(255,184,0,0.05);border:1px solid rgba(255,184,0,0.18);border-radius:14px;padding:20px 24px;">
+    <p style="font-size:13px;color:rgba(255,184,0,0.8);line-height:1.8;"><strong>⚠️ Important:</strong> SIGNAL is <strong>NOT SEBI registered</strong>. The parameters above and the signals they generate are for <strong>informational and educational purposes only</strong>. No parameter or combination of parameters guarantees future returns. All trading involves risk of loss. Please conduct your own research and consult a SEBI-registered investment advisor before making any financial decisions.</p>
+  </div>
+</div>
+
+<script>
+function filterCat(cat, btn) {
+  document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.param-card').forEach(card => {
+    if (cat === 'all' || card.dataset.cat === cat) {
+      card.style.display = '';
+    } else {
+      card.style.display = 'none';
+    }
+  });
+}
+</script>
+</body>
+</html>

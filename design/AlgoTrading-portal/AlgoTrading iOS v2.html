@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Indian AlgoTrading App · 14 Screens</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { width: 100%; height: 100%; }
+    body { background: #111; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; }
+    button { font-family: inherit; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+  <!-- Starter scaffolds -->
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+
+  <!-- App modules (load order matters) -->
+  <script type="text/babel" src="shared.jsx"></script>
+  <script type="text/babel" src="screens-1to6.jsx"></script>
+  <script type="text/babel" src="screens-7to9.jsx"></script>
+  <script type="text/babel" src="screens-10to14.jsx"></script>
+
+  <script type="text/babel">
+    function App() {
+      return (
+        <ThemeProvider>
+          <ThemeToggle />
+          <DesignCanvas>
+
+            <DCSection id="onboard" title="Onboarding Flow"
+              subtitle="Welcome → Sign Up → OTP Verify">
+              <DCArtboard id="s1" label="01 · Welcome"    width={400} height={840}><ThemedIOSDevice><S1_Welcome /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s2" label="02 · Sign Up"    width={400} height={840}><ThemedIOSDevice><S2_SignUp /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s3" label="03 · Verify OTP" width={400} height={840}><ThemedIOSDevice><S3_Verify /></ThemedIOSDevice></DCArtboard>
+            </DCSection>
+
+            <DCSection id="import" title="Portfolio Import"
+              subtitle="Connect Broker API  →  Upload Excel  →  ML Analysis">
+              <DCArtboard id="s4" label="04 · Connect Broker"  width={400} height={840}><ThemedIOSDevice><S4_BrokerConnect /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s5" label="05 · Upload Excel"    width={400} height={840}><ThemedIOSDevice><S5_ExcelUpload /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s6" label="06 · ML Analysing…"  width={400} height={840}><ThemedIOSDevice><S6_Analyzing /></ThemedIOSDevice></DCArtboard>
+            </DCSection>
+
+            <DCSection id="intel" title="Intelligence &amp; Trading"
+              subtitle="Portfolio Classifier  →  Dashboard  →  Stock Detail Card">
+              <DCArtboard id="s7" label="07 · Portfolio Analysis" width={400} height={840}><ThemedIOSDevice><S7_Analysis /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s8" label="08 · Dashboard"          width={400} height={840}><ThemedIOSDevice><S8_Dashboard /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s9" label="09 · Stock Detail"       width={400} height={840}><ThemedIOSDevice><S9_StockDetail /></ThemedIOSDevice></DCArtboard>
+            </DCSection>
+
+            <DCSection id="algo" title="Algo Builder"
+              subtitle="Hub  →  Indicators  →  Conditions  →  Code  →  Deploy">
+              <DCArtboard id="s10" label="10 · Algo Hub"          width={400} height={840}><ThemedIOSDevice><S10_AlgoHub /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s11" label="11 · Select Indicators" width={400} height={840}><ThemedIOSDevice><S11_ParamExplorer /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s12" label="12 · Build Algorithm"   width={400} height={840}><ThemedIOSDevice><S12_AlgoBuilder /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s13" label="13 · Generated Code"    width={400} height={840}><ThemedIOSDevice><S13_CodeGen /></ThemedIOSDevice></DCArtboard>
+              <DCArtboard id="s14" label="14 · Deploy Guide"      width={400} height={840}><ThemedIOSDevice><S14_Deploy /></ThemedIOSDevice></DCArtboard>
+            </DCSection>
+
+          </DesignCanvas>
+        </ThemeProvider>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+  </script>
+</body>
+</html>

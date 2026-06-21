@@ -1,0 +1,1109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NSE Gold EGR · X Thread · 3 Cards</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+:root {
+  /* Luxury dark gold + ink */
+  --ink:    #07060a;
+  --ink2:   #0e0c12;
+  --ink3:   #161320;
+  --ink4:   #201c2e;
+  --g1:     #f0c040;   /* bright gold */
+  --g2:     #d4a017;   /* deep gold */
+  --g3:     #b8860b;   /* dark gold */
+  --g4:     #f5e0a0;   /* pale gold */
+  --g5:     #fffbe8;   /* cream gold */
+  --w:      #f8f4e8;   /* warm white */
+  --mid:    #a09070;
+  --dim:    #5a5040;
+  --green:  #4ade80;
+  --red:    #f87171;
+  --blue:   #93c5fd;
+  --teal:   #5eead4;
+  --orange: #fb923c;
+
+  --serif: 'Cormorant Garamond', Georgia, serif;
+  --sans:  'Outfit', sans-serif;
+  --mono:  'Fira Code', monospace;
+  --W: 880px;
+}
+
+body {
+  background: #04030a;
+  font-family: var(--sans);
+  color: var(--w);
+  padding: 36px 20px 80px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+/* ── Export bar ── */
+.xbar {
+  width: var(--W);
+  background: rgba(240,192,64,0.06);
+  border: 1px dashed rgba(240,192,64,0.2);
+  border-radius: 10px;
+  padding: 12px 18px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.xb-title { font-family:var(--mono); font-size:9px; letter-spacing:2px; color:var(--mid); text-transform:uppercase; }
+.xb-right { display:flex; gap:8px; align-items:center; }
+.dpr-btn {
+  font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:1px;
+  padding:5px 12px; border-radius:5px; border:1px solid; cursor:pointer;
+  background:transparent; text-transform:uppercase; transition:all 0.15s;
+}
+.dpr-btn.d2 { border-color:var(--g2); color:var(--g2); }
+.dpr-btn.d3 { border-color:var(--g1); color:var(--g1); background:rgba(240,192,64,0.07); }
+.dpr-btn.active.d2 { background:var(--g2); color:var(--ink); }
+.dpr-btn.active.d3 { background:var(--g1); color:var(--ink); }
+.exp-btn {
+  display:flex; align-items:center; gap:7px;
+  padding:7px 18px; border-radius:6px; cursor:pointer;
+  background:rgba(240,192,64,0.1); border:1px solid rgba(240,192,64,0.3);
+  font-family:var(--mono); font-size:10px; font-weight:700; color:var(--g1);
+  letter-spacing:1px; text-transform:uppercase; transition:all 0.2s;
+}
+.exp-btn:hover { background:rgba(240,192,64,0.18); }
+#xstatus { font-family:var(--mono); font-size:9px; color:var(--dim); }
+
+/* ── Tweet copy ── */
+.tweet-copy {
+  width: var(--W);
+  background: rgba(240,192,64,0.04);
+  border: 1px dashed rgba(240,192,64,0.18);
+  border-radius: 8px;
+  padding: 12px 18px;
+  margin-bottom: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: rgba(248,244,232,0.65);
+  line-height: 1.8;
+}
+.tweet-copy::before {
+  content: '▸  𝕏  POST TEXT';
+  font-size: 8.5px; letter-spacing: 2px; color: var(--g1);
+  display: block; margin-bottom: 6px; opacity:0.8;
+}
+.tweet-tags { margin-top:7px; color:var(--g2); font-size:10px; }
+
+/* ── Thread join ── */
+.tjoin {
+  width: 2px; height: 32px;
+  background: linear-gradient(to bottom, var(--g1), transparent);
+  margin: 0 auto;
+}
+
+/* ══════════════════════════════════
+   CARD SHELL — shared styles
+══════════════════════════════════ */
+.card {
+  width: var(--W);
+  background: var(--ink2);
+  border-radius: 14px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(212,160,23,0.2);
+  box-shadow:
+    0 0 0 1px rgba(212,160,23,0.07),
+    0 24px 80px rgba(0,0,0,0.75),
+    inset 0 0 80px rgba(212,160,23,0.03);
+}
+
+/* Gold shimmer top line */
+.card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0; height: 2px;
+  background: linear-gradient(90deg,
+    transparent 0%,
+    var(--g3) 15%,
+    var(--g1) 40%,
+    #fff8e0 50%,
+    var(--g1) 60%,
+    var(--g3) 85%,
+    transparent 100%);
+  z-index: 2;
+}
+
+/* Diagonal gold watermark */
+.card-wm {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) rotate(-25deg);
+  font-family: var(--serif);
+  font-size: 180px;
+  font-weight: 700;
+  color: rgba(212,160,23,0.04);
+  letter-spacing: -4px;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 0;
+  user-select: none;
+}
+
+.card > *:not(.card-wm) { position:relative; z-index:1; }
+
+/* ── MASTHEAD ── */
+.mast {
+  padding: 18px 26px 14px;
+  border-bottom: 1px solid rgba(212,160,23,0.15);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, rgba(212,160,23,0.1) 0%, transparent 60%);
+}
+.mast-l { display:flex; flex-direction:column; gap:4px; }
+.mast-kicker {
+  font-family:var(--mono); font-size:8.5px; letter-spacing:3px;
+  text-transform:uppercase; color:var(--g2);
+}
+.mast-h {
+  font-family:var(--serif); font-size:28px; font-weight:700;
+  color:var(--w); line-height:1.1;
+}
+.mast-h em { color:var(--g1); font-style:normal; }
+.mast-sub { font-size:11px; color:var(--mid); margin-top:3px; }
+.mast-badges { display:flex; gap:7px; margin-top:8px; flex-wrap:wrap; }
+
+.mast-r { text-align:right; flex-shrink:0; }
+.card-no {
+  font-family:var(--serif); font-size:70px; font-weight:700;
+  color:rgba(212,160,23,0.1); line-height:1;
+}
+.card-of { font-family:var(--mono); font-size:8.5px; letter-spacing:2px; color:var(--g2); text-transform:uppercase; text-align:right; }
+
+/* badges */
+.badge {
+  font-family:var(--mono); font-size:8px; letter-spacing:1.5px;
+  font-weight:700; padding:3px 10px; border-radius:3px; text-transform:uppercase;
+}
+.b-new    { background:rgba(240,192,64,0.15); color:var(--g1); border:1px solid rgba(240,192,64,0.3); }
+.b-sebi   { background:rgba(147,197,253,0.1); color:var(--blue); border:1px solid rgba(147,197,253,0.2); }
+.b-green  { background:rgba(74,222,128,0.1); color:var(--green); border:1px solid rgba(74,222,128,0.2); }
+.b-red    { background:rgba(248,113,113,0.1); color:var(--red); border:1px solid rgba(248,113,113,0.2); }
+.b-orange { background:rgba(251,146,60,0.1); color:var(--orange); border:1px solid rgba(251,146,60,0.2); }
+.b-teal   { background:rgba(94,234,212,0.1); color:var(--teal); border:1px solid rgba(94,234,212,0.2); }
+
+/* ── HERO STRIP ── */
+.hstrip {
+  display: grid;
+  border-bottom: 1px solid rgba(212,160,23,0.1);
+}
+.hstrip.s4 { grid-template-columns:repeat(4,1fr); }
+.hstrip.s5 { grid-template-columns:repeat(5,1fr); }
+.hstrip.s6 { grid-template-columns:repeat(6,1fr); }
+
+.hs {
+  padding: 12px 14px;
+  border-right: 1px solid rgba(212,160,23,0.08);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.hs:last-child { border-right: none; }
+.hs-l { font-family:var(--mono); font-size:7.5px; letter-spacing:2px; text-transform:uppercase; color:var(--dim); }
+.hs-v { font-family:var(--serif); font-size:20px; font-weight:700; line-height:1; }
+.hs-s { font-family:var(--mono); font-size:9px; }
+.c-g1 { color:var(--g1); }  .c-g4 { color:var(--g4); }
+.c-gr { color:var(--green); } .c-rd { color:var(--red); }
+.c-bl { color:var(--blue); }  .c-tl { color:var(--teal); }
+.c-or { color:var(--orange); } .c-mid { color:var(--mid); }
+.c-w  { color:var(--w); }
+
+/* ── SEC HEAD ── */
+.sh {
+  font-family:var(--mono); font-size:8.5px; letter-spacing:2.5px;
+  text-transform:uppercase; color:var(--g2);
+  display:flex; align-items:center; gap:7px;
+  padding-bottom:7px; margin-bottom:10px;
+  border-bottom:1px solid rgba(212,160,23,0.12);
+}
+.sh::before { content:''; width:8px; height:1px; background:var(--g3); }
+
+/* ── COLUMNS ── */
+.cols { display:grid; }
+.c2   { grid-template-columns:1fr 1fr; }
+.c3   { grid-template-columns:1fr 1fr 1fr; }
+.c64  { grid-template-columns:6fr 1px 4fr; }
+.c55  { grid-template-columns:5fr 1px 5fr; }
+.c37  { grid-template-columns:3fr 1px 7fr; }
+.gc   { padding:14px 20px; }
+.gdiv { background:rgba(212,160,23,0.1); }
+
+/* ── HOW IT WORKS timeline ── */
+.timeline { display:flex; flex-direction:column; gap:0; }
+.tl-item {
+  display:flex; gap:14px; align-items:flex-start;
+  padding:8px 0;
+}
+.tl-left {
+  display:flex; flex-direction:column; align-items:center;
+  flex-shrink:0; width:28px;
+}
+.tl-dot {
+  width:26px; height:26px; border-radius:50%;
+  background:rgba(212,160,23,0.15); border:1.5px solid var(--g2);
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--mono); font-size:10px; font-weight:700; color:var(--g1);
+  flex-shrink:0;
+}
+.tl-line { width:2px; flex:1; min-height:8px; background:rgba(212,160,23,0.15); margin-top:3px; }
+.tl-item:last-child .tl-line { display:none; }
+.tl-content { flex:1; padding-bottom:2px; }
+.tl-title { font-size:12px; font-weight:700; color:var(--w); margin-bottom:2px; }
+.tl-desc  { font-size:10.5px; color:var(--mid); line-height:1.55; }
+
+/* ── BENEFIT BOX ── */
+.blist { display:flex; flex-direction:column; gap:7px; }
+.bitem {
+  display:flex; gap:10px; align-items:flex-start;
+  padding:9px 12px; border-radius:6px;
+  border:1px solid rgba(212,160,23,0.1);
+  background:rgba(212,160,23,0.03);
+}
+.bi-icon { font-size:15px; flex-shrink:0; margin-top:1px; }
+.bi-body {}
+.bi-title { font-size:11.5px; font-weight:700; color:var(--g4); margin-bottom:2px; }
+.bi-desc  { font-size:10.5px; color:var(--mid); line-height:1.55; }
+
+/* ── DATA ROW ── */
+.drow {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:6px 0; border-bottom:1px solid rgba(212,160,23,0.06);
+  gap:12px;
+}
+.drow:last-child { border-bottom:none; }
+.dr-l { font-size:11px; color:var(--mid); }
+.dr-v { font-family:var(--mono); font-size:11px; font-weight:700; }
+
+/* ── COMPARISON TABLE ── */
+.comp-table { width:100%; }
+.ct-head {
+  display:grid; padding:6px 14px;
+  background:rgba(212,160,23,0.08);
+  border-bottom:1px solid rgba(212,160,23,0.15);
+}
+.ct-head span { font-family:var(--mono); font-size:8.5px; letter-spacing:2px; color:var(--g2); text-transform:uppercase; }
+.ct-row { display:grid; padding:9px 14px; border-bottom:1px solid rgba(212,160,23,0.06); align-items:center; }
+.ct-row:last-child { border-bottom:none; }
+.ct-cat  { font-size:11px; font-weight:700; color:var(--w); }
+.ct-egr  { font-size:10.5px; line-height:1.5; }
+.ct-phys { font-size:10.5px; line-height:1.5; }
+.ct-win  { font-family:var(--mono); font-size:9px; font-weight:700; padding:2px 8px; border-radius:3px; text-align:center; }
+.win-egr  { background:rgba(74,222,128,0.12); color:var(--green); border:1px solid rgba(74,222,128,0.2); }
+.win-phy  { background:rgba(240,192,64,0.12); color:var(--g1); border:1px solid rgba(240,192,64,0.25); }
+.win-tie  { background:rgba(148,163,184,0.08); color:var(--mid); border:1px solid rgba(148,163,184,0.15); }
+
+/* col grid spec for comp table */
+.ct4 { grid-template-columns:2.2fr 2.8fr 2.8fr 1.2fr; }
+
+/* ── INFINIA CARD VISUAL ── */
+.infinia-card {
+  background:linear-gradient(135deg, #1a0a00 0%, #2d1500 50%, #1a0a00 100%);
+  border-radius:12px;
+  border:1px solid rgba(212,160,23,0.4);
+  padding:16px 18px;
+  position:relative;
+  overflow:hidden;
+  box-shadow:0 4px 24px rgba(0,0,0,0.5), inset 0 1px 0 rgba(240,192,64,0.3);
+}
+.infinia-card::before {
+  content:'';
+  position:absolute; top:0; left:0; right:0; bottom:0;
+  background:radial-gradient(ellipse at 70% 30%, rgba(240,192,64,0.12) 0%, transparent 60%);
+  pointer-events:none;
+}
+.ic-bank { font-family:var(--mono); font-size:9px; letter-spacing:2px; color:rgba(240,192,64,0.5); margin-bottom:2px; text-transform:uppercase; }
+.ic-name { font-family:var(--serif); font-size:20px; font-weight:700; color:var(--g1); }
+.ic-type { font-family:var(--mono); font-size:8.5px; color:var(--mid); letter-spacing:1px; margin-bottom:10px; text-transform:uppercase; }
+.ic-stats { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+.ic-stat { background:rgba(240,192,64,0.06); border:1px solid rgba(240,192,64,0.12); border-radius:5px; padding:7px 9px; }
+.ic-sl { font-family:var(--mono); font-size:7.5px; letter-spacing:1.5px; color:var(--dim); text-transform:uppercase; margin-bottom:3px; }
+.ic-sv { font-family:var(--mono); font-size:12px; font-weight:700; color:var(--g1); }
+
+/* ── VERDICT STRIP ── */
+.vstrip {
+  display:grid;
+  border-top:1px solid rgba(212,160,23,0.15);
+  background:rgba(212,160,23,0.03);
+}
+.vstrip.v3 { grid-template-columns:repeat(3,1fr); }
+.vstrip.v2 { grid-template-columns:1fr 1fr; }
+
+.vc {
+  padding:12px 18px;
+  border-right:1px solid rgba(212,160,23,0.1);
+  display:flex; flex-direction:column; gap:3px;
+}
+.vc:last-child { border-right:none; }
+.vc-l { font-family:var(--mono); font-size:8px; letter-spacing:2px; text-transform:uppercase; color:var(--dim); }
+.vc-v { font-family:var(--serif); font-size:16px; font-weight:700; line-height:1.1; }
+.vc-s { font-size:10px; color:var(--mid); line-height:1.4; }
+
+/* ── PULL QUOTE ── */
+.pq {
+  margin:14px 22px;
+  padding:12px 18px;
+  border-left:3px solid var(--g2);
+  background:rgba(212,160,23,0.04);
+  border-radius:0 6px 6px 0;
+}
+.pq-t { font-family:var(--serif); font-size:13px; font-style:italic; color:rgba(248,244,232,0.7); line-height:1.7; }
+.pq-a { font-family:var(--mono); font-size:8px; color:var(--dim); margin-top:5px; letter-spacing:0.5px; }
+
+/* ── FOOTER ── */
+.cfoot {
+  padding:9px 22px;
+  background:rgba(0,0,0,0.3);
+  border-top:1px solid rgba(212,160,23,0.1);
+  display:flex; justify-content:space-between; align-items:center;
+}
+.cf-l { font-family:var(--mono); font-size:8.5px; color:var(--dim); letter-spacing:1px; }
+.cf-r { font-family:var(--mono); font-size:7.5px; color:var(--dim); font-style:italic; }
+
+/* ── Summary table section ── */
+.sum-row {
+  display:grid; grid-template-columns:2fr 1fr 1fr 1fr;
+  padding:8px 14px; border-bottom:1px solid rgba(212,160,23,0.06);
+  align-items:center; gap:6px;
+}
+.sum-row.hdr { background:rgba(212,160,23,0.06); border-bottom:1px solid rgba(212,160,23,0.15); }
+.sum-row.hdr span { font-family:var(--mono); font-size:8px; letter-spacing:1.5px; text-transform:uppercase; color:var(--g2); }
+.sum-row:last-child { border-bottom:none; }
+.sr-name { font-size:11.5px; font-weight:700; color:var(--w); }
+.sr-v    { font-family:var(--mono); font-size:11px; }
+</style>
+</head>
+<body>
+
+<!-- Export controls -->
+<div class="xbar">
+  <div class="xb-title">🥇 NSE Gold EGR Thread · 3 Cards · Hi-Res Export</div>
+  <div class="xb-right">
+    <span id="xstatus">Ready — Screenshot each card</span>
+    <button class="dpr-btn d2" id="b2" onclick="setDpr(2)">2x</button>
+    <button class="dpr-btn d3 active" id="b3" onclick="setDpr(3)">3x ← Best for X</button>
+    <button class="exp-btn" onclick="expAll()">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Export All Cards
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════
+     TWEET 1
+═══════════════════════════════════════ -->
+<div class="tweet-copy">
+🥇 NSE just launched something that could CHANGE how 1.4 billion Indians own gold.
+
+Launched May 4, 2026 — India's first exchange-traded Electronic Gold Receipt (EGR).
+
+No locker. No making charges. No purity questions. Trade gold like stocks from your Zerodha/Groww app.
+
+Full explainer 👇 [1/3]
+<div class="tweet-tags">#NSEGold #EGR #ElectronicGoldReceipt #GoldIndia #NSE #InvestIndia #DigitalGold #SEBI</div>
+</div>
+
+<!-- ══════ CARD 1 ══════ -->
+<div class="card" id="c1">
+<div class="card-wm">GOLD</div>
+
+  <div class="mast">
+    <div class="mast-l">
+      <div class="mast-kicker">NSE · New Segment · Launched May 4, 2026</div>
+      <div class="mast-h">Electronic<br><em>Gold Receipt</em></div>
+      <div class="mast-sub">NSE EGR — India's first exchange-traded gold instrument backed by physical bullion</div>
+      <div class="mast-badges">
+        <span class="badge b-new">🆕 Just Launched</span>
+        <span class="badge b-sebi">SEBI Regulated</span>
+        <span class="badge b-green">24K · 999 Purity</span>
+        <span class="badge b-green">Demat Held</span>
+      </div>
+    </div>
+    <div class="mast-r">
+      <div class="card-no">1</div>
+      <div class="card-of">of 3</div>
+    </div>
+  </div>
+
+  <!-- Hero strip -->
+  <div class="hstrip s5">
+    <div class="hs">
+      <div class="hs-l">Launch Date</div>
+      <div class="hs-v c-g1">May 4</div>
+      <div class="hs-s c-mid">2026 · NSE</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">Gold Purity</div>
+      <div class="hs-v c-g4">999 / 995</div>
+      <div class="hs-s c-mid">LBMA + BIS certified</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">Min. Unit</div>
+      <div class="hs-v c-g1">1 gram</div>
+      <div class="hs-s c-mid">Also 10g, 100g, 1kg</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">Trading Hours</div>
+      <div class="hs-v c-bl">9AM–11:30PM</div>
+      <div class="hs-s c-mid">Mon–Fri · Extended hrs</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">Settlement</div>
+      <div class="hs-v c-gr">T + 1</div>
+      <div class="hs-s c-mid">Next working day</div>
+    </div>
+  </div>
+
+  <!-- What is it + How it works -->
+  <div class="cols c55">
+    <div class="gc">
+      <div class="sh">What Exactly Is An EGR?</div>
+      <div style="font-family:var(--serif);font-size:16px;font-style:italic;color:var(--g4);line-height:1.65;margin-bottom:14px;">
+        "Think of EGR as a digital title deed for gold. You own real, physical 24K gold — you just don't have to store it."
+      </div>
+      <div class="blist">
+        <div class="bitem">
+          <div class="bi-icon">📜</div>
+          <div class="bi-body">
+            <div class="bi-title">Dematerialised Security</div>
+            <div class="bi-desc">EGR is a SEBI-notified security (Dec 2021 notification). Held in your existing demat account — same as your NSE stocks. No new account needed.</div>
+          </div>
+        </div>
+        <div class="bitem">
+          <div class="bi-icon">🏛️</div>
+          <div class="bi-body">
+            <div class="bi-title">Backed by Physical Gold</div>
+            <div class="bi-desc">Every EGR is 100% backed by real gold stored in SEBI-accredited vaults. Vault managers: Sequel Logistics, Malca-Amit JK Logistics, Brinks India.</div>
+          </div>
+        </div>
+        <div class="bitem">
+          <div class="bi-icon">🔁</div>
+          <div class="bi-body">
+            <div class="bi-title">Convert Anytime</div>
+            <div class="bi-desc">Want the physical gold? Submit a redemption request (10AM–3PM window, 3-day validity). Physical gold withdrawn from vault and delivered.</div>
+          </div>
+        </div>
+        <div class="bitem">
+          <div class="bi-icon">🌍</div>
+          <div class="bi-body">
+            <div class="bi-title">One Nation, One Price</div>
+            <div class="bi-desc">NSE sets a single transparent price across India. No more paying ₹200/gram premium at your local jeweller based on their margin.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="gdiv"></div>
+
+    <div class="gc">
+      <div class="sh">How It Works — Step by Step</div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-dot">1</div><div class="tl-line"></div></div>
+          <div class="tl-content">
+            <div class="tl-title">Gold Deposited in Vault</div>
+            <div class="tl-desc">Refiners/jewellers deposit physical gold (meeting LBMA/BIS standards) with an accredited Vault Manager. First 1,000g bar deposited on launch day itself.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-dot">2</div><div class="tl-line"></div></div>
+          <div class="tl-content">
+            <div class="tl-title">EGR Created in Demat</div>
+            <div class="tl-desc">Vault converts gold to electronic receipt. EGR is credited to seller's demat account — dematerialised and listed on NSE EGR segment.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-dot">3</div><div class="tl-line"></div></div>
+          <div class="tl-content">
+            <div class="tl-title">You Buy on NSE</div>
+            <div class="tl-desc">You place a buy order through your broker (Zerodha, Groww, Angel etc.) for 1g, 10g, 100g, or 1kg denomination. Traded like stocks in real-time.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-dot">4</div><div class="tl-line"></div></div>
+          <div class="tl-content">
+            <div class="tl-title">EGR Credited to Your Demat</div>
+            <div class="tl-desc">T+1 settlement. EGR appears in your demat account the next working day. NSE Clearing Corporation guarantees settlement.</div>
+          </div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-dot">5</div><div class="tl-line"></div></div>
+          <div class="tl-content">
+            <div class="tl-title">Sell or Redeem Anytime</div>
+            <div class="tl-desc">Sell EGR on exchange for cash (T+1), OR submit redemption request to get the actual gold bar delivered to you.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Who can invest -->
+  <div style="padding:10px 20px 14px;">
+    <div class="sh">Who Can Invest?</div>
+    <div class="cols c3" style="gap:10px;padding:0;">
+      <div style="padding:10px 14px;background:rgba(74,222,128,0.06);border:1px solid rgba(74,222,128,0.15);border-radius:6px;">
+        <div style="font-size:11.5px;font-weight:700;color:var(--green);margin-bottom:4px;">🙋 Retail Investors</div>
+        <div style="font-size:10.5px;color:var(--mid);line-height:1.5;">Anyone with a demat + trading account. Start with just 1 gram. No minimum wealth requirement.</div>
+      </div>
+      <div style="padding:10px 14px;background:rgba(240,192,64,0.06);border:1px solid rgba(240,192,64,0.15);border-radius:6px;">
+        <div style="font-size:11.5px;font-weight:700;color:var(--g1);margin-bottom:4px;">💍 Jewellers & Traders</div>
+        <div style="font-size:10.5px;color:var(--mid);line-height:1.5;">Organised procurement at transparent prices. Reduces procurement risk and working capital.</div>
+      </div>
+      <div style="padding:10px 14px;background:rgba(147,197,253,0.06);border:1px solid rgba(147,197,253,0.15);border-radius:6px;">
+        <div style="font-size:11.5px;font-weight:700;color:var(--blue);margin-bottom:4px;">🏦 Institutional Investors</div>
+        <div style="font-size:10.5px;color:var(--mid);line-height:1.5;">Formal regulated route. Portfolio diversification. Settlement guarantee by clearing corporation.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vstrip v3">
+    <div class="vc"><div class="vc-l">First Conversion</div><div class="vc-v c-g1">1,000g Bar</div><div class="vc-s">Converted on launch day — operational readiness proven</div></div>
+    <div class="vc"><div class="vc-l">Vault Managers</div><div class="vc-v c-g4">3 Approved</div><div class="vc-s">Sequel · Malca-Amit JK · Brinks India — global custodians</div></div>
+    <div class="vc"><div class="vc-l">Segment Type</div><div class="vc-v c-bl">New Exchange</div><div class="vc-s">Separate EGR segment on NSE, not equity/derivatives</div></div>
+  </div>
+
+  <div class="cfoot">
+    <div class="cf-l">NSE Gold EGR · Launched May 4, 2026 · Research via Claude AI</div>
+    <div class="cf-r">⚠️ Not financial advice · Educational purposes only</div>
+  </div>
+</div>
+
+<div class="tjoin"></div>
+
+<!-- ═══════════════════════════════════════
+     TWEET 2
+═══════════════════════════════════════ -->
+<div class="tweet-copy" style="margin-top:14px;">
+🥇 NSE EGR — 7 reasons this beats EVERY other gold investment format (ETF, Digital Gold, Sovereign Bonds).
+
+The "One Nation One Price" alone is a game-changer for India.
+
+Detailed breakdown 👇 [2/3]
+<div class="tweet-tags">#NSEEGR #GoldETF #SovereignGoldBond #DigitalGold #GoldInvesting #IndiaFinance #NSE</div>
+</div>
+
+<!-- ══════ CARD 2 ══════ -->
+<div class="card" id="c2">
+<div class="card-wm">EGR</div>
+
+  <div class="mast">
+    <div class="mast-l">
+      <div class="mast-kicker">Why EGR Beats Every Other Gold Format</div>
+      <div class="mast-h">7 <em>Compelling</em><br>Reasons to Own EGR</div>
+      <div class="mast-sub">EGR vs Physical Gold · ETF · Digital Gold · Sovereign Gold Bond — full comparison</div>
+      <div class="mast-badges">
+        <span class="badge b-green">Beats Gold ETF</span>
+        <span class="badge b-green">Beats Digital Gold</span>
+        <span class="badge b-teal">Better than Physical</span>
+      </div>
+    </div>
+    <div class="mast-r">
+      <div class="card-no">2</div>
+      <div class="card-of">of 3</div>
+    </div>
+  </div>
+
+  <!-- Hero strip — EGR vs others quick scoreboard -->
+  <div class="hstrip s5">
+    <div class="hs">
+      <div class="hs-l">vs Physical Gold</div>
+      <div class="hs-v c-gr">EGR Wins</div>
+      <div class="hs-s c-mid">No storage risk · No making charges</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">vs Gold ETF</div>
+      <div class="hs-v c-gr">EGR Wins</div>
+      <div class="hs-s c-mid">No fund mgmt fee · Physical redeemable</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">vs Digital Gold</div>
+      <div class="hs-v c-gr">EGR Wins</div>
+      <div class="hs-s c-mid">SEBI regulated · No platform risk</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">vs SGB</div>
+      <div class="hs-v c-g1">Tie / EGR</div>
+      <div class="hs-s c-mid">SGB has 2.5% interest · EGR has liquidity</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">Purity Guarantee</div>
+      <div class="hs-v c-gr">100%</div>
+      <div class="hs-s c-mid">LBMA + BIS certified</div>
+    </div>
+  </div>
+
+  <!-- 7 benefits in 2-col layout -->
+  <div class="cols c55">
+    <div class="gc">
+      <div class="sh">The 7 Advantages Explained</div>
+      <div class="blist">
+
+        <div class="bitem">
+          <div class="bi-icon">🇮🇳</div>
+          <div class="bi-body">
+            <div class="bi-title">1. One Nation, One Price</div>
+            <div class="bi-desc">Every Indian — from Mumbai to Manipur — pays the exact same market price. No dealer margin, no city premium, no Friday afternoon "rate ke hisaab se" nonsense. Price discovered on NSE's matching engine.</div>
+          </div>
+        </div>
+
+        <div class="bitem">
+          <div class="bi-icon">💎</div>
+          <div class="bi-body">
+            <div class="bi-title">2. Certified 999/995 Purity — Guaranteed</div>
+            <div class="bi-desc">Gold meets LBMA (London Bullion Market Association) and BIS standards. Zero doubt on hallmarking. Physical gold purity at jewellers can vary — EGR cannot. You're always getting exactly what you paid for.</div>
+          </div>
+        </div>
+
+        <div class="bitem">
+          <div class="bi-icon">⚡</div>
+          <div class="bi-body">
+            <div class="bi-title">3. T+1 Liquidity — Sell in Seconds</div>
+            <div class="bi-desc">Try selling a 100g gold bar quickly at fair price. You'll lose 3–5% just getting it appraised. EGR: place sell order, money in account next working day. Exchange-guaranteed settlement.</div>
+          </div>
+        </div>
+
+        <div class="bitem">
+          <div class="bi-icon">📦</div>
+          <div class="bi-body">
+            <div class="bi-title">4. Zero Storage Headache</div>
+            <div class="bi-desc">No bank locker (₹5,000–₹15,000/yr charges + limited hours). No home storage risk. No insurance premium. Gold sits in institutional vault — guarded 24/7. Your demat account is your locker.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="gdiv"></div>
+
+    <div class="gc">
+      <div class="sh" style="color:transparent; border-color:transparent;">—</div>
+      <div class="blist">
+
+        <div class="bitem">
+          <div class="bi-icon">1️⃣</div>
+          <div class="bi-body">
+            <div class="bi-title">5. Start with Just 1 Gram</div>
+            <div class="bi-desc">At ₹7,500–8,000 per gram, you can start investing immediately. No need to save up for 10g coin (₹80,000+). Perfect for SIP-style gold accumulation each month. Democratises gold investment.</div>
+          </div>
+        </div>
+
+        <div class="bitem">
+          <div class="bi-icon">🔁</div>
+          <div class="bi-body">
+            <div class="bi-title">6. Physical Redemption Available</div>
+            <div class="bi-desc">Unlike Gold ETFs (fund units, not physical gold), EGR can be surrendered for actual gold delivery. Want the bar for your daughter's wedding? Convert EGR → physical gold. The best of both worlds.</div>
+          </div>
+        </div>
+
+        <div class="bitem">
+          <div class="bi-icon">🏛️</div>
+          <div class="bi-body">
+            <div class="bi-title">7. SEBI Regulated + Settlement Guaranteed</div>
+            <div class="bi-desc">Digital Gold platforms (Paytm, PhonePe gold) had SEBI concerns in Nov 2025. EGR is a notified security under the Securities Contracts Act. NSE Clearing Corporation guarantees every trade. No platform risk.</div>
+          </div>
+        </div>
+
+        <!-- EGR vs SGB special note -->
+        <div class="bitem" style="background:rgba(240,192,64,0.05);border-color:rgba(240,192,64,0.2);">
+          <div class="bi-icon">⚖️</div>
+          <div class="bi-body">
+            <div class="bi-title" style="color:var(--g1);">EGR vs Sovereign Gold Bond — The Nuance</div>
+            <div class="bi-desc">SGB pays 2.5% interest + tax-free maturity gains (if held 8 yrs). EGR has better liquidity, no lock-in, physical redemption. SGB wins on returns. EGR wins on flexibility. For traders: EGR. For long hold: SGB.</div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick comparison matrix -->
+  <div style="padding:0 20px 14px;">
+    <div class="sh" style="margin-top:4px;">Full Format Comparison Matrix</div>
+    <div class="comp-table">
+      <div class="ct-head ct4">
+        <span>Feature</span><span>NSE EGR</span><span>Physical Gold</span><span>Winner</span>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">Purity Guarantee</div>
+        <div class="ct-egr c-gr">999/995 LBMA certified</div>
+        <div class="ct-phys" style="color:var(--mid);">Varies by jeweller; hallmarking not universal</div>
+        <div class="ct-win win-egr">EGR</div>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">Storage Cost</div>
+        <div class="ct-egr c-gr">Minimal vault fee (built in)</div>
+        <div class="ct-phys" style="color:var(--mid);">₹5K–15K/yr locker + theft risk</div>
+        <div class="ct-win win-egr">EGR</div>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">Liquidity</div>
+        <div class="ct-egr c-gr">Instant sell on exchange · T+1</div>
+        <div class="ct-phys" style="color:var(--mid);">Sell at jeweller — lose 3–5% in appraisal</div>
+        <div class="ct-win win-egr">EGR</div>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">Min. Investment</div>
+        <div class="ct-egr c-gr">1 gram (~₹7,500)</div>
+        <div class="ct-phys" style="color:var(--mid);">10g coin min. at most jewellers (~₹80,000)</div>
+        <div class="ct-win win-egr">EGR</div>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">Price Transparency</div>
+        <div class="ct-egr c-gr">NSE market price — nationwide uniform</div>
+        <div class="ct-phys" style="color:var(--mid);">City + dealer-specific premiums</div>
+        <div class="ct-win win-egr">EGR</div>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">Tangible Delivery</div>
+        <div class="ct-egr c-gr">Yes — redeem anytime for physical gold</div>
+        <div class="ct-phys" style="color:var(--g1);">Already physical — direct possession</div>
+        <div class="ct-win win-tie">TIE</div>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">Making Charges</div>
+        <div class="ct-egr c-gr">Zero (investment gold only)</div>
+        <div class="ct-phys" style="color:var(--mid);">Jewelry: 8–15%; Coins: 2–5% extra</div>
+        <div class="ct-win win-egr">EGR</div>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">GST on Purchase</div>
+        <div class="ct-egr c-gr">0% on EGR trade (exchange transaction)</div>
+        <div class="ct-phys" style="color:var(--mid);">3% GST on gold jewelry/coins purchase</div>
+        <div class="ct-win win-egr">EGR</div>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">Gifting/Wedding Use</div>
+        <div class="ct-egr" style="color:var(--mid);">Redeem → physical first (extra step)</div>
+        <div class="ct-phys c-gr">Direct — best for emotional/gifting needs</div>
+        <div class="ct-win win-phy">Physical</div>
+      </div>
+      <div class="ct-row ct4">
+        <div class="ct-cat">Regulation</div>
+        <div class="ct-egr c-gr">SEBI + NSE clearing guarantee</div>
+        <div class="ct-phys" style="color:var(--mid);">No central regulation — buyer beware</div>
+        <div class="ct-win win-egr">EGR</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="vstrip v3">
+    <div class="vc"><div class="vc-l">EGR Wins</div><div class="vc-v c-gr">8 of 10</div><div class="vc-s">Parameters vs physical gold. Clear winner for investment-grade gold holding.</div></div>
+    <div class="vc"><div class="vc-l">Physical Wins</div><div class="vc-v c-g1">1 of 10</div><div class="vc-s">Gifting/wedding — emotional & immediate possession. Irreplaceable for tradition.</div></div>
+    <div class="vc"><div class="vc-l">Tie</div><div class="vc-v c-mid">1 of 10</div><div class="vc-s">Tangible delivery — EGR can convert, so functionally equivalent over time.</div></div>
+  </div>
+
+  <div class="cfoot">
+    <div class="cf-l">NSE Gold EGR Benefits Analysis · May 2026 · Research via Claude AI</div>
+    <div class="cf-r">⚠️ Not financial advice · Do your own research</div>
+  </div>
+</div>
+
+<div class="tjoin"></div>
+
+<!-- ═══════════════════════════════════════
+     TWEET 3
+═══════════════════════════════════════ -->
+<div class="tweet-copy" style="margin-top:14px;">
+💳 Here's the part nobody is talking about:
+
+If you're an HDFC Infinia cardholder who buys physical gold via Tanishq SmartBuy vouchers — is EGR still better?
+
+Honest math on rewards vs EGR cost savings. Spoiler: it depends on WHY you're buying gold.
+
+[3/3] Final Card 👇
+<div class="tweet-tags">#HDFCInfinia #NSEGold #EGR #CreditCardRewards #GoldInvesting #SmartBuy #IndiaFinance</div>
+</div>
+
+<!-- ══════ CARD 3 ══════ -->
+<div class="card" id="c3">
+<div class="card-wm">₹ VS 🥇</div>
+
+  <div class="mast">
+    <div class="mast-l">
+      <div class="mast-kicker">Final Verdict · NSE EGR vs Physical Gold via Premium Credit Cards</div>
+      <div class="mast-h">EGR vs <em>Infinia</em><br>Gold Strategy</div>
+      <div class="mast-sub">HDFC Infinia + Tanishq SmartBuy vouchers vs NSE EGR — where does the math land?</div>
+      <div class="mast-badges">
+        <span class="badge b-new">HDFC Infinia</span>
+        <span class="badge b-orange">Annual Fee ₹12,500</span>
+        <span class="badge b-green">10X SmartBuy Rewards</span>
+        <span class="badge b-sebi">Invite Only Card</span>
+      </div>
+    </div>
+    <div class="mast-r">
+      <div class="card-no">3</div>
+      <div class="card-of">of 3</div>
+    </div>
+  </div>
+
+  <!-- Hero stats — Infinia rewards overview -->
+  <div class="hstrip s5">
+    <div class="hs">
+      <div class="hs-l">Base Earn Rate</div>
+      <div class="hs-v c-g1">5 pts</div>
+      <div class="hs-s c-mid">Per ₹150 spent · 3.33%</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">SmartBuy Earn</div>
+      <div class="hs-v c-gr">10X max</div>
+      <div class="hs-s c-mid">Travel + shopping · ~33%</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">Tanishq Vouchers</div>
+      <div class="hs-v c-g4">Redeemable</div>
+      <div class="hs-s c-mid">SmartBuy luxury vouchers</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">Annual Fee</div>
+      <div class="hs-v c-or">₹12,500</div>
+      <div class="hs-s c-mid">+GST · Invite only</div>
+    </div>
+    <div class="hs">
+      <div class="hs-l">Spend Threshold</div>
+      <div class="hs-v c-mid">₹18L/yr</div>
+      <div class="hs-s c-mid">To retain card from Apr 2026</div>
+    </div>
+  </div>
+
+  <!-- Main comparison layout -->
+  <div class="cols c64">
+    <div class="gc">
+      <div class="sh">The Honest Math — ₹1 Lakh Gold Investment</div>
+
+      <!-- Scenario 1: Infinia + Tanishq -->
+      <div style="padding:14px;background:rgba(212,160,23,0.05);border:1px solid rgba(212,160,23,0.2);border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div class="badge b-new">Route A</div>
+          <div style="font-size:12px;font-weight:700;color:var(--g1);">HDFC Infinia → SmartBuy Tanishq Vouchers → Physical Gold</div>
+        </div>
+        <div class="drow"><div class="dr-l">Gold purchase (coin/bar)</div><div class="dr-v c-g4">₹1,00,000</div></div>
+        <div class="drow"><div class="dr-l">GST on purchase</div><div class="dr-v c-rd">+ ₹3,000 (3%)</div></div>
+        <div class="drow"><div class="dr-l">Making charges (coins)</div><div class="dr-v c-rd">+ ₹2,000–5,000 (2–5%)</div></div>
+        <div class="drow"><div class="dr-l">SmartBuy 10X rewards earned</div><div class="dr-v c-gr">+₹10,000 value (10% effective)</div></div>
+        <div class="drow"><div class="dr-l">Points cap (15K/month)</div><div class="dr-v c-or">⚠️ Capped at ₹1,500 if over limit</div></div>
+        <div class="drow" style="border-top:1px solid rgba(212,160,23,0.15);margin-top:4px;padding-top:8px;">
+          <div class="dr-l" style="font-weight:700;color:var(--w);">Net effective cost</div>
+          <div class="dr-v c-g1">₹95,000–97,000</div>
+        </div>
+        <div style="font-size:10px;color:var(--mid);margin-top:6px;padding:6px 8px;background:rgba(212,160,23,0.04);border-radius:4px;">✅ Net savings: ~₹3,000–5,000 on ₹1L if you fully use the 10X rewards. But: rewards are capped at 15K pts/month = max ₹1,500 value for this transaction via SmartBuy accelerated rate.</div>
+      </div>
+
+      <!-- Scenario 2: NSE EGR -->
+      <div style="padding:14px;background:rgba(74,222,128,0.05);border:1px solid rgba(74,222,128,0.2);border-radius:8px;margin-bottom:12px;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+          <div class="badge b-green">Route B</div>
+          <div style="font-size:12px;font-weight:700;color:var(--green);">NSE EGR — Buy via Zerodha / Groww</div>
+        </div>
+        <div class="drow"><div class="dr-l">EGR purchase value</div><div class="dr-v c-g4">₹1,00,000</div></div>
+        <div class="drow"><div class="dr-l">GST on trade</div><div class="dr-v c-gr">₹0 (exchange transaction)</div></div>
+        <div class="drow"><div class="dr-l">Making charges</div><div class="dr-v c-gr">₹0 (investment gold)</div></div>
+        <div class="drow"><div class="dr-l">Brokerage (est.)</div><div class="dr-v c-mid">~₹20–100 (standard broker fee)</div></div>
+        <div class="drow"><div class="dr-l">Credit card rewards</div><div class="dr-v c-rd">❌ Broker txns excluded from rewards</div></div>
+        <div class="drow" style="border-top:1px solid rgba(74,222,128,0.15);margin-top:4px;padding-top:8px;">
+          <div class="dr-l" style="font-weight:700;color:var(--w);">Net effective cost</div>
+          <div class="dr-v c-gr">₹1,00,020–100 (near-zero friction)</div>
+        </div>
+        <div style="font-size:10px;color:var(--mid);margin-top:6px;padding:6px 8px;background:rgba(74,222,128,0.04);border-radius:4px;">✅ No GST, no making charges, no purity doubt. But cannot earn credit card rewards since broker/exchange transactions are excluded from Infinia reward categories.</div>
+      </div>
+
+      <!-- Key insight box -->
+      <div style="padding:12px 14px;background:rgba(147,197,253,0.05);border:1px solid rgba(147,197,253,0.15);border-radius:6px;">
+        <div style="font-family:var(--mono);font-size:8.5px;letter-spacing:2px;color:var(--blue);margin-bottom:6px;text-transform:uppercase;">🔑 The Crucial Insight</div>
+        <div style="font-size:11px;color:var(--mid);line-height:1.6;">
+          <strong style="color:var(--w);">You cannot use Infinia to buy NSE EGR and earn rewards</strong> — broker/exchange transactions are explicitly excluded. The 10X rewards only apply when buying <strong style="color:var(--g4);">Tanishq vouchers via SmartBuy</strong>. So the comparison is:
+          <br><br>
+          <span style="color:var(--g1);">Infinia Route</span> = Pay ₹3,000 GST + ₹2-5K making charges, earn back ₹1,500 max from rewards cap.<br>
+          <span style="color:var(--green);">EGR Route</span> = Pay ₹0 GST + ₹0 making charges. Earn ₹0 rewards but save ₹4,500–7,500 total.
+        </div>
+      </div>
+    </div>
+
+    <div class="gdiv"></div>
+
+    <!-- RIGHT: INFINIA CARD + USE CASE GUIDE -->
+    <div class="gc">
+      <div class="sh">HDFC Infinia — What You're Working With</div>
+
+      <!-- Visual card -->
+      <div class="infinia-card" style="margin-bottom:14px;">
+        <div class="ic-bank">HDFC Bank</div>
+        <div class="ic-name">INFINIA METAL</div>
+        <div class="ic-type">Super Premium · Invite Only · Mastercard World Elite</div>
+        <div class="ic-stats">
+          <div class="ic-stat">
+            <div class="ic-sl">Base Earn</div>
+            <div class="ic-sv">3.33%</div>
+          </div>
+          <div class="ic-stat">
+            <div class="ic-sl">SmartBuy Max</div>
+            <div class="ic-sv">~33%</div>
+          </div>
+          <div class="ic-stat">
+            <div class="ic-sl">Reward Cap</div>
+            <div class="ic-sv">15K pts/mo</div>
+          </div>
+          <div class="ic-stat">
+            <div class="ic-sl">Annual Fee</div>
+            <div class="ic-sv">₹12,500</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Use case guide -->
+      <div class="sh">Which Route Should You Take?</div>
+
+      <div class="blist">
+        <div class="bitem" style="background:rgba(74,222,128,0.07);border-color:rgba(74,222,128,0.2);">
+          <div class="bi-icon">📈</div>
+          <div class="bi-body">
+            <div class="bi-title" style="color:var(--green);">INVESTMENT Gold → Choose NSE EGR</div>
+            <div class="bi-desc">Buying gold as a financial asset for portfolio diversification / inflation hedge / long-term hold? EGR wins clearly — zero GST, zero making charges, T+1 liquidity, SEBI guaranteed. Don't waste ₹3,000 in GST for Infinia rewards that are capped anyway.</div>
+          </div>
+        </div>
+
+        <div class="bitem" style="background:rgba(240,192,64,0.07);border-color:rgba(240,192,64,0.2);">
+          <div class="bi-icon">💍</div>
+          <div class="bi-body">
+            <div class="bi-title" style="color:var(--g1);">WEDDING / GIFTING Gold → Infinia + Tanishq</div>
+            <div class="bi-desc">Buying jewelry for a wedding, anniversary, or gift? Use Infinia's SmartBuy Tanishq vouchers to earn rewards. Making charges are unavoidable anyway for jewelry. Earn 10X points (up to the 15K/month cap) and offset the cost. This is where Infinia shines.</div>
+          </div>
+        </div>
+
+        <div class="bitem" style="background:rgba(147,197,253,0.07);border-color:rgba(147,197,253,0.15);">
+          <div class="bi-icon">🏆</div>
+          <div class="bi-body">
+            <div class="bi-title" style="color:var(--blue);">Best of Both → Hybrid Strategy</div>
+            <div class="bi-desc">Invest monthly via NSE EGR (₹5,000–20,000/month). Redeem EGR for physical gold bars when you need actual gold for wedding/gifting. No making charges (bars vs jewelry). Use Infinia for everything else (travel, shopping) to maximize the 3.33% base rate.</div>
+          </div>
+        </div>
+
+        <div class="bitem" style="background:rgba(248,113,113,0.06);border-color:rgba(248,113,113,0.15);">
+          <div class="bi-icon">⚠️</div>
+          <div class="bi-body">
+            <div class="bi-title" style="color:var(--red);">Infinia 2026 Warning — Rewards Tightening</div>
+            <div class="bi-desc">From Jan 2026: SmartBuy voucher accelerator dropped from 5X → 3X (then rolled back, but still uncertain). From Apr 2026: ₹18L annual spend OR ₹50L relationship value needed to retain card. The era of 16% effective returns from voucher arbitrage is narrowing.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Final comparison summary -->
+  <div style="padding:12px 20px 14px;">
+    <div class="sh">The Bottom Line — Side by Side</div>
+    <div class="comp-table">
+      <div class="ct-head" style="grid-template-columns:2.2fr 2.5fr 2.5fr 1.2fr 1.4fr; display:grid; padding:7px 14px; background:rgba(212,160,23,0.08); border-bottom:1px solid rgba(212,160,23,0.15);">
+        <span>Parameter</span><span>NSE EGR</span><span>Infinia + Tanishq (Jewelry)</span><span>Winner</span><span>For Investment?</span>
+      </div>
+      <div style="display:grid;grid-template-columns:2.2fr 2.5fr 2.5fr 1.2fr 1.4fr;padding:8px 14px;border-bottom:1px solid rgba(212,160,23,0.06);font-size:10.5px;align-items:center;">
+        <div style="font-weight:700;color:var(--w);">Total Cost</div>
+        <div style="color:var(--green);">~0.02% brokerage</div>
+        <div style="color:var(--mid);">3% GST + 2–15% making + rewards offset</div>
+        <div class="ct-win win-egr">EGR</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--green);">EGR clearly</div>
+      </div>
+      <div style="display:grid;grid-template-columns:2.2fr 2.5fr 2.5fr 1.2fr 1.4fr;padding:8px 14px;border-bottom:1px solid rgba(212,160,23,0.06);font-size:10.5px;align-items:center;">
+        <div style="font-weight:700;color:var(--w);">Rewards Earned</div>
+        <div style="color:var(--red);">Zero (broker excluded)</div>
+        <div style="color:var(--green);">Up to 10X on SmartBuy (capped ₹1,500)</div>
+        <div class="ct-win win-phy">Infinia</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--mid);">Marginal edge</div>
+      </div>
+      <div style="display:grid;grid-template-columns:2.2fr 2.5fr 2.5fr 1.2fr 1.4fr;padding:8px 14px;border-bottom:1px solid rgba(212,160,23,0.06);font-size:10.5px;align-items:center;">
+        <div style="font-weight:700;color:var(--w);">Liquidity</div>
+        <div style="color:var(--green);">T+1 at NSE market price</div>
+        <div style="color:var(--mid);">Sell at jeweller: 3–5% loss</div>
+        <div class="ct-win win-egr">EGR</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--green);">EGR clearly</div>
+      </div>
+      <div style="display:grid;grid-template-columns:2.2fr 2.5fr 2.5fr 1.2fr 1.4fr;padding:8px 14px;border-bottom:1px solid rgba(212,160,23,0.06);font-size:10.5px;align-items:center;">
+        <div style="font-weight:700;color:var(--w);">Wedding/Gifting</div>
+        <div style="color:var(--mid);">Redeem to physical (extra step)</div>
+        <div style="color:var(--green);">Direct jewelry — perfect for tradition</div>
+        <div class="ct-win win-phy">Infinia</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--g1);">Physical wins</div>
+      </div>
+      <div style="display:grid;grid-template-columns:2.2fr 2.5fr 2.5fr 1.2fr 1.4fr;padding:8px 14px;border-bottom:1px solid rgba(212,160,23,0.06);font-size:10.5px;align-items:center;">
+        <div style="font-weight:700;color:var(--w);">Purity</div>
+        <div style="color:var(--green);">LBMA + BIS certified 100%</div>
+        <div style="color:var(--mid);">Hallmarking varies by jeweller</div>
+        <div class="ct-win win-egr">EGR</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--green);">EGR clearly</div>
+      </div>
+      <div style="display:grid;grid-template-columns:2.2fr 2.5fr 2.5fr 1.2fr 1.4fr;padding:8px 14px;font-size:10.5px;align-items:center;">
+        <div style="font-weight:700;color:var(--w);">Net Savings (₹1L)</div>
+        <div style="color:var(--green);">+₹4,500–7,500 saved (no GST/making)</div>
+        <div style="color:var(--mid);">+₹1,500 max rewards back (capped)</div>
+        <div class="ct-win win-egr">EGR</div>
+        <div style="font-family:var(--mono);font-size:9px;color:var(--green);">EGR 3–5x better</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="pq">
+    <div class="pq-t">"The smartest gold strategy in 2026: SIP into NSE EGR for investment-grade gold accumulation, use Infinia's Tanishq SmartBuy vouchers for wedding/gifting jewelry. Don't pay ₹3,000 GST to earn ₹1,500 in points. The math doesn't work for investment gold — but Infinia's 10X absolutely works when making charges are unavoidable anyway."</div>
+    <div class="pq-a">Personal research via Claude AI · May 7, 2026 · Not financial advice</div>
+  </div>
+
+  <div class="vstrip v3">
+    <div class="vc"><div class="vc-l">For Investment</div><div class="vc-v c-gr">NSE EGR ✅</div><div class="vc-s">Save 3–5% vs physical. Zero GST, zero making charges, T+1 liquidity.</div></div>
+    <div class="vc"><div class="vc-l">For Gifting/Jewelry</div><div class="vc-v c-g1">Infinia + Tanishq</div><div class="vc-s">Making charges unavoidable — earn 10X points back via SmartBuy.</div></div>
+    <div class="vc"><div class="vc-l">Optimal Combo</div><div class="vc-v c-bl">Hybrid Strategy</div><div class="vc-s">Monthly EGR SIP for wealth. Infinia for all other spending. Redeem EGR for wedding gold.</div></div>
+  </div>
+
+  <div class="cfoot">
+    <div class="cf-l">NSE EGR vs Physical Gold · Research via Claude AI · May 7, 2026</div>
+    <div class="cf-r">⚠️ Not SEBI-registered financial advice · Educational purposes only · Do your own research</div>
+  </div>
+</div>
+
+<script>
+let dpr = 3;
+function setDpr(n) {
+  dpr = n;
+  document.querySelectorAll('.dpr-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('b'+n).classList.add('active');
+}
+
+function expCard(id, filename) {
+  return new Promise(resolve => {
+    const el = document.getElementById(id);
+    html2canvas(el, {
+      scale: dpr, useCORS: true,
+      backgroundColor: '#0e0c12', logging: false
+    }).then(c => {
+      const url = c.toDataURL('image/png', 1.0);
+      const a = document.createElement('a');
+      a.href = url; a.download = filename; a.click();
+      resolve();
+    });
+  });
+}
+
+async function expAll() {
+  document.getElementById('xstatus').textContent = 'Rendering card 1...';
+  await expCard('c1', `NSE_EGR_Card1_${dpr}x.png`);
+  document.getElementById('xstatus').textContent = 'Rendering card 2...';
+  await new Promise(r => setTimeout(r, 600));
+  await expCard('c2', `NSE_EGR_Card2_${dpr}x.png`);
+  document.getElementById('xstatus').textContent = 'Rendering card 3...';
+  await new Promise(r => setTimeout(r, 600));
+  await expCard('c3', `NSE_EGR_Card3_${dpr}x.png`);
+  document.getElementById('xstatus').textContent = `✅ All 3 cards exported at ${dpr}x`;
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,37 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Next.js
+apps/web/.next/
+apps/web/out/
+
+# Expo / React Native
+apps/signal-mobile/.expo/
+apps/signal-mobile/dist/
+
+# env files — NEVER commit real keys
+.env
+.env.local
+.env.*.local
+
+# build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# editor
+.vscode/settings.json
+.idea/
+
+# logs
+*.log
+npm-debug.log*
+
+# Vercel
+.vercel

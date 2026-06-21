@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Algo Builder</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    :root {
+      --bg:#070D1A; --surf:#0E1628; --surf2:#162038; --bdr:#1C2E4A;
+      --txt:#FFFFFF; --dim:#7A8BAA; --dim2:#3A4E6A;
+      --blu:#1740F5; --bluL:#4F6FFA; --org:#FF5C1A;
+      --grn:#00D4A0; --red:#FF3B5C; --ylw:#FFB800; --pur:#8B5CF6;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--txt); font-family:'Inter',system-ui,sans-serif; min-height:100vh; }
+
+    nav { display:flex; align-items:center; height:58px; padding:0 clamp(16px,3vw,32px);
+          background:var(--surf); border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:100; gap:0; }
+    .nav-logo { display:flex; align-items:center; gap:8px; font-size:18px; font-weight:900; letter-spacing:-0.5px; text-decoration:none; color:var(--txt); margin-right:28px; }
+    .nav-links { display:flex; align-items:center; gap:2px; flex:1; }
+    .nav-link { height:34px; padding:0 13px; border-radius:8px; font-size:13px; font-weight:500; color:var(--dim); text-decoration:none; display:flex; align-items:center; gap:6px; transition:all 0.15s; }
+    .nav-link:hover { background:var(--surf2); color:var(--txt); }
+    .nav-link.active { background:rgba(23,64,245,0.12); color:var(--bluL); font-weight:600; }
+    .nav-right { display:flex; align-items:center; gap:10px; }
+    .plan-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:6px; background:rgba(255,92,26,0.12); border:1px solid rgba(255,92,26,0.25); color:var(--org); }
+    .user-chip { display:flex; align-items:center; gap:8px; padding:4px 12px 4px 4px; border-radius:20px; background:var(--surf2); border:1px solid var(--bdr); cursor:pointer; }
+    .user-av { width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--blu),var(--org)); display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#fff; }
+
+    .page { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 58px); }
+    .sidebar { background:var(--surf); border-right:1px solid var(--bdr); padding:16px 10px; display:flex; flex-direction:column; gap:4px; }
+    .sb-section { font-size:10px; font-weight:700; color:var(--dim2); letter-spacing:1px; text-transform:uppercase; padding:12px 10px 6px; }
+    .sb-link { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:9px; font-size:13px; font-weight:500; color:var(--dim); text-decoration:none; cursor:pointer; transition:all 0.15s; }
+    .sb-link:hover { background:var(--surf2); color:var(--txt); }
+    .sb-link.active { background:rgba(23,64,245,0.1); color:var(--bluL); font-weight:600; }
+
+    .main { padding:24px clamp(16px,3vw,32px); }
+
+    /* Step progress */
+    .step-progress { display:flex; align-items:center; gap:0; margin-bottom:28px; }
+    .step-item { display:flex; align-items:center; gap:8px; flex:1; }
+    .step-num  { width:30px; height:30px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:800; flex-shrink:0; transition:all 0.2s; }
+    .step-num.done    { background:var(--grn); color:#001A12; }
+    .step-num.current { background:var(--blu); color:#fff; }
+    .step-num.pending { background:var(--surf2); color:var(--dim); }
+    .step-label { font-size:13px; font-weight:600; }
+    .step-label.current { color:var(--txt); }
+    .step-label.pending { color:var(--dim); }
+    .step-label.done    { color:var(--grn); }
+    .step-connector { flex:1; height:2px; background:var(--bdr); margin:0 8px; }
+    .step-connector.done { background:var(--grn); }
+
+    /* Builder layout */
+    .builder-grid { display:grid; grid-template-columns:1fr 360px; gap:20px; }
+
+    /* Strategy cards */
+    .strat-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:20px; }
+    .strat-card { background:var(--surf); border:2px solid var(--bdr); border-radius:14px; padding:20px; cursor:pointer; transition:all 0.2s; }
+    .strat-card:hover { border-color:var(--dim2); }
+    .strat-card.selected { border-color:var(--blu); background:rgba(23,64,245,0.05); }
+    .strat-icon { font-size:28px; margin-bottom:10px; }
+    .strat-name { font-size:14px; font-weight:800; margin-bottom:4px; }
+    .strat-desc { font-size:12px; color:var(--dim); line-height:1.55; }
+    .strat-tags { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+    .strat-tag  { font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:5px; background:var(--surf2); color:var(--dim); }
+
+    /* Section heading */
+    .s-head { font-size:14px; font-weight:700; margin-bottom:12px; }
+    .s-sub  { font-size:12px; color:var(--dim); margin-bottom:16px; line-height:1.55; }
+
+    /* Universe chips */
+    .uni-grid { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:20px; }
+    .uni-chip { height:34px; padding:0 14px; border-radius:8px; font-size:12px; font-weight:700;
+                background:transparent; border:1px solid var(--bdr); color:var(--dim);
+                cursor:pointer; font-family:inherit; transition:all 0.18s; }
+    .uni-chip.active { background:rgba(23,64,245,0.12); border-color:var(--blu); color:var(--bluL); }
+
+    /* Indicator checkboxes */
+    .ind-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:20px; }
+    .ind-item { display:flex; align-items:center; gap:10px; padding:11px 14px; border-radius:11px;
+                background:var(--surf); border:1px solid var(--bdr); cursor:pointer; transition:all 0.15s; }
+    .ind-item.checked { background:rgba(23,64,245,0.07); border-color:rgba(23,64,245,0.3); }
+    .ind-cb  { width:18px; height:18px; border-radius:5px; border:2px solid var(--bdr); display:flex; align-items:center; justify-content:center; flex-shrink:0; transition:all 0.15s; }
+    .ind-item.checked .ind-cb { background:var(--blu); border-color:var(--blu); }
+    .ind-name  { font-size:12px; font-weight:700; }
+    .ind-cat   { font-size:10px; color:var(--dim); margin-top:1px; }
+
+    /* Condition builder */
+    .cond-list { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+    .cond-item { display:flex; align-items:center; gap:8px; padding:11px 14px; border-radius:11px; }
+    .cond-buy  { background:rgba(0,212,160,0.06); border:1px solid rgba(0,212,160,0.2); }
+    .cond-sell { background:rgba(255,59,92,0.06); border:1px solid rgba(255,59,92,0.2); }
+    .cond-dot  { width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+    .cond-lbl  { font-size:12px; font-weight:700; min-width:64px; }
+    .cond-sel  { height:30px; padding:0 10px; border-radius:7px; background:var(--surf2); border:1px solid var(--bdr); color:var(--txt); font-size:12px; font-family:inherit; outline:none; }
+    .cond-op   { height:30px; padding:0 10px; border-radius:7px; background:var(--surf2); border:1px solid var(--bdr); color:var(--txt); font-size:12px; font-family:inherit; outline:none; min-width:50px; }
+    .cond-val  { height:30px; padding:0 10px; border-radius:7px; background:var(--surf2); border:1px solid var(--bdr); color:var(--txt); font-size:12px; font-weight:700; font-family:inherit; outline:none; width:72px; }
+    .cond-rm   { width:24px; height:24px; border-radius:6px; background:transparent; border:none; color:var(--dim); cursor:pointer; font-size:14px; margin-left:auto; }
+    .cond-rm:hover { color:var(--red); }
+    .add-cond-btn { height:36px; padding:0 16px; border-radius:9px; background:transparent; border:1px dashed var(--bdr); color:var(--dim); font-size:12px; font-weight:600; cursor:pointer; font-family:inherit; transition:all 0.2s; }
+    .add-cond-btn:hover { border-color:var(--blu); color:var(--bluL); }
+
+    /* Risk sliders */
+    .risk-row { display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; margin-bottom:20px; }
+    .risk-item label { font-size:11px; font-weight:600; color:var(--dim); display:block; margin-bottom:6px; }
+    .risk-item input[type=range] { width:100%; accent-color:var(--blu); }
+    .risk-val { font-size:18px; font-weight:900; margin-top:4px; }
+
+    /* Code preview */
+    .code-block { background:#0D1117; border:1px solid #21262D; border-radius:14px; overflow:hidden; }
+    .code-hdr   { display:flex; justify-content:space-between; align-items:center; padding:10px 16px; background:#161B22; border-bottom:1px solid #21262D; }
+    .code-fn    { font-family:'JetBrains Mono',monospace; font-size:12px; color:#8B949E; }
+    .code-body  { padding:16px; overflow-x:auto; font-family:'JetBrains Mono',monospace; font-size:12px; line-height:1.7; }
+    .c-c { color:#4A6080; } .c-k { color:#79C0FF; } .c-s { color:#68D391; }
+    .c-f { color:#F6C90E; } .c-v { color:#FFA657; } .c-n { color:#FF7D46; }
+
+    /* Backtest results */
+    .bt-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:10px; margin-bottom:16px; }
+    .bt-card { background:var(--surf2); border:1px solid var(--bdr); border-radius:11px; padding:12px 14px; text-align:center; }
+    .bt-val  { font-size:20px; font-weight:900; }
+    .bt-lbl  { font-size:10.5px; color:var(--dim); margin-top:3px; }
+
+    /* Right panel */
+    .right-panel { display:flex; flex-direction:column; gap:14px; }
+    .rp-card { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:18px; }
+    .rp-title { font-size:13px; font-weight:700; margin-bottom:12px; }
+
+    /* Action buttons */
+    .action-btns { display:flex; flex-direction:column; gap:10px; }
+    .btn-paper { height:46px; border-radius:12px; background:linear-gradient(135deg,var(--pur),#6D3EC1); border:none; color:#fff; font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+    .btn-save  { height:46px; border-radius:12px; background:transparent; border:1px solid var(--bdr); color:var(--txt); font-size:14px; font-weight:600; cursor:pointer; font-family:inherit; }
+    .btn-code  { height:46px; border-radius:12px; background:rgba(23,64,245,0.1); border:1px solid rgba(23,64,245,0.3); color:var(--bluL); font-size:14px; font-weight:700; cursor:pointer; font-family:inherit; }
+
+    @media(max-width:1000px) { .builder-grid,.strat-grid { grid-template-columns:1fr; } }
+    @media(max-width:900px) { .page { grid-template-columns:1fr; } .sidebar { display:none; } }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Signals.html">📈 Signals</a>
+    <a class="nav-link" href="#">💼 Portfolio</a>
+    <a class="nav-link active" href="#">⚙️ Algo Builder</a>
+    <a class="nav-link" href="SIGNAL Paper Trading.html">🧪 Paper Trade</a>
+    <a class="nav-link" href="SIGNAL ML Parameters.html" target="_blank">🔬 ML Params</a>
+  </div>
+  <div class="nav-right">
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">VA</div><span style="font-size:12px;font-weight:600;">Vaasudev A.</span></div>
+  </div>
+</nav>
+
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals</a>
+  <a class="sb-link" href="#">💼 My Portfolio</a>
+  <a class="sb-link" href="#">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link active" href="#">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link" href="#">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="#">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="#">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="#">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="#">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+
+<main class="main">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Algo Builder</div>
+      <div style="font-size:13px;color:var(--dim);margin-top:3px;">Build a strategy → backtest → paper trade → deploy. Pro feature.</div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button style="height:36px;padding:0 16px;border-radius:9px;background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">📂 My Strategies (3)</button>
+    </div>
+  </div>
+
+  <!-- Step progress -->
+  <div class="step-progress">
+    <div class="step-item">
+      <div class="step-num done" id="sn1">✓</div>
+      <span class="step-label done" id="sl1">Strategy Type</span>
+    </div>
+    <div class="step-connector done" id="sc1"></div>
+    <div class="step-item">
+      <div class="step-num done" id="sn2">✓</div>
+      <span class="step-label done" id="sl2">Indicators</span>
+    </div>
+    <div class="step-connector done" id="sc2"></div>
+    <div class="step-item">
+      <div class="step-num current" id="sn3">3</div>
+      <span class="step-label current" id="sl3">Conditions</span>
+    </div>
+    <div class="step-connector" id="sc3"></div>
+    <div class="step-item">
+      <div class="step-num pending" id="sn4">4</div>
+      <span class="step-label pending" id="sl4">Backtest &amp; Deploy</span>
+    </div>
+  </div>
+
+  <div class="builder-grid">
+    <div>
+
+      <!-- Step 1: Strategy Type (completed) -->
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div class="s-head" style="margin:0;">Step 1 — Strategy Type</div>
+          <span style="font-size:11px;font-weight:700;color:var(--grn);padding:3px 10px;border-radius:6px;background:rgba(0,212,160,0.1);">✓ Momentum selected</span>
+        </div>
+        <div class="strat-grid">
+          <div class="strat-card selected">
+            <div class="strat-icon">🚀</div>
+            <div class="strat-name">Momentum</div>
+            <div class="strat-desc">Ride stocks with strong price + volume momentum using RSI and EMA crossovers.</div>
+            <div class="strat-tags"><span class="strat-tag">RSI</span><span class="strat-tag">EMA</span><span class="strat-tag">Volume</span></div>
+          </div>
+          <div class="strat-card" onclick="this.closest('.strat-grid').querySelectorAll('.strat-card').forEach(c=>c.classList.remove('selected'));this.classList.add('selected');">
+            <div class="strat-icon">📈</div>
+            <div class="strat-name">Trend Following</div>
+            <div class="strat-desc">Follow the dominant trend using EMAs, MACD, and ADX strength filter.</div>
+            <div class="strat-tags"><span class="strat-tag">EMA</span><span class="strat-tag">MACD</span><span class="strat-tag">ADX</span></div>
+          </div>
+          <div class="strat-card" onclick="this.closest('.strat-grid').querySelectorAll('.strat-card').forEach(c=>c.classList.remove('selected'));this.classList.add('selected');">
+            <div class="strat-icon">🔄</div>
+            <div class="strat-name">Mean Reversion</div>
+            <div class="strat-desc">Buy oversold bounces when price touches Bollinger Band lower with RSI divergence.</div>
+            <div class="strat-tags"><span class="strat-tag">BB</span><span class="strat-tag">RSI</span><span class="strat-tag">Stoch</span></div>
+          </div>
+          <div class="strat-card" onclick="this.closest('.strat-grid').querySelectorAll('.strat-card').forEach(c=>c.classList.remove('selected'));this.classList.add('selected');">
+            <div class="strat-icon">⚡</div>
+            <div class="strat-name">Breakout</div>
+            <div class="strat-desc">Catch stocks breaking 52W highs or consolidation ranges with volume confirmation.</div>
+            <div class="strat-tags"><span class="strat-tag">ATR</span><span class="strat-tag">Volume</span><span class="strat-tag">52W</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2: Indicators (completed) -->
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+          <div class="s-head" style="margin:0;">Step 2 — Stock Universe &amp; Indicators</div>
+          <span style="font-size:11px;font-weight:700;color:var(--grn);padding:3px 10px;border-radius:6px;background:rgba(0,212,160,0.1);">✓ 5 indicators selected</span>
+        </div>
+        <div class="s-head" style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:8px;">Stock Universe</div>
+        <div class="uni-grid">
+          <button class="uni-chip active">NIFTY 50</button>
+          <button class="uni-chip" onclick="this.classList.toggle('active')">NIFTY 500</button>
+          <button class="uni-chip" onclick="this.classList.toggle('active')">NIFTY Midcap 150</button>
+          <button class="uni-chip" onclick="this.classList.toggle('active')">My Portfolio</button>
+          <button class="uni-chip" onclick="this.classList.toggle('active')">Custom List</button>
+        </div>
+        <div class="s-head" style="font-size:12px;font-weight:600;color:var(--dim);margin-bottom:8px;">Indicators</div>
+        <div class="ind-grid">
+          <div class="ind-item checked" onclick="this.classList.toggle('checked')"><div class="ind-cb">✓</div><div><div class="ind-name">RSI (14)</div><div class="ind-cat">Momentum</div></div></div>
+          <div class="ind-item checked" onclick="this.classList.toggle('checked')"><div class="ind-cb">✓</div><div><div class="ind-name">EMA 20/50</div><div class="ind-cat">Trend</div></div></div>
+          <div class="ind-item checked" onclick="this.classList.toggle('checked')"><div class="ind-cb">✓</div><div><div class="ind-name">Volume Surge</div><div class="ind-cat">Volume</div></div></div>
+          <div class="ind-item checked" onclick="this.classList.toggle('checked')"><div class="ind-cb">✓</div><div><div class="ind-name">Delivery %</div><div class="ind-cat">Volume · India</div></div></div>
+          <div class="ind-item checked" onclick="this.classList.toggle('checked')"><div class="ind-cb">✓</div><div><div class="ind-name">ADX (14)</div><div class="ind-cat">Trend Strength</div></div></div>
+          <div class="ind-item" onclick="this.classList.toggle('checked')"><div class="ind-cb"></div><div><div class="ind-name">MACD (12,26,9)</div><div class="ind-cat">Trend</div></div></div>
+          <div class="ind-item" onclick="this.classList.toggle('checked')"><div class="ind-cb"></div><div><div class="ind-name">Bollinger Bands</div><div class="ind-cat">Volatility</div></div></div>
+          <div class="ind-item" onclick="this.classList.toggle('checked')"><div class="ind-cb"></div><div><div class="ind-name">ATR (14)</div><div class="ind-cat">Volatility</div></div></div>
+          <div class="ind-item" onclick="this.classList.toggle('checked')"><div class="ind-cb"></div><div><div class="ind-name">Stochastic</div><div class="ind-cat">Momentum</div></div></div>
+          <div class="ind-item" onclick="this.classList.toggle('checked')"><div class="ind-cb"></div><div><div class="ind-name">𝕏 Sentiment</div><div class="ind-cat">Sentiment</div></div></div>
+        </div>
+      </div>
+
+      <!-- Step 3: Conditions (current) -->
+      <div style="background:var(--surf);border:1px solid rgba(23,64,245,0.3);border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div class="s-head">Step 3 — Entry &amp; Exit Conditions</div>
+        <div class="s-sub">Define when SIGNAL should trigger a BUY or SELL. All conditions must be true simultaneously.</div>
+
+        <div style="font-size:12px;font-weight:700;color:var(--grn);margin-bottom:8px;">🟢 BUY when ALL of these are true:</div>
+        <div class="cond-list" id="buy-conds">
+          <div class="cond-item cond-buy">
+            <div class="cond-dot" style="background:var(--grn);"></div>
+            <select class="cond-sel"><option>RSI (14)</option><option>EMA20</option><option>Volume</option><option>Del.%</option></select>
+            <select class="cond-op"><option>&lt;</option><option>&gt;</option><option>=</option><option>crosses above</option></select>
+            <input class="cond-val" type="text" value="35">
+            <span style="font-size:11px;color:var(--dim);">(oversold)</span>
+            <button class="cond-rm" onclick="this.closest('.cond-item').remove()">✕</button>
+          </div>
+          <div class="cond-item cond-buy">
+            <div class="cond-dot" style="background:var(--grn);"></div>
+            <select class="cond-sel"><option>EMA20</option><option>RSI</option><option>Volume</option></select>
+            <select class="cond-op"><option>crosses above</option><option>&gt;</option><option>&lt;</option></select>
+            <input class="cond-val" type="text" value="EMA50">
+            <span style="font-size:11px;color:var(--dim);">(golden cross)</span>
+            <button class="cond-rm" onclick="this.closest('.cond-item').remove()">✕</button>
+          </div>
+          <div class="cond-item cond-buy">
+            <div class="cond-dot" style="background:var(--grn);"></div>
+            <select class="cond-sel"><option>Volume</option><option>RSI</option><option>Del.%</option></select>
+            <select class="cond-op"><option>&gt;</option><option>&lt;</option></select>
+            <input class="cond-val" type="text" value="1.5×avg">
+            <span style="font-size:11px;color:var(--dim);">(volume surge)</span>
+            <button class="cond-rm" onclick="this.closest('.cond-item').remove()">✕</button>
+          </div>
+        </div>
+        <button class="add-cond-btn" onclick="addCond('buy')" style="margin-bottom:20px;">+ Add BUY condition</button>
+
+        <div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:8px;">🔴 SELL / EXIT when:</div>
+        <div class="cond-list" id="sell-conds">
+          <div class="cond-item cond-sell">
+            <div class="cond-dot" style="background:var(--red);"></div>
+            <select class="cond-sel"><option>RSI (14)</option><option>EMA20</option></select>
+            <select class="cond-op"><option>&gt;</option><option>&lt;</option></select>
+            <input class="cond-val" type="text" value="70">
+            <span style="font-size:11px;color:var(--dim);">(overbought)</span>
+            <button class="cond-rm" onclick="this.closest('.cond-item').remove()">✕</button>
+          </div>
+        </div>
+        <button class="add-cond-btn" onclick="addCond('sell')" style="margin-bottom:20px;">+ Add SELL condition</button>
+
+        <div class="s-head" style="margin-bottom:10px;">Risk Management</div>
+        <div class="risk-row">
+          <div class="risk-item">
+            <label>Stop Loss</label>
+            <input type="range" min="1" max="10" value="25" step="0.5" oninput="document.getElementById('sl-val').textContent=this.value/10+'%'">
+            <div class="risk-val" id="sl-val" style="color:var(--red);">2.5%</div>
+          </div>
+          <div class="risk-item">
+            <label>Target</label>
+            <input type="range" min="2" max="20" value="60" step="0.5" oninput="document.getElementById('tgt-val').textContent=this.value/10+'%'">
+            <div class="risk-val" id="tgt-val" style="color:var(--grn);">6.0%</div>
+          </div>
+          <div class="risk-item">
+            <label>Position Size</label>
+            <input type="range" min="5" max="30" value="10" step="1" oninput="document.getElementById('pos-val').textContent=this.value+'%'">
+            <div class="risk-val" id="pos-val">10%</div>
+          </div>
+        </div>
+        <button onclick="goToStep4()" style="height:44px;padding:0 28px;border-radius:11px;background:linear-gradient(135deg,var(--blu),var(--bluL));border:none;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;">Run Backtest →</button>
+      </div>
+
+      <!-- Step 4: Backtest (shown after clicking Run) -->
+      <div id="step4" style="display:none;background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:20px;margin-bottom:16px;">
+        <div class="s-head">Step 4 — Backtest Results (1 Year · NIFTY 50)</div>
+        <div class="bt-grid">
+          <div class="bt-card"><div class="bt-val" style="color:var(--grn);">+24.3%</div><div class="bt-lbl">Total Returns</div></div>
+          <div class="bt-card"><div class="bt-val" style="color:var(--bluL);">1.84</div><div class="bt-lbl">Sharpe Ratio</div></div>
+          <div class="bt-card"><div class="bt-val" style="color:var(--grn);">64%</div><div class="bt-lbl">Win Rate</div></div>
+          <div class="bt-card"><div class="bt-val" style="color:var(--red);">-8.2%</div><div class="bt-lbl">Max Drawdown</div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;">
+          <div class="bt-card"><div class="bt-val">48</div><div class="bt-lbl">Total Trades</div></div>
+          <div class="bt-card"><div class="bt-val" style="color:var(--grn);">31</div><div class="bt-lbl">Winners</div></div>
+          <div class="bt-card"><div class="bt-val" style="color:var(--red);">17</div><div class="bt-lbl">Losers</div></div>
+          <div class="bt-card"><div class="bt-val">2.1:1</div><div class="bt-lbl">Avg R:R</div></div>
+        </div>
+        <!-- Generated code -->
+        <div class="code-block">
+          <div class="code-hdr"><span class="code-fn">signal_momentum_rsi_ema.py</span><button onclick="copyCode()" style="height:26px;padding:0 12px;border-radius:6px;background:rgba(23,64,245,0.15);border:1px solid rgba(23,64,245,0.3);color:var(--bluL);font-size:11px;font-weight:700;cursor:pointer;font-family:inherit;">⎘ Copy</button></div>
+          <div class="code-body">
+            <span class="c-c"># SIGNAL Strategy · Momentum RSI+EMA · Generated 19 Jun 2026</span><br>
+            <span class="c-c"># Universe: NIFTY 50 · Backtest: 1Y · Win rate: 64%</span><br><br>
+            <span class="c-k">import</span> pandas <span class="c-k">as</span> pd, numpy <span class="c-k">as</span> np<br><br>
+            <span class="c-f">RSI_LOW</span>, <span class="c-f">RSI_HIGH</span> = <span class="c-v">35</span>, <span class="c-v">70</span><br>
+            <span class="c-f">EMA_FAST</span>, <span class="c-f">EMA_SLOW</span> = <span class="c-v">20</span>, <span class="c-v">50</span><br>
+            <span class="c-f">STOP_LOSS</span>, <span class="c-f">TARGET</span>   = <span class="c-v">0.025</span>, <span class="c-v">0.06</span><br><br>
+            <span class="c-n">def</span> <span class="c-f">generate_signal</span>(df):<br>
+            &nbsp;&nbsp;rsi  = compute_rsi(df[<span class="c-s">"close"</span>], <span class="c-v">14</span>)<br>
+            &nbsp;&nbsp;ema20 = df[<span class="c-s">"close"</span>].ewm(span=<span class="c-v">20</span>).mean()<br>
+            &nbsp;&nbsp;ema50 = df[<span class="c-s">"close"</span>].ewm(span=<span class="c-v">50</span>).mean()<br>
+            &nbsp;&nbsp;vol_ratio = df[<span class="c-s">"volume"</span>] / df[<span class="c-s">"volume"</span>].rolling(<span class="c-v">20</span>).mean()<br>
+            &nbsp;&nbsp;<span class="c-k">if</span> rsi.iloc[-<span class="c-v">1</span>] &lt; RSI_LOW <span class="c-k">and</span> ema20.iloc[-<span class="c-v">1</span>] &gt; ema50.iloc[-<span class="c-v">1</span>] \<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<span class="c-k">and</span> vol_ratio.iloc[-<span class="c-v">1</span>] &gt; <span class="c-v">1.5</span>:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="c-k">return</span> <span class="c-s">"BUY"</span><br>
+            &nbsp;&nbsp;<span class="c-k">if</span> rsi.iloc[-<span class="c-v">1</span>] &gt; RSI_HIGH:<br>
+            &nbsp;&nbsp;&nbsp;&nbsp;<span class="c-k">return</span> <span class="c-s">"SELL"</span><br>
+            &nbsp;&nbsp;<span class="c-k">return</span> <span class="c-s">"HOLD"</span>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right panel -->
+    <div class="right-panel">
+      <div class="rp-card">
+        <div class="rp-title">Strategy Summary</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Type</span><span style="font-weight:700;">🚀 Momentum</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Universe</span><span style="font-weight:700;">NIFTY 50</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Indicators</span><span style="font-weight:700;">5 selected</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">BUY conditions</span><span style="font-weight:700;">3</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Stop Loss</span><span style="font-weight:700;color:var(--red);">2.5%</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Target</span><span style="font-weight:700;color:var(--grn);">6.0%</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Risk:Reward</span><span style="font-weight:700;">2.4:1</span></div>
+        </div>
+      </div>
+
+      <div class="rp-card">
+        <div class="rp-title">Actions</div>
+        <div class="action-btns">
+          <button class="btn-paper" onclick="goToStep4()">🧪 Paper Trade This Strategy</button>
+          <button class="btn-code" onclick="goToStep4()">⬇ Generate Code &amp; Backtest</button>
+          <button class="btn-save">💾 Save Strategy</button>
+        </div>
+      </div>
+
+      <div class="rp-card">
+        <div class="rp-title">My Saved Strategies</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="padding:10px 12px;background:var(--surf2);border-radius:9px;display:flex;align-items:center;justify-content:space-between;">
+            <div><div style="font-size:12px;font-weight:700;">RSI+EMA Momentum</div><div style="font-size:10.5px;color:var(--grn);">Paper trading · Day 6</div></div>
+            <span style="font-size:10px;color:var(--dim);">→</span>
+          </div>
+          <div style="padding:10px 12px;background:var(--surf2);border-radius:9px;display:flex;align-items:center;justify-content:space-between;">
+            <div><div style="font-size:12px;font-weight:700;">Breakout Scanner</div><div style="font-size:10.5px;color:var(--dim);">Saved · Not deployed</div></div>
+            <span style="font-size:10px;color:var(--dim);">→</span>
+          </div>
+        </div>
+      </div>
+
+      <div style="background:rgba(255,184,0,0.05);border:1px solid rgba(255,184,0,0.18);border-radius:12px;padding:14px;">
+        <p style="font-size:12px;color:rgba(255,184,0,0.8);line-height:1.7;">⚠️ SIGNAL is NOT SEBI registered. Generated strategies are for informational purposes only. Test thoroughly with paper trading before using real money.</p>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+function addCond(type) {
+  const list = document.getElementById(type + '-conds');
+  const div  = document.createElement('div');
+  div.className = 'cond-item cond-' + type;
+  const dot = type === 'buy' ? 'var(--grn)' : 'var(--red)';
+  div.innerHTML = `<div class="cond-dot" style="background:${dot};"></div>
+    <select class="cond-sel"><option>RSI (14)</option><option>EMA20</option><option>Volume</option><option>Del.%</option><option>ADX</option></select>
+    <select class="cond-op"><option>&lt;</option><option>&gt;</option><option>=</option><option>crosses above</option><option>crosses below</option></select>
+    <input class="cond-val" type="text" value="50">
+    <button class="cond-rm" onclick="this.closest('.cond-item').remove()">✕</button>`;
+  list.appendChild(div);
+}
+function goToStep4() {
+  document.getElementById('step4').style.display = '';
+  document.getElementById('sn4').textContent = '4';
+  document.getElementById('sn4').className = 'step-num current';
+  document.getElementById('sl4').className = 'step-label current';
+  document.getElementById('sc3').className = 'step-connector done';
+  document.getElementById('sn3').textContent = '✓';
+  document.getElementById('sn3').className = 'step-num done';
+  document.getElementById('sl3').className = 'step-label done';
+  document.getElementById('step4').scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+function copyCode() { navigator.clipboard?.writeText('# SIGNAL Strategy code copied!'); }
+</script>
+</body>
+</html>

@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — App Store Preview</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #fff; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif; color: #1d1d1f; -webkit-font-smoothing: antialiased; }
+
+    /* ── Header ─────────────────── */
+    .store-nav { background: rgba(255,255,255,0.86); backdrop-filter: blur(20px); position: sticky; top: 0; z-index: 99; padding: 14px 22px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #e5e5e5; }
+    .store-nav .back { color: #0071e3; font-size: 16px; cursor: pointer; display: flex; align-items: center; gap: 4px; font-weight: 500; }
+    .store-nav .nav-search { flex: 1; height: 34px; background: #f2f2f5; border: none; border-radius: 10px; padding: 0 14px; font-size: 14px; outline: none; }
+
+    /* ── App hero ─────────────────── */
+    .hero { padding: 28px 22px 18px; display: flex; gap: 18px; align-items: flex-start; border-bottom: 1px solid #f0f0f0; }
+    .app-icon { width: 110px; height: 110px; border-radius: 26px; flex-shrink: 0; overflow: hidden; box-shadow: 0 4px 20px rgba(23,64,245,0.28); }
+    .app-info { flex: 1; }
+    .app-name { font-size: 22px; font-weight: 800; letter-spacing: -0.4px; color: #1d1d1f; }
+    .app-sub  { font-size: 13px; color: #6e6e73; margin-top: 3px; }
+    .app-dev  { font-size: 13px; color: #0071e3; margin-top: 3px; font-weight: 500; }
+    .get-row  { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+    .get-btn  { background: #0071e3; color: #fff; border: none; padding: 9px 30px; border-radius: 18px; font-size: 16px; font-weight: 700; cursor: pointer; }
+    .in-app   { font-size: 11px; color: #6e6e73; }
+
+    /* ── Badges row ─────────────────── */
+    .badges { display: flex; gap: 0; padding: 14px 22px; border-bottom: 1px solid #f0f0f0; overflow-x: auto; }
+    .badge  { flex-shrink: 0; padding: 0 28px; border-right: 1px solid #e5e5e5; text-align: center; }
+    .badge:first-child { padding-left: 0; }
+    .badge:last-child  { border-right: none; }
+    .badge-val  { font-size: 20px; font-weight: 800; color: #1d1d1f; }
+    .badge-lbl  { font-size: 11px; color: #6e6e73; margin-top: 2px; }
+    .stars { color: #ff9500; font-size: 13px; letter-spacing: -1px; }
+
+    /* ── Screenshots ─────────────────── */
+    .section { padding: 22px; }
+    .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; }
+    .screenshots { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; }
+    .phone-wrap { flex-shrink: 0; }
+    .phone-label { font-size: 11px; color: #6e6e73; text-align: center; margin-top: 8px; }
+
+    /* ── Phone mockup ─────────────────── */
+    .phone { width: 156px; height: 318px; background: #000; border-radius: 26px; overflow: hidden; position: relative; box-shadow: 0 6px 24px rgba(0,0,0,0.22); }
+    .phone-notch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); width: 60px; height: 10px; background: #111; border-radius: 6px; z-index: 9; }
+    .phone-screen { position: absolute; top: 0; left: 0; right: 0; bottom: 0; overflow: hidden; }
+
+    /* ── Feature grid ─────────────────── */
+    .features { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .feat { background: #f5f5f7; border-radius: 16px; padding: 18px 16px; }
+    .feat-icon { font-size: 28px; margin-bottom: 8px; }
+    .feat-title { font-size: 14px; font-weight: 700; color: #1d1d1f; }
+    .feat-desc { font-size: 12px; color: #6e6e73; margin-top: 4px; line-height: 1.5; }
+
+    /* ── Subscription ─────────────────── */
+    .plans { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+    .plan { flex-shrink: 0; width: 160px; border-radius: 16px; padding: 16px; border: 1.5px solid #e5e5e5; }
+    .plan-name { font-size: 13px; font-weight: 800; }
+    .plan-price { font-size: 22px; font-weight: 900; margin-top: 4px; }
+    .plan-period { font-size: 11px; color: #6e6e73; }
+    .plan-feats { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
+    .plan-feat { font-size: 11px; color: #6e6e73; display: flex; gap: 5px; align-items: flex-start; }
+    .plan-feat::before { content: '✓'; font-weight: 700; flex-shrink: 0; }
+
+    /* ── Reviews ─────────────────── */
+    .review { background: #f5f5f7; border-radius: 16px; padding: 16px; }
+    .review-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+    .review-title { font-size: 14px; font-weight: 700; }
+    .review-date  { font-size: 11px; color: #6e6e73; }
+    .review-body  { font-size: 13px; color: #3d3d3f; line-height: 1.5; }
+    .review-user  { font-size: 11px; color: #6e6e73; margin-top: 8px; }
+
+    /* ── Privacy ─────────────────── */
+    .privacy-card { border: 1px solid #e5e5e5; border-radius: 16px; padding: 18px; }
+    .privacy-row  { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f0f0f0; }
+    .privacy-row:last-child { border-bottom: none; }
+
+    /* ── Footer ─────────────────── */
+    footer { padding: 24px 22px; font-size: 11px; color: #6e6e73; line-height: 1.7; border-top: 1px solid #f0f0f0; }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<div class="store-nav">
+  <div class="back">‹ Search</div>
+  <input class="nav-search" placeholder="Games, Apps, Stories…" readonly>
+</div>
+
+<!-- Hero -->
+<div class="hero">
+  <!-- App Icon SVG -->
+  <div class="app-icon">
+    <svg width="110" height="110" viewBox="0 0 110 110" fill="none">
+      <rect width="110" height="110" fill="#070D1A"/>
+      <defs>
+        <linearGradient id="ig" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#1740F5"/><stop offset="1" stop-color="#4F6FFA"/></linearGradient>
+        <radialGradient id="glow" cx="50%" cy="50%" r="50%"><stop stop-color="#1740F5" stop-opacity="0.35"/><stop offset="1" stop-color="#1740F5" stop-opacity="0"/></radialGradient>
+      </defs>
+      <circle cx="55" cy="52" r="40" fill="url(#glow)"/>
+      <rect x="26" y="30" width="58" height="58" rx="14" fill="url(#ig)"/>
+      <polyline points="34,72 42,58 49,65 57,48 65,54 73,41" stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="65" cy="54" r="5.5" fill="#FF5C1A"/>
+      <circle cx="65" cy="54" r="10" fill="#FF5C1A" fill-opacity="0.22"/>
+    </svg>
+  </div>
+  <div class="app-info">
+    <div class="app-name">SIGNAL</div>
+    <div class="app-sub">NSE · BSE · ML-Powered Algo Trading</div>
+    <div class="app-dev">Signal Technologies Pvt. Ltd.</div>
+    <div class="get-row">
+      <button class="get-btn">GET</button>
+      <div class="in-app">In-App Purchases<br>₹199 – ₹1,499</div>
+    </div>
+  </div>
+</div>
+
+<!-- Badges -->
+<div class="badges">
+  <div class="badge">
+    <div class="badge-val">4.8</div>
+    <div class="stars">★★★★★</div>
+    <div class="badge-lbl">2.4K Ratings</div>
+  </div>
+  <div class="badge">
+    <div class="badge-val">#1</div>
+    <div class="badge-lbl">Finance<br>India</div>
+  </div>
+  <div class="badge">
+    <div class="badge-val">17+</div>
+    <div class="badge-lbl">Age<br>Rating</div>
+  </div>
+  <div class="badge">
+    <div class="badge-val">44 MB</div>
+    <div class="badge-lbl">Size</div>
+  </div>
+  <div class="badge">
+    <div class="badge-val">Free</div>
+    <div class="badge-lbl">Price</div>
+  </div>
+</div>
+
+<!-- Screenshots -->
+<div class="section" style="padding-right:0">
+  <div class="section-title">Preview</div>
+  <div class="screenshots">
+
+    <!-- 1: Welcome -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:#070D1A;">
+          <div style="position:absolute;top:-30px;left:-30px;width:160px;height:160px;border-radius:50%;background:radial-gradient(circle,rgba(23,64,245,0.4) 0%,transparent 70%)"></div>
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:10px;padding:0 16px;">
+            <div style="width:52px;height:52px;border-radius:15px;background:linear-gradient(145deg,#1740F5,#4F6FFA);display:flex;align-items:center;justify-content:center;box-shadow:0 8px 24px rgba(23,64,245,0.55);">
+              <svg width="28" height="28" viewBox="0 0 28 28" fill="none"><polyline points="2,22 8,13 13,18 18,8 23,12 26,6" stroke="white" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="23" cy="12" r="3" fill="#FF5C1A"/></svg>
+            </div>
+            <div style="font-size:20px;font-weight:900;color:#fff;letter-spacing:-1px;">SIGNAL</div>
+            <div style="font-size:7px;color:#7A8BAA;letter-spacing:1.5px;">NSE · BSE · ML-POWERED</div>
+            <svg width="120" height="36" viewBox="0 0 120 36" fill="none" style="margin-top:16px;"><path d="M0,30 C12,26 22,20 32,16 S56,8 68,6 S96,2 120,1" stroke="#1740F5" stroke-width="1.5" fill="none" stroke-linecap="round"/><circle cx="96" cy="3" r="3" fill="#FF5C1A"/></svg>
+            <div style="width:100%;height:26px;background:linear-gradient(135deg,#1740F5,#4F6FFA);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:#fff;margin-top:8px;">Portfolio Tracker →</div>
+            <div style="width:100%;height:22px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:9px;color:#7A8BAA;">Sign In</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Welcome</div>
+    </div>
+
+    <!-- 2: Dashboard -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:#070D1A;padding:32px 10px 8px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+            <div><div style="font-size:7px;color:#7A8BAA;">Namaste 👋</div><div style="font-size:11px;font-weight:800;color:#fff;">Arjun Sharma</div></div>
+            <div style="width:20px;height:20px;border-radius:10px;background:linear-gradient(135deg,#1740F5,#FF5C1A);display:flex;align-items:center;justify-content:center;font-size:7px;font-weight:700;color:#fff;">AS</div>
+          </div>
+          <div style="background:linear-gradient(145deg,#0D1E45,#0E1628);border-radius:10px;padding:10px;margin-bottom:7px;border:1px solid #1C2E4A;">
+            <div style="font-size:6px;color:#7A8BAA;letter-spacing:0.5px;margin-bottom:2px;">PORTFOLIO VALUE</div>
+            <div style="font-size:16px;font-weight:900;color:#fff;letter-spacing:-0.5px;">₹8,42,316</div>
+            <div style="font-size:8px;color:#00D4A0;font-weight:700;margin-bottom:5px;">▲ +1.55% Today</div>
+            <svg width="116" height="14" viewBox="0 0 116 14" fill="none"><polyline points="0,12 10,10 20,8 30,6 40,9 50,5 60,7 70,4 80,6 90,3 100,5 116,1" stroke="#1740F5" stroke-width="1.5" fill="none" stroke-linecap="round"/></svg>
+          </div>
+          <div style="background:rgba(255,92,26,0.08);border:1px solid rgba(255,92,26,0.3);border-radius:8px;padding:7px 9px;margin-bottom:7px;display:flex;justify-content:space-between;align-items:center;">
+            <div style="font-size:7px;color:#FF7D46;font-weight:700;">🤖 5 ML signals · 2 exits</div>
+            <div style="font-size:7px;color:#FF5C1A;">View →</div>
+          </div>
+          <div style="display:flex;gap:5px;">
+            {['RELIANCE','HDFCBANK','INFY'].map((s,i) => '')}
+            <div style="flex:1;background:#0E1628;border-radius:7px;padding:6px 5px;border:1px solid #1C2E4A;"><div style="font-size:6px;font-weight:800;color:#fff;">RELIANCE</div><div style="font-size:8px;font-weight:700;color:#00D4A0;margin-top:2px;">▲ +1.8%</div></div>
+            <div style="flex:1;background:#0E1628;border-radius:7px;padding:6px 5px;border:1px solid #1C2E4A;"><div style="font-size:6px;font-weight:800;color:#fff;">HDFCBANK</div><div style="font-size:8px;font-weight:700;color:#FFB800;margin-top:2px;">– 0.4%</div></div>
+            <div style="flex:1;background:#0E1628;border-radius:7px;padding:6px 5px;border:1px solid #1C2E4A;"><div style="font-size:6px;font-weight:800;color:#fff;">INFY</div><div style="font-size:8px;font-weight:700;color:#00D4A0;margin-top:2px;">▲ +2.2%</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Dashboard</div>
+    </div>
+
+    <!-- 3: ML Signals -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:#070D1A;padding:32px 10px 8px;">
+          <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:8px;">ML Signals</div>
+          <div style="display:flex;background:#162038;border-radius:8px;padding:2px;gap:2px;margin-bottom:9px;">
+            <div style="flex:1;text-align:center;padding:5px 0;border-radius:6px;background:#1740F5;color:#fff;font-size:7px;font-weight:700;">🚀 Momentum</div>
+            <div style="flex:1;text-align:center;padding:5px 0;color:#7A8BAA;font-size:7px;font-weight:700;">🔄 Swing</div>
+          </div>
+          <!-- Stock card -->
+          <div style="background:#0E1628;border-radius:10px;border:1px solid rgba(0,212,160,0.2);overflow:hidden;margin-bottom:7px;">
+            <div style="padding:8px 10px;border-bottom:1px solid #1C2E4A;display:flex;justify-content:space-between;">
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div style="width:24px;height:24px;border-radius:7px;background:rgba(0,212,160,0.15);border:1px solid rgba(0,212,160,0.3);display:flex;align-items:center;justify-content:center;font-size:6px;font-weight:900;color:#00D4A0;">RELI</div>
+                <div><div style="font-size:8px;font-weight:800;color:#fff;">RELIANCE</div><div style="font-size:6.5px;color:#7A8BAA;">Reliance Industries</div></div>
+              </div>
+              <div style="text-align:right;"><div style="font-size:8px;font-weight:800;color:#fff;">₹2,912</div><div style="font-size:7px;color:#00D4A0;font-weight:700;">▲ +1.80%</div></div>
+            </div>
+            <div style="padding:7px 10px;">
+              <div style="font-size:6px;font-weight:700;color:#7A8BAA;letter-spacing:0.5px;margin-bottom:4px;">WHY ML PICKED THIS</div>
+              {['RSI(14)=68 — momentum breakout','EMA20 crossed EMA50 (golden cross)','Volume 2.4× avg — institutional buy','𝕏 sentiment: 76% bullish'].map(r => `<div style="display:flex;gap:4px;margin-bottom:3px;"><div style="width:8px;height:8px;border-radius:2px;background:rgba(0,212,160,0.2);border:1px solid rgba(0,212,160,0.4);flex-shrink:0;margin-top:1px;"></div><span style="font-size:6.5px;color:#7A8BAA;">${r}</span></div>`).join('')}
+              <div style="height:3px;border-radius:3px;background:#1C2E4A;overflow:hidden;margin-top:5px;"><div style="height:100%;width:92%;background:#00D4A0;border-radius:3px;"></div></div>
+              <div style="display:flex;justify-content:space-between;margin-top:2px;"><span style="font-size:6px;color:#7A8BAA;">ML Score</span><span style="font-size:6px;font-weight:700;color:#00D4A0;">92/100</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">ML Signals</div>
+    </div>
+
+    <!-- 4: Stock Detail -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:#070D1A;padding:32px 10px 8px;">
+          <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+            <div style="display:flex;gap:6px;align-items:center;">
+              <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,#1B4FD8,#3B74F5);display:flex;align-items:center;justify-content:center;font-size:5.5px;font-weight:900;color:#fff;">RIL</div>
+              <div><div style="font-size:9px;font-weight:800;color:#fff;">RELIANCE</div><div style="font-size:6.5px;color:#7A8BAA;">NSE</div></div>
+            </div>
+            <div style="text-align:right;"><div style="font-size:13px;font-weight:900;color:#fff;">₹2,912</div><div style="font-size:7px;color:#00D4A0;font-weight:700;">▲ +1.80%</div></div>
+          </div>
+          <svg width="136" height="30" viewBox="0 0 136 30" fill="none">
+            <defs><linearGradient id="cg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00D4A0" stop-opacity="0.2"/><stop offset="100%" stop-color="#00D4A0" stop-opacity="0"/></linearGradient></defs>
+            <path d="M0,28 C8,24 18,20 28,16 S50,10 68,7 S100,3 136,1 L136,30 L0,30Z" fill="url(#cg)"/>
+            <path d="M0,28 C8,24 18,20 28,16 S50,10 68,7 S100,3 136,1" stroke="#00D4A0" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+          </svg>
+          <div style="background:rgba(0,212,160,0.08);border:1px solid rgba(0,212,160,0.2);border-radius:8px;padding:7px 9px;margin-top:6px;">
+            <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><div style="display:flex;gap:4px;align-items:center;"><span style="font-size:8px;">🚀</span><span style="font-size:7px;font-weight:700;color:#00D4A0;">MOMENTUM</span></div><span style="font-size:6px;font-weight:800;padding:2px 6px;border-radius:4px;background:rgba(0,212,160,0.2);color:#00D4A0;">STRONG BUY</span></div>
+            <div style="height:3px;border-radius:3px;background:#1C2E4A;overflow:hidden;"><div style="height:100%;width:87%;background:#00D4A0;border-radius:3px;"></div></div>
+            <div style="font-size:6px;color:#7A8BAA;margin-top:3px;">Confidence <span style="color:#00D4A0;font-weight:700;">87%</span></div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;margin-top:7px;padding:8px 9px;background:#0E1628;border-radius:8px;border:1px solid #1C2E4A;">
+            {[['Mkt Cap','₹19.7L Cr'],['P/E','28.4x'],['Beta','0.82'],['52W H','₹3,217'],['52W L','₹2,220'],['Deliv%','63%']].map(([l,v])=>'')}
+            <div><div style="font-size:6px;color:#7A8BAA;">Mkt Cap</div><div style="font-size:7.5px;font-weight:700;color:#fff;">₹19.7L Cr</div></div>
+            <div><div style="font-size:6px;color:#7A8BAA;">P/E</div><div style="font-size:7.5px;font-weight:700;color:#fff;">28.4x</div></div>
+            <div><div style="font-size:6px;color:#7A8BAA;">Beta</div><div style="font-size:7.5px;font-weight:700;color:#fff;">0.82</div></div>
+            <div><div style="font-size:6px;color:#7A8BAA;">52W High</div><div style="font-size:7.5px;font-weight:700;color:#00D4A0;">₹3,217</div></div>
+            <div><div style="font-size:6px;color:#7A8BAA;">52W Low</div><div style="font-size:7.5px;font-weight:700;color:#FF3B5C;">₹2,220</div></div>
+            <div><div style="font-size:6px;color:#7A8BAA;">Delivery</div><div style="font-size:7.5px;font-weight:700;color:#00D4A0;">63.2%</div></div>
+          </div>
+          <div style="display:flex;gap:5px;margin-top:7px;">
+            <div style="flex:1;height:24px;border-radius:7px;background:linear-gradient(135deg,#00D4A0,#00A87D);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#001A12;">BUY</div>
+            <div style="flex:1;height:24px;border-radius:7px;background:rgba(255,59,92,0.15);border:1px solid rgba(255,59,92,0.4);display:flex;align-items:center;justify-content:center;font-size:8px;font-weight:800;color:#FF3B5C;">SELL</div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Stock Detail</div>
+    </div>
+
+    <!-- 5: Algo Builder -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:#070D1A;padding:32px 10px 8px;">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:5px;">
+            <div style="width:18px;height:18px;border-radius:6px;background:rgba(255,92,26,0.2);display:flex;align-items:center;justify-content:center;font-size:9px;">⚙️</div>
+            <span style="font-size:7px;font-weight:600;color:#FF7D46;">ALGO BUILDER</span>
+          </div>
+          <div style="font-size:13px;font-weight:900;color:#fff;line-height:1.1;margin-bottom:2px;">Build Your<br><span style="color:#FF5C1A;">Algorithm</span></div>
+          <div style="font-size:6.5px;color:#7A8BAA;margin-bottom:10px;">Python · Pine Script · Deploy in minutes</div>
+          <!-- Code editor -->
+          <div style="background:#0D1117;border-radius:8px;overflow:hidden;border:1px solid #21262D;">
+            <div style="background:#161B22;padding:5px 8px;border-bottom:1px solid #21262D;display:flex;justify-content:space-between;align-items:center;">
+              <span style="font-size:6px;color:#8B949E;font-family:monospace;">signal_rsi_ema.py</span>
+              <span style="font-size:6px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(23,64,245,0.2);color:#4F6FFA;">⎘ Copy</span>
+            </div>
+            <div style="padding:8px;font-family:monospace;font-size:7px;line-height:13px;">
+              <div style="color:#68D391;"># RSI + EMA Crossover</div>
+              <div style="color:#79C0FF;">import pandas as pd</div>
+              <div style="color:#F6C90E;">RSI_LOW, RSI_HIGH = 35, 70</div>
+              <div style="color:#F6C90E;">EMA_FAST, EMA_SLOW = 20, 50</div>
+              <div>&nbsp;</div>
+              <div style="color:#FF7D46;">def signal(df):</div>
+              <div style="color:#E2E8F0;">&nbsp;&nbsp;r = rsi(df["close"])</div>
+              <div style="color:#68D391;">&nbsp;&nbsp;if r &lt; RSI_LOW: return "BUY"</div>
+              <div style="color:#FC8181;">&nbsp;&nbsp;if r &gt; RSI_HIGH: return "SELL"</div>
+              <div style="color:#E2E8F0;">&nbsp;&nbsp;return "HOLD"</div>
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:5px;margin-top:8px;">
+            {['+24.3%','1.84','64%','-8.2%'].map(v=>'')}
+            <div style="text-align:center;background:#0E1628;border-radius:6px;padding:5px 4px;border:1px solid #1C2E4A;"><div style="font-size:8px;font-weight:900;color:#00D4A0;">+24.3%</div><div style="font-size:5.5px;color:#7A8BAA;">Returns</div></div>
+            <div style="text-align:center;background:#0E1628;border-radius:6px;padding:5px 4px;border:1px solid #1C2E4A;"><div style="font-size:8px;font-weight:900;color:#4F6FFA;">1.84</div><div style="font-size:5.5px;color:#7A8BAA;">Sharpe</div></div>
+            <div style="text-align:center;background:#0E1628;border-radius:6px;padding:5px 4px;border:1px solid #1C2E4A;"><div style="font-size:8px;font-weight:900;color:#00D4A0;">64%</div><div style="font-size:5.5px;color:#7A8BAA;">Win Rate</div></div>
+            <div style="text-align:center;background:#0E1628;border-radius:6px;padding:5px 4px;border:1px solid #1C2E4A;"><div style="font-size:8px;font-weight:900;color:#FF3B5C;">-8.2%</div><div style="font-size:5.5px;color:#7A8BAA;">Max DD</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Algo Builder</div>
+    </div>
+
+    <!-- 6: Markets -->
+    <div class="phone-wrap">
+      <div class="phone">
+        <div class="phone-notch"></div>
+        <div class="phone-screen" style="background:#070D1A;padding:32px 10px 8px;">
+          <div style="font-size:13px;font-weight:800;color:#fff;margin-bottom:8px;">Markets</div>
+          <!-- Global cues -->
+          <div style="display:flex;gap:5px;overflow-x:hidden;margin-bottom:8px;">
+            <div style="flex-shrink:0;background:#0E1628;border-radius:7px;padding:5px 7px;border:1px solid #1C2E4A;"><div style="font-size:5.5px;color:#7A8BAA;">S&P 500</div><div style="font-size:8px;font-weight:800;color:#fff;">5,847</div><div style="font-size:6.5px;color:#00D4A0;font-weight:700;">+0.42%</div></div>
+            <div style="flex-shrink:0;background:#0E1628;border-radius:7px;padding:5px 7px;border:1px solid #1C2E4A;"><div style="font-size:5.5px;color:#7A8BAA;">NASDAQ</div><div style="font-size:8px;font-weight:800;color:#fff;">19,240</div><div style="font-size:6.5px;color:#00D4A0;font-weight:700;">+0.61%</div></div>
+            <div style="flex-shrink:0;background:#0E1628;border-radius:7px;padding:5px 7px;border:1px solid #1C2E4A;"><div style="font-size:5.5px;color:#7A8BAA;">Gold</div><div style="font-size:8px;font-weight:800;color:#fff;">$2,380</div><div style="font-size:6.5px;color:#00D4A0;font-weight:700;">+0.3%</div></div>
+          </div>
+          <!-- Tab -->
+          <div style="display:flex;background:#162038;border-radius:7px;padding:2px;gap:2px;margin-bottom:7px;">
+            <div style="flex:1;text-align:center;padding:4px;border-radius:5px;background:#1740F5;color:#fff;font-size:6.5px;font-weight:700;">📰 News</div>
+            <div style="flex:1;text-align:center;padding:4px;color:#7A8BAA;font-size:6.5px;font-weight:700;">🪙 Commo</div>
+            <div style="flex:1;text-align:center;padding:4px;color:#7A8BAA;font-size:6.5px;font-weight:700;">💱 Forex</div>
+          </div>
+          <!-- News items -->
+          <div style="display:flex;flex-direction:column;gap:5px;">
+            <div style="background:#0E1628;border-radius:7px;padding:7px 8px;border:1px solid #1C2E4A;">
+              <div style="display:flex;gap:5px;align-items:center;margin-bottom:3px;"><span style="font-size:6px;color:#7A8BAA;">ET</span><span style="font-size:5.5px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,212,160,0.15);color:#00D4A0;">Bullish</span><span style="font-size:5.5px;color:#7A8BAA;margin-left:auto;">2m ago</span></div>
+              <div style="font-size:7px;color:#fff;line-height:1.4;">FII net buyers ₹2,840Cr; NIFTY eyes 25,000</div>
+            </div>
+            <div style="background:#0E1628;border-radius:7px;padding:7px 8px;border:1px solid #1C2E4A;">
+              <div style="display:flex;gap:5px;align-items:center;margin-bottom:3px;"><span style="font-size:6px;color:#7A8BAA;">Mint</span><span style="font-size:5.5px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(255,184,0,0.15);color:#FFB800;">Neutral</span><span style="font-size:5.5px;color:#7A8BAA;margin-left:auto;">18m</span></div>
+              <div style="font-size:7px;color:#fff;line-height:1.4;">RBI holds 6.5% — GDP upgraded to 7.4%</div>
+            </div>
+            <div style="background:#0E1628;border-radius:7px;padding:7px 8px;border:1px solid #1C2E4A;">
+              <div style="display:flex;gap:5px;align-items:center;margin-bottom:3px;"><span style="font-size:6px;color:#7A8BAA;">MC</span><span style="font-size:5.5px;font-weight:700;padding:1px 5px;border-radius:3px;background:rgba(0,212,160,0.15);color:#00D4A0;">Bullish</span><span style="font-size:5.5px;color:#7A8BAA;margin-left:auto;">1h</span></div>
+              <div style="font-size:7px;color:#fff;line-height:1.4;">RELIANCE Q4 PAT ₹21,137Cr — beats +8%</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="phone-label">Markets</div>
+    </div>
+
+  </div><!-- end screenshots -->
+</div>
+
+<!-- Features -->
+<div class="section" style="border-top:1px solid #f0f0f0;">
+  <div class="section-title">Why SIGNAL?</div>
+  <div class="features">
+    <div class="feat">
+      <div class="feat-icon">🤖</div>
+      <div class="feat-title">Explainable ML</div>
+      <div class="feat-desc">"Why ML picked this" — every signal explained in plain language with technical reasons.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">⚙️</div>
+      <div class="feat-title">Algo Builder</div>
+      <div class="feat-desc">Build strategies visually. Generate Python or Pine Script. Backtest. Deploy.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">𝕏</div>
+      <div class="feat-title">Twitter Sentiment</div>
+      <div class="feat-desc">Real-time 𝕏 sentiment per stock. Be ahead of retail FOMO and FUD.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🌐</div>
+      <div class="feat-title">Global Cues</div>
+      <div class="feat-desc">Pre-market digest at 8 AM. US, Asian markets, Crude, Gold, DXY — all in one screen.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">📊</div>
+      <div class="feat-title">Portfolio Classifier</div>
+      <div class="feat-desc">ML sorts your holdings into Momentum, Swing, Long-term, Exit Now and Watch.</div>
+    </div>
+    <div class="feat">
+      <div class="feat-icon">🪙</div>
+      <div class="feat-title">Commodities + Forex</div>
+      <div class="feat-desc">MCX Gold, Silver, Crude Oil, Copper. USD/INR, EUR/INR, GBP/INR live rates.</div>
+    </div>
+  </div>
+</div>
+
+<!-- Plans -->
+<div class="section" style="border-top:1px solid #f0f0f0;">
+  <div class="section-title">In-App Purchases</div>
+  <div class="plans">
+    <div class="plan" style="border-color:#ccc;">
+      <div class="plan-name" style="color:#666;">Free</div>
+      <div class="plan-price" style="color:#1d1d1f;">₹0</div>
+      <div class="plan-period">forever</div>
+      <div class="plan-feats">
+        <div class="plan-feat">5 stocks</div>
+        <div class="plan-feat">Basic prices</div>
+        <div class="plan-feat">3 alerts</div>
+      </div>
+    </div>
+    <div class="plan" style="border-color:#0071e3; background:#f0f7ff;">
+      <div class="plan-name" style="color:#0071e3;">Starter</div>
+      <div class="plan-price" style="color:#0071e3;">₹199</div>
+      <div class="plan-period">/month</div>
+      <div class="plan-feats">
+        <div class="plan-feat">25 stocks</div>
+        <div class="plan-feat">ML signals</div>
+        <div class="plan-feat">𝕏 sentiment</div>
+        <div class="plan-feat">Excel import</div>
+      </div>
+    </div>
+    <div class="plan" style="border-color:#FF5C1A; background:#fff8f5;">
+      <div class="plan-name" style="color:#FF5C1A;">Pro</div>
+      <div class="plan-price" style="color:#FF5C1A;">₹599</div>
+      <div class="plan-period">/month</div>
+      <div class="plan-feats">
+        <div class="plan-feat">Unlimited stocks</div>
+        <div class="plan-feat">Algo Builder</div>
+        <div class="plan-feat">Backtesting</div>
+        <div class="plan-feat">Broker API</div>
+        <div class="plan-feat">Commodities+Forex</div>
+      </div>
+    </div>
+    <div class="plan" style="border-color:#8B5CF6; background:#faf5ff;">
+      <div class="plan-name" style="color:#8B5CF6;">Elite</div>
+      <div class="plan-price" style="color:#8B5CF6;">₹1,499</div>
+      <div class="plan-period">/month</div>
+      <div class="plan-feats">
+        <div class="plan-feat">Auto-execute orders</div>
+        <div class="plan-feat">Custom ML model</div>
+        <div class="plan-feat">24/7 WhatsApp</div>
+        <div class="plan-feat">AI portfolio mgr</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Ratings -->
+<div class="section" style="border-top:1px solid #f0f0f0;">
+  <div class="section-title">Ratings & Reviews</div>
+  <div style="display:flex;align-items:center;gap:24px;margin-bottom:18px;">
+    <div style="text-align:center;">
+      <div style="font-size:56px;font-weight:800;color:#1d1d1f;line-height:1;">4.8</div>
+      <div style="color:#ff9500;font-size:16px;letter-spacing:2px;">★★★★★</div>
+      <div style="font-size:11px;color:#6e6e73;margin-top:4px;">2.4K Ratings</div>
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
+      <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:11px;color:#6e6e73;width:8px;">5</div><div style="flex:1;height:4px;background:#e5e5e5;border-radius:2px;overflow:hidden;"><div style="height:100%;width:82%;background:#ff9500;border-radius:2px;"></div></div></div>
+      <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:11px;color:#6e6e73;width:8px;">4</div><div style="flex:1;height:4px;background:#e5e5e5;border-radius:2px;overflow:hidden;"><div style="height:100%;width:12%;background:#ff9500;border-radius:2px;"></div></div></div>
+      <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:11px;color:#6e6e73;width:8px;">3</div><div style="flex:1;height:4px;background:#e5e5e5;border-radius:2px;overflow:hidden;"><div style="height:100%;width:4%;background:#ff9500;border-radius:2px;"></div></div></div>
+      <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:11px;color:#6e6e73;width:8px;">2</div><div style="flex:1;height:4px;background:#e5e5e5;border-radius:2px;overflow:hidden;"><div style="height:100%;width:1%;background:#ff9500;border-radius:2px;"></div></div></div>
+      <div style="display:flex;align-items:center;gap:6px;"><div style="font-size:11px;color:#6e6e73;width:8px;">1</div><div style="flex:1;height:4px;background:#e5e5e5;border-radius:2px;overflow:hidden;"><div style="height:100%;width:1%;background:#ff9500;border-radius:2px;"></div></div></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div class="review">
+      <div class="review-head">
+        <div class="review-title">Finally, signals that explain themselves!</div>
+        <div class="review-date">17 Jun 2026</div>
+      </div>
+      <div style="color:#ff9500;font-size:12px;margin-bottom:6px;">★★★★★</div>
+      <div class="review-body">Every other app just says "BUY" — SIGNAL tells me exactly WHY. RSI level, EMA cross, delivery %, Twitter sentiment. Game changer for someone learning technical analysis.</div>
+      <div class="review-user">— swing_trader_mumbai</div>
+    </div>
+    <div class="review">
+      <div class="review-head">
+        <div class="review-title">Algo builder is incredible value</div>
+        <div class="review-date">12 Jun 2026</div>
+      </div>
+      <div style="color:#ff9500;font-size:12px;margin-bottom:6px;">★★★★★</div>
+      <div class="review-body">I've always wanted to code my own strategy but didn't know Python well. SIGNAL generates the code, I just review and deploy. Made ₹18,000 in the first month from my RSI+EMA strategy.</div>
+      <div class="review-user">— nifty_options_kochi</div>
+    </div>
+  </div>
+</div>
+
+<!-- Privacy -->
+<div class="section" style="border-top:1px solid #f0f0f0;">
+  <div class="section-title">Privacy</div>
+  <div class="privacy-card">
+    <div style="font-size:13px;color:#6e6e73;margin-bottom:14px;">Signal Technologies Pvt. Ltd. indicated that the app's privacy practices may include handling of data as described below. For more information, see the developer's privacy policy.</div>
+    <div class="privacy-row">
+      <div style="font-size:14px;font-weight:600;">Financial Info</div>
+      <div style="font-size:12px;color:#6e6e73;">Used for portfolio analysis · Encrypted</div>
+    </div>
+    <div class="privacy-row">
+      <div style="font-size:14px;font-weight:600;">Identifiers</div>
+      <div style="font-size:12px;color:#6e6e73;">Email / mobile for 2FA only</div>
+    </div>
+    <div class="privacy-row">
+      <div style="font-size:14px;font-weight:600;">Usage Data</div>
+      <div style="font-size:12px;color:#6e6e73;">Anonymous analytics · SEBI compliant</div>
+    </div>
+    <div class="privacy-row">
+      <div style="font-size:14px;font-weight:600;">Not Linked to You</div>
+      <div style="font-size:12px;color:#6e6e73;">Diagnostics / crash logs only</div>
+    </div>
+  </div>
+</div>
+
+<!-- What's New -->
+<div class="section" style="border-top:1px solid #f0f0f0;">
+  <div class="section-title">What's New</div>
+  <div style="font-size:13px;color:#6e6e73;margin-bottom:8px;">Version 2.4.0 · Jun 2026</div>
+  <ul style="font-size:14px;color:#1d1d1f;line-height:2;padding-left:18px;">
+    <li>𝕏 / Twitter sentiment analysis — real-time per stock</li>
+    <li>Algo Builder: Python + Pine Script code generation</li>
+    <li>Commodities (MCX) and Forex live rates</li>
+    <li>Global pre-market digest (Notifications)</li>
+    <li>Trade History with P&L table + CSV export</li>
+    <li>In-app Trading Preferences onboarding</li>
+    <li>Dark / Light theme with persistent preference</li>
+  </ul>
+</div>
+
+<footer>
+  Signal Technologies Pvt. Ltd. &nbsp;·&nbsp; SEBI Registered Research Analyst &nbsp;·&nbsp; Investments are subject to market risks &nbsp;·&nbsp; Past performance is not indicative of future results.
+  <br>SIGNAL provides educational information and algorithmic tools only. It does not provide investment advice. Please consult a SEBI-registered advisor before investing.
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Live Signals</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root {
+      --bg:#070D1A; --surf:#0E1628; --surf2:#162038; --bdr:#1C2E4A;
+      --txt:#FFFFFF; --dim:#7A8BAA; --dim2:#3A4E6A;
+      --blu:#1740F5; --bluL:#4F6FFA; --org:#FF5C1A;
+      --grn:#00D4A0; --red:#FF3B5C; --ylw:#FFB800; --pur:#8B5CF6;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--txt); font-family:'Inter',system-ui,sans-serif; min-height:100vh; }
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+
+    nav { display:flex; align-items:center; height:58px; padding:0 clamp(16px,3vw,32px);
+          background:var(--surf); border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:100; gap:0; }
+    .nav-logo { display:flex; align-items:center; gap:8px; font-size:18px; font-weight:900;
+                letter-spacing:-0.5px; text-decoration:none; color:var(--txt); margin-right:28px; }
+    .nav-links { display:flex; align-items:center; gap:2px; flex:1; }
+    .nav-link  { height:34px; padding:0 13px; border-radius:8px; font-size:13px; font-weight:500;
+                 color:var(--dim); text-decoration:none; display:flex; align-items:center; gap:6px; transition:all 0.15s; }
+    .nav-link:hover { background:var(--surf2); color:var(--txt); }
+    .nav-link.active { background:rgba(23,64,245,0.12); color:var(--bluL); font-weight:600; }
+    .nav-right { display:flex; align-items:center; gap:10px; }
+    .notif-btn { width:34px; height:34px; border-radius:9px; background:transparent; border:1px solid var(--bdr);
+                 display:flex; align-items:center; justify-content:center; cursor:pointer; position:relative; }
+    .notif-dot { position:absolute; top:6px; right:6px; width:7px; height:7px; border-radius:50%;
+                 background:var(--red); border:1.5px solid var(--surf); }
+    .plan-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:6px;
+                  background:rgba(255,92,26,0.12); border:1px solid rgba(255,92,26,0.25); color:var(--org); }
+    .user-chip { display:flex; align-items:center; gap:8px; padding:4px 12px 4px 4px;
+                 border-radius:20px; background:var(--surf2); border:1px solid var(--bdr); cursor:pointer; }
+    .user-av { width:26px; height:26px; border-radius:50%;
+               background:linear-gradient(135deg,var(--blu),var(--org));
+               display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#fff; }
+
+    .page { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 58px); }
+    .sidebar { background:var(--surf); border-right:1px solid var(--bdr); padding:16px 10px; display:flex; flex-direction:column; gap:4px; }
+    .sb-section { font-size:10px; font-weight:700; color:var(--dim2); letter-spacing:1px; text-transform:uppercase; padding:12px 10px 6px; }
+    .sb-link { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:9px; font-size:13px; font-weight:500;
+               color:var(--dim); text-decoration:none; cursor:pointer; transition:all 0.15s; }
+    .sb-link:hover { background:var(--surf2); color:var(--txt); }
+    .sb-link.active { background:rgba(23,64,245,0.1); color:var(--bluL); font-weight:600; }
+    .sb-badge { margin-left:auto; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; background:var(--red); color:#fff; }
+
+    .main { padding:24px clamp(16px,3vw,32px); }
+
+    /* Filter bar */
+    .filter-bar { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
+    .filter-chip { height:34px; padding:0 14px; border-radius:8px; font-size:12px; font-weight:700;
+                   background:transparent; border:1px solid var(--bdr); color:var(--dim);
+                   cursor:pointer; font-family:inherit; transition:all 0.18s; }
+    .filter-chip:hover { border-color:var(--dim); color:var(--txt); }
+    .filter-chip.active { color:#fff; border-color:transparent; }
+    .fc-all  { }.fc-all.active  { background:#1740F5; }
+    .fc-buy  { }.fc-buy.active  { background:rgba(0,212,160,0.8); color:#001A12; }
+    .fc-sell { }.fc-sell.active { background:rgba(255,59,92,0.8); }
+    .fc-hold { }.fc-hold.active { background:rgba(255,184,0,0.8); color:#1A0F00; }
+    .fc-mom  { }.fc-mom.active  { background:rgba(255,92,26,0.8); }
+    .fc-mf   { }.fc-mf.active   { background:rgba(139,92,246,0.8); }
+
+    .search-input { height:34px; padding:0 14px; border-radius:8px; background:var(--surf2);
+                    border:1px solid var(--bdr); color:var(--txt); font-size:13px; font-family:inherit;
+                    outline:none; min-width:200px; margin-left:auto; }
+    .search-input:focus { border-color:var(--blu); }
+
+    /* Content grid */
+    .content-grid { display:grid; grid-template-columns:1fr 320px; gap:16px; }
+
+    /* Signal cards grid */
+    .signals-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+
+    /* Signal card */
+    .sig-card { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:18px;
+                transition:border-color 0.2s; cursor:pointer; }
+    .sig-card:hover { border-color:var(--dim2); }
+    .sig-card.buy-card:hover  { border-color:rgba(0,212,160,0.4); }
+    .sig-card.sell-card:hover { border-color:rgba(255,59,92,0.4); }
+    .sig-card-head { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:12px; }
+    .sig-stock-name { font-size:17px; font-weight:900; letter-spacing:-0.3px; }
+    .sig-stock-sub  { font-size:11px; color:var(--dim); margin-top:2px; }
+    .sig-badge { font-size:11px; font-weight:800; padding:4px 12px; border-radius:7px; white-space:nowrap; }
+    .badge-sbuy { background:rgba(0,212,160,0.14); color:var(--grn); border:1px solid rgba(0,212,160,0.3); }
+    .badge-buy  { background:rgba(0,212,160,0.09); color:var(--grn); border:1px solid rgba(0,212,160,0.2); }
+    .badge-hold { background:rgba(255,184,0,0.12); color:var(--ylw); border:1px solid rgba(255,184,0,0.25); }
+    .badge-sell { background:rgba(255,59,92,0.12); color:var(--red); border:1px solid rgba(255,59,92,0.25); }
+
+    /* Confidence bar */
+    .conf-row { margin-bottom:12px; }
+    .conf-label { display:flex; justify-content:space-between; font-size:11px; color:var(--dim); margin-bottom:5px; }
+    .conf-track { height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; }
+    .conf-fill  { height:100%; border-radius:3px; }
+
+    /* Levels */
+    .levels-row { display:flex; gap:0; border:1px solid var(--bdr); border-radius:10px; overflow:hidden; margin-bottom:10px; }
+    .level-item { flex:1; padding:8px 10px; border-right:1px solid var(--bdr); text-align:center; }
+    .level-item:last-child { border-right:none; }
+    .level-lbl { font-size:10px; color:var(--dim); margin-bottom:3px; }
+    .level-val  { font-size:13px; font-weight:800; }
+
+    /* Indicators */
+    .ind-row { display:flex; flex-wrap:wrap; gap:5px; }
+    .ind-tag { font-size:10.5px; font-weight:600; padding:2px 8px; border-radius:5px;
+               background:rgba(23,64,245,0.1); color:var(--bluL); border:1px solid rgba(23,64,245,0.2); }
+
+    /* Foot */
+    .sig-foot { display:flex; align-items:center; justify-content:space-between; margin-top:10px; padding-top:10px;
+                border-top:1px solid var(--bdr); }
+    .sig-time { font-size:11px; color:var(--dim2); }
+    .sig-sector { font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:5px; }
+
+    /* Right rail */
+    .sc-card { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:18px; margin-bottom:14px; }
+    .sc-title { font-size:14px; font-weight:700; margin-bottom:14px; }
+    .acc-bar  { height:6px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; margin:6px 0; }
+    .acc-fill { height:100%; border-radius:3px; background:linear-gradient(90deg,var(--grn),#00A87D); }
+
+    @media(max-width:1100px) { .signals-grid { grid-template-columns:1fr; } }
+    @media(max-width:900px)  { .page { grid-template-columns:1fr; } .sidebar { display:none; } .content-grid { grid-template-columns:1fr; } }
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div class="nav-links">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link active" href="#">📈 Signals</a>
+    <a class="nav-link" href="#">💼 Portfolio</a>
+    <a class="nav-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+    <a class="nav-link" href="SIGNAL Paper Trading.html">🧪 Paper Trade</a>
+    <a class="nav-link" href="SIGNAL ML Parameters.html" target="_blank">🔬 ML Params</a>
+  </div>
+  <div class="nav-right">
+    <div class="notif-btn">🔔<div class="notif-dot"></div></div>
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">VA</div><span style="font-size:12px;font-weight:600;">Vaasudev A.</span></div>
+  </div>
+</nav>
+
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link active" href="#">📈 Live Signals <span class="sb-badge">10</span></a>
+  <a class="sb-link" href="#">💼 My Portfolio</a>
+  <a class="sb-link" href="#">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link" href="#">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="#">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="#">🌍 FII / DII Flow</a>
+  <a class="sb-link" href="#">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="#">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="#">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="#">🔗 Connect Broker</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+
+<main class="main">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:18px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Live Signals</div>
+      <div style="font-size:13px;color:var(--dim);margin-top:3px;">
+        <span style="width:7px;height:7px;border-radius:50%;background:var(--grn);display:inline-block;margin-right:5px;animation:blink 2s infinite;"></span>
+        Market open · 10 signals fired today · Accuracy 90d: <span style="color:var(--grn);font-weight:700;">71.4%</span>
+      </div>
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button style="height:36px;padding:0 16px;border-radius:9px;background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">⚙️ Alert Settings</button>
+      <button style="height:36px;padding:0 16px;border-radius:9px;background:var(--blu);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">📥 Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+    <button class="filter-chip fc-all active" onclick="filterSigs('all',this)">All (10)</button>
+    <button class="filter-chip fc-buy" onclick="filterSigs('buy',this)">🟢 BUY (7)</button>
+    <button class="filter-chip fc-sell" onclick="filterSigs('sell',this)">🔴 SELL (2)</button>
+    <button class="filter-chip fc-hold" onclick="filterSigs('hold',this)">🟡 HOLD (1)</button>
+    <button class="filter-chip fc-mom" onclick="filterSigs('momentum',this)">🚀 Momentum</button>
+    <button class="filter-chip fc-mf" onclick="filterSigs('swing',this)">🔄 Swing</button>
+    <input class="search-input" type="text" placeholder="🔍 Search stocks…" oninput="searchSigs(this.value)">
+  </div>
+
+  <div class="content-grid">
+    <div class="signals-grid" id="sigs-grid">
+
+      <!-- RELIANCE -->
+      <div class="sig-card buy-card" data-type="buy" data-cat="momentum" data-sym="RELIANCE">
+        <div class="sig-card-head">
+          <div><div class="sig-stock-name">RELIANCE</div><div class="sig-stock-sub">Reliance Industries · NSE · Large Cap</div></div>
+          <span class="sig-badge badge-sbuy">STRONG BUY</span>
+        </div>
+        <div class="conf-row">
+          <div class="conf-label"><span>Model confidence</span><span style="color:var(--grn);font-weight:700;">87%</span></div>
+          <div class="conf-track"><div class="conf-fill" style="width:87%;background:linear-gradient(90deg,var(--grn),#00A87D);"></div></div>
+        </div>
+        <div class="levels-row">
+          <div class="level-item"><div class="level-lbl">CMP</div><div class="level-val">₹2,912</div></div>
+          <div class="level-item"><div class="level-lbl">Target</div><div class="level-val" style="color:var(--grn);">₹3,080</div></div>
+          <div class="level-item"><div class="level-lbl">Stop Loss</div><div class="level-val" style="color:var(--red);">₹2,820</div></div>
+          <div class="level-item"><div class="level-lbl">R:R</div><div class="level-val">1.8:1</div></div>
+        </div>
+        <div class="ind-row">
+          <span class="ind-tag">RSI=34 ↑</span><span class="ind-tag">EMA cross ✓</span><span class="ind-tag">Del.%=66</span><span class="ind-tag">Vol 2.1×</span><span class="ind-tag">ADX=28</span>
+        </div>
+        <div class="sig-foot">
+          <span class="sig-time">Today 09:32 IST</span>
+          <span class="sig-sector" style="background:rgba(255,92,26,0.1);color:var(--org);">Energy</span>
+        </div>
+      </div>
+
+      <!-- TATAMOTORS -->
+      <div class="sig-card buy-card" data-type="buy" data-cat="momentum" data-sym="TATAMOTORS">
+        <div class="sig-card-head">
+          <div><div class="sig-stock-name">TATAMOTORS</div><div class="sig-stock-sub">Tata Motors · NSE · Auto</div></div>
+          <span class="sig-badge badge-sbuy">STRONG BUY</span>
+        </div>
+        <div class="conf-row">
+          <div class="conf-label"><span>Model confidence</span><span style="color:var(--grn);font-weight:700;">81%</span></div>
+          <div class="conf-track"><div class="conf-fill" style="width:81%;background:linear-gradient(90deg,var(--grn),#00A87D);"></div></div>
+        </div>
+        <div class="levels-row">
+          <div class="level-item"><div class="level-lbl">CMP</div><div class="level-val">₹960</div></div>
+          <div class="level-item"><div class="level-lbl">Target</div><div class="level-val" style="color:var(--grn);">₹1,040</div></div>
+          <div class="level-item"><div class="level-lbl">Stop Loss</div><div class="level-val" style="color:var(--red);">₹930</div></div>
+          <div class="level-item"><div class="level-lbl">R:R</div><div class="level-val">2.7:1</div></div>
+        </div>
+        <div class="ind-row">
+          <span class="ind-tag">RF score=0.81</span><span class="ind-tag">Vol 2.4×</span><span class="ind-tag">Sector ▲</span><span class="ind-tag">OBV rising</span>
+        </div>
+        <div class="sig-foot">
+          <span class="sig-time">Today 09:31 IST</span>
+          <span class="sig-sector" style="background:rgba(23,64,245,0.1);color:var(--bluL);">Auto</span>
+        </div>
+      </div>
+
+      <!-- TCS -->
+      <div class="sig-card buy-card" data-type="buy" data-cat="swing" data-sym="TCS">
+        <div class="sig-card-head">
+          <div><div class="sig-stock-name">TCS</div><div class="sig-stock-sub">Tata Consultancy · NSE · IT</div></div>
+          <span class="sig-badge badge-buy">BUY</span>
+        </div>
+        <div class="conf-row">
+          <div class="conf-label"><span>Model confidence</span><span style="color:var(--grn);font-weight:700;">73%</span></div>
+          <div class="conf-track"><div class="conf-fill" style="width:73%;background:linear-gradient(90deg,var(--grn),#00A87D);"></div></div>
+        </div>
+        <div class="levels-row">
+          <div class="level-item"><div class="level-lbl">CMP</div><div class="level-val">₹3,880</div></div>
+          <div class="level-item"><div class="level-lbl">Target</div><div class="level-val" style="color:var(--grn);">₹4,100</div></div>
+          <div class="level-item"><div class="level-lbl">Stop Loss</div><div class="level-val" style="color:var(--red);">₹3,780</div></div>
+          <div class="level-item"><div class="level-lbl">R:R</div><div class="level-val">2.2:1</div></div>
+        </div>
+        <div class="ind-row">
+          <span class="ind-tag">MACD cross ✓</span><span class="ind-tag">IT sector +4.1%</span><span class="ind-tag">Del.%=58</span>
+        </div>
+        <div class="sig-foot">
+          <span class="sig-time">Today 09:35 IST</span>
+          <span class="sig-sector" style="background:rgba(139,92,246,0.1);color:var(--pur);">IT</span>
+        </div>
+      </div>
+
+      <!-- SBIN -->
+      <div class="sig-card buy-card" data-type="buy" data-cat="momentum" data-sym="SBIN">
+        <div class="sig-card-head">
+          <div><div class="sig-stock-name">SBIN</div><div class="sig-stock-sub">State Bank of India · NSE · Banking</div></div>
+          <span class="sig-badge badge-buy">BUY</span>
+        </div>
+        <div class="conf-row">
+          <div class="conf-label"><span>Model confidence</span><span style="color:var(--grn);font-weight:700;">76%</span></div>
+          <div class="conf-track"><div class="conf-fill" style="width:76%;background:linear-gradient(90deg,var(--grn),#00A87D);"></div></div>
+        </div>
+        <div class="levels-row">
+          <div class="level-item"><div class="level-lbl">CMP</div><div class="level-val">₹824</div></div>
+          <div class="level-item"><div class="level-lbl">Target</div><div class="level-val" style="color:var(--grn);">₹872</div></div>
+          <div class="level-item"><div class="level-lbl">Stop Loss</div><div class="level-val" style="color:var(--red);">₹798</div></div>
+          <div class="level-item"><div class="level-lbl">R:R</div><div class="level-val">1.8:1</div></div>
+        </div>
+        <div class="ind-row">
+          <span class="ind-tag">RSI=38</span><span class="ind-tag">Vol surge 2.8×</span><span class="ind-tag">BB lower band</span><span class="ind-tag">DII buying</span>
+        </div>
+        <div class="sig-foot">
+          <span class="sig-time">Today 09:40 IST</span>
+          <span class="sig-sector" style="background:rgba(255,184,0,0.1);color:var(--ylw);">Banking</span>
+        </div>
+      </div>
+
+      <!-- INFY -->
+      <div class="sig-card buy-card" data-type="buy" data-cat="swing" data-sym="INFY">
+        <div class="sig-card-head">
+          <div><div class="sig-stock-name">INFY</div><div class="sig-stock-sub">Infosys · NSE · IT</div></div>
+          <span class="sig-badge badge-buy">BUY</span>
+        </div>
+        <div class="conf-row">
+          <div class="conf-label"><span>Model confidence</span><span style="color:var(--grn);font-weight:700;">69%</span></div>
+          <div class="conf-track"><div class="conf-fill" style="width:69%;background:linear-gradient(90deg,var(--grn),#00A87D);"></div></div>
+        </div>
+        <div class="levels-row">
+          <div class="level-item"><div class="level-lbl">CMP</div><div class="level-val">₹1,492</div></div>
+          <div class="level-item"><div class="level-lbl">Target</div><div class="level-val" style="color:var(--grn);">₹1,580</div></div>
+          <div class="level-item"><div class="level-lbl">Stop Loss</div><div class="level-val" style="color:var(--red);">₹1,450</div></div>
+          <div class="level-item"><div class="level-lbl">R:R</div><div class="level-val">2.2:1</div></div>
+        </div>
+        <div class="ind-row">
+          <span class="ind-tag">EMA20&gt;EMA50</span><span class="ind-tag">ADX=26</span><span class="ind-tag">IT momentum</span>
+        </div>
+        <div class="sig-foot">
+          <span class="sig-time">Today 09:44 IST</span>
+          <span class="sig-sector" style="background:rgba(139,92,246,0.1);color:var(--pur);">IT</span>
+        </div>
+      </div>
+
+      <!-- HDFCBANK HOLD -->
+      <div class="sig-card" data-type="hold" data-cat="swing" data-sym="HDFCBANK">
+        <div class="sig-card-head">
+          <div><div class="sig-stock-name">HDFCBANK</div><div class="sig-stock-sub">HDFC Bank · NSE · Banking</div></div>
+          <span class="sig-badge badge-hold">HOLD</span>
+        </div>
+        <div class="conf-row">
+          <div class="conf-label"><span>Model confidence</span><span style="color:var(--ylw);font-weight:700;">58%</span></div>
+          <div class="conf-track"><div class="conf-fill" style="width:58%;background:var(--ylw);"></div></div>
+        </div>
+        <div style="background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.2);border-radius:10px;padding:11px 13px;margin-bottom:10px;">
+          <div style="font-size:12px;color:rgba(255,184,0,0.9);line-height:1.6;">Conflicting signals — RSI neutral (52), price near EMA50 support. Wait for clearer breakout above ₹1,650 before adding.</div>
+        </div>
+        <div class="ind-row">
+          <span class="ind-tag" style="background:rgba(255,184,0,0.1);color:var(--ylw);border-color:rgba(255,184,0,0.25);">RSI=52 neutral</span>
+          <span class="ind-tag" style="background:rgba(255,184,0,0.1);color:var(--ylw);border-color:rgba(255,184,0,0.25);">EMA50 test</span>
+        </div>
+        <div class="sig-foot">
+          <span class="sig-time">Today 09:38 IST</span>
+          <span class="sig-sector" style="background:rgba(255,184,0,0.1);color:var(--ylw);">Banking</span>
+        </div>
+      </div>
+
+      <!-- ZOMATO SELL -->
+      <div class="sig-card sell-card" data-type="sell" data-cat="momentum" data-sym="ZOMATO">
+        <div class="sig-card-head">
+          <div><div class="sig-stock-name">ZOMATO</div><div class="sig-stock-sub">Zomato Ltd · NSE · Consumer</div></div>
+          <span class="sig-badge badge-sell">SELL</span>
+        </div>
+        <div class="conf-row">
+          <div class="conf-label"><span>Model confidence</span><span style="color:var(--red);font-weight:700;">74%</span></div>
+          <div class="conf-track"><div class="conf-fill" style="width:74%;background:linear-gradient(90deg,var(--red),#CC2040);"></div></div>
+        </div>
+        <div class="levels-row">
+          <div class="level-item"><div class="level-lbl">CMP</div><div class="level-val">₹198</div></div>
+          <div class="level-item"><div class="level-lbl">Target</div><div class="level-val" style="color:var(--grn);">₹176</div></div>
+          <div class="level-item"><div class="level-lbl">Stop Loss</div><div class="level-val" style="color:var(--red);">₹208</div></div>
+          <div class="level-item"><div class="level-lbl">R:R</div><div class="level-val">2.2:1</div></div>
+        </div>
+        <div class="ind-row">
+          <span class="ind-tag" style="background:rgba(255,59,92,0.1);color:var(--red);border-color:rgba(255,59,92,0.25);">RSI=71</span>
+          <span class="ind-tag" style="background:rgba(255,59,92,0.1);color:var(--red);border-color:rgba(255,59,92,0.25);">Below EMA50</span>
+          <span class="ind-tag" style="background:rgba(255,59,92,0.1);color:var(--red);border-color:rgba(255,59,92,0.25);">FII selling</span>
+        </div>
+        <div class="sig-foot">
+          <span class="sig-time">Today 09:30 IST</span>
+          <span class="sig-sector" style="background:rgba(255,59,92,0.1);color:var(--red);">Consumer</span>
+        </div>
+      </div>
+
+      <!-- PAYTM SELL -->
+      <div class="sig-card sell-card" data-type="sell" data-cat="momentum" data-sym="PAYTM">
+        <div class="sig-card-head">
+          <div><div class="sig-stock-name">PAYTM</div><div class="sig-stock-sub">One97 Communications · NSE · Fintech</div></div>
+          <span class="sig-badge badge-sell">SELL</span>
+        </div>
+        <div class="conf-row">
+          <div class="conf-label"><span>Model confidence</span><span style="color:var(--red);font-weight:700;">71%</span></div>
+          <div class="conf-track"><div class="conf-fill" style="width:71%;background:linear-gradient(90deg,var(--red),#CC2040);"></div></div>
+        </div>
+        <div class="levels-row">
+          <div class="level-item"><div class="level-lbl">CMP</div><div class="level-val">₹312</div></div>
+          <div class="level-item"><div class="level-lbl">Target</div><div class="level-val" style="color:var(--grn);">₹278</div></div>
+          <div class="level-item"><div class="level-lbl">Stop Loss</div><div class="level-val" style="color:var(--red);">₹332</div></div>
+          <div class="level-item"><div class="level-lbl">R:R</div><div class="level-val">1.7:1</div></div>
+        </div>
+        <div class="ind-row">
+          <span class="ind-tag" style="background:rgba(255,59,92,0.1);color:var(--red);border-color:rgba(255,59,92,0.25);">MACD bearish</span>
+          <span class="ind-tag" style="background:rgba(255,59,92,0.1);color:var(--red);border-color:rgba(255,59,92,0.25);">Below EMA200</span>
+        </div>
+        <div class="sig-foot">
+          <span class="sig-time">Today 09:36 IST</span>
+          <span class="sig-sector" style="background:rgba(255,59,92,0.1);color:var(--red);">Fintech</span>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right rail -->
+    <div>
+      <!-- Accuracy stats -->
+      <div class="sc-card">
+        <div class="sc-title">📊 Signal Accuracy</div>
+        <div style="font-size:36px;font-weight:900;color:var(--grn);letter-spacing:-1px;">71.4%</div>
+        <div style="font-size:12px;color:var(--dim);margin-bottom:10px;">last 90 days · 50 of 70 signals hit target</div>
+        <div class="acc-bar"><div class="acc-fill" style="width:71.4%;"></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+          <div style="background:var(--surf2);border-radius:9px;padding:10px;text-align:center;">
+            <div style="font-size:18px;font-weight:900;color:var(--grn);">50</div>
+            <div style="font-size:10px;color:var(--dim);">Targets hit</div>
+          </div>
+          <div style="background:var(--surf2);border-radius:9px;padding:10px;text-align:center;">
+            <div style="font-size:18px;font-weight:900;color:var(--red);">14</div>
+            <div style="font-size:10px;color:var(--dim);">Stop losses</div>
+          </div>
+        </div>
+      </div>
+      <!-- RF Pick -->
+      <div style="background:linear-gradient(135deg,rgba(23,64,245,0.08),rgba(0,212,160,0.05));border:1px solid rgba(23,64,245,0.25);border-radius:14px;padding:18px;margin-bottom:14px;">
+        <div style="font-size:10px;font-weight:700;color:var(--bluL);letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">🤖 RF Pick of the Day</div>
+        <div style="font-size:20px;font-weight:900;">TATAMOTORS</div>
+        <div style="font-size:12px;color:var(--dim);margin-bottom:8px;">Auto · RF score: 0.81</div>
+        <div style="display:flex;gap:12px;font-size:13px;">
+          <div><div style="color:var(--dim);font-size:10px;">Entry</div><div style="font-weight:700;">₹960</div></div>
+          <div><div style="color:var(--dim);font-size:10px;">Target</div><div style="font-weight:700;color:var(--grn);">₹1,040</div></div>
+          <div><div style="color:var(--dim);font-size:10px;">SL</div><div style="font-weight:700;color:var(--red);">₹930</div></div>
+        </div>
+        <div style="margin-top:10px;height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;"><div style="height:100%;width:81%;background:linear-gradient(90deg,var(--grn),#00A87D);border-radius:3px;"></div></div>
+        <div style="font-size:11px;color:var(--grn);margin-top:5px;font-weight:700;">81% confidence</div>
+      </div>
+      <!-- Today summary -->
+      <div class="sc-card">
+        <div class="sc-title">Today's Summary</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--dim);">Total signals</span><span style="font-weight:700;">10</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--dim);">BUY signals</span><span style="font-weight:700;color:var(--grn);">7</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--dim);">SELL signals</span><span style="font-weight:700;color:var(--red);">2</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--dim);">HOLD signals</span><span style="font-weight:700;color:var(--ylw);">1</span>
+          </div>
+          <div style="height:1px;background:var(--bdr);"></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--dim);">Market mood</span><span style="font-weight:700;color:var(--grn);">Bullish ↑</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--dim);">FII net</span><span style="font-weight:700;color:var(--red);">-₹1,240 Cr</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;">
+            <span style="color:var(--dim);">DII net</span><span style="font-weight:700;color:var(--grn);">+₹2,180 Cr</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+
+<script>
+function filterSigs(type, btn) {
+  document.querySelectorAll('.filter-chip').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.sig-card').forEach(c => {
+    const show = type === 'all' || c.dataset.type === type || c.dataset.cat === type;
+    c.style.display = show ? '' : 'none';
+  });
+}
+function searchSigs(q) {
+  const term = q.trim().toUpperCase();
+  document.querySelectorAll('.sig-card').forEach(c => {
+    c.style.display = (!term || c.dataset.sym.includes(term)) ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>

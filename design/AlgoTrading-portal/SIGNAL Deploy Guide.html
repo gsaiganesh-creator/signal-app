@@ -1,0 +1,603 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Full Stack Deployment Guide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    :root {
+      --bg:#070D1A; --surf:#0E1628; --surf2:#162038; --bdr:#1C2E4A;
+      --txt:#FFFFFF; --dim:#7A8BAA; --dim2:#3A4E6A;
+      --blu:#1740F5; --bluL:#4F6FFA; --org:#FF5C1A;
+      --grn:#00D4A0; --red:#FF3B5C; --ylw:#FFB800; --pur:#8B5CF6;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--txt); font-family:'Inter',system-ui,sans-serif; }
+
+    nav { display:flex; align-items:center; justify-content:space-between; height:60px;
+          padding:0 clamp(16px,4vw,64px); background:var(--surf);
+          border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:100; }
+    .nav-logo { font-size:18px; font-weight:900; letter-spacing:-0.5px; text-decoration:none; color:var(--txt); display:flex; align-items:center; gap:9px; }
+    .nav-back  { font-size:13px; color:var(--dim); text-decoration:none; }
+    .nav-back:hover { color:var(--txt); }
+
+    .doc { max-width:960px; margin:0 auto; padding:48px clamp(20px,5vw,64px) 96px; }
+
+    /* Typography */
+    .eyebrow { font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; margin-bottom:10px; }
+    h1 { font-size:clamp(32px,5vw,56px); font-weight:900; letter-spacing:-2px; line-height:1.0; margin-bottom:16px; }
+    h2 { font-size:20px; font-weight:800; letter-spacing:-0.5px; margin:44px 0 16px; padding-bottom:10px; border-bottom:2px solid var(--bdr); }
+    h3 { font-size:15px; font-weight:700; margin:20px 0 8px; }
+    p  { font-size:14px; line-height:1.75; color:#C4D0E8; margin-bottom:12px; }
+    ul,ol { padding-left:20px; margin-bottom:14px; }
+    li { font-size:14px; line-height:1.75; color:#C4D0E8; }
+    li+li { margin-top:3px; }
+    strong { font-weight:700; color:var(--txt); }
+    a  { color:var(--bluL); text-decoration:none; }
+    a:hover { text-decoration:underline; }
+    code { font-family:'JetBrains Mono',monospace; font-size:12px; background:rgba(23,64,245,0.1); color:var(--bluL); padding:2px 7px; border-radius:5px; }
+    hr { border:none; border-top:1px solid var(--bdr); margin:32px 0; }
+
+    /* Pre / code blocks */
+    pre { background:#0D1117; border:1px solid #21262D; border-radius:13px; padding:18px 20px;
+          font-family:'JetBrains Mono',monospace; font-size:12.5px; line-height:1.8;
+          overflow-x:auto; margin:0 0 16px; color:#E2E8F4; }
+    .c-c { color:#4A6080; } .c-k { color:#79C0FF; } .c-s { color:#68D391; }
+    .c-f { color:#F6C90E; } .c-v { color:#FFA657; } .c-n { color:#FF7D46; }
+
+    /* Phase cards */
+    .phase { display:flex; gap:0; margin-bottom:0; }
+    .phase-timeline { display:flex; flex-direction:column; align-items:center; margin-right:20px; flex-shrink:0; }
+    .phase-dot  { width:38px; height:38px; border-radius:11px; display:flex; align-items:center;
+                  justify-content:center; font-size:14px; font-weight:900; color:#fff; flex-shrink:0; }
+    .phase-line { width:2px; flex:1; min-height:24px; background:var(--bdr); margin:6px 0; }
+    .phase-body { flex:1; padding-bottom:32px; }
+    .phase-title { font-size:16px; font-weight:800; margin-bottom:6px; }
+    .phase-sub   { font-size:13px; color:var(--dim); margin-bottom:14px; line-height:1.55; }
+
+    /* Step pills */
+    .step-row { display:flex; gap:10px; align-items:flex-start; margin-bottom:10px; }
+    .step-num  { width:24px; height:24px; border-radius:7px; background:var(--surf2); border:1px solid var(--bdr);
+                  display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;
+                  color:var(--dim); flex-shrink:0; margin-top:1px; }
+    .step-body { flex:1; font-size:13.5px; line-height:1.65; color:#C4D0E8; }
+
+    /* Info cards */
+    .card-grid  { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+    .card-grid-3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; margin-bottom:16px; }
+    .info-card  { background:var(--surf); border:1px solid var(--bdr); border-radius:13px; padding:18px; }
+    .ic-label   { font-size:10px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+    .ic-val     { font-size:22px; font-weight:900; letter-spacing:-0.5px; margin-bottom:4px; }
+    .ic-sub     { font-size:12px; color:var(--dim); line-height:1.5; }
+
+    /* Callouts */
+    .callout { border-radius:12px; padding:14px 18px; margin:16px 0; }
+    .callout-blue   { background:rgba(23,64,245,0.07); border:1px solid rgba(23,64,245,0.25); }
+    .callout-green  { background:rgba(0,212,160,0.06); border:1px solid rgba(0,212,160,0.25); }
+    .callout-orange { background:rgba(255,92,26,0.06); border:1px solid rgba(255,92,26,0.25); }
+    .callout-yellow { background:rgba(255,184,0,0.06); border:1px solid rgba(255,184,0,0.2); }
+    .callout-purple { background:rgba(139,92,246,0.07); border:1px solid rgba(139,92,246,0.25); }
+    .callout p { font-size:13px; line-height:1.7; color:#C4D0E8; margin:0; }
+
+    /* Table */
+    table { width:100%; border-collapse:collapse; font-size:13px; margin-bottom:16px; border-radius:12px; overflow:hidden; border:1px solid var(--bdr); }
+    thead th { background:var(--surf2); font-size:10.5px; font-weight:700; letter-spacing:0.5px; text-transform:uppercase; color:var(--dim); padding:10px 14px; text-align:left; border-bottom:1px solid var(--bdr); }
+    tbody td  { padding:10px 14px; border-bottom:1px solid rgba(28,46,74,0.6); color:#C4D0E8; vertical-align:top; }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover td { background:rgba(255,255,255,0.02); }
+
+    /* Tags */
+    .tag-free { display:inline-block; font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:5px; background:rgba(0,212,160,0.12); color:var(--grn); border:1px solid rgba(0,212,160,0.25); }
+    .tag-paid { display:inline-block; font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:5px; background:rgba(255,59,92,0.1); color:var(--red); border:1px solid rgba(255,59,92,0.22); }
+    .tag-soon { display:inline-block; font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:5px; background:rgba(255,184,0,0.1); color:var(--ylw); border:1px solid rgba(255,184,0,0.2); }
+
+    /* Arch diagram */
+    .arch { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:0; margin:20px 0; }
+    .arch-box  { background:var(--surf); border:1px solid var(--bdr); border-radius:11px; padding:11px 16px; text-align:center; font-size:12px; font-weight:700; }
+    .arch-box small { display:block; font-size:10px; font-weight:400; color:var(--dim); margin-top:2px; }
+    .arch-box.blu { background:rgba(23,64,245,0.08); border-color:rgba(23,64,245,0.3); color:var(--bluL); }
+    .arch-box.grn { background:rgba(0,212,160,0.07); border-color:rgba(0,212,160,0.3); color:var(--grn); }
+    .arch-box.org { background:rgba(255,92,26,0.07); border-color:rgba(255,92,26,0.3); color:var(--org); }
+    .arch-box.pur { background:rgba(139,92,246,0.07); border-color:rgba(139,92,246,0.3); color:var(--pur); }
+    .arch-arr { color:var(--dim2); font-size:18px; padding:0 8px; flex-shrink:0; }
+
+    /* Cost summary */
+    .cost-total { background:linear-gradient(135deg,rgba(0,212,160,0.07),rgba(23,64,245,0.05)); border:1px solid rgba(0,212,160,0.25); border-radius:16px; padding:24px; margin:24px 0; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:16px; }
+    .cost-val { font-size:48px; font-weight:900; letter-spacing:-2px; color:var(--grn); }
+    .cost-sub { font-size:13px; color:var(--dim); line-height:1.65; max-width:420px; }
+
+    @media(max-width:700px) {
+      .card-grid,.card-grid-3 { grid-template-columns:1fr; }
+      .arch { flex-direction:column; }
+      .arch-arr { transform:rotate(90deg); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="SIGNAL Landing Page.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <a class="nav-back" href="SIGNAL Dev Setup.html">← Dev Setup Guide</a>
+</nav>
+
+<div class="doc">
+
+  <div class="eyebrow" style="color:var(--bluL);">Full Stack Deployment</div>
+  <h1>From design to<br><span style="color:var(--grn);">live production</span></h1>
+  <p style="font-size:16px;color:var(--dim);max-width:620px;">Complete step-by-step guide for Vaasudev Amitav — Vercel (website) + Supabase (database + auth) + Railway (backend API) + Expo (mobile app). <strong style="color:var(--grn);">₹0 to start.</strong> All free tiers, upgrade when you have paying users.</p>
+
+  <div class="callout callout-green" style="margin-top:24px;">
+    <p>✅ <strong>Yes — one database, one backend, same data everywhere.</strong> Your website and mobile app both call the same API. A signal fired on the backend shows up instantly on both web and app. User accounts, subscriptions, portfolio data — all shared.</p>
+  </div>
+
+  <!-- Architecture -->
+  <h2>System Architecture</h2>
+  <p>Here's how every part connects. The backend is the single source of truth — both the website and app talk only to it.</p>
+
+  <div class="arch">
+    <div class="arch-box blu">Website<small>Next.js · Vercel</small></div>
+    <div class="arch-arr">→</div>
+    <div class="arch-box org">Backend API<small>Node.js · Railway</small></div>
+    <div class="arch-arr">←</div>
+    <div class="arch-box blu">Mobile App<small>React Native · Expo</small></div>
+  </div>
+  <div style="display:flex;justify-content:center;margin:-8px 0 0;">
+    <div class="arch-arr" style="transform:rotate(90deg);">→</div>
+  </div>
+  <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+    <div class="arch-box grn">Supabase<small>Postgres DB + Auth + Realtime</small></div>
+    <div class="arch-box pur">ML Service<small>Python · Hugging Face Spaces</small></div>
+    <div class="arch-box org">mStock API<small>Live market data</small></div>
+  </div>
+
+  <div class="callout callout-blue" style="margin-top:16px;">
+    <p><strong>Key principle:</strong> Website and app never talk to the database directly. They only call your backend API (<code>api.signal.in</code>). The backend handles all DB queries, ML calls, and data fan-out. This means one change = fixed everywhere simultaneously.</p>
+  </div>
+
+  <!-- Phase 1 -->
+  <h2>Phase 1 — Database &amp; Auth (Day 1–2) · Free</h2>
+
+  <div class="phase">
+    <div class="phase-timeline">
+      <div class="phase-dot" style="background:var(--grn);">1</div>
+      <div class="phase-line"></div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-title">Set up Supabase — your database + auth</div>
+      <div class="phase-sub">Supabase is free for up to 500MB database + 50,000 monthly active users. It replaces Firebase, Auth0, and a separate Postgres server — all in one.</div>
+
+      <div class="step-row"><div class="step-num">1</div><div class="step-body">Go to <a href="https://supabase.com" target="_blank">supabase.com</a> → click <strong>Start your project</strong> → sign in with GitHub → create a new project named <code>signal-prod</code>. Choose region: <strong>South Asia (Mumbai)</strong> for lowest latency to Indian users.</div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-body">Once created, go to <strong>Project Settings → API</strong> → copy your <code>Project URL</code> and <code>anon public key</code>. You'll need these in every service.</div></div>
+      <div class="step-row"><div class="step-num">3</div><div class="step-body">Go to <strong>SQL Editor</strong> and run this to create your core tables:</div></div>
+
+<pre><span class="c-c">-- Users table (extends Supabase auth.users)</span>
+<span class="c-k">CREATE TABLE</span> profiles (
+  id          uuid <span class="c-k">REFERENCES</span> auth.users <span class="c-k">PRIMARY KEY</span>,
+  name        text,
+  plan        text <span class="c-k">DEFAULT</span> <span class="c-s">'free'</span>,  <span class="c-c">-- free | starter | pro | elite</span>
+  plan_expiry timestamptz,
+  broker      text,
+  created_at  timestamptz <span class="c-k">DEFAULT</span> now()
+);
+
+<span class="c-c">-- Stock signals</span>
+<span class="c-k">CREATE TABLE</span> signals (
+  id          bigserial <span class="c-k">PRIMARY KEY</span>,
+  symbol      text <span class="c-k">NOT NULL</span>,
+  signal_type text,  <span class="c-c">-- BUY | SELL | HOLD</span>
+  confidence  float,
+  entry       float,
+  target      float,
+  stop_loss   float,
+  indicators  jsonb,
+  fired_at    timestamptz <span class="c-k">DEFAULT</span> now(),
+  outcome     text,  <span class="c-c">-- WIN | LOSS | OPEN</span>
+  exit_price  float,
+  exit_at     timestamptz
+);
+
+<span class="c-c">-- User portfolios</span>
+<span class="c-k">CREATE TABLE</span> portfolios (
+  id         bigserial <span class="c-k">PRIMARY KEY</span>,
+  user_id    uuid <span class="c-k">REFERENCES</span> profiles,
+  symbol     text,
+  quantity   int,
+  avg_price  float,
+  broker     text,
+  updated_at timestamptz <span class="c-k">DEFAULT</span> now()
+);
+
+<span class="c-c">-- Paper trading strategies</span>
+<span class="c-k">CREATE TABLE</span> paper_strategies (
+  id           bigserial <span class="c-k">PRIMARY KEY</span>,
+  user_id      uuid <span class="c-k">REFERENCES</span> profiles,
+  name         text,
+  config       jsonb,  <span class="c-c">-- all strategy params</span>
+  virtual_cash float <span class="c-k">DEFAULT</span> 100000,
+  status       text <span class="c-k">DEFAULT</span> <span class="c-s">'running'</span>,
+  started_at   timestamptz <span class="c-k">DEFAULT</span> now()
+);
+
+<span class="c-c">-- Paper trade log</span>
+<span class="c-k">CREATE TABLE</span> paper_trades (
+  id          bigserial <span class="c-k">PRIMARY KEY</span>,
+  strategy_id bigint <span class="c-k">REFERENCES</span> paper_strategies,
+  symbol      text,
+  signal      text,
+  entry       float,
+  exit_price  float,
+  pnl         float,
+  outcome     text,
+  created_at  timestamptz <span class="c-k">DEFAULT</span> now()
+);
+
+<span class="c-c">-- Broker OAuth tokens (encrypted)</span>
+<span class="c-k">CREATE TABLE</span> broker_tokens (
+  user_id      uuid <span class="c-k">REFERENCES</span> profiles,
+  broker       text,
+  access_token text,  <span class="c-c">-- store AES-256 encrypted</span>
+  expires_at   timestamptz,
+  <span class="c-k">PRIMARY KEY</span> (user_id, broker)
+);
+
+<span class="c-c">-- Enable Row Level Security on all tables</span>
+<span class="c-k">ALTER TABLE</span> profiles        <span class="c-k">ENABLE ROW LEVEL SECURITY</span>;
+<span class="c-k">ALTER TABLE</span> portfolios      <span class="c-k">ENABLE ROW LEVEL SECURITY</span>;
+<span class="c-k">ALTER TABLE</span> paper_strategies <span class="c-k">ENABLE ROW LEVEL SECURITY</span>;
+<span class="c-k">ALTER TABLE</span> paper_trades    <span class="c-k">ENABLE ROW LEVEL SECURITY</span>;
+<span class="c-k">ALTER TABLE</span> broker_tokens   <span class="c-k">ENABLE ROW LEVEL SECURITY</span>;
+
+<span class="c-c">-- RLS policies: users can only see their own data</span>
+<span class="c-k">CREATE POLICY</span> <span class="c-s">"own_profile"</span> <span class="c-k">ON</span> profiles
+  <span class="c-k">FOR ALL USING</span> (auth.uid() = id);
+
+<span class="c-k">CREATE POLICY</span> <span class="c-s">"own_portfolio"</span> <span class="c-k">ON</span> portfolios
+  <span class="c-k">FOR ALL USING</span> (auth.uid() = user_id);</pre>
+
+      <div class="step-row"><div class="step-num">4</div><div class="step-body">Go to <strong>Authentication → Providers</strong> → enable <strong>Google</strong> and <strong>Twitter/X</strong>. For Google: create OAuth credentials at <a href="https://console.cloud.google.com" target="_blank">console.cloud.google.com</a>. For Twitter: create app at <a href="https://developer.twitter.com" target="_blank">developer.twitter.com</a>. Paste Client ID + Secret into Supabase. Done — auth is live.</div></div>
+    </div>
+  </div>
+
+  <!-- Phase 2 -->
+  <h2>Phase 2 — Backend API (Day 2–4) · Free</h2>
+
+  <div class="phase">
+    <div class="phase-timeline">
+      <div class="phase-dot" style="background:var(--blu);">2</div>
+      <div class="phase-line"></div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-title">Node.js backend on Railway</div>
+      <div class="phase-sub">Railway gives you $5/month free credit — enough for a small Node.js server with zero configuration. This is your API that the website and app both call.</div>
+
+      <div class="step-row"><div class="step-num">1</div><div class="step-body">In VS Code terminal: <code>mkdir signal-api && cd signal-api && npm init -y</code><br>Then: <code>npm install express cors dotenv @supabase/supabase-js axios node-cron ws</code></div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-body">Create <code>.env</code> file in your project root:</div></div>
+
+<pre>SUPABASE_URL=https://yourproject.supabase.co
+SUPABASE_SERVICE_KEY=your_service_role_key   <span class="c-c"># NOT the anon key — get from Settings → API</span>
+MSTOCK_API_KEY=your_mstock_key
+MSTOCK_SECRET=your_mstock_secret
+JWT_SECRET=your_random_32char_string
+RAZORPAY_KEY=your_razorpay_key
+RAZORPAY_SECRET=your_razorpay_secret
+TWITTER_API_KEY=your_twitter_key
+TWITTER_API_SECRET=your_twitter_secret
+TWITTER_ACCESS_TOKEN=your_access_token
+TWITTER_ACCESS_SECRET=your_access_secret
+PORT=3001</pre>
+
+      <div class="step-row"><div class="step-num">3</div><div class="step-body">Create <code>index.js</code> — the main API server:</div></div>
+
+<pre><span class="c-k">const</span> express = require(<span class="c-s">'express'</span>);
+<span class="c-k">const</span> cors    = require(<span class="c-s">'cors'</span>);
+<span class="c-k">const</span> { createClient } = require(<span class="c-s">'@supabase/supabase-js'</span>);
+require(<span class="c-s">'dotenv'</span>).config();
+
+<span class="c-k">const</span> app = express();
+<span class="c-k">const</span> supabase = createClient(
+  process.env.SUPABASE_URL,
+  process.env.SUPABASE_SERVICE_KEY
+);
+
+app.use(cors({ origin: [<span class="c-s">'https://signal.vercel.app'</span>, <span class="c-s">'http://localhost:3000'</span>] }));
+app.use(express.json());
+
+<span class="c-c">// ── Auth middleware ─────────────────────────────────</span>
+<span class="c-k">async function</span> <span class="c-f">auth</span>(req, res, next) {
+  <span class="c-k">const</span> token = req.headers.authorization?.split(<span class="c-s">' '</span>)[1];
+  <span class="c-k">if</span> (!token) <span class="c-k">return</span> res.status(401).json({ error: <span class="c-s">'Unauthorized'</span> });
+  <span class="c-k">const</span> { data: { user }, error } = <span class="c-k">await</span> supabase.auth.getUser(token);
+  <span class="c-k">if</span> (error || !user) <span class="c-k">return</span> res.status(401).json({ error: <span class="c-s">'Invalid token'</span> });
+  req.user = user;
+  next();
+}
+
+<span class="c-c">// ── Routes ──────────────────────────────────────────</span>
+
+<span class="c-c">// GET /signals — latest signals (public)</span>
+app.get(<span class="c-s">'/signals'</span>, <span class="c-k">async</span> (req, res) => {
+  <span class="c-k">const</span> { data } = <span class="c-k">await</span> supabase
+    .from(<span class="c-s">'signals'</span>)
+    .select(<span class="c-s">'*'</span>)
+    .order(<span class="c-s">'fired_at'</span>, { ascending: <span class="c-k">false</span> })
+    .limit(20);
+  res.json(data);
+});
+
+<span class="c-c">// GET /portfolio — user's portfolio (auth required)</span>
+app.get(<span class="c-s">'/portfolio'</span>, auth, <span class="c-k">async</span> (req, res) => {
+  <span class="c-k">const</span> { data } = <span class="c-k">await</span> supabase
+    .from(<span class="c-s">'portfolios'</span>)
+    .select(<span class="c-s">'*'</span>)
+    .eq(<span class="c-s">'user_id'</span>, req.user.id);
+  res.json(data);
+});
+
+<span class="c-c">// POST /paper-trade/create — new paper strategy</span>
+app.post(<span class="c-s">'/paper-trade/create'</span>, auth, <span class="c-k">async</span> (req, res) => {
+  <span class="c-k">const</span> { name, config } = req.body;
+  <span class="c-k">const</span> { data } = <span class="c-k">await</span> supabase
+    .from(<span class="c-s">'paper_strategies'</span>)
+    .insert({ user_id: req.user.id, name, config })
+    .select().single();
+  res.json(data);
+});
+
+<span class="c-c">// GET /paper-trade/:id/log — signal log for strategy</span>
+app.get(<span class="c-s">'/paper-trade/:id/log'</span>, auth, <span class="c-k">async</span> (req, res) => {
+  <span class="c-k">const</span> { data } = <span class="c-k">await</span> supabase
+    .from(<span class="c-s">'paper_trades'</span>)
+    .select(<span class="c-s">'*'</span>)
+    .eq(<span class="c-s">'strategy_id'</span>, req.params.id)
+    .order(<span class="c-s">'created_at'</span>, { ascending: <span class="c-k">false</span> });
+  res.json(data);
+});
+
+<span class="c-c">// POST /paper-trade/:id/update-params — edit strategy</span>
+app.post(<span class="c-s">'/paper-trade/:id/update-params'</span>, auth, <span class="c-k">async</span> (req, res) => {
+  <span class="c-k">await</span> supabase.from(<span class="c-s">'paper_strategies'</span>)
+    .update({ config: req.body.config })
+    .eq(<span class="c-s">'id'</span>, req.params.id)
+    .eq(<span class="c-s">'user_id'</span>, req.user.id);
+  res.json({ ok: <span class="c-k">true</span> });
+});
+
+<span class="c-c">// GET /market/quote/:symbol</span>
+app.get(<span class="c-s">'/market/quote/:symbol'</span>, auth, <span class="c-k">async</span> (req, res) => {
+  <span class="c-c">// Call mStock API here</span>
+  <span class="c-k">const</span> quote = <span class="c-k">await</span> getMStockQuote(req.params.symbol);
+  res.json(quote);
+});
+
+app.listen(process.env.PORT, () =>
+  console.log(<span class="c-s">`SIGNAL API running on port ${process.env.PORT}`</span>));
+</pre>
+
+      <div class="step-row"><div class="step-num">4</div><div class="step-body">Deploy to Railway: go to <a href="https://railway.app" target="_blank">railway.app</a> → <strong>New Project → Deploy from GitHub repo</strong> → select your <code>signal-api</code> repo → Railway auto-detects Node.js and deploys. Add your <code>.env</code> variables in <strong>Variables</strong> tab. Your API URL will be something like <code>signal-api.up.railway.app</code>.</div></div>
+    </div>
+  </div>
+
+  <!-- Phase 3 -->
+  <h2>Phase 3 — Website on Vercel (Day 3–4) · Free</h2>
+
+  <div class="phase">
+    <div class="phase-timeline">
+      <div class="phase-dot" style="background:var(--org);">3</div>
+      <div class="phase-line"></div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-title">Deploy the website — Next.js on Vercel</div>
+      <div class="phase-sub">The HTML designs you have become a Next.js app. Vercel deploys automatically on every git push — zero config, free SSL, free CDN.</div>
+
+      <div class="step-row"><div class="step-num">1</div><div class="step-body">Convert your HTML pages to Next.js: <code>npx create-next-app@latest signal-web --typescript --tailwind --app</code></div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-body">Each HTML page maps to a Next.js route:<br><code>SIGNAL Landing Page.html</code> → <code>app/page.tsx</code><br><code>SIGNAL Dashboard.html</code> → <code>app/dashboard/page.tsx</code><br><code>SIGNAL Signals.html</code> → <code>app/signals/page.tsx</code><br>and so on for each page.</div></div>
+      <div class="step-row"><div class="step-num">3</div><div class="step-body">Add Supabase client to your Next.js app:<br><code>npm install @supabase/supabase-js @supabase/ssr</code><br>Create <code>.env.local</code>:<br><code>NEXT_PUBLIC_SUPABASE_URL=your_url</code><br><code>NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key</code><br><code>NEXT_PUBLIC_API_URL=https://signal-api.up.railway.app</code></div></div>
+      <div class="step-row"><div class="step-num">4</div><div class="step-body">Push to GitHub → go to <a href="https://vercel.com" target="_blank">vercel.com</a> → <strong>Import Project</strong> → select your repo → Vercel auto-deploys. Add your env variables in <strong>Settings → Environment Variables</strong>.</div></div>
+      <div class="step-row"><div class="step-num">5</div><div class="step-body">Your site is live at <code>signal-web.vercel.app</code>. Add a custom domain (<code>getsignal.in</code> ≈ ₹800/yr from GoDaddy) in Vercel Settings → Domains → done, SSL auto-configured.</div></div>
+    </div>
+  </div>
+
+  <!-- Phase 4 -->
+  <h2>Phase 4 — ML Signal Engine (Day 5–7) · Free</h2>
+
+  <div class="phase">
+    <div class="phase-timeline">
+      <div class="phase-dot" style="background:var(--pur);">4</div>
+      <div class="phase-line"></div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-title">Random Forest model on Hugging Face Spaces</div>
+      <div class="phase-sub">Hugging Face Spaces lets you host a Python Flask/FastAPI app for free. Your ML model runs here and the backend calls it every 2 minutes during market hours.</div>
+
+      <div class="step-row"><div class="step-num">1</div><div class="step-body">Create a new Space at <a href="https://huggingface.co/spaces" target="_blank">huggingface.co/spaces</a> → choose <strong>Gradio</strong> or <strong>Docker</strong> → name it <code>signal-ml</code>.</div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-body">Create <code>app.py</code>:</div></div>
+
+<pre><span class="c-k">from</span> flask <span class="c-k">import</span> Flask, request, jsonify
+<span class="c-k">from</span> sklearn.ensemble <span class="c-k">import</span> RandomForestClassifier
+<span class="c-k">import</span> pandas <span class="c-k">as</span> pd, numpy <span class="c-k">as</span> np, joblib
+<span class="c-k">from</span> ta <span class="c-k">import</span> add_all_ta_features
+
+app = Flask(__name__)
+model = joblib.load(<span class="c-s">'signal_rf_model.pkl'</span>)  <span class="c-c"># pre-trained model file</span>
+
+FEATURES = [
+  <span class="c-s">'momentum_rsi'</span>, <span class="c-s">'trend_macd'</span>, <span class="c-s">'trend_ema_fast'</span>,
+  <span class="c-s">'volatility_bbh'</span>, <span class="c-s">'trend_adx'</span>, <span class="c-s">'volume_obv'</span>
+]
+
+@app.route(<span class="c-s">'/predict'</span>, methods=[<span class="c-s">'POST'</span>])
+<span class="c-k">def</span> <span class="c-f">predict</span>():
+  df = pd.DataFrame(request.json[<span class="c-s">'candles'</span>],
+         columns=[<span class="c-s">'date'</span>,<span class="c-s">'open'</span>,<span class="c-s">'high'</span>,<span class="c-s">'low'</span>,<span class="c-s">'close'</span>,<span class="c-s">'volume'</span>])
+  df = add_all_ta_features(df, open=<span class="c-s">'open'</span>, high=<span class="c-s">'high'</span>,
+         low=<span class="c-s">'low'</span>, close=<span class="c-s">'close'</span>, volume=<span class="c-s">'volume'</span>, fillna=<span class="c-k">True</span>)
+  proba = model.predict_proba(df[FEATURES].tail(1))[0][1]
+  signal = <span class="c-s">'BUY'</span> <span class="c-k">if</span> proba > 0.65 <span class="c-k">else</span> (<span class="c-s">'SELL'</span> <span class="c-k">if</span> proba < 0.35 <span class="c-k">else</span> <span class="c-s">'HOLD'</span>)
+  <span class="c-k">return</span> jsonify({ <span class="c-s">'signal'</span>: signal, <span class="c-s">'confidence'</span>: round(proba * 100, 1) })
+
+<span class="c-k">if</span> __name__ == <span class="c-s">'__main__'</span>:
+  app.run(host=<span class="c-s">'0.0.0.0'</span>, port=<span class="c-v">7860</span>)</pre>
+
+      <div class="step-row"><div class="step-num">3</div><div class="step-body">Your backend calls this every 2 minutes during market hours (9:15am–3:30pm IST, Mon–Fri) using a cron job. For each NIFTY 50 stock, it fetches OHLCV from mStock → sends to ML service → stores the signal in Supabase → pushes notifications to subscribed users.</div></div>
+      <div class="step-row"><div class="step-num">4</div><div class="step-body"><strong>Training the model:</strong> Use 5 years of historical data from <code>yfinance</code> (free). Run training locally once, save the model file with <code>joblib.dump(model, 'signal_rf_model.pkl')</code>, upload to Hugging Face Space. Re-train monthly with new data.</div></div>
+    </div>
+  </div>
+
+  <!-- Phase 5 -->
+  <h2>Phase 5 — Mobile App (Week 2–3) · Free</h2>
+
+  <div class="phase">
+    <div class="phase-timeline">
+      <div class="phase-dot" style="background:var(--ylw);">5</div>
+      <div class="phase-line"></div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-title">React Native app with Expo — same API, same DB</div>
+      <div class="phase-sub">The mobile app calls the exact same backend API as the website. All actions (signals, portfolio, paper trading, algo builder) have identical behaviour on both platforms.</div>
+
+      <div class="step-row"><div class="step-num">1</div><div class="step-body"><code>npx create-expo-app signal-mobile --template blank-typescript</code><br>Then: <code>npm install @supabase/supabase-js axios zustand react-query</code></div></div>
+      <div class="step-row"><div class="step-num">2</div><div class="step-body">Create <code>lib/api.ts</code> — all your app's API calls live here. Both web and app use the same endpoints:</div></div>
+
+<pre><span class="c-c">// lib/api.ts — used by BOTH website and mobile app</span>
+<span class="c-k">const</span> API = process.env.EXPO_PUBLIC_API_URL; <span class="c-c">// your Railway URL</span>
+
+<span class="c-k">export async function</span> <span class="c-f">getSignals</span>() {
+  <span class="c-k">const</span> r = <span class="c-k">await</span> fetch(<span class="c-s">`${API}/signals`</span>);
+  <span class="c-k">return</span> r.json();
+}
+
+<span class="c-k">export async function</span> <span class="c-f">getPortfolio</span>(token: string) {
+  <span class="c-k">const</span> r = <span class="c-k">await</span> fetch(<span class="c-s">`${API}/portfolio`</span>, {
+    headers: { Authorization: <span class="c-s">`Bearer ${token}`</span> }
+  });
+  <span class="c-k">return</span> r.json();
+}
+
+<span class="c-k">export async function</span> <span class="c-f">createPaperStrategy</span>(token: string, name: string, config: object) {
+  <span class="c-k">const</span> r = <span class="c-k">await</span> fetch(<span class="c-s">`${API}/paper-trade/create`</span>, {
+    method: <span class="c-s">'POST'</span>,
+    headers: { Authorization: <span class="c-s">`Bearer ${token}`</span>, <span class="c-s">'Content-Type'</span>: <span class="c-s">'application/json'</span> },
+    body: JSON.stringify({ name, config })
+  });
+  <span class="c-k">return</span> r.json();
+}</pre>
+
+      <div class="step-row"><div class="step-num">3</div><div class="step-body">Test on your phone immediately — no build needed: <code>npx expo start</code> → scan QR with Expo Go app (iOS or Android). See your app live on your phone in 30 seconds.</div></div>
+      <div class="step-row"><div class="step-num">4</div><div class="step-body">When ready to submit: <code>npm install -g eas-cli && eas login && eas build --platform all</code> → Expo builds IPA (iOS) + APK (Android) in the cloud. No Mac needed for Android. iOS needs Apple Developer account ($99/yr).</div></div>
+    </div>
+  </div>
+
+  <!-- Phase 6 -->
+  <h2>Phase 6 — Payments &amp; Subscriptions (Day 5–6) · Free to integrate</h2>
+
+  <div class="phase">
+    <div class="phase-timeline">
+      <div class="phase-dot" style="background:var(--red);">6</div>
+    </div>
+    <div class="phase-body">
+      <div class="phase-title">Razorpay subscription billing</div>
+      <div class="phase-sub">Free to integrate. Razorpay charges 2% per transaction — only when you have paying users. Works on web and mobile.</div>
+
+<pre><span class="c-c">// Backend: create subscription</span>
+<span class="c-k">const</span> Razorpay = require(<span class="c-s">'razorpay'</span>);
+<span class="c-k">const</span> rzp = <span class="c-k">new</span> Razorpay({ key_id: process.env.RAZORPAY_KEY, key_secret: process.env.RAZORPAY_SECRET });
+
+app.post(<span class="c-s">'/subscribe'</span>, auth, <span class="c-k">async</span> (req, res) => {
+  <span class="c-k">const</span> plans = {
+    starter: <span class="c-s">'plan_starter_monthly'</span>,  <span class="c-c">// ₹199/mo — create in Razorpay dashboard</span>
+    pro:     <span class="c-s">'plan_pro_monthly'</span>,      <span class="c-c">// ₹599/mo</span>
+    elite:   <span class="c-s">'plan_elite_monthly'</span>,    <span class="c-c">// ₹1499/mo</span>
+  };
+  <span class="c-k">const</span> sub = <span class="c-k">await</span> rzp.subscriptions.create({
+    plan_id: plans[req.body.plan],
+    total_count: 12,
+    notes: { user_id: req.user.id }
+  });
+  res.json({ payment_url: sub.short_url });
+});
+
+<span class="c-c">// Webhook: Razorpay calls this when payment succeeds</span>
+app.post(<span class="c-s">'/webhook/razorpay'</span>, <span class="c-k">async</span> (req, res) => {
+  <span class="c-k">const</span> event = req.body;
+  <span class="c-k">if</span> (event.event === <span class="c-s">'subscription.activated'</span>) {
+    <span class="c-k">const</span> userId = event.payload.subscription.entity.notes.user_id;
+    <span class="c-k">const</span> plan   = getPlanFromPlanId(event.payload.subscription.entity.plan_id);
+    <span class="c-c">// Update user's plan in Supabase</span>
+    <span class="c-k">await</span> supabase.from(<span class="c-s">'profiles'</span>).update({ plan }).eq(<span class="c-s">'id'</span>, userId);
+  }
+  res.json({ ok: <span class="c-k">true</span> });
+});</pre>
+    </div>
+  </div>
+
+  <!-- Cost Summary -->
+  <h2>Complete Cost Breakdown</h2>
+
+  <div class="cost-total">
+    <div>
+      <div style="font-size:13px;color:var(--dim);margin-bottom:6px;">TOTAL MONTHLY COST TO START</div>
+      <div class="cost-val">₹0</div>
+      <div style="font-size:13px;color:var(--dim);margin-top:6px;">during testing phase</div>
+    </div>
+    <div class="cost-sub">Every service below has a free tier generous enough to take you to your first 100–200 users. Only upgrade when revenue covers the cost.</div>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th>Service</th><th>What it does</th><th>Free tier</th><th>Paid (when needed)</th><th>Your first upgrade trigger</th>
+    </tr></thead>
+    <tbody>
+      <tr><td><strong>Supabase</strong></td><td>Database + Auth + Realtime</td><td><span class="tag-free">Free</span> · 500MB DB · 50K users</td><td>$25/mo for 8GB</td><td>When DB hits 400MB or 40K users</td></tr>
+      <tr><td><strong>Vercel</strong></td><td>Website hosting</td><td><span class="tag-free">Free</span> · unlimited sites</td><td>$20/mo (Pro)</td><td>When you need team access or advanced analytics</td></tr>
+      <tr><td><strong>Railway</strong></td><td>Node.js API server</td><td><span class="tag-free">$5 credit/mo</span> · ~500 hrs</td><td>$10–20/mo</td><td>When API gets consistent traffic</td></tr>
+      <tr><td><strong>Hugging Face</strong></td><td>ML model hosting</td><td><span class="tag-free">Free</span> · public spaces</td><td>$0–9/mo (private)</td><td>When you want private/faster inference</td></tr>
+      <tr><td><strong>mStock API</strong></td><td>Market data</td><td><span class="tag-free">Free</span> · your broker account</td><td>—</td><td>When you add Kite (₹2,000/mo)</td></tr>
+      <tr><td><strong>Expo EAS</strong></td><td>App builds</td><td><span class="tag-free">Free</span> · 30 builds/mo</td><td>$29/mo</td><td>When you push updates daily</td></tr>
+      <tr><td><strong>Apple Dev</strong></td><td>iOS App Store</td><td><span class="tag-paid">$99/yr</span> (~₹8,200)</td><td>—</td><td>Required for TestFlight + App Store</td></tr>
+      <tr><td><strong>Google Play</strong></td><td>Android Play Store</td><td><span class="tag-paid">$25 one-time</span> (~₹2,100)</td><td>—</td><td>Required for Play Store listing</td></tr>
+      <tr><td><strong>Domain (.in)</strong></td><td>Custom domain</td><td>—</td><td><span class="tag-paid">₹800/yr</span></td><td>When you go live publicly</td></tr>
+      <tr><td><strong>Razorpay</strong></td><td>Payments</td><td><span class="tag-free">Free</span> to integrate</td><td>2% per transaction</td><td>Only pay when you earn</td></tr>
+      <tr><td><strong>Twitter API</strong></td><td>Auto-post signals</td><td><span class="tag-free">Free</span> · 1,500 tweets/mo</td><td>~₹1,200/mo (Basic)</td><td>When you need more volume</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-yellow">
+    <p><strong>💰 Real cost to launch (minimum):</strong> ₹8,200 Apple Developer + ₹2,100 Google Play + ₹800 domain = <strong>₹11,100 one-time</strong>. Monthly recurring = ₹0 until you have real traffic. Razorpay only charges when you earn — so your first ₹599 Pro subscription more than covers it.</p>
+  </div>
+
+  <!-- Timeline -->
+  <h2>Realistic Timeline</h2>
+  <table>
+    <thead><tr><th>Week</th><th>What you build</th><th>Milestone</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Week 1</strong></td><td>Supabase DB setup · Node.js API on Railway · basic auth</td><td>Sign in works end-to-end</td></tr>
+      <tr><td><strong>Week 2</strong></td><td>Convert HTML designs to Next.js · deploy to Vercel · wire signals API</td><td>Website live at your domain</td></tr>
+      <tr><td><strong>Week 3</strong></td><td>ML model training + deploy to HF Spaces · mStock integration · cron job</td><td>Real signals firing daily</td></tr>
+      <tr><td><strong>Week 4</strong></td><td>Razorpay subscriptions · paper trading API · push notifications</td><td>First paying user possible</td></tr>
+      <tr><td><strong>Week 5–6</strong></td><td>React Native app · Expo Go testing · broker OAuth</td><td>App working on your phone</td></tr>
+      <tr><td><strong>Week 7–8</strong></td><td>App Store + Play Store submission · review wait</td><td>App publicly available</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-purple">
+    <p><strong>🎯 Fastest path to revenue:</strong> Get the website live on Vercel first (Week 2) — it requires no app store approval. Share it on Twitter with your track record. Even 5 Pro subscribers at ₹599 = ₹3,000/month which more than covers all your costs. Build the mobile app in parallel without pressure.</p>
+  </div>
+
+  <div class="callout callout-orange" style="margin-top:16px;">
+    <p><strong>⚠️ SEBI reminder:</strong> While testing and building, keep the "NOT SEBI registered" disclaimer prominent on every page and in app. When revenue grows, consult a fintech lawyer about whether your specific feature set requires SEBI registration as a Research Analyst (RA). The RA registration route is the cleanest path for a signal platform — cost is manageable and takes ~3 months.</p>
+  </div>
+
+</div>
+
+<footer style="border-top:1px solid var(--bdr);padding:28px clamp(20px,4vw,64px);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;">
+  <div style="font-size:16px;font-weight:900;letter-spacing:-0.3px;">SIGNAL</div>
+  <div style="font-size:12px;color:var(--dim2);">© 2026 Vaasudev Amitav · NOT SEBI registered · Not financial advice</div>
+</footer>
+
+</body>
+</html>

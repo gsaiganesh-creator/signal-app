@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — AlgoTrading iOS App Flow</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { width: 100%; height: 100%; }
+    body { background: #111; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; }
+    button { font-family: inherit; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="design-canvas.jsx"></script>
+
+  <script type="text/babel">
+    const { useState } = React;
+
+    /* ── Palette ────────────────────────────────────────────── */
+    const BLU   = '#1740F5';
+    const BLU_L = '#4F6FFA';
+    const ORG   = '#FF5C1A';
+    const ORG_L = '#FF7D46';
+    const BG    = '#070D1A';
+    const SURF  = '#0E1628';
+    const SURF2 = '#162038';
+    const BDR   = '#1C2E4A';
+    const TXT   = '#FFFFFF';
+    const DIM   = '#7A8BAA';
+    const GRN   = '#00D4A0';
+    const RED   = '#FF3B5C';
+
+    /* ── Micro components ───────────────────────────────────── */
+    function Spark({ data = [], color = BLU, w = 80, h = 32 }) {
+      const max = Math.max(...data), min = Math.min(...data), rng = max - min || 1;
+      const pts = data.map((v, i) =>
+        `${(i / (data.length - 1)) * w},${h - 2 - ((v - min) / rng) * (h - 4)}`
+      ).join(' ');
+      return (
+        <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{ display: 'block' }}>
+          <polyline points={pts} fill="none" stroke={color} strokeWidth="1.8"
+            strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      );
+    }
+
+    function StrengthBar({ val = 4, max = 5, color = GRN }) {
+      return (
+        <div style={{ display: 'flex', gap: 3 }}>
+          {Array.from({ length: max }, (_, i) => (
+            <div key={i} style={{ flex: 1, height: 5, borderRadius: 3,
+              background: i < val ? color : BDR }} />
+          ))}
+        </div>
+      );
+    }
+
+    /* ── Screen 1 · Welcome ─────────────────────────────────── */
+    function WelcomeScreen() {
+      return (
+        <div style={{ width: '100%', height: '100%', background: BG,
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          justifyContent: 'space-between', padding: '48px 24px 44px',
+          position: 'relative', overflow: 'hidden' }}>
+
+          {/* Glow blobs */}
+          <div style={{ position: 'absolute', top: -90, left: -90, width: 280, height: 280,
+            borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,64,245,0.3) 0%, transparent 70%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', bottom: 50, right: -60, width: 240, height: 240,
+            borderRadius: '50%', background: 'radial-gradient(circle, rgba(255,92,26,0.22) 0%, transparent 70%)', pointerEvents: 'none' }} />
+
+          {/* Logo */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, zIndex: 1, paddingTop: 20 }}>
+            <div style={{ width: 80, height: 80, borderRadius: 24,
+              background: `linear-gradient(145deg, ${BLU}, ${BLU_L})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: `0 10px 40px rgba(23,64,245,0.55)` }}>
+              <svg width="44" height="44" viewBox="0 0 44 44" fill="none">
+                <polyline points="2,36 11,20 18,27 27,11 35,17 42,7"
+                  stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round" />
+                <circle cx="35" cy="17" r="4" fill={ORG} />
+                <circle cx="35" cy="17" r="8" fill={ORG} opacity="0.25" />
+              </svg>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <div style={{ fontSize: 36, fontWeight: 900, color: TXT, letterSpacing: -1.5 }}>SIGNAL</div>
+              <div style={{ fontSize: 11, color: DIM, letterSpacing: 2, marginTop: 5 }}>ML-POWERED ETF INTELLIGENCE</div>
+            </div>
+          </div>
+
+          {/* Hero chart */}
+          <div style={{ zIndex: 1, width: '100%', display: 'flex', justifyContent: 'center' }}>
+            <svg width="280" height="110" viewBox="0 0 280 110" fill="none">
+              <defs>
+                <linearGradient id="wGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor={BLU} stopOpacity="0.38" />
+                  <stop offset="100%" stopColor={BLU} stopOpacity="0" />
+                </linearGradient>
+              </defs>
+              {[25, 55, 85].map(y => (
+                <line key={y} x1="0" y1={y} x2="280" y2={y} stroke={BDR} strokeWidth="0.8" />
+              ))}
+              <path d="M0,88 C25,82 44,72 65,62 S105,45 128,38 S168,24 188,20 S228,13 250,16 L280,12 L280,110 L0,110 Z"
+                fill="url(#wGrad)" />
+              <path d="M0,88 C25,82 44,72 65,62 S105,45 128,38 S168,24 188,20 S228,13 250,16 L280,12"
+                stroke={BLU} strokeWidth="2.5" fill="none" strokeLinecap="round" />
+              <circle cx="250" cy="16" r="5" fill={ORG} />
+              <circle cx="250" cy="16" r="10" fill={ORG} opacity="0.22" />
+              <line x1="250" y1="0" x2="250" y2="110" stroke={ORG} strokeWidth="1" strokeDasharray="4 3" opacity="0.5" />
+              <rect x="218" y="1" width="64" height="17" rx="4" fill="rgba(255,92,26,0.14)" stroke={ORG} strokeWidth="0.8" />
+              <text x="250" y="13" textAnchor="middle" fill={ORG} fontSize="8" fontWeight="700" fontFamily="system-ui">BUY SIGNAL</text>
+              {/* Mini badges */}
+              <rect x="4" y="50" width="42" height="14" rx="4" fill="rgba(0,212,160,0.12)" stroke="rgba(0,212,160,0.3)" strokeWidth="0.8" />
+              <text x="25" y="60" textAnchor="middle" fill={GRN} fontSize="7" fontWeight="700" fontFamily="system-ui">+1.25% SPY</text>
+              <rect x="60" y="34" width="42" height="14" rx="4" fill="rgba(79,111,250,0.14)" stroke="rgba(79,111,250,0.3)" strokeWidth="0.8" />
+              <text x="81" y="44" textAnchor="middle" fill={BLU_L} fontSize="7" fontWeight="700" fontFamily="system-ui">+2.87% ARKK</text>
+            </svg>
+          </div>
+
+          {/* CTA */}
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 10, zIndex: 1 }}>
+            <div style={{ display: 'flex', gap: 8, justifyContent: 'center', marginBottom: 4 }}>
+              {['📈 ETF Signals', '🤖 ML Alerts', '𝕏 Sentiment'].map(tag => (
+                <span key={tag} style={{ fontSize: 10, color: DIM, padding: '3px 8px',
+                  borderRadius: 10, background: SURF, border: `1px solid ${BDR}` }}>{tag}</span>
+              ))}
+            </div>
+            <button style={{ width: '100%', height: 54, borderRadius: 16,
+              background: `linear-gradient(135deg, ${BLU}, ${BLU_L})`,
+              border: 'none', color: TXT, fontSize: 17, fontWeight: 700, cursor: 'pointer',
+              boxShadow: `0 6px 28px rgba(23,64,245,0.45)` }}>
+              Get Started →
+            </button>
+            <button style={{ width: '100%', height: 50, borderRadius: 16,
+              background: 'rgba(255,255,255,0.05)', border: `1px solid ${BDR}`,
+              color: TXT, fontSize: 16, fontWeight: 600, cursor: 'pointer' }}>
+              Sign In
+            </button>
+            <p style={{ textAlign: 'center', fontSize: 10.5, color: '#3A4860', marginTop: 2 }}>
+              Terms of Service · Privacy Policy
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── Screen 2 · Sign Up ─────────────────────────────────── */
+    function SignUpScreen() {
+      const fields = [
+        { label: 'Full Name',      placeholder: 'Alex Morgan',       val: 'Alex Morgan' },
+        { label: 'Email Address',  placeholder: 'alex@example.com',   val: 'alex@example' },
+        { label: 'Password',       placeholder: '••••••••••••',       val: '••••••••••' },
+      ];
+      return (
+        <div style={{ width: '100%', height: '100%', background: BG,
+          padding: '24px 22px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          <div>
+            <div style={{ fontSize: 26, fontWeight: 800, color: TXT, letterSpacing: -0.5 }}>Create Account</div>
+            <div style={{ fontSize: 14, color: DIM, marginTop: 5 }}>Join thousands of algo traders</div>
+          </div>
+
+          {/* Social */}
+          <div style={{ display: 'flex', gap: 10 }}>
+            {[{ icon: '𝕏', label: 'Twitter' }, { icon: 'G', label: 'Google' }].map(s => (
+              <button key={s.label} style={{ flex: 1, height: 46, borderRadius: 13,
+                background: SURF, border: `1px solid ${BDR}`,
+                color: TXT, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+                <span style={{ fontWeight: 800 }}>{s.icon}</span> {s.label}
+              </button>
+            ))}
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div style={{ flex: 1, height: 1, background: BDR }} />
+            <span style={{ fontSize: 11.5, color: DIM }}>or continue with email</span>
+            <div style={{ flex: 1, height: 1, background: BDR }} />
+          </div>
+
+          {/* Fields */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+            {fields.map(f => (
+              <div key={f.label}>
+                <div style={{ fontSize: 11, color: DIM, marginBottom: 5, fontWeight: 700, letterSpacing: 0.5 }}>
+                  {f.label.toUpperCase()}
+                </div>
+                <div style={{ height: 48, borderRadius: 12, background: SURF,
+                  border: `1px solid ${f.label === 'Email Address' ? BLU : BDR}`,
+                  display: 'flex', alignItems: 'center', padding: '0 14px',
+                  fontSize: 14, color: TXT, gap: 8 }}>
+                  {f.val}
+                  {f.label === 'Email Address' && (
+                    <div style={{ marginLeft: 'auto', width: 20, height: 20, borderRadius: 10,
+                      background: `rgba(23,64,245,0.2)`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="10" height="10" viewBox="0 0 10 10">
+                        <path d="M2 5 L4 7 L8 3" stroke={BLU_L} strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          {/* Risk tolerance */}
+          <div>
+            <div style={{ fontSize: 11, color: DIM, marginBottom: 8, fontWeight: 700, letterSpacing: 0.5 }}>RISK TOLERANCE</div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              {['Conservative', 'Moderate', 'Aggressive'].map((r, i) => (
+                <div key={r} style={{ flex: 1, height: 38, borderRadius: 10,
+                  background: i === 1 ? `rgba(23,64,245,0.18)` : SURF2,
+                  border: `1px solid ${i === 1 ? BLU : BDR}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: i === 1 ? BLU_L : DIM, fontSize: 11, fontWeight: 600 }}>
+                  {r}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 'auto' }}>
+            <button style={{ width: '100%', height: 52, borderRadius: 15,
+              background: `linear-gradient(135deg, ${BLU}, ${ORG})`,
+              border: 'none', color: TXT, fontSize: 16, fontWeight: 700, cursor: 'pointer',
+              boxShadow: `0 6px 24px rgba(23,64,245,0.35)` }}>
+              Create Account →
+            </button>
+            <p style={{ textAlign: 'center', fontSize: 13, color: DIM, marginTop: 14 }}>
+              Already have an account?{' '}
+              <span style={{ color: BLU_L, fontWeight: 600 }}>Sign In</span>
+            </p>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── Screen 3 · Verify Email ────────────────────────────── */
+    function VerifyScreen() {
+      const digits = ['4', '7', '2', '', '', ''];
+      return (
+        <div style={{ width: '100%', height: '100%', background: BG,
+          padding: '44px 24px 40px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', gap: 24 }}>
+
+          <div style={{ width: 76, height: 76, borderRadius: 22,
+            background: `rgba(23,64,245,0.1)`, border: `1px solid ${BDR}`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <svg width="38" height="38" viewBox="0 0 38 38" fill="none">
+              <rect x="3" y="9" width="32" height="22" rx="5" stroke={BLU_L} strokeWidth="2" />
+              <path d="M3 14 L19 23 L35 14" stroke={BLU_L} strokeWidth="2" strokeLinecap="round" />
+              <circle cx="29" cy="29" r="8" fill={BG} stroke={ORG} strokeWidth="2" />
+              <path d="M26 29 L28.5 31.5 L32 27" stroke={ORG} strokeWidth="2"
+                strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+
+          <div style={{ textAlign: 'center' }}>
+            <div style={{ fontSize: 24, fontWeight: 800, color: TXT }}>Check your email</div>
+            <div style={{ fontSize: 14, color: DIM, marginTop: 8, lineHeight: 1.55 }}>
+              We sent a 6-digit code to<br />
+              <span style={{ color: TXT, fontWeight: 600 }}>alex@example.com</span>
+            </div>
+          </div>
+
+          {/* OTP */}
+          <div style={{ display: 'flex', gap: 9 }}>
+            {digits.map((d, i) => (
+              <div key={i} style={{
+                width: 48, height: 58, borderRadius: 13,
+                background: d ? `rgba(23,64,245,0.1)` : SURF,
+                border: `2px solid ${d ? BLU : i === 3 ? ORG : BDR}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 24, fontWeight: 700, color: d ? TXT : ORG,
+              }}>{d || (i === 3 ? '|' : '')}</div>
+            ))}
+          </div>
+
+          <div style={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 14 }}>
+            <button style={{ width: '100%', height: 52, borderRadius: 15,
+              background: `linear-gradient(135deg, ${BLU}, ${BLU_L})`,
+              border: 'none', color: TXT, fontSize: 16, fontWeight: 700, cursor: 'pointer',
+              boxShadow: `0 6px 22px rgba(23,64,245,0.4)`, opacity: 0.5 }}>
+              Verify Email
+            </button>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: 14, color: DIM }}>Didn't receive it? </span>
+              <span style={{ fontSize: 14, color: ORG, fontWeight: 600 }}>Resend code</span>
+            </div>
+            <div style={{ textAlign: 'center' }}>
+              <span style={{ fontSize: 12, color: DIM }}>Resend available in </span>
+              <span style={{ fontSize: 12, color: TXT, fontWeight: 600 }}>0:47</span>
+            </div>
+          </div>
+
+          {/* Security note */}
+          <div style={{ width: '100%', padding: '12px 14px', borderRadius: 13,
+            background: 'rgba(0,212,160,0.07)', border: '1px solid rgba(0,212,160,0.22)',
+            display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ marginTop: 1, flexShrink: 0 }}>
+              <path d="M8 1.5L2.5 4v4.5c0 3 2.4 5.8 5.5 6.5 3.1-.7 5.5-3.5 5.5-6.5V4L8 1.5z"
+                fill={GRN} opacity="0.12" stroke={GRN} strokeWidth="1.2" />
+              <path d="M5.5 8.2 L7 9.8 L10.5 6.5" stroke={GRN} strokeWidth="1.5"
+                strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+            <span style={{ fontSize: 11.5, color: GRN, lineHeight: 1.45 }}>
+              Your account is protected with 2FA. Never share this code with anyone.
+            </span>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── Screen 4 · Portfolio Setup ─────────────────────────── */
+    function PortfolioSetupScreen() {
+      const etfs = [
+        { t: 'SPY',  n: 'S&P 500',         sel: true },
+        { t: 'QQQ',  n: 'NASDAQ-100',       sel: true },
+        { t: 'VTI',  n: 'Total Market',     sel: false },
+        { t: 'ARKK', n: 'Innovation ETF',   sel: true },
+        { t: 'SCHD', n: 'Dividend Growth',  sel: false },
+        { t: 'JEPI', n: 'Equity Premium',   sel: false },
+        { t: 'GLD',  n: 'Gold',             sel: false },
+        { t: 'TLT',  n: 'Long Bonds',       sel: false },
+      ];
+      return (
+        <div style={{ width: '100%', height: '100%', background: BG,
+          padding: '20px 20px 28px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+
+          <div>
+            <div style={{ fontSize: 24, fontWeight: 800, color: TXT }}>Build Your Portfolio</div>
+            <div style={{ fontSize: 13, color: DIM, marginTop: 5, lineHeight: 1.5 }}>
+              Pick your ETFs — our ML engine will generate buy/sell signals and Twitter sentiment analysis for each.
+            </div>
+          </div>
+
+          {/* Search */}
+          <div style={{ height: 44, borderRadius: 13, background: SURF,
+            border: `1px solid ${BDR}`, display: 'flex', alignItems: 'center', padding: '0 13px', gap: 9 }}>
+            <svg width="15" height="15" viewBox="0 0 15 15" fill="none">
+              <circle cx="6.5" cy="6.5" r="5" stroke={DIM} strokeWidth="1.5" />
+              <path d="M10.5 10.5 L13.5 13.5" stroke={DIM} strokeWidth="1.5" strokeLinecap="round" />
+            </svg>
+            <span style={{ fontSize: 14, color: DIM }}>Search stocks &amp; ETFs…</span>
+          </div>
+
+          {/* Selected chips */}
+          <div>
+            <div style={{ fontSize: 10.5, color: DIM, fontWeight: 700, letterSpacing: 0.8, marginBottom: 8 }}>
+              SELECTED (3)
+            </div>
+            <div style={{ display: 'flex', gap: 7, flexWrap: 'wrap' }}>
+              {etfs.filter(e => e.sel).map(e => (
+                <div key={e.t} style={{ padding: '5px 12px 5px 10px', borderRadius: 20,
+                  background: `rgba(23,64,245,0.15)`, border: `1px solid ${BLU}`,
+                  display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: BLU_L }}>{e.t}</span>
+                  <span style={{ fontSize: 11, color: BLU, opacity: 0.7 }}>✕</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ETF Grid */}
+          <div>
+            <div style={{ fontSize: 10.5, color: DIM, fontWeight: 700, letterSpacing: 0.8, marginBottom: 9 }}>
+              POPULAR ETFs
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {etfs.map(e => (
+                <div key={e.t} style={{ padding: '11px 13px', borderRadius: 13,
+                  background: e.sel ? `rgba(23,64,245,0.1)` : SURF,
+                  border: `1px solid ${e.sel ? BLU : BDR}`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <div style={{ fontSize: 14, fontWeight: 800, color: e.sel ? BLU_L : TXT }}>{e.t}</div>
+                    <div style={{ fontSize: 10.5, color: DIM, marginTop: 1 }}>{e.n}</div>
+                  </div>
+                  {e.sel && (
+                    <div style={{ width: 22, height: 22, borderRadius: 11,
+                      background: BLU, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <svg width="11" height="11" viewBox="0 0 11 11">
+                        <path d="M2 5.5 L4.5 8 L9 3.5" stroke="white" strokeWidth="1.6"
+                          strokeLinecap="round" strokeLinejoin="round" fill="none" />
+                      </svg>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 'auto' }}>
+            <button style={{ width: '100%', height: 52, borderRadius: 15,
+              background: `linear-gradient(135deg, ${BLU}, ${ORG})`,
+              border: 'none', color: TXT, fontSize: 16, fontWeight: 700, cursor: 'pointer',
+              boxShadow: `0 6px 22px rgba(23,64,245,0.3)` }}>
+              Start Trading →
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── Screen 5 · Dashboard ────────────────────────────────── */
+    function DashboardScreen() {
+      const holdings = [
+        { t: 'SPY',  p: 585.42, chg: 1.25,  sig: 'BUY',  data: [40,43,41,46,44,48,50,49,53,56] },
+        { t: 'QQQ',  p: 484.21, chg: -0.43, sig: 'HOLD', data: [50,48,52,49,51,50,48,47,45,46] },
+        { t: 'ARKK', p: 52.18,  chg: 2.87,  sig: 'BUY',  data: [28,30,29,32,35,33,38,40,42,45] },
+      ];
+      const twSignals = [
+        { t: 'SPY',  bull: 78, posts: 143 },
+        { t: 'ARKK', bull: 64, posts: 91 },
+      ];
+      return (
+        <div style={{ width: '100%', height: '100%', background: BG, overflow: 'hidden',
+          display: 'flex', flexDirection: 'column' }}>
+
+          {/* Header */}
+          <div style={{ padding: '14px 18px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div>
+              <div style={{ fontSize: 12, color: DIM }}>Good morning 👋</div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: TXT }}>Alex Morgan</div>
+            </div>
+            <div style={{ width: 38, height: 38, borderRadius: 19,
+              background: `linear-gradient(135deg, ${BLU}, ${ORG})`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 15, fontWeight: 700, color: TXT }}>A</div>
+          </div>
+
+          {/* Portfolio card */}
+          <div style={{ margin: '0 14px 10px', padding: '14px 16px', borderRadius: 16,
+            background: 'linear-gradient(145deg, #0D1E45, #0E1628)',
+            border: `1px solid ${BDR}`, position: 'relative', overflow: 'hidden' }}>
+            <div style={{ position: 'absolute', top: -35, right: -35, width: 130, height: 130,
+              borderRadius: '50%', background: 'radial-gradient(circle, rgba(23,64,245,0.25) 0%, transparent 70%)' }} />
+            <div style={{ fontSize: 11, color: DIM, fontWeight: 700, letterSpacing: 0.5 }}>TOTAL PORTFOLIO</div>
+            <div style={{ fontSize: 30, fontWeight: 900, color: TXT, letterSpacing: -1, margin: '3px 0 2px' }}>$124,842.50</div>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', marginBottom: 8 }}>
+              <span style={{ fontSize: 13, color: GRN, fontWeight: 700 }}>▲ +$1,842.30 (1.50%)</span>
+              <span style={{ fontSize: 11, color: DIM }}>Today</span>
+            </div>
+            <Spark data={[80,84,80,90,86,94,92,98,102,110,106,114]} color={BLU} w={220} h={34} />
+          </div>
+
+          {/* ML Signal banner */}
+          <div style={{ margin: '0 14px 10px', padding: '10px 14px', borderRadius: 13,
+            background: `rgba(255,92,26,0.09)`, border: `1px solid rgba(255,92,26,0.3)`,
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: 9, alignItems: 'center' }}>
+              <span style={{ fontSize: 18 }}>🤖</span>
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: ORG_L, letterSpacing: 0.5 }}>TODAY'S ML SIGNAL</div>
+                <div style={{ fontSize: 13, color: TXT, marginTop: 1 }}>3 strong buy signals detected</div>
+              </div>
+            </div>
+            <span style={{ fontSize: 12, color: ORG, fontWeight: 700 }}>View →</span>
+          </div>
+
+          {/* Holdings */}
+          <div style={{ padding: '0 14px', marginBottom: 10 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 9 }}>
+              <span style={{ fontSize: 13, fontWeight: 700, color: TXT }}>Holdings</span>
+              <span style={{ fontSize: 12, color: BLU_L }}>View All</span>
+            </div>
+            <div style={{ display: 'flex', gap: 10 }}>
+              {holdings.map(item => (
+                <div key={item.t} style={{ flex: 1, padding: '11px 11px', borderRadius: 14,
+                  background: SURF, border: `1px solid ${BDR}` }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 4 }}>
+                    <span style={{ fontSize: 14, fontWeight: 800, color: TXT }}>{item.t}</span>
+                    <span style={{ fontSize: 9.5, fontWeight: 700, padding: '2px 5px', borderRadius: 5,
+                      background: item.sig === 'BUY' ? 'rgba(0,212,160,0.15)' : 'rgba(255,184,0,0.15)',
+                      color: item.sig === 'BUY' ? GRN : '#FFB800' }}>{item.sig}</span>
+                  </div>
+                  <Spark data={item.data} color={item.chg >= 0 ? GRN : RED} w={80} h={26} />
+                  <div style={{ fontSize: 12, fontWeight: 700, color: TXT, marginTop: 3 }}>${item.p.toFixed(0)}</div>
+                  <div style={{ fontSize: 10.5, color: item.chg >= 0 ? GRN : RED }}>
+                    {item.chg >= 0 ? '▲' : '▼'} {Math.abs(item.chg)}%
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Twitter Sentiment */}
+          <div style={{ padding: '0 14px' }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: TXT, marginBottom: 8 }}>𝕏 Twitter Sentiment</div>
+            {twSignals.map(s => (
+              <div key={s.t} style={{ padding: '9px 12px', borderRadius: 13, background: SURF,
+                border: `1px solid ${BDR}`, marginBottom: 7,
+                display: 'flex', alignItems: 'center', gap: 11 }}>
+                <div style={{ width: 36, height: 36, borderRadius: 10, background: SURF2,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 12, fontWeight: 800, color: TXT }}>{s.t}</div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 5 }}>
+                    <span style={{ fontSize: 11.5, color: DIM }}>{s.posts} posts analyzed</span>
+                    <span style={{ fontSize: 11.5, fontWeight: 700, color: s.bull > 60 ? GRN : '#FFB800' }}>
+                      {s.bull}% Bullish
+                    </span>
+                  </div>
+                  <div style={{ height: 5, borderRadius: 3, background: BDR, overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${s.bull}%`, borderRadius: 3,
+                      background: s.bull > 60 ? GRN : '#FFB800' }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    }
+
+    /* ── Screen 6 · Stock Detail ─────────────────────────────── */
+    function StockDetailScreen() {
+      const chartData = [480,492,488,501,498,510,505,516,522,518,531,528,540,535,546,553,548,558,566,560,572,568,576,580,585];
+      return (
+        <div style={{ width: '100%', height: '100%', background: BG, overflow: 'hidden',
+          display: 'flex', flexDirection: 'column' }}>
+
+          {/* Hero header */}
+          <div style={{ padding: '10px 18px 0' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12,
+                  background: `linear-gradient(135deg, ${BLU}, ${BLU_L})`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 10, fontWeight: 900, color: TXT }}>SPY</div>
+                <div>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: TXT }}>SPY</div>
+                  <div style={{ fontSize: 11, color: DIM }}>SPDR S&amp;P 500 ETF Trust</div>
+                </div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 24, fontWeight: 900, color: TXT, letterSpacing: -0.8 }}>$585.42</div>
+                <div style={{ fontSize: 13, color: GRN, fontWeight: 700 }}>▲ +7.23 (+1.25%)</div>
+              </div>
+            </div>
+
+            {/* Chart */}
+            <div style={{ marginTop: 10 }}>
+              <svg width="100%" height="56" viewBox="0 0 340 56" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="sGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={GRN} stopOpacity="0.22" />
+                    <stop offset="100%" stopColor={GRN} stopOpacity="0" />
+                  </linearGradient>
+                </defs>
+                {(() => {
+                  const d = chartData;
+                  const mn = Math.min(...d), mx = Math.max(...d), rng = mx - mn;
+                  const pts = d.map((v, i) => `${(i / (d.length - 1)) * 340},${54 - ((v - mn) / rng) * 50}`);
+                  return (
+                    <>
+                      <path d={`M${pts.join(' L')} L340,56 L0,56 Z`} fill="url(#sGrad)" />
+                      <path d={`M${pts.join(' L')}`} fill="none" stroke={GRN} strokeWidth="2" strokeLinecap="round" />
+                    </>
+                  );
+                })()}
+              </svg>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
+                {['1D', '1W', '1M', '3M', '6M', '1Y'].map(p => (
+                  <span key={p} style={{ fontSize: 11, padding: '2px 7px', borderRadius: 6, cursor: 'pointer',
+                    background: p === '3M' ? `rgba(23,64,245,0.18)` : 'transparent',
+                    color: p === '3M' ? BLU_L : DIM, fontWeight: p === '3M' ? 700 : 400 }}>{p}</span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* ML Signal */}
+          <div style={{ margin: '10px 14px 0', padding: '11px 14px', borderRadius: 14,
+            background: 'rgba(0,212,160,0.07)', border: '1px solid rgba(0,212,160,0.25)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+              <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                <span style={{ fontSize: 14 }}>🤖</span>
+                <span style={{ fontSize: 11.5, fontWeight: 700, color: GRN, letterSpacing: 0.4 }}>ML SIGNAL</span>
+              </div>
+              <div style={{ padding: '3px 10px', borderRadius: 20,
+                background: 'rgba(0,212,160,0.18)', border: '1px solid rgba(0,212,160,0.4)' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: GRN }}>STRONG BUY</span>
+              </div>
+            </div>
+            <StrengthBar val={4} max={5} color={GRN} />
+            <div style={{ fontSize: 11, color: DIM, marginTop: 6 }}>
+              Confidence{' '}<span style={{ color: GRN, fontWeight: 700 }}>87%</span>
+              &nbsp;·&nbsp;4 bullish patterns detected
+              &nbsp;·&nbsp;Updated 2 min ago
+            </div>
+          </div>
+
+          {/* Twitter Sentiment */}
+          <div style={{ margin: '8px 14px 0', padding: '11px 14px', borderRadius: 14,
+            background: SURF, border: `1px solid ${BDR}` }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 7 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: TXT }}>𝕏 Twitter Sentiment</span>
+              <span style={{ fontSize: 11, color: DIM }}>156 posts analyzed today</span>
+            </div>
+            <div style={{ height: 6, borderRadius: 4, background: BDR, overflow: 'hidden', marginBottom: 5 }}>
+              <div style={{ height: '100%', width: '76%', borderRadius: 4,
+                background: `linear-gradient(90deg, ${GRN}, ${BLU_L})` }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5 }}>
+              <span style={{ color: GRN, fontWeight: 700 }}>76% Bullish</span>
+              <span style={{ color: RED, fontWeight: 700 }}>24% Bearish</span>
+            </div>
+          </div>
+
+          {/* Key Stats */}
+          <div style={{ margin: '8px 14px 0', padding: '11px 14px', borderRadius: 14,
+            background: SURF, border: `1px solid ${BDR}` }}>
+            <div style={{ fontSize: 10.5, color: DIM, fontWeight: 700, letterSpacing: 0.8, marginBottom: 9 }}>KEY STATS</div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px 0' }}>
+              {[
+                { l: 'Volume',  v: '89.2M' },
+                { l: 'Mkt Cap', v: '$582B' },
+                { l: 'Beta',    v: '0.99' },
+                { l: '52W High', v: '$611', c: GRN },
+                { l: '52W Low',  v: '$492', c: RED },
+                { l: 'Div Yld', v: '1.27%' },
+              ].map(s => (
+                <div key={s.l}>
+                  <div style={{ fontSize: 10, color: DIM }}>{s.l}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: s.c || TXT, marginTop: 1 }}>{s.v}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* ML Analysis note */}
+          <div style={{ margin: '8px 14px 0', padding: '10px 13px', borderRadius: 13,
+            background: `rgba(23,64,245,0.07)`, border: `1px solid rgba(23,64,245,0.2)`,
+            display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+            <span style={{ fontSize: 13, lineHeight: 1, marginTop: 1 }}>💡</span>
+            <span style={{ fontSize: 11.5, color: DIM, lineHeight: 1.5 }}>
+              ML model detected{' '}<span style={{ color: TXT, fontWeight: 600 }}>momentum breakout</span> and{' '}
+              <span style={{ color: TXT, fontWeight: 600 }}>volume surge</span>. Twitter sentiment shifted bullish
+              over last 4 hours based on your trading signals.
+            </span>
+          </div>
+
+          {/* Actions */}
+          <div style={{ margin: '10px 14px 0', display: 'flex', gap: 9 }}>
+            <button style={{ flex: 1, height: 48, borderRadius: 14,
+              background: `linear-gradient(135deg, ${GRN}, #00A87D)`,
+              border: 'none', color: '#001A12', fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>
+              BUY
+            </button>
+            <button style={{ flex: 1, height: 48, borderRadius: 14,
+              background: 'rgba(255,59,92,0.12)', border: `1px solid rgba(255,59,92,0.4)`,
+              color: RED, fontSize: 15, fontWeight: 800, cursor: 'pointer' }}>
+              SELL
+            </button>
+            <button style={{ width: 48, height: 48, borderRadius: 14,
+              background: SURF, border: `1px solid ${BDR}`,
+              color: DIM, fontSize: 20, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              ☆
+            </button>
+          </div>
+        </div>
+      );
+    }
+
+    /* ── App ─────────────────────────────────────────────────── */
+    function AlgoApp() {
+      return (
+        <DesignCanvas>
+          <DCSection id="onboarding" title="Onboarding Flow" subtitle="Welcome → Sign Up → Email Verification">
+            <DCArtboard id="welcome"  label="01 · Welcome"      width={400} height={840}>
+              <IOSDevice dark title="">
+                <WelcomeScreen />
+              </IOSDevice>
+            </DCArtboard>
+            <DCArtboard id="signup"   label="02 · Sign Up"      width={400} height={840}>
+              <IOSDevice dark title="Create Account">
+                <SignUpScreen />
+              </IOSDevice>
+            </DCArtboard>
+            <DCArtboard id="verify"   label="03 · Verify Email" width={400} height={840}>
+              <IOSDevice dark title="Verify Email">
+                <VerifyScreen />
+              </IOSDevice>
+            </DCArtboard>
+          </DCSection>
+
+          <DCSection id="app" title="App Experience" subtitle="Portfolio Setup → Dashboard → Stock Detail Card">
+            <DCArtboard id="portfolio"  label="04 · Portfolio Setup" width={400} height={840}>
+              <IOSDevice dark title="Portfolio">
+                <PortfolioSetupScreen />
+              </IOSDevice>
+            </DCArtboard>
+            <DCArtboard id="dashboard"  label="05 · Dashboard"       width={400} height={840}>
+              <IOSDevice dark title="">
+                <DashboardScreen />
+              </IOSDevice>
+            </DCArtboard>
+            <DCArtboard id="stockdetail" label="06 · Stock Detail"   width={400} height={840}>
+              <IOSDevice dark title="SPY">
+                <StockDetailScreen />
+              </IOSDevice>
+            </DCArtboard>
+          </DCSection>
+        </DesignCanvas>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById('root')).render(<AlgoApp />);
+  </script>
+</body>
+</html>

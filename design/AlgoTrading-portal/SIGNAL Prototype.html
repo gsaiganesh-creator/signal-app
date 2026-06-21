@@ -1,0 +1,1532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Interactive Prototype</title>
+  <template id="__bundler_thumbnail" data-bg-color="#0A0A12">
+    <svg viewBox="0 0 400 300" xmlns="http://www.w3.org/2000/svg">
+      <rect width="400" height="300" fill="#0A0A12"/>
+      <rect x="155" y="75" width="90" height="90" rx="26" fill="#1740F5" opacity="0.9"/>
+      <polyline points="168,148 178,133 185,140 196,122 206,128 218,116"
+        stroke="white" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="206" cy="128" r="5" fill="#FF5C1A"/>
+      <circle cx="206" cy="128" r="9" fill="#FF5C1A" opacity="0.25"/>
+      <text x="200" y="195" text-anchor="middle" fill="white" font-family="system-ui" font-weight="800" font-size="22" letter-spacing="-0.5">SIGNAL</text>
+      <text x="200" y="214" text-anchor="middle" fill="#4F6FFA" font-family="system-ui" font-size="10" letter-spacing="3">NSE · BSE · ML</text>
+    </svg>
+  </template>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { width: 100%; height: 100%; background: #0A0A12; overflow: hidden; }
+    button { font-family: inherit; cursor: pointer; }
+    @keyframes sIn { from { opacity:0; transform:translateX(14px); } to { opacity:1; transform:translateX(0); } }
+    .si { animation: sIn 0.2s ease; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="ios-frame.jsx"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+
+  <!-- ── S1 · Context + Theme + Nav + Shared ─────────────────── -->
+  <script type="text/babel">
+  const { createContext, useContext, useState, useEffect } = React;
+
+  /* ── Palette ─────────────────────────────── */
+  const ThemeCtx  = createContext({ dark:true, toggle:()=>{} });
+  const NavCtx    = createContext({ screen:'welcome', navigate:()=>{}, goBack:()=>{} });
+  const TweaksCtx = createContext({ blu:'#1740F5', org:'#FF5C1A', grn:'#00D4A0',
+    buyLabel:'BUY', sellLabel:'SELL', signalLabel:'STRONG BUY',
+    density:'Standard', isEssential:false, isPro:false, tradingMode:'Swing' });
+
+  const DP = { bg:'#070D1A', surf:'#0E1628', surf2:'#162038', bdr:'#1C2E4A', txt:'#FFF', dim:'#7A8BAA', cg:'linear-gradient(145deg,#0D1E45,#0E1628)' };
+  const LP = { bg:'#F2F6FF', surf:'#FFF', surf2:'#E8EEFF', bdr:'#CDD5F0', txt:'#0A1628', dim:'#5A6A8A', cg:'linear-gradient(145deg,#E8EEFF,#FFF)' };
+  const A  = { blu:'#1740F5', bluL:'#4F6FFA', org:'#FF5C1A', orgL:'#FF7D46', grn:'#00D4A0', red:'#FF3B5C', ylw:'#FFB800', pur:'#8B5CF6' };
+  const SAFE_TOP = 62;   /* iOS status-bar overlay height */
+  const SAFE_BOT = 34;   /* home-indicator overlay height */
+
+  function useTheme()    { const {dark}=useContext(ThemeCtx); return {T:dark?DP:LP, dark, A}; }
+  function useNav()      { return useContext(NavCtx); }
+  function useTk()       { return useContext(TweaksCtx); }  /* trading tweaks */
+
+  function AppProviders({ children }) {
+    const [dark,  setDark]  = useState(()=>{ try{return localStorage.getItem('sp_t')!=='light';}catch{return true;} });
+    const [stack, setStack] = useState(['welcome']);
+    const screen   = stack[stack.length-1];
+    const navigate = s => setStack(p=>[...p,s]);
+    const goBack   = () => setStack(p=>p.length>1?p.slice(0,-1):p);
+    const toggle   = () => setDark(d=>{ const n=!d; try{localStorage.setItem('sp_t',n?'dark':'light');}catch{} return n; });
+    return (
+      <ThemeCtx.Provider value={{dark,toggle}}>
+        <NavCtx.Provider value={{screen,navigate,goBack}}>{children}</NavCtx.Provider>
+      </ThemeCtx.Provider>
+    );
+  }
+
+  /* NavBar — fixed safe-area inset + inline theme toggle (top-right) */
+  function NavBar({ title='', back=true }) {
+    const {goBack}=useNav(); const {T,dark}=useTheme(); const {toggle}=useContext(ThemeCtx);
+    return (
+      <div style={{ paddingTop:SAFE_TOP, paddingLeft:16, paddingRight:14, paddingBottom:8,
+        display:'flex', alignItems:'center', gap:10, flexShrink:0 }}>
+        {back && <div onClick={goBack} style={{width:32,height:32,borderRadius:9,background:T.surf2,
+          display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:T.txt,cursor:'pointer',flexShrink:0}}>‹</div>}
+        {title && <span style={{fontSize:17,fontWeight:700,color:T.txt,flex:1}}>{title}</span>}
+        <button onClick={toggle} style={{width:32,height:32,borderRadius:16,background:dark?'rgba(255,255,255,0.11)':'rgba(0,0,0,0.07)',
+          border:`1px solid ${T.bdr}`,fontSize:14,display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0}}>
+          {dark?'☀️':'🌙'}
+        </button>
+      </div>
+    );
+  }
+
+  /* Micro components */
+  function Spark({ data=[], color=A.blu, w=80, h=26 }) {
+    const mx=Math.max(...data),mn=Math.min(...data),r=mx-mn||1;
+    const pts=data.map((v,i)=>`${(i/(data.length-1))*w},${h-2-((v-mn)/r)*(h-4)}`).join(' ');
+    return <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} style={{display:'block'}}><polyline points={pts} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>;
+  }
+  function PBar({ val, max=100, color=A.grn, h=5 }) {
+    const {T}=useTheme();
+    return <div style={{height:h,borderRadius:h,background:T.bdr,overflow:'hidden'}}><div style={{height:'100%',width:`${(val/max)*100}%`,borderRadius:h,background:color}}/></div>;
+  }
+  function BigBtn({ label, onClick, orange=false, outline=false }) {
+    const {T}=useTheme(); const tk=useTk();
+    const bg = outline ? T.surf : orange
+      ? `linear-gradient(135deg,${tk.org},${tk.org}CC)`
+      : `linear-gradient(135deg,${tk.blu},${tk.blu}BB)`;
+    return <button onClick={onClick} style={{width:'100%',height:50,borderRadius:14,border:outline?`1px solid ${T.bdr}`:'none',
+      background:bg,color:outline?T.txt:'#fff',fontSize:15,fontWeight:700,cursor:'pointer',
+      boxShadow:outline?'none':orange?`0 5px 18px ${tk.org}55`:`0 5px 18px ${tk.blu}55`}}>{label}</button>;
+  }
+
+  Object.assign(window, { ThemeCtx, NavCtx, TweaksCtx, DP, LP, A, SAFE_TOP, SAFE_BOT,
+    useTheme, useNav, useTk, AppProviders, NavBar, Spark, PBar, BigBtn });
+  </script>
+
+  <!-- ── S2 · Screens P01–P06 ────────────────────────────────── -->
+  <script type="text/babel">
+  const { useEffect: ue2 } = React;
+
+  function P01_Welcome() {
+    const {T,A,dark}=useTheme(); const {navigate}=useNav();
+    const {toggle}=React.useContext(ThemeCtx); const tk=useTk();
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',
+        alignItems:'center',justifyContent:'space-between',
+        padding:`${SAFE_TOP+26}px 24px ${SAFE_BOT+8}px`,
+        overflow:'hidden',position:'relative'}}>
+        <div style={{position:'absolute',top:-70,left:-70,width:240,height:240,borderRadius:'50%',
+          background:`radial-gradient(circle,${tk.blu}44 0%,transparent 70%)`,pointerEvents:'none'}}/>
+        {/* Theme toggle top-right — inside phone */}
+        <button onClick={toggle} style={{position:'absolute',top:SAFE_TOP+6,right:18,zIndex:20,
+          width:32,height:32,borderRadius:16,background:dark?'rgba(255,255,255,0.11)':'rgba(0,0,0,0.07)',
+          border:`1px solid ${T.bdr}`,fontSize:14,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          {dark?'☀️':'🌙'}
+        </button>
+        {/* Logo — drops comfortably below status bar */}
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12,zIndex:1}}>
+          <div style={{width:78,height:78,borderRadius:22,
+            background:`linear-gradient(145deg,${tk.blu},${tk.blu}BB)`,
+            display:'flex',alignItems:'center',justifyContent:'center',
+            boxShadow:`0 10px 36px ${tk.blu}88`}}>
+            <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+              <polyline points="2,32 10,19 16,26 24,11 31,17 38,8" stroke="white" strokeWidth="2.8" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="31" cy="17" r="4" fill={tk.org}/><circle cx="31" cy="17" r="8" fill={tk.org} opacity="0.22"/>
+            </svg>
+          </div>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:36,fontWeight:900,color:T.txt,letterSpacing:-1.5}}>SIGNAL</div>
+            <div style={{fontSize:10,color:T.dim,letterSpacing:2.5,marginTop:4}}>NSE · BSE · ML-POWERED</div>
+          </div>
+        </div>
+        {/* Mini chart */}
+        <svg width="100%" height="80" viewBox="0 0 300 80" fill="none" preserveAspectRatio="none" style={{zIndex:1}}>
+          <defs><linearGradient id="pg1" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={tk.blu} stopOpacity={dark?.28:.14}/>
+            <stop offset="100%" stopColor={tk.blu} stopOpacity="0"/>
+          </linearGradient></defs>
+          <path d="M0,70 C30,62 55,52 80,42 S140,26 170,20 S230,10 260,6 L300,2 L300,80 L0,80Z" fill="url(#pg1)"/>
+          <path d="M0,70 C30,62 55,52 80,42 S140,26 170,20 S230,10 260,6 L300,2" stroke={tk.blu} strokeWidth="2" fill="none" strokeLinecap="round"/>
+          <circle cx="240" cy="8" r="5" fill={tk.org}/><circle cx="240" cy="8" r="10" fill={tk.org} opacity="0.2"/>
+          <rect x="206" y="1" width="66" height="11" rx="3" fill="rgba(255,92,26,0.14)" stroke={tk.org} strokeWidth="0.7"/>
+          <text x="239" y="9.5" textAnchor="middle" fill={tk.org} fontSize="6.5" fontWeight="800" fontFamily="system-ui">BUY SIGNAL</text>
+        </svg>
+        {/* CTAs */}
+        <div style={{width:'100%',display:'flex',flexDirection:'column',gap:9,zIndex:1}}>
+          <div style={{display:'flex',gap:7,justifyContent:'center',marginBottom:2}}>
+            {['📈 NSE/BSE','🤖 ML','𝕏 Sentiment'].map(t=><span key={t} style={{fontSize:10,color:T.dim,padding:'3px 8px',borderRadius:10,background:T.surf,border:`1px solid ${T.bdr}`}}>{t}</span>)}
+          </div>
+          <BigBtn label="Portfolio Tracker →" onClick={()=>navigate('signup')}/>
+          <BigBtn label="Sign In" outline onClick={()=>navigate('dashboard')}/>
+        </div>
+      </div>
+    );
+  }
+
+  function P02_SignUp() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column'}}>
+        <NavBar title="Create Account"/>
+        <div style={{flex:1,overflow:'auto',padding:'6px 20px 16px',display:'flex',flexDirection:'column',gap:12}}>
+          <div style={{fontSize:13,color:T.dim}}>Join India's smartest algo traders</div>
+          <div style={{display:'flex',flexDirection:'column',gap:9}}>
+            <button onClick={()=>navigate('dashboard')} style={{width:'100%',height:46,borderRadius:12,background:'#000',border:'1px solid #333',color:'#fff',fontSize:13,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:9,cursor:'pointer',fontFamily:'inherit'}}>
+              <span style={{fontWeight:900,fontSize:17,lineHeight:1}}>𝕏</span> Continue with Twitter / X
+            </button>
+            <button onClick={()=>navigate('dashboard')} style={{width:'100%',height:46,borderRadius:12,background:T.surf,border:`1px solid ${T.bdr}`,color:T.txt,fontSize:13,fontWeight:600,display:'flex',alignItems:'center',justifyContent:'center',gap:9,cursor:'pointer',fontFamily:'inherit'}}>
+              <svg width="16" height="16" viewBox="0 0 18 18" style={{flexShrink:0}}><path d="M17.5 9.2c0-.6-.1-1.1-.2-1.7H9v3.2h4.8c-.2 1.1-.9 2.1-1.9 2.7v2.2h3.1c1.8-1.7 2.5-4.1 2.5-6.4z" fill="#4285F4"/><path d="M9 18c2.4 0 4.4-.8 5.9-2.2l-3.1-2.2c-.8.5-1.8.8-2.8.8-2.2 0-4-1.5-4.7-3.4H1.1v2.3C2.6 16 5.6 18 9 18z" fill="#34A853"/><path d="M4.3 10.9c-.2-.5-.3-1.1-.3-1.7s.1-1.2.3-1.7V5.2H1.1C.4 6.5 0 7.9 0 9.2s.4 2.7 1.1 4l3.2-2.3z" fill="#FBBC05"/><path d="M9 3.6c1.2 0 2.3.4 3.2 1.2l2.4-2.4C13 .9 11.2 0 9 0 5.6 0 2.6 2 1.1 5l3.2 2.3C5 5.1 6.8 3.6 9 3.6z" fill="#EA4335"/></svg> Continue with Google
+            </button>
+          </div>
+          <div style={{display:'flex',alignItems:'center',gap:8}}>
+            <div style={{flex:1,height:1,background:T.bdr}}/>
+            <span style={{fontSize:11,color:T.dim}}>or sign up with email</span>
+            <div style={{flex:1,height:1,background:T.bdr}}/>
+          </div>
+          {[{l:'Full Name',v:'Vaasudev Amitav'},{l:'Email / Mobile',v:'vaasudev@signal.in'},{l:'Password',v:'••••••••••'}].map(f=>
+            <div key={f.l}>
+              <div style={{fontSize:10.5,color:T.dim,fontWeight:700,letterSpacing:0.5,marginBottom:5}}>{f.l.toUpperCase()}</div>
+              <div style={{height:46,borderRadius:12,background:T.surf,border:`1px solid ${f.l==='Email / Mobile'?tk.blu:T.bdr}`,display:'flex',alignItems:'center',padding:'0 13px',fontSize:14,color:T.txt}}>{f.v}</div>
+            </div>)}
+          <div>
+            <div style={{fontSize:10.5,color:T.dim,fontWeight:700,letterSpacing:0.5,marginBottom:7}}>TRADING EXPERIENCE</div>
+            <div style={{display:'flex',gap:7}}>
+              {['Beginner','Intermediate','Pro'].map((r,i)=><div key={r} style={{flex:1,height:36,borderRadius:10,background:i===1?`${tk.blu}20`:T.surf2,border:`1px solid ${i===1?tk.blu:T.bdr}`,display:'flex',alignItems:'center',justifyContent:'center',color:i===1?tk.blu:T.dim,fontSize:11,fontWeight:600}}>{r}</div>)}
+            </div>
+          </div>
+        </div>
+        <div style={{padding:`0 20px ${SAFE_BOT+10}px`,display:'flex',flexDirection:'column',gap:9}}>
+          <BigBtn label="Create Account →" onClick={()=>navigate('verify')}/>
+          <div style={{textAlign:'center',fontSize:13,color:T.dim}}>Already a member? <span style={{color:tk.blu,fontWeight:600,cursor:'pointer'}} onClick={()=>navigate('dashboard')}>Sign In</span></div>
+        </div>
+      </div>
+    );
+  }
+
+  function P03_Verify() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const d=['4','7','2','','',''];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column'}}>
+        <NavBar title="Verify Email"/>
+        <div style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',padding:'24px 24px',gap:20}}>
+          <div style={{width:72,height:72,borderRadius:22,background:`${tk.blu}10`,border:`1px solid ${T.bdr}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+            <svg width="34" height="34" viewBox="0 0 36 36" fill="none"><rect x="3" y="8" width="30" height="20" rx="5" stroke={tk.blu} strokeWidth="2"/><path d="M3 13 L18 22 L33 13" stroke={tk.blu} strokeWidth="2" strokeLinecap="round"/><circle cx="27" cy="27" r="7.5" fill={T.bg} stroke={tk.org} strokeWidth="2"/><path d="M24.5 27 L27 29.5 L30.5 25" stroke={tk.org} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
+          <div style={{textAlign:'center'}}>
+            <div style={{fontSize:22,fontWeight:800,color:T.txt}}>Verify your email</div>
+            <div style={{fontSize:13,color:T.dim,marginTop:6,lineHeight:1.5}}>OTP sent to<br/><span style={{color:T.txt,fontWeight:600}}>vaasudev@signal.in</span></div>
+          </div>
+          <div style={{display:'flex',gap:9}}>
+            {d.map((v,i)=><div key={i} style={{width:44,height:54,borderRadius:12,background:v?`${tk.blu}12`:T.surf,border:`2px solid ${v?tk.blu:i===3?tk.org:T.bdr}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:20,fontWeight:700,color:v?T.txt:tk.org}}>{v||(i===3?'|':'')}</div>)}
+          </div>
+          <BigBtn label="Verify & Continue" onClick={()=>navigate('preferences')}/>
+          <div style={{fontSize:13,color:T.dim}}>Resend OTP in <span style={{color:T.txt,fontWeight:600}}>0:52</span></div>
+        </div>
+      </div>
+    );
+  }
+
+  function P04_BrokerConnect() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const bkr=[{n:'Zerodha Kite',ab:'ZE',c:'#387ED1',tag:'Popular'},{n:'mStock',ab:'MS',c:'#E63946',tag:'Your Broker'},{n:'HDFC Securities',ab:'HD',c:'#004C8F',tag:null},{n:'Groww',ab:'GR',c:'#00D09C',tag:null},{n:'Upstox',ab:'UP',c:'#7B2FBE',tag:null},{n:'Angel One',ab:'AO',c:'#E87722',tag:null}];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column'}}>
+        <NavBar title="Connect Broker"/>
+        <div style={{flex:1,overflow:'auto',padding:'4px 16px',display:'flex',flexDirection:'column',gap:8}}>
+          {bkr.map((b,i)=>(
+            <div key={b.n} onClick={()=>navigate('excel')} style={{padding:'10px 13px',borderRadius:14,background:i===1?`${tk.blu}0C`:T.surf,border:`1px solid ${i===1?tk.blu:T.bdr}`,display:'flex',alignItems:'center',gap:12,cursor:'pointer'}}>
+              <div style={{width:40,height:40,borderRadius:11,flexShrink:0,background:`${b.c}20`,border:`1px solid ${b.c}40`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:900,color:b.c}}>{b.ab}</div>
+              <div style={{flex:1}}><div style={{display:'flex',alignItems:'center',gap:7}}><span style={{fontSize:14,fontWeight:700,color:T.txt}}>{b.n}</span>{b.tag&&<span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:5,background:`${b.tag==='Your Broker'?tk.org:tk.grn}22`,color:b.tag==='Your Broker'?tk.org:tk.grn}}>{b.tag}</span>}</div><div style={{fontSize:11,color:T.dim,marginTop:1}}>API connect · Instant sync</div></div>
+              <span style={{fontSize:18,color:T.dim}}>›</span>
+            </div>
+          ))}
+        </div>
+        <div style={{padding:`0 16px ${SAFE_BOT+8}px`,display:'flex',flexDirection:'column',gap:9}}>
+          <div style={{display:'flex',alignItems:'center',gap:10}}><div style={{flex:1,height:1,background:T.bdr}}/><span style={{fontSize:11,color:T.dim}}>or import manually</span><div style={{flex:1,height:1,background:T.bdr}}/></div>
+          <button onClick={()=>navigate('excel')} style={{width:'100%',height:48,borderRadius:14,background:`${tk.org}14`,border:`1px solid ${tk.org}44`,color:tk.org,fontSize:14,fontWeight:700,display:'flex',alignItems:'center',justifyContent:'center',gap:8}}><span style={{fontSize:17}}>📊</span> Upload Excel Portfolio</button>
+        </div>
+      </div>
+    );
+  }
+
+  function P05_ExcelUpload() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const rows=[['Reliance Industries','RELIANCE','50','2,840','NSE'],['HDFC Bank','HDFCBANK','30','1,610','NSE'],['Infosys Ltd','INFY','45','1,420','NSE']];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column'}}>
+        <NavBar title="Upload Portfolio"/>
+        <div style={{flex:1,overflow:'auto',padding:'6px 18px',display:'flex',flexDirection:'column',gap:12}}>
+          <div style={{padding:'18px 14px',borderRadius:16,background:`${tk.blu}08`,border:`2px dashed ${tk.blu}55`,display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+            <span style={{fontSize:36}}>📤</span>
+            <div style={{textAlign:'center'}}><div style={{fontSize:14,fontWeight:700,color:T.txt}}>Tap to upload .xlsx / .csv</div><div style={{fontSize:11,color:T.dim,marginTop:2}}>NSE / BSE format supported</div></div>
+            <button style={{padding:'7px 20px',borderRadius:10,background:`linear-gradient(135deg,${tk.blu},${tk.blu}BB)`,border:'none',color:'#fff',fontSize:13,fontWeight:700}}>Choose File</button>
+          </div>
+          <div style={{padding:'10px 13px',borderRadius:13,background:T.surf,border:`1px solid ${T.bdr}`,display:'flex',alignItems:'center',gap:11}}>
+            <span style={{fontSize:22}}>📋</span>
+            <div style={{flex:1}}><div style={{fontSize:13,fontWeight:600,color:T.txt}}>Download Template</div><div style={{fontSize:11,color:T.dim}}>Pre-formatted Excel sheet</div></div>
+            <div style={{padding:'5px 10px',borderRadius:8,background:`${tk.org}18`,border:`1px solid ${tk.org}44`,fontSize:11.5,fontWeight:700,color:tk.org}}>↓ .xlsx</div>
+          </div>
+          <div style={{borderRadius:12,overflow:'hidden',border:`1px solid ${T.bdr}`}}>
+            <div style={{display:'grid',gridTemplateColumns:'1.8fr 1fr 0.6fr 1fr 0.8fr',background:T.surf2,padding:'7px 11px',gap:4}}>
+              {['Stock Name','Symbol','Qty','Avg ₹','Exchange'].map(c=><span key={c} style={{fontSize:9.5,fontWeight:700,color:T.dim,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{c}</span>)}
+            </div>
+            {rows.map((r,ri)=><div key={ri} style={{display:'grid',gridTemplateColumns:'1.8fr 1fr 0.6fr 1fr 0.8fr',padding:'7px 11px',gap:4,background:ri%2===0?T.surf:T.bg,borderTop:`1px solid ${T.bdr}`}}>
+              {r.map((cell,ci)=><span key={ci} style={{fontSize:10.5,color:ci===0?T.txt:T.dim,fontWeight:ci===1?700:400,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{cell}</span>)}
+            </div>)}
+          </div>
+        </div>
+        <div style={{padding:`0 18px ${SAFE_BOT+8}px`}}><BigBtn label="Analyse Portfolio →" onClick={()=>navigate('analyzing')}/></div>
+      </div>
+    );
+  }
+
+  function P06_Analyzing() {
+    const {T,A,dark}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    ue2(()=>{ const t=setTimeout(()=>navigate('analysis'),3400); return ()=>clearTimeout(t); },[]);
+    const steps=[{l:'Parsing portfolio data',done:true},{l:'Fetching NSE/BSE price history',done:true},{l:'Running momentum model',done:true},{l:'Analysing 𝕏 Twitter sentiment',active:true},{l:'Generating swing signals',p:true},{l:'Computing risk scores',p:true}];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'space-between',padding:`${SAFE_TOP+20}px 24px ${SAFE_BOT+16}px`,position:'relative',overflow:'hidden'}}>
+        <div style={{position:'absolute',top:'28%',left:'50%',transform:'translate(-50%,-50%)',width:240,height:240,borderRadius:'50%',background:`radial-gradient(circle,${tk.blu}${dark?'24':'12'} 0%,transparent 70%)`,pointerEvents:'none'}}/>
+        <div style={{display:'flex',flexDirection:'column',alignItems:'center',gap:12,zIndex:1}}>
+          <div style={{position:'relative',width:82,height:82}}>
+            <svg width="82" height="82" viewBox="0 0 82 82" style={{position:'absolute',top:0,left:0}}><circle cx="41" cy="41" r="35" stroke={T.surf2} strokeWidth="5" fill="none"/><circle cx="41" cy="41" r="35" stroke={tk.blu} strokeWidth="5" fill="none" strokeDasharray="165 55" strokeLinecap="round" transform="rotate(-90 41 41)"/></svg>
+            <div style={{position:'absolute',inset:0,display:'flex',alignItems:'center',justifyContent:'center',fontSize:26}}>🤖</div>
+          </div>
+          <div style={{textAlign:'center'}}><div style={{fontSize:22,fontWeight:800,color:T.txt}}>ML Engine Running</div><div style={{fontSize:13,color:T.dim,marginTop:4}}>Analysing 18 stocks… auto-advancing</div></div>
+        </div>
+        <div style={{width:'100%',display:'flex',flexDirection:'column',gap:7,zIndex:1}}>
+          {steps.map((s,i)=>(
+            <div key={i} style={{display:'flex',alignItems:'center',gap:11,padding:'8px 12px',borderRadius:12,background:s.active?`${tk.blu}0E`:'transparent',border:`1px solid ${s.active?tk.blu:'transparent'}`}}>
+              <div style={{width:20,height:20,borderRadius:10,flexShrink:0,background:s.done?`${tk.grn}20`:s.active?`${tk.org}20`:T.surf2,border:`1.5px solid ${s.done?tk.grn:s.active?tk.org:T.bdr}`,display:'flex',alignItems:'center',justifyContent:'center'}}>
+                {s.done?<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke={tk.grn} strokeWidth="1.6" strokeLinecap="round" fill="none"/></svg>:s.active?<div style={{width:6,height:6,borderRadius:3,background:tk.org}}/>:null}
+              </div>
+              <span style={{fontSize:13,color:s.done?T.dim:s.active?T.txt:T.dim,fontWeight:s.active?700:400}}>{s.l}</span>
+              {s.active&&<span style={{marginLeft:'auto',fontSize:11,color:tk.org,fontWeight:700}}>…</span>}
+            </div>
+          ))}
+        </div>
+        <div style={{width:'100%',zIndex:1}}>
+          <div style={{fontSize:11,color:T.dim,textAlign:'center',marginBottom:7}}>68% complete</div>
+          <PBar val={68} color={`linear-gradient(90deg,${tk.blu},${tk.org})`} h={7}/>
+        </div>
+      </div>
+    );
+  }
+
+  Object.assign(window, { P01_Welcome, P02_SignUp, P03_Verify, P04_BrokerConnect, P05_ExcelUpload, P06_Analyzing });
+  </script>
+
+  <!-- ── S3 · Screens P07–P14 ────────────────────────────────── -->
+  <script type="text/babel">
+  const { useState: us3 } = React;
+
+  function P07_Analysis() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const allCats=[
+      {id:'m',label:'Momentum',emoji:'🚀',color:tk.grn,count:5,stocks:['RELIANCE','TATAMOTORS','SBIN','INDUSINDBK','ADANIENT'],desc:'Strong uptrend + volume surge'},
+      {id:'s',label:'Swingable',emoji:'🔄',color:tk.blu,count:4,stocks:['HDFCBANK','WIPRO','BAJFINANCE','LTIM'],desc:'Range-bound, ideal for swing'},
+      {id:'l',label:'Long Term',emoji:'🏛️',color:A.pur,count:5,stocks:['TCS','INFY','HINDUNILVR','NESTLEIND','ASIANPAINT'],desc:'Strong fundamentals, hold ≥1Y'},
+      {id:'e',label:'Exit Now',emoji:'⚠️',color:A.red,count:2,stocks:['ZOMATO','PAYTM'],desc:'Below key support, sell signal'},
+      {id:'w',label:'Watch',emoji:'👁️',color:A.ylw,count:2,stocks:['COALINDIA','NTPC'],desc:'Consolidating — wait for entry'},
+    ];
+    const cats = tk.isEssential ? allCats.slice(0,3) : allCats;
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <div style={{paddingTop:SAFE_TOP,padding:`${SAFE_TOP}px 18px 10px`,display:'flex',justifyContent:'space-between',alignItems:'flex-end'}}>
+          <div><div style={{fontSize:tk.isPro?20:22,fontWeight:800,color:T.txt}}>Portfolio Analysis</div><div style={{fontSize:12,color:T.dim,marginTop:3}}>18 stocks · Updated just now</div></div>
+          <div style={{padding:'4px 10px',borderRadius:20,background:`${tk.grn}15`,border:`1px solid ${tk.grn}44`}}><span style={{fontSize:11,fontWeight:700,color:tk.grn}}>ML ✓</span></div>
+        </div>
+        <div style={{flex:1,overflow:'auto',padding:'0 14px 10px',display:'flex',flexDirection:'column',gap:8}}>
+          {cats.map(cat=>(
+            <div key={cat.id} onClick={()=>navigate('dashboard')} style={{borderRadius:14,background:T.surf,border:`1px solid ${cat.color}30`,cursor:'pointer'}}>
+              <div style={{padding:'11px 14px',borderBottom:`1px solid ${T.bdr}`,display:'flex',alignItems:'center',gap:9}}>
+                <span style={{fontSize:18}}>{cat.emoji}</span>
+                <div style={{flex:1}}><div style={{display:'flex',alignItems:'center',gap:8}}><span style={{fontSize:tk.isPro?13:14,fontWeight:800,color:T.txt}}>{cat.label}</span><span style={{fontSize:12,fontWeight:700,color:cat.color,background:`${cat.color}18`,padding:'1px 7px',borderRadius:6}}>{cat.count}</span></div><div style={{fontSize:11,color:T.dim,marginTop:2}}>{cat.desc}</div></div>
+                <span style={{fontSize:14,color:T.dim}}>›</span>
+              </div>
+              <div style={{padding:'8px 14px',display:'flex',gap:6,flexWrap:'wrap'}}>
+                {cat.stocks.slice(0,tk.isPro?5:3).map(s=><span key={s} style={{fontSize:11,fontWeight:700,padding:'3px 8px',borderRadius:7,background:`${cat.color}12`,color:cat.color,border:`1px solid ${cat.color}28`}}>{s}</span>)}
+                {cat.stocks.length>(tk.isPro?5:3)&&<span style={{fontSize:11,color:T.dim}}>+{cat.stocks.length-(tk.isPro?5:3)} more</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function P08_Dashboard() {
+    const {T,A,dark}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const greeting = tk.tradingMode==='Scalper' ? 'Markets Open ⚡' : tk.tradingMode==='Investor' ? 'Good morning' : 'Namaste 👋';
+    const accounts=[
+      {id:'kite',n:'Zerodha Kite',ab:'ZE',c:'#387ED1',val:'₹4,21,840',chg:'+₹8,240',status:'synced'},
+      {id:'hdfc',n:'HDFC Securities',ab:'HD',c:'#004C8F',val:'₹2,84,160',chg:'+₹3,120',status:'uploaded'},
+      {id:'mstock',n:'MStock',ab:'MS',c:'#E63946',val:'₹1,36,316',chg:'+₹1,482',status:'synced'},
+    ];
+    const h=[{t:'RELIANCE',p:2912,chg:1.8,sig:tk.signalLabel,data:[42,45,44,48,46,50,52,51,55,58],c:tk.grn},{t:'HDFCBANK',p:1634,chg:-0.4,sig:'HOLD',data:[50,48,52,49,51,50,48,47,45,46],c:A.ylw},{t:'INFY',p:1441,chg:2.2,sig:tk.signalLabel,data:[30,32,31,35,38,36,40,42,44,47],c:A.pur}];
+    const showH = tk.isEssential ? h.slice(0,2) : h;
+    const sectors=[
+      {n:'Banking',pct:32,c:tk.blu},{n:'IT & Tech',pct:28,c:A.pur},
+      {n:'Energy',pct:22,c:tk.org},{n:'FMCG',pct:18,c:tk.grn},
+    ];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT,overflow:'hidden'}}>
+        {/* Header */}
+        <div style={{paddingTop:SAFE_TOP,padding:`${SAFE_TOP}px 18px 8px`,display:'flex',justifyContent:'space-between',alignItems:'center',flexShrink:0}}>
+          <div><div style={{fontSize:12,color:T.dim}}>{greeting}</div><div style={{fontSize:20,fontWeight:800,color:T.txt}}>Vaasudev Amitav</div></div>
+          <div style={{display:'flex',gap:9,alignItems:'center'}}>
+            <div onClick={()=>navigate('notifications')} style={{width:34,height:34,borderRadius:10,background:T.surf2,display:'flex',alignItems:'center',justifyContent:'center',fontSize:16,cursor:'pointer',position:'relative'}}>
+              🔔<div style={{position:'absolute',top:5,right:6,width:7,height:7,borderRadius:4,background:A.red}}/>
+            </div>
+            <div onClick={()=>navigate('subscription')} style={{width:36,height:36,borderRadius:18,background:`linear-gradient(135deg,${tk.blu},${tk.org})`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:700,color:'#fff',cursor:'pointer'}}>AS</div>
+          </div>
+        </div>
+        {/* Scrollable body */}
+        <div style={{flex:1,overflowY:'auto',padding:'0 13px 10px',display:'flex',flexDirection:'column',gap:9}}>
+          {/* Portfolio value */}
+          <div style={{padding:'13px 16px',borderRadius:16,background:T.cg,border:`1px solid ${T.bdr}`,position:'relative',overflow:'hidden'}}>
+            <div style={{position:'absolute',top:-28,right:-28,width:110,height:110,borderRadius:'50%',background:`radial-gradient(circle,${tk.blu}30 0%,transparent 70%)`,pointerEvents:'none'}}/>
+            <div style={{fontSize:10.5,color:T.dim,fontWeight:700,letterSpacing:0.5}}>TOTAL PORTFOLIO · 3 ACCOUNTS</div>
+            <div style={{fontSize:28,fontWeight:900,color:T.txt,letterSpacing:-1,margin:'3px 0'}}>₹8,42,316</div>
+            <div style={{fontSize:13,color:tk.grn,fontWeight:700,marginBottom:7}}>▲ +₹12,842 (+1.55%) Today</div>
+            {!tk.isEssential && <Spark data={[80,84,80,90,86,94,92,98,102,110,106,114]} color={tk.blu} w={220} h={24}/>}
+            <div style={{display:'flex',gap:16,marginTop:8}}>
+              {[['Invested','₹7,21,480',T.dim],['Total P&L','+₹1,20,836',tk.grn],['XIRR','16.7%',tk.grn]].map(([k,v,c])=>(
+                <div key={k}><div style={{fontSize:9.5,color:T.dim}}>{k}</div><div style={{fontSize:12,fontWeight:700,color:c}}>{v}</div></div>
+              ))}
+            </div>
+            {tk.isPro && <div style={{display:'flex',gap:14,marginTop:8,paddingTop:8,borderTop:`1px solid ${T.bdr}`}}>
+              {[['NIFTY50','24,612',tk.grn,'+0.92%'],['SENSEX','81,148',tk.grn,'+0.88%'],['VIX','13.2',A.ylw,'+0.4']].map(([k,v,c,p])=>(
+                <div key={k} style={{display:'flex',gap:4,alignItems:'center'}}>
+                  <span style={{fontSize:9.5,color:T.dim}}>{k}</span><span style={{fontSize:10.5,fontWeight:700,color:T.txt}}>{v}</span><span style={{fontSize:9.5,color:c}}>{p}</span>
+                </div>
+              ))}
+            </div>}
+          </div>
+          {/* My Accounts */}
+          <div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+              <span style={{fontSize:13,fontWeight:700,color:T.txt}}>My Accounts</span>
+              <span style={{fontSize:12,color:tk.blu,fontWeight:600,cursor:'pointer'}} onClick={()=>navigate('my-portfolios')}>Manage + View Combined →</span>
+            </div>
+            <div style={{display:'flex',gap:7}}>
+              {accounts.map(a=>(
+                <div key={a.id} onClick={()=>navigate('my-portfolios')} style={{flex:1,padding:'10px 10px',borderRadius:12,background:T.surf,border:`1px solid ${T.bdr}`,cursor:'pointer'}}>
+                  <div style={{display:'flex',alignItems:'center',gap:5,marginBottom:5}}>
+                    <div style={{width:24,height:24,borderRadius:7,background:`${a.c}20`,border:`1px solid ${a.c}40`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:8,fontWeight:900,color:a.c,flexShrink:0}}>{a.ab}</div>
+                    <div style={{width:6,height:6,borderRadius:3,background:a.status==='synced'?tk.grn:A.ylw,flexShrink:0}}/>
+                  </div>
+                  <div style={{fontSize:12,fontWeight:800,color:T.txt,lineHeight:1.2}}>{a.val}</div>
+                  <div style={{fontSize:10,color:tk.grn,marginTop:1}}>{a.chg}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* ML Signal banner */}
+          <div onClick={()=>navigate('signals')} style={{padding:'9px 13px',borderRadius:13,background:`${tk.org}0F`,border:`1px solid ${tk.org}44`,display:'flex',alignItems:'center',justifyContent:'space-between',cursor:'pointer'}}>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}><span>🤖</span><div><div style={{fontSize:10,fontWeight:700,color:tk.org}}>ML SIGNAL TODAY</div><div style={{fontSize:12,color:T.txt}}>5 signals · 2 exit alerts</div></div></div>
+            <span style={{fontSize:12,color:tk.org,fontWeight:700}}>View →</span>
+          </div>
+          {/* Holdings */}
+          <div>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+              <span style={{fontSize:13,fontWeight:700,color:T.txt}}>Holdings</span>
+              <span style={{fontSize:12,color:tk.blu,cursor:'pointer'}} onClick={()=>navigate('history')}>📋 History</span>
+            </div>
+            <div style={{display:'flex',gap:8}}>
+              {showH.map(item=>(
+                <div key={item.t} onClick={()=>navigate('stock-detail')} style={{flex:1,padding:'10px 10px',borderRadius:13,background:T.surf,border:`1px solid ${T.bdr}`,cursor:'pointer'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:4}}>
+                    <span style={{fontSize:12,fontWeight:800,color:T.txt}}>{item.t}</span>
+                    <span style={{fontSize:9,fontWeight:700,padding:'2px 5px',borderRadius:5,background:`${item.c}22`,color:item.c}}>{item.sig}</span>
+                  </div>
+                  <Spark data={item.data} color={item.chg>=0?tk.grn:A.red} w={72} h={20}/>
+                  <div style={{fontSize:12,fontWeight:700,color:T.txt,marginTop:2}}>₹{item.p.toLocaleString()}</div>
+                  <div style={{fontSize:10,color:item.chg>=0?tk.grn:A.red}}>{item.chg>=0?'▲':'▼'} {Math.abs(item.chg)}%</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Sector Allocation */}
+          <div style={{padding:'12px 14px',borderRadius:14,background:T.surf,border:`1px solid ${T.bdr}`}}>
+            <div style={{fontSize:13,fontWeight:700,color:T.txt,marginBottom:10}}>Sector Allocation</div>
+            {sectors.map(s=>(
+              <div key={s.n} style={{display:'flex',alignItems:'center',gap:9,marginBottom:7}}>
+                <span style={{fontSize:11,color:T.dim,width:52,flexShrink:0}}>{s.n}</span>
+                <div style={{flex:1,height:6,borderRadius:3,background:T.bdr,overflow:'hidden'}}>
+                  <div style={{height:'100%',width:`${s.pct}%`,borderRadius:3,background:s.c}}/>
+                </div>
+                <span style={{fontSize:11,fontWeight:700,color:T.txt,width:28,textAlign:'right'}}>{s.pct}%</span>
+              </div>
+            ))}
+          </div>
+          {/* Ace Investors */}
+          <div onClick={()=>navigate('top-investors')} style={{padding:'12px 14px',borderRadius:14,background:`${A.pur}0A`,border:`1px solid ${A.pur}28`,cursor:'pointer',display:'flex',alignItems:'center',gap:12}}>
+            <div style={{width:44,height:44,borderRadius:13,background:`${A.pur}20`,border:`1px solid ${A.pur}40`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>🏆</div>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:14,fontWeight:700,color:T.txt}}>Ace Investor Portfolios</div>
+              <div style={{fontSize:11,color:T.dim,marginTop:2}}>Dolly Khanna · Ashish Kacholia · Vijay Kedia</div>
+              <div style={{fontSize:10,color:A.pur,marginTop:2,fontWeight:600}}>Public NSE/BSE disclosures only</div>
+            </div>
+            <span style={{fontSize:18,color:T.dim,flexShrink:0}}>›</span>
+          </div>
+          {/* Disclaimer */}
+          <div style={{padding:'9px 12px',borderRadius:11,background:T.surf,border:`1px solid ${T.bdr}`}}>
+            <div style={{fontSize:10,color:T.dim,lineHeight:1.6,textAlign:'center'}}>
+              ⚠️ <span style={{fontWeight:600,color:T.txt}}>Disclaimer:</span> SIGNAL is not SEBI registered. All analysis is for educational purposes only and does not constitute investment advice. Past performance is not indicative of future results. Consult a SEBI-registered advisor before investing.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  function P09_StockDetail() {
+    const {T,A,dark}=useTheme(); const {goBack}=useNav(); const tk=useTk();
+    const [tab,setTab]=React.useState(0);
+    const cd=[2640,2680,2660,2720,2700,2760,2740,2800,2780,2840,2820,2880,2860,2890,2912];
+
+    const moat=[
+      {t:'Energy Dominance',d:'Largest private oil & gas refiner in India. 1.4 mbpd refining capacity. Export to 100+ countries.'},
+      {t:'Retail + Telecom',d:'Reliance Retail + Jio = 500M+ customers. Unmatched last-mile distribution advantage.'},
+      {t:'Green Energy Pivot',d:'₹75,000 Cr committed to solar, green H2, batteries. Decade-long structural tailwind.'},
+      {t:'Balance Sheet',d:'Net cash positive core business. ₹2.5L Cr cash/equivalents. Zero operational leverage risk.'},
+    ];
+    const zones=[
+      {label:'Accumulation Zone',tag:'BUY HERE',range:'₹2,700–2,780',desc:'Strong institutional support. FII net buyers here. Load 40% position — best risk:reward.',c:tk.grn},
+      {label:'Current Zone',tag:'FAIR ENTRY',range:'₹2,850–2,950',desc:'Fair entry at current levels. Start 40% position, top up on strength above ₹3,000.',c:tk.blu},
+      {label:'Breakout',tag:'MOMENTUM',range:'₹3,050–3,100',desc:'Breakout above ₹3,050 on volume = confirmed. Finish 20% position. SL: ₹2,650.',c:tk.org},
+    ];
+    const targets=[
+      {label:'Bull Case',prob:'65%',c:tk.grn,desc:'Green energy re-rating + Jio IPO announcement. ₹3,500–3,800 by FY27. New PE multiple unlocks.'},
+      {label:'Base Case',prob:'28%',c:tk.blu,desc:'Steady compounding. ₹3,200–3,400 in 12 months. Retail + energy stable growth.'},
+      {label:'Bear Case',prob:'7%',c:A.red,desc:'Global crude crash + regulatory headwinds. Floor ₹2,200 — near 52W low. Structural thesis intact.'},
+    ];
+    const emas=[
+      {ma:'5-Day EMA',level:'₹2,940',sig:'Resistance',sc:A.red},
+      {ma:'20-Day EMA',level:'₹2,870',sig:'Support Zone',sc:tk.grn},
+      {ma:'50-Day EMA',level:'₹2,810',sig:'Support Zone',sc:tk.grn},
+      {ma:'200-Day EMA ⭐',level:'₹2,620',sig:'Strong Base',sc:A.ylw},
+      {ma:'Bollinger Upper',level:'~₹3,100',sig:'Target 1',sc:tk.blu},
+      {ma:'Bollinger Lower',level:'~₹2,720',sig:'Buy Floor',sc:tk.grn},
+    ];
+    const entryZones=[
+      {label:'Deep Value',tag:'Best Zone',range:'₹2,700–2,780',desc:'Near 200D EMA. Max safety. Add 40–50% here.',c:tk.grn},
+      {label:'Current Zone',tag:'SIP / Add',range:'₹2,850–2,950',desc:'Consolidation band. Small adds OK.',c:tk.blu},
+      {label:'Target 1',tag:'+12–18%',range:'₹3,200–3,400',desc:'Analyst consensus target. Book 25–30%.',c:A.ylw},
+      {label:'Target 2 · Core',tag:'+30–38%',range:'₹3,600–3,800',desc:'Jio IPO + green energy re-rating. Hold core 25%.',c:A.pur},
+    ];
+    const catalysts=[
+      {period:'Jul–Sep 2026',desc:'Q1 FY27 results. Jio ARPU growth + Retail EBITDA expansion. Watch margin trajectory.'},
+      {period:'Oct–Dec 2026',desc:'Jio IPO announcement expected. Major re-rating catalyst for the whole group.'},
+      {period:'Jan–Mar 2027',desc:'Green energy capacity commissioning — solar + electrolyzer. New revenue stream begins.'},
+    ];
+
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT,overflow:'hidden'}}>
+        {/* Compact header */}
+        <div style={{paddingTop:SAFE_TOP+4,padding:`${SAFE_TOP+4}px 14px 0`,flexShrink:0}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:6}}>
+            <div style={{display:'flex',gap:8,alignItems:'center'}}>
+              <div onClick={goBack} style={{width:30,height:30,borderRadius:8,background:T.surf2,display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,color:T.txt,cursor:'pointer',flexShrink:0}}>‹</div>
+              <div style={{width:36,height:36,borderRadius:10,background:`linear-gradient(135deg,${tk.blu},${tk.blu}BB)`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:900,color:'#fff',flexShrink:0}}>RIL</div>
+              <div>
+                <div style={{fontSize:15,fontWeight:800,color:T.txt,lineHeight:1.1}}>RELIANCE</div>
+                <div style={{fontSize:9.5,color:T.dim}}>NSE · Energy · Retail · Telecom</div>
+              </div>
+            </div>
+            <div style={{textAlign:'right'}}>
+              <div style={{fontSize:20,fontWeight:900,color:T.txt,letterSpacing:-0.5}}>₹2,912</div>
+              <div style={{fontSize:11,color:tk.grn,fontWeight:700}}>▲ +51.60 (+1.80%)</div>
+            </div>
+          </div>
+          {/* Mini chart */}
+          <svg width="100%" height="38" viewBox="0 0 340 38" preserveAspectRatio="none">
+            <defs><linearGradient id="rg3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={tk.grn} stopOpacity="0.25"/><stop offset="100%" stopColor={tk.grn} stopOpacity="0"/></linearGradient></defs>
+            {(()=>{const d=cd,mn=Math.min(...d),mx=Math.max(...d),r=mx-mn;const pts=d.map((v,i)=>`${(i/(d.length-1))*340},${36-((v-mn)/r)*32}`);return(<><path d={`M${pts.join('L')} L340,38 L0,38Z`} fill="url(#rg3)"/><path d={`M${pts.join('L')}`} fill="none" stroke={tk.grn} strokeWidth="2" strokeLinecap="round"/></>)})()}
+          </svg>
+          {/* Tags */}
+          <div style={{display:'flex',gap:5,flexWrap:'wrap',margin:'6px 0 7px'}}>
+            {['CONGLOMERATE','STRONG MOAT','CASH RICH'].map(t=>(
+              <span key={t} style={{fontSize:9.5,fontWeight:700,padding:'2px 8px',borderRadius:5,background:`${tk.blu}18`,color:tk.blu,border:`1px solid ${tk.blu}28`}}>{t}</span>
+            ))}
+            <span style={{fontSize:9.5,fontWeight:700,padding:'2px 8px',borderRadius:5,background:`${tk.grn}18`,color:tk.grn,border:`1px solid ${tk.grn}28`}}>{tk.signalLabel}</span>
+          </div>
+          {/* Tabs */}
+          <div style={{display:'flex',background:T.surf2,borderRadius:11,padding:3,gap:2}}>
+            {['Overview','Strategy','Technical'].map((t,i)=>(
+              <div key={t} onClick={()=>setTab(i)} style={{flex:1,textAlign:'center',padding:'7px 0',borderRadius:8,
+                background:tab===i?tk.blu:'transparent',color:tab===i?'#fff':T.dim,fontWeight:700,fontSize:12,cursor:'pointer'}}>{t}</div>
+            ))}
+          </div>
+        </div>
+
+        {/* Scrollable content */}
+        <div style={{flex:1,overflowY:'auto',padding:'9px 14px 6px',display:'flex',flexDirection:'column',gap:9}}>
+
+          {/* ── TAB 0: OVERVIEW ── */}
+          {tab===0 && <>
+            {/* Signal + confidence */}
+            <div style={{padding:'10px 13px',borderRadius:13,background:`${tk.grn}09`,border:`1px solid ${tk.grn}28`}}>
+              <div style={{display:'flex',justifyContent:'space-between',marginBottom:5}}>
+                <div style={{display:'flex',gap:5,alignItems:'center'}}><span style={{fontSize:14}}>🚀</span><span style={{fontSize:11,fontWeight:700,color:tk.grn}}>MOMENTUM</span></div>
+                <span style={{fontSize:10,fontWeight:800,padding:'2px 8px',borderRadius:6,background:`${tk.grn}22`,color:tk.grn,border:`1px solid ${tk.grn}44`}}>{tk.signalLabel}</span>
+              </div>
+              <PBar val={87} color={tk.grn} h={4}/>
+              <div style={{display:'flex',gap:14,marginTop:6}}>
+                {[['ML Confidence','87%',tk.grn],['𝕏 Bullish','76%',tk.blu],['FII Flow','+₹420Cr',tk.grn],['Del%','63.2%',tk.grn]].map(([k,v,c])=>(
+                  <div key={k}><div style={{fontSize:9,color:T.dim}}>{k}</div><div style={{fontSize:11,fontWeight:700,color:c}}>{v}</div></div>
+                ))}
+              </div>
+            </div>
+            {/* Key metrics grid */}
+            <div style={{padding:'11px 13px',borderRadius:13,background:T.surf,border:`1px solid ${T.bdr}`}}>
+              <div style={{fontSize:10.5,fontWeight:700,color:T.dim,letterSpacing:0.5,marginBottom:9}}>KEY METRICS</div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:6}}>
+                {[['Mkt Cap','₹19.7L Cr'],['P/E Ratio','28.4x'],['Profit Margin','8.2%'],['ROE','9.8%'],['52W High','₹3,217'],['52W Low','₹2,220'],['Promoter','50.3%'],['Beta','0.82']].map(([k,v])=>(
+                  <div key={k} style={{display:'flex',justifyContent:'space-between',padding:'5px 8px',borderRadius:7,background:T.surf2}}>
+                    <span style={{fontSize:10.5,color:T.dim}}>{k}</span>
+                    <span style={{fontSize:11.5,fontWeight:700,color:T.txt}}>{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+            {/* MOAT */}
+            <div style={{padding:'11px 13px',borderRadius:13,background:T.surf,border:`1px solid ${T.bdr}`}}>
+              <div style={{fontSize:13,fontWeight:700,color:A.ylw,marginBottom:9}}>🏰 The MOAT — Why it Matters</div>
+              {moat.map((m,i)=>(
+                <div key={i} style={{display:'flex',gap:9,marginBottom:i<moat.length-1?9:0,alignItems:'flex-start'}}>
+                  <div style={{width:6,height:6,borderRadius:3,background:A.ylw,flexShrink:0,marginTop:5}}/>
+                  <div style={{fontSize:12.5,lineHeight:1.5,color:T.dim}}>
+                    <span style={{fontWeight:700,color:T.txt}}>{m.t}: </span>{m.d}
+                  </div>
+                </div>
+              ))}
+            </div>
+            {/* Analyst quote */}
+            <div style={{padding:'11px 13px',borderRadius:12,background:`${tk.blu}08`,border:`1px solid ${tk.blu}20`}}>
+              <div style={{fontSize:11.5,color:T.dim,lineHeight:1.6,fontStyle:'italic'}}>
+                "Reliance is a 3-decade compounding story. Jio disrupted telecom; Retail is disrupting commerce; Green Energy will disrupt utilities. The sum-of-parts valuation alone justifies current price."
+              </div>
+              <div style={{fontSize:10,color:T.dim,marginTop:5}}>Research via SIGNAL ML · Not SEBI-registered · DYOR</div>
+            </div>
+          </>}
+
+          {/* ── TAB 1: STRATEGY ── */}
+          {tab===1 && <>
+            <div style={{fontSize:12,fontWeight:700,color:T.txt}}>📍 Price Trajectory</div>
+            {zones.map((z,i)=>(
+              <div key={i} style={{padding:'11px 13px',borderRadius:13,background:T.surf,border:`1px solid ${z.c}35`}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
+                  <span style={{fontSize:10.5,color:z.c,fontWeight:700}}>{z.label}</span>
+                  <span style={{fontSize:10,fontWeight:800,padding:'2px 8px',borderRadius:5,background:`${z.c}22`,color:z.c,border:`1px solid ${z.c}44`}}>{z.tag}</span>
+                </div>
+                <div style={{fontSize:21,fontWeight:900,color:T.txt,margin:'3px 0',letterSpacing:-0.5}}>{z.range}</div>
+                <div style={{fontSize:11.5,color:T.dim,lineHeight:1.45}}>{z.desc}</div>
+              </div>
+            ))}
+            <div style={{fontSize:12,fontWeight:700,color:T.txt,marginTop:3}}>🎯 12-Month Targets</div>
+            {targets.map((tg,i)=>(
+              <div key={i} style={{padding:'10px 13px',borderRadius:12,background:T.surf,border:`1px solid ${tg.c}28`,display:'flex',gap:10,alignItems:'flex-start'}}>
+                <div style={{width:3,alignSelf:'stretch',borderRadius:3,background:tg.c,flexShrink:0}}/>
+                <div style={{flex:1}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                    <span style={{fontSize:13,fontWeight:800,color:T.txt}}>{tg.label}</span>
+                    <span style={{fontSize:11,fontWeight:700,color:tg.c}}>{tg.prob} prob.</span>
+                  </div>
+                  <div style={{fontSize:11.5,color:T.dim,lineHeight:1.45}}>{tg.desc}</div>
+                </div>
+              </div>
+            ))}
+            <div style={{fontSize:12,fontWeight:700,color:T.txt,marginTop:3}}>📅 Timeline & Catalysts</div>
+            {catalysts.map((c,i)=>(
+              <div key={i} style={{display:'flex',gap:9,alignItems:'flex-start',padding:'8px 10px',borderRadius:10,background:T.surf,border:`1px solid ${T.bdr}`}}>
+                <div style={{width:6,height:6,borderRadius:3,background:A.ylw,flexShrink:0,marginTop:5}}/>
+                <div style={{fontSize:12,lineHeight:1.5,color:T.dim}}>
+                  <span style={{fontWeight:700,color:A.ylw}}>{c.period}: </span>{c.desc}
+                </div>
+              </div>
+            ))}
+          </>}
+
+          {/* ── TAB 2: TECHNICAL ── */}
+          {tab===2 && <>
+            {/* Indicator summary row */}
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:7}}>
+              {[['RSI (14)','68','Neutral',A.ylw],['MACD','12.4','Buy signal',tk.grn],['MA Signals','12 Buy','0 Sell',tk.grn]].map(([k,v,s,c])=>(
+                <div key={k} style={{padding:'9px 10px',borderRadius:11,background:T.surf,border:`1px solid ${T.bdr}`,textAlign:'center'}}>
+                  <div style={{fontSize:9,color:T.dim,marginBottom:2}}>{k}</div>
+                  <div style={{fontSize:14,fontWeight:800,color:T.txt}}>{v}</div>
+                  <div style={{fontSize:9.5,color:c,marginTop:1}}>{s}</div>
+                </div>
+              ))}
+            </div>
+            {/* EMA/SMA table */}
+            <div style={{padding:'11px 13px',borderRadius:13,background:T.surf,border:`1px solid ${T.bdr}`}}>
+              <div style={{fontSize:10.5,fontWeight:700,color:T.dim,letterSpacing:0.5,marginBottom:9}}>EMA / SMA PRICE MAP</div>
+              {emas.map((e,i)=>(
+                <div key={i} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 0',borderBottom:i<emas.length-1?`1px solid ${T.bdr}`:'none'}}>
+                  <span style={{fontSize:11,color:T.dim,flex:1.2}}>{e.ma}</span>
+                  <span style={{fontSize:12,fontWeight:700,color:T.txt,flex:1}}>{e.level}</span>
+                  <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:5,background:`${e.sc}18`,color:e.sc,flexShrink:0}}>{e.sig}</span>
+                </div>
+              ))}
+            </div>
+            {/* Entry / Target grid */}
+            <div style={{fontSize:12,fontWeight:700,color:T.txt}}>🎯 Entry · Target · Stop Loss</div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:8}}>
+              {entryZones.map((ez,i)=>(
+                <div key={i} style={{padding:'10px 11px',borderRadius:12,background:T.surf,border:`1px solid ${ez.c}35`}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:3}}>
+                    <span style={{fontSize:9.5,color:ez.c,fontWeight:700}}>{ez.label}</span>
+                    <span style={{fontSize:8.5,fontWeight:700,padding:'1px 5px',borderRadius:4,background:`${ez.c}20`,color:ez.c}}>{ez.tag}</span>
+                  </div>
+                  <div style={{fontSize:14,fontWeight:900,color:T.txt,margin:'2px 0',letterSpacing:-0.3}}>{ez.range}</div>
+                  <div style={{fontSize:10.5,color:T.dim,lineHeight:1.4}}>{ez.desc}</div>
+                </div>
+              ))}
+            </div>
+            {/* Stop loss */}
+            <div style={{padding:'10px 13px',borderRadius:12,background:`${A.red}09`,border:`1px solid ${A.red}35`}}>
+              <div style={{fontSize:9.5,fontWeight:700,color:A.red,letterSpacing:0.5,marginBottom:3}}>🔴 STOP LOSS — HARD EXIT</div>
+              <div style={{fontSize:20,fontWeight:900,color:A.red}}>Below ₹2,600</div>
+              <div style={{fontSize:11.5,color:T.dim,marginTop:3,lineHeight:1.45}}>Weekly close below = trend breakdown. Exit 50–60% immediately. Re-enter only on recovery above ₹2,700 with volume confirmation.</div>
+            </div>
+            {/* Position sizing */}
+            <div style={{padding:'11px 13px',borderRadius:13,background:T.surf,border:`1px solid ${T.bdr}`}}>
+              <div style={{fontSize:10.5,fontWeight:700,color:T.dim,letterSpacing:0.5,marginBottom:8}}>POSITION SIZING GUIDE</div>
+              {[
+                {icon:'💡',l:'Fresh buyer',d:'30% now (₹2,850–2,950) · 40% at ₹2,700–2,780 dip · 30% on breakout above ₹3,050 on volume.'},
+                {icon:'⚠️',l:'In loss (bought ₹3,000+)',d:'Avoid averaging yet. Wait for ₹2,700–2,780 dip. Brings average down meaningfully.'},
+                {icon:'🚫',l:'Never lump sum at CMP',d:'SIP approach ₹10,000–25,000/month. PE at 28x — patience required.'},
+              ].map((ps,i)=>(
+                <div key={i} style={{display:'flex',gap:9,padding:'8px 10px',borderRadius:9,background:T.surf2,marginBottom:i<2?6:0}}>
+                  <span style={{fontSize:14,flexShrink:0,lineHeight:1.4}}>{ps.icon}</span>
+                  <div><div style={{fontSize:11.5,fontWeight:700,color:T.txt,marginBottom:1}}>{ps.l}</div><div style={{fontSize:11,color:T.dim,lineHeight:1.45}}>{ps.d}</div></div>
+                </div>
+              ))}
+            </div>
+          </>}
+
+          {/* Disclaimer */}
+          <div style={{padding:'7px 11px',borderRadius:10,background:T.surf,border:`1px solid ${T.bdr}`}}>
+            <div style={{fontSize:9.5,color:T.dim,textAlign:'center',lineHeight:1.5}}>⚠️ Not SEBI-registered · Educational purposes only · DYOR</div>
+          </div>
+        </div>
+
+        {/* BUY / SELL strip */}
+        <div style={{padding:`5px 14px`,display:'flex',gap:8,flexShrink:0}}>
+          <button style={{flex:1,height:44,borderRadius:12,background:`linear-gradient(135deg,${tk.grn},#00A87D)`,border:'none',color:'#001A12',fontSize:14,fontWeight:800}}>{tk.buyLabel}</button>
+          <button style={{flex:1,height:44,borderRadius:12,background:`${A.red}18`,border:`1px solid ${A.red}44`,color:A.red,fontSize:14,fontWeight:800}}>{tk.sellLabel}</button>
+          <button style={{width:44,height:44,borderRadius:12,background:T.surf,border:`1px solid ${T.bdr}`,color:T.dim,fontSize:17,flexShrink:0}}>☆</button>
+        </div>
+      </div>
+    );
+  }
+
+  function P10_AlgoHub() {
+    const {T,A,dark}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const st=[{e:'📈',n:'Trend Following',d:'Ride sustained moves using EMAs',diff:'Easy',dc:tk.grn},{e:'🚀',n:'Momentum',d:'Buy strength, RSI + volume surge',diff:'Medium',dc:A.ylw},{e:'🔄',n:'Mean Reversion',d:'Buy the dip, Bollinger Bands',diff:'Medium',dc:A.ylw},{e:'⚡',n:'Breakout',d:'Catch range breakouts with ATR',diff:'Hard',dc:A.red}];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <div style={{position:'relative',overflow:'hidden'}}>
+          <div style={{position:'absolute',top:-40,right:-40,width:180,height:180,borderRadius:'50%',background:`radial-gradient(circle,${tk.org}${dark?'38':'18'} 0%,transparent 70%)`,pointerEvents:'none'}}/>
+          <div style={{padding:`${SAFE_TOP+6}px 20px 12px`,position:'relative',zIndex:1}}>
+            <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:9}}><div style={{width:28,height:28,borderRadius:9,background:`${tk.org}20`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:14}}>⚙️</div><span style={{fontSize:12,fontWeight:600,color:tk.org}}>ALGO BUILDER</span></div>
+            <div style={{fontSize:27,fontWeight:900,color:T.txt,lineHeight:1.1,letterSpacing:-0.8}}>Build Your<br/><span style={{color:tk.org}}>Trading Algorithm</span></div>
+            <div style={{fontSize:12.5,color:T.dim,marginTop:7}}>ML-powered · Python/Pine code · Deploy in minutes</div>
+            <div style={{display:'flex',gap:16,marginTop:10}}>
+              {[['1,240+','Algos Built'],['21.3%','Avg Return'],['3.2K','Traders']].map(([v,l])=><div key={l}><div style={{fontSize:14,fontWeight:800,color:T.txt}}>{v}</div><div style={{fontSize:10,color:T.dim}}>{l}</div></div>)}
+            </div>
+          </div>
+        </div>
+        <div style={{padding:'0 16px',flex:1,overflow:'auto'}}>
+          <div style={{fontSize:11,color:T.dim,fontWeight:700,letterSpacing:0.5,marginBottom:8}}>STRATEGY TYPE</div>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:9}}>
+            {st.map((s,i)=>(
+              <div key={s.n} onClick={()=>navigate('param-explorer')} style={{padding:'12px 12px',borderRadius:14,background:i===1?`${tk.org}10`:T.surf,border:`1px solid ${i===1?tk.org:T.bdr}`,display:'flex',flexDirection:'column',gap:5,cursor:'pointer'}}>
+                <div style={{display:'flex',justifyContent:'space-between'}}><span style={{fontSize:22}}>{s.e}</span><span style={{fontSize:9.5,fontWeight:700,padding:'2px 7px',borderRadius:5,background:`${s.dc}18`,color:s.dc}}>{s.diff}</span></div>
+                <div style={{fontSize:13,fontWeight:700,color:T.txt}}>{s.n}</div>
+                <div style={{fontSize:11,color:T.dim,lineHeight:1.4}}>{s.d}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{padding:'12px 16px',display:'flex',flexDirection:'column',gap:9}}>
+          <BigBtn label="Start from Scratch →" onClick={()=>navigate('param-explorer')}/>
+          <BigBtn label="Use a Template" outline onClick={()=>navigate('param-explorer')}/>
+        </div>
+      </div>
+    );
+  }
+
+  function P11_ParamExplorer() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const p=[{n:'RSI (14)',s:'Overbought/Oversold momentum',d:'Easy',dc:tk.grn,a:true,sp:[50,42,35,40,55,68,72,65,58,50]},{n:'MACD',s:'Trend + momentum crossover',d:'Medium',dc:A.ylw,a:false,sp:[2,-1,0,3,5,4,2,-2,-4,-1]},{n:'EMA / SMA',s:'Smooths price, identifies trend',d:'Easy',dc:tk.grn,a:true,sp:[40,42,44,46,45,47,49,50,52,54]},{n:'Bollinger Bands',s:'Volatility bands for range trading',d:'Medium',dc:A.ylw,a:false,sp:[48,55,62,58,50,44,46,54,60,56]},{n:'Volume Analysis',s:'Confirms moves with delivery %',d:'Easy',dc:tk.grn,a:false,sp:[20,35,28,40,60,45,30,50,70,55]},{n:'ADX',s:'Measures trend strength 0-100',d:'Hard',dc:A.red,a:false,sp:[15,18,22,28,32,35,38,40,36,34]},{n:'Stochastic',s:'Overbought/sold in ranging markets',d:'Medium',dc:A.ylw,a:false,sp:[80,75,62,45,38,35,42,55,65,72]},{n:'ATR',s:'Volatility-based stop loss sizing',d:'Medium',dc:A.ylw,a:false,sp:[12,14,18,16,20,22,19,17,15,16]}];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <NavBar title="Select Indicators"/>
+        <div style={{padding:'0 16px 8px',display:'flex',gap:7,flexWrap:'wrap'}}>
+          {p.filter(x=>x.a).map(x=><div key={x.n} style={{padding:'4px 11px',borderRadius:20,background:`${tk.blu}18`,border:`1px solid ${tk.blu}55`,display:'flex',alignItems:'center',gap:6}}><span style={{fontSize:12,fontWeight:700,color:tk.blu}}>{x.n.split(' ')[0]}</span><span style={{fontSize:11,color:tk.blu,opacity:0.7}}>✕</span></div>)}
+        </div>
+        <div style={{flex:1,overflow:'auto',padding:'0 14px',display:'flex',flexDirection:'column',gap:7}}>
+          {p.map(x=>(
+            <div key={x.n} style={{padding:'10px 12px',borderRadius:13,background:x.a?`${tk.blu}08`:T.surf,border:`1px solid ${x.a?tk.blu:T.bdr}`,display:'flex',alignItems:'center',gap:11}}>
+              <div style={{flex:1,minWidth:0}}><div style={{display:'flex',alignItems:'center',gap:7}}><span style={{fontSize:13,fontWeight:700,color:T.txt}}>{x.n}</span><span style={{fontSize:9.5,fontWeight:700,padding:'2px 6px',borderRadius:5,background:`${x.dc}18`,color:x.dc}}>{x.d}</span></div><div style={{fontSize:11,color:T.dim,marginTop:2}}>{x.s}</div></div>
+              <Spark data={x.sp} color={x.a?tk.blu:T.dim} w={46} h={20}/>
+              <div style={{width:28,height:28,borderRadius:8,flexShrink:0,background:x.a?tk.blu:`${tk.blu}14`,border:`1px solid ${x.a?tk.blu:T.bdr}`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,color:x.a?'#fff':tk.blu,fontWeight:700}}>{x.a?'✓':'+'}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{padding:`8px 14px ${SAFE_BOT+8}px`}}><BigBtn label="Build Algo (2 selected) →" onClick={()=>navigate('algo-builder')}/></div>
+      </div>
+    );
+  }
+
+  function P12_AlgoBuilder() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const en=[{l:'RSI',op:'<',v:'35',note:'oversold'},{l:'EMA20',op:'>',v:'EMA50',note:'golden cross'}];
+    const ex=[{l:'RSI',op:'>',v:'70',note:'overbought'},{l:'Stop Loss',op:'=',v:'2.5%',note:'trail'},{l:'Target',op:'=',v:'6.0%',note:'exit'}];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <NavBar title="Build Algorithm"/>
+        <div style={{flex:1,overflow:'auto',padding:'4px 18px',display:'flex',flexDirection:'column',gap:11}}>
+          <div style={{display:'flex',gap:7,flexWrap:'wrap'}}>
+            {['RSI (14)','EMA 20/50'].map(x=><div key={x} style={{padding:'4px 11px',borderRadius:20,background:`${tk.blu}18`,border:`1px solid ${tk.blu}55`,display:'flex',gap:6,alignItems:'center'}}><span style={{fontSize:12,fontWeight:700,color:tk.blu}}>{x}</span><span style={{fontSize:11,color:tk.blu,opacity:0.7}}>✕</span></div>)}
+          </div>
+          <div style={{padding:'12px 13px',borderRadius:13,background:T.surf,border:`1px solid ${T.bdr}`}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:9}}><div style={{width:8,height:8,borderRadius:4,background:tk.grn}}/><span style={{fontSize:11.5,fontWeight:700,color:tk.grn}}>{tk.buyLabel} WHEN (entry)</span></div>
+            {en.map((c,i)=><div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:7,padding:'7px 10px',borderRadius:9,background:`${tk.grn}08`,border:`1px solid ${tk.grn}22`}}><span style={{fontSize:12,fontWeight:700,color:T.txt,minWidth:42}}>{c.l}</span><span style={{fontSize:12,color:tk.grn,fontWeight:700}}>{c.op}</span><span style={{fontSize:12,fontWeight:700,color:T.txt,background:`${tk.grn}18`,padding:'2px 8px',borderRadius:6}}>{c.v}</span><span style={{fontSize:11,color:T.dim}}>({c.note})</span></div>)}
+            <div style={{fontSize:12,color:tk.blu,fontWeight:600}}>+ Add condition</div>
+          </div>
+          <div style={{padding:'12px 13px',borderRadius:13,background:T.surf,border:`1px solid ${T.bdr}`}}>
+            <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:9}}><div style={{width:8,height:8,borderRadius:4,background:A.red}}/><span style={{fontSize:11.5,fontWeight:700,color:A.red}}>{tk.sellLabel} WHEN</span></div>
+            {ex.map((c,i)=><div key={i} style={{display:'flex',alignItems:'center',gap:8,marginBottom:7,padding:'7px 10px',borderRadius:9,background:`${A.red}08`,border:`1px solid ${A.red}22`}}><span style={{fontSize:12,fontWeight:700,color:T.txt,minWidth:54}}>{c.l}</span><span style={{fontSize:12,color:A.red,fontWeight:700}}>{c.op}</span><span style={{fontSize:12,fontWeight:700,color:T.txt,background:`${A.red}18`,padding:'2px 8px',borderRadius:6}}>{c.v}</span><span style={{fontSize:11,color:T.dim}}>({c.note})</span></div>)}
+          </div>
+          <div style={{display:'flex',gap:10}}>
+            <div style={{flex:1}}><div style={{fontSize:10.5,color:T.dim,fontWeight:700,letterSpacing:0.5,marginBottom:6}}>BACKTEST</div><div style={{display:'flex',gap:6}}>{['1Y','2Y','5Y'].map((p,i)=><span key={p} style={{fontSize:12,fontWeight:700,padding:'5px 11px',borderRadius:8,background:i===0?`${tk.blu}20`:T.surf2,border:`1px solid ${i===0?tk.blu:T.bdr}`,color:i===0?tk.blu:T.dim}}>{p}</span>)}</div></div>
+            <div style={{flex:1}}><div style={{fontSize:10.5,color:T.dim,fontWeight:700,letterSpacing:0.5,marginBottom:6}}>LANGUAGE</div><div style={{display:'flex',gap:6}}>{['Python','Pine'].map((p,i)=><span key={p} style={{fontSize:12,fontWeight:700,padding:'5px 10px',borderRadius:8,background:i===0?`${tk.blu}20`:T.surf2,border:`1px solid ${i===0?tk.blu:T.bdr}`,color:i===0?tk.blu:T.dim}}>{p}</span>)}</div></div>
+          </div>
+        </div>
+        <div style={{padding:`0 18px ${SAFE_BOT+8}px`}}><BigBtn label="Generate Code →" orange onClick={()=>navigate('code-gen')}/></div>
+      </div>
+    );
+  }
+
+  function P13_CodeGen() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const [copied,setCopied]=us3(false);
+    const lines=[{t:'# SIGNAL Strategy  ·  RSI + EMA Crossover',c:'#68D391'},{t:'# Generated by SIGNAL App  ·  Jun 2026',c:'#68D391'},{t:'',c:'#ccc'},{t:'import pandas as pd',c:'#79C0FF'},{t:'import numpy as np',c:'#79C0FF'},{t:'',c:'#ccc'},{t:'RSI_LOW, RSI_HIGH = 35, 70',c:'#F6C90E'},{t:'EMA_FAST, EMA_SLOW = 20, 50',c:'#F6C90E'},{t:'',c:'#ccc'},{t:'def rsi(close, n=14):',c:'#FF7D46'},{t:'    d = close.diff()',c:'#E2E8F0'},{t:'    g = d.clip(lower=0).rolling(n).mean()',c:'#E2E8F0'},{t:'    return 100-(100/(1+g/(-d.clip(upper=0)).rolling(n).mean()))',c:'#E2E8F0'},{t:'',c:'#ccc'},{t:'def signal(df):',c:'#FF7D46'},{t:'    r    = rsi(df["close"])',c:'#E2E8F0'},{t:'    fast = df["close"].ewm(span=EMA_FAST).mean()',c:'#E2E8F0'},{t:'    slow = df["close"].ewm(span=EMA_SLOW).mean()',c:'#E2E8F0'},{t:'    cross = (fast.iloc[-1]>slow.iloc[-1] and',c:'#E2E8F0'},{t:'             fast.iloc[-2]<=slow.iloc[-2])',c:'#E2E8F0'},{t:'    if r.iloc[-1] < RSI_LOW and cross: return "BUY"',c:'#68D391'},{t:'    if r.iloc[-1] > RSI_HIGH:           return "SELL"',c:'#FC8181'},{t:'    return "HOLD"',c:'#E2E8F0'}];
+    const m=[{l:'Returns',v:'+24.3%',c:tk.grn},{l:'Sharpe',v:'1.84',c:tk.blu},{l:'Win Rate',v:'64%',c:tk.grn},{l:'Max DD',v:'-8.2%',c:A.red}];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <NavBar title="Generated Code"/>
+        <div style={{padding:'0 14px 5px',display:'flex',justifyContent:'flex-end',flexShrink:0}}>
+          <div style={{display:'flex',gap:7}}>{['Python','Pine'].map((l,i)=><span key={l} style={{fontSize:11,fontWeight:700,padding:'4px 9px',borderRadius:7,background:i===0?`${tk.blu}20`:T.surf2,border:`1px solid ${i===0?tk.blu:T.bdr}`,color:i===0?tk.blu:T.dim}}>{l}</span>)}</div>
+        </div>
+        <div style={{margin:'0 14px',borderRadius:13,overflow:'hidden',background:'#0D1117',border:'1px solid #21262D',flex:1,display:'flex',flexDirection:'column'}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'7px 12px',background:'#161B22',borderBottom:'1px solid #21262D',flexShrink:0}}>
+            <span style={{fontSize:11,color:'#8B949E',fontFamily:'monospace'}}>signal_rsi_ema.py</span>
+            <button onClick={()=>{setCopied(true);setTimeout(()=>setCopied(false),1800);}} style={{padding:'4px 11px',borderRadius:7,background:copied?`${tk.grn}22`:`${tk.blu}22`,border:`1px solid ${copied?tk.grn:tk.blu}44`,color:copied?tk.grn:tk.blu,fontSize:11.5,fontWeight:700}}>{copied?'✓ Copied!':'⎘ Copy'}</button>
+          </div>
+          <div style={{padding:'10px 13px',overflow:'auto',flex:1}}>
+            {lines.map((l,i)=><div key={i} style={{fontFamily:'monospace',fontSize:10.5,lineHeight:'17px',color:l.c,whiteSpace:'pre'}}>{l.t}</div>)}
+          </div>
+        </div>
+        <div style={{padding:'8px 14px 0',flexShrink:0}}>
+          <div style={{fontSize:11,color:T.dim,fontWeight:700,letterSpacing:0.5,marginBottom:7}}>1Y BACKTEST RESULTS</div>
+          <div style={{display:'grid',gridTemplateColumns:'repeat(4,1fr)',gap:7}}>
+            {m.map(x=><div key={x.l} style={{padding:'8px 8px',borderRadius:10,background:T.surf,border:`1px solid ${T.bdr}`,textAlign:'center'}}><div style={{fontSize:14,fontWeight:900,color:x.c}}>{x.v}</div><div style={{fontSize:10,color:T.dim,marginTop:1}}>{x.l}</div></div>)}
+          </div>
+        </div>
+        <div style={{padding:`8px 14px ${SAFE_BOT+8}px`,flexShrink:0}}><BigBtn label="Deploy Script →" orange onClick={()=>navigate('deploy')}/></div>
+      </div>
+    );
+  }
+
+  function P14_Deploy() {
+    const {T,A}=useTheme(); const tk=useTk();
+    const bkr=[{n:'Zerodha Kite',c:'#387ED1',cost:'₹2,000/mo'},{n:'mStock',c:'#E63946',cost:'₹500/mo'},{n:'Upstox',c:'#7B2FBE',cost:'₹999/mo'},{n:'HDFC Sec',c:'#004C8F',cost:'₹1,500/mo'}];
+    const inf=[{p:'Raspberry Pi 4',one:'₹4,500*',mo:'₹0',note:'24/7 home server'},{p:'AWS t2.micro',one:'Free',mo:'₹850',note:'12mo free tier'},{p:'DigitalOcean',one:'Free',mo:'₹600',note:'Easy managed'},{p:'Heroku',one:'Free',mo:'₹1,200',note:'Beginner friendly'}];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <NavBar title="Deploy Your Algo"/>
+        <div style={{flex:1,overflow:'auto',padding:'4px 14px',display:'flex',flexDirection:'column',gap:9}}>
+          <div style={{padding:'11px 13px',borderRadius:14,background:T.surf,border:`1px solid ${T.bdr}`}}>
+            <div style={{display:'flex',gap:9,alignItems:'center',marginBottom:9}}><div style={{width:24,height:24,borderRadius:12,background:`${tk.blu}22`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:tk.blu}}>1</div><span style={{fontSize:14,fontWeight:700,color:T.txt}}>Get Broker API Access</span></div>
+            <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:7}}>
+              {bkr.map(b=><div key={b.n} style={{padding:'7px 10px',borderRadius:9,background:`${b.c}12`,border:`1px solid ${b.c}30`,display:'flex',justifyContent:'space-between',alignItems:'center'}}><span style={{fontSize:11.5,fontWeight:700,color:b.c}}>{b.n}</span><span style={{fontSize:10,color:T.dim}}>{b.cost}</span></div>)}
+            </div>
+          </div>
+          <div style={{padding:'11px 13px',borderRadius:14,background:T.surf,border:`1px solid ${T.bdr}`}}>
+            <div style={{display:'flex',gap:9,alignItems:'center',marginBottom:9}}><div style={{width:24,height:24,borderRadius:12,background:`${tk.org}22`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:tk.org}}>2</div><span style={{fontSize:14,fontWeight:700,color:T.txt}}>Choose Infrastructure</span></div>
+            <div style={{borderRadius:9,overflow:'hidden',border:`1px solid ${T.bdr}`}}>
+              <div style={{display:'grid',gridTemplateColumns:'1.4fr 0.8fr 0.7fr',background:T.surf2,padding:'5px 10px',gap:4}}>{['Platform','One-time','Monthly'].map(h=><span key={h} style={{fontSize:9.5,fontWeight:700,color:T.dim}}>{h}</span>)}</div>
+              {inf.map((r,i)=><div key={r.p} style={{display:'grid',gridTemplateColumns:'1.4fr 0.8fr 0.7fr',padding:'6px 10px',gap:4,background:i===0?`${tk.grn}08`:i%2===0?T.surf:T.bg,borderTop:`1px solid ${T.bdr}`}}><span style={{fontSize:11,fontWeight:700,color:i===0?tk.grn:T.txt}}>{r.p}</span><span style={{fontSize:11,color:T.dim}}>{r.one}</span><span style={{fontSize:11,fontWeight:700,color:i===0?tk.grn:T.txt}}>{r.mo}</span></div>)}
+            </div>
+          </div>
+          <div style={{padding:'11px 13px',borderRadius:14,background:T.surf,border:`1px solid ${T.bdr}`}}>
+            <div style={{display:'flex',gap:9,alignItems:'center',marginBottom:9}}><div style={{width:24,height:24,borderRadius:12,background:`${tk.grn}22`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:tk.grn}}>3</div><span style={{fontSize:14,fontWeight:700,color:T.txt}}>Run Your Script</span></div>
+            <div style={{borderRadius:9,background:'#0D1117',border:'1px solid #21262D',padding:'9px 12px'}}>
+              {[{t:'pip install kiteconnect pandas numpy',c:'#E2E8F0'},{t:'export KITE_API_KEY="your_key"',c:'#F6C90E'},{t:'python signal_rsi_ema.py --live',c:'#79C0FF'}].map((l,i)=><div key={i} style={{fontFamily:'monospace',fontSize:10.5,lineHeight:'18px',color:l.c,whiteSpace:'pre'}}>{l.t}</div>)}
+            </div>
+          </div>
+          <div style={{padding:'10px 13px',borderRadius:12,background:`${tk.blu}0A`,border:`1px solid ${tk.blu}25`}}>
+            <div style={{fontSize:11.5,fontWeight:700,color:T.txt,marginBottom:3}}>💰 Estimated Monthly Cost</div>
+            <div style={{fontSize:20,fontWeight:900,color:tk.blu}}>₹600 – ₹3,200</div>
+            <div style={{fontSize:11,color:T.dim,marginTop:2}}>Infrastructure + Broker API fees combined</div>
+          </div>
+          <div style={{display:'flex',gap:8}}>
+            <button style={{flex:1,height:46,borderRadius:12,background:`linear-gradient(135deg,${tk.blu},${tk.blu}BB)`,border:'none',color:'#fff',fontSize:13,fontWeight:700}}>📄 Download Guide</button>
+            <button style={{flex:1,height:46,borderRadius:12,background:`${tk.grn}14`,border:`1px solid ${tk.grn}40`,color:tk.grn,fontSize:13,fontWeight:700}}>👥 Join Community</button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  Object.assign(window, { P07_Analysis, P08_Dashboard, P09_StockDetail, P10_AlgoHub, P11_ParamExplorer, P12_AlgoBuilder, P13_CodeGen, P14_Deploy });
+  </script>
+
+  <!-- ── S5 · Extra Screens: Preferences / Signals / Markets / Subscription ── -->
+  <script type="text/babel">
+  const { useState: us4 } = React;
+
+  /* ── P04b : Trading Preferences (onboarding) ──────────────────── */
+  function P04b_Preferences() {
+    const {T,A,dark}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const [selMode,setSelMode]=us4(tk.tradingMode||'Swing');
+    const [selLayout,setSelLayout]=us4(tk.density||'Standard');
+    const modes=[
+      {id:'Scalper',icon:'⚡',label:'Scalper',desc:'Fast intraday trades · M1–M15 signals · Quick ENTRY/EXIT · Lean, real-time UI',color:A.red},
+      {id:'Swing',icon:'🔄',label:'Swing Trader',desc:'1–15 day trades · RSI / MACD / EMA signals · Charts + key metrics balanced',color:tk.blu},
+      {id:'Investor',icon:'🏛️',label:'Long-term Investor',desc:'Hold for months / years · Fundamentals + valuation · Clean, distraction-free',color:A.pur},
+    ];
+    const layouts=[
+      {id:'Essential',icon:'✦',label:'Clean',desc:'Big numbers only'},
+      {id:'Standard',icon:'⊞',label:'Balanced',desc:'Charts + metrics'},
+      {id:'Pro',icon:'▦',label:'Power Trader',desc:'All data visible'},
+    ];
+    const handleContinue=()=>{ if(tk.setPrefs) tk.setPrefs(selMode,selLayout); navigate('broker'); };
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column'}}>
+        <NavBar title="Personalise SIGNAL" back={false}/>
+        <div style={{flex:1,overflow:'auto',padding:'4px 20px 14px',display:'flex',flexDirection:'column',gap:18}}>
+          <div>
+            <div style={{fontSize:10.5,color:T.dim,fontWeight:800,letterSpacing:1,marginBottom:10}}>HOW DO YOU TRADE?</div>
+            <div style={{display:'flex',flexDirection:'column',gap:9}}>
+              {modes.map(m=>(
+                <div key={m.id} onClick={()=>setSelMode(m.id)} style={{padding:'13px 15px',borderRadius:15,
+                  background:selMode===m.id?`${m.color}10`:T.surf,
+                  border:`2px solid ${selMode===m.id?m.color:T.bdr}`,cursor:'pointer',
+                  display:'flex',alignItems:'center',gap:14}}>
+                  <div style={{width:46,height:46,borderRadius:14,background:`${m.color}18`,border:`1px solid ${m.color}30`,
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:22,flexShrink:0}}>{m.icon}</div>
+                  <div style={{flex:1}}>
+                    <div style={{fontSize:14,fontWeight:800,color:selMode===m.id?m.color:T.txt}}>{m.label}</div>
+                    <div style={{fontSize:11.5,color:T.dim,marginTop:2,lineHeight:1.4}}>{m.desc}</div>
+                  </div>
+                  <div style={{width:20,height:20,borderRadius:10,flexShrink:0,
+                    border:`2px solid ${selMode===m.id?m.color:T.bdr}`,
+                    background:selMode===m.id?m.color:'transparent',
+                    display:'flex',alignItems:'center',justifyContent:'center'}}>
+                    {selMode===m.id&&<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" fill="none"/></svg>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <div style={{fontSize:10.5,color:T.dim,fontWeight:800,letterSpacing:1,marginBottom:10}}>YOUR LAYOUT PREFERENCE</div>
+            <div style={{display:'flex',gap:9}}>
+              {layouts.map(l=>(
+                <div key={l.id} onClick={()=>setSelLayout(l.id)} style={{flex:1,padding:'12px 8px',borderRadius:14,
+                  background:selLayout===l.id?`${tk.blu}10`:T.surf,
+                  border:`2px solid ${selLayout===l.id?tk.blu:T.bdr}`,cursor:'pointer',textAlign:'center'}}>
+                  <div style={{fontSize:20,marginBottom:5}}>{l.icon}</div>
+                  <div style={{fontSize:12,fontWeight:700,color:selLayout===l.id?tk.blu:T.txt}}>{l.label}</div>
+                  <div style={{fontSize:10,color:T.dim,marginTop:3,lineHeight:1.35}}>{l.desc}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={{padding:'10px 13px',borderRadius:12,background:`${tk.grn}0A`,border:`1px solid ${tk.grn}25`}}>
+            <div style={{fontSize:12,color:T.dim,lineHeight:1.5}}>
+              <span style={{color:T.txt,fontWeight:700}}>You're in control.</span> SIGNAL adapts to how you trade. Change anytime from Profile → Preferences.
+            </div>
+          </div>
+        </div>
+        <div style={{padding:`0 20px ${SAFE_BOT+12}px`}}>
+          <BigBtn label={`Continue as ${selMode} →`} onClick={handleContinue}/>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── P15 : ML Signals (Momentum + Swing toggle) ───────────────── */
+  function P15_Signals() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const [tab,setTab]=us4(0);
+    const mom=[
+      {sym:'RELIANCE',name:'Reliance Industries',price:'₹2,912',chg:'+1.80%',score:92,c:tk.grn,
+       why:['RSI(14)=68 — fresh momentum breakout zone','EMA20 crossed above EMA50 (golden cross)','Volume 2.4× 30-day avg — institutional buying','𝕏 sentiment: 76% bullish across 212 posts','FII net bought ₹420Cr this week']},
+      {sym:'TATAMOTORS',name:'Tata Motors Ltd',price:'₹978',chg:'+2.10%',score:88,c:tk.grn,
+       why:['ADX=36 → strong trend confirmed','Broke ₹960 resistance on high volume','Delivery %=68% — conviction accumulation','MACD histogram expanding — momentum building']},
+      {sym:'SBIN',name:'State Bank of India',price:'₹812',chg:'+1.20%',score:81,c:tk.grn,
+       why:['Weekly Marubozu candle — bull conviction','RSI bouncing from 42 (mid-trend continuation)','Credit growth +14% YoY — positive surprise','FII added ₹280Cr — follow the smart money']},
+      {sym:'ADANIENT',name:'Adani Enterprises',price:'₹3,240',chg:'+2.45%',score:79,c:tk.grn,
+       why:['Price above 20/50/200 EMA — all-bull stack','Volume 3.1× 30-day avg on breakout day','Bollinger upper band expansion = strong trend','𝕏 buzz: 340 positive posts last 4h']},
+    ];
+    const swg=[
+      {sym:'HDFCBANK',name:'HDFC Bank',price:'₹1,634',chg:'-0.40%',score:78,c:tk.blu,
+       sup:'₹1,590',res:'₹1,680',buy:'₹1,595–1,610',tgt:'₹1,680',sl:'₹1,570',
+       why:['90-pt range for 3 weeks — defined channel','Lower Bollinger Band touched → mean reversion','RSI=38 — near oversold, bounce expected','Volume drying at support = quiet accumulation']},
+      {sym:'WIPRO',name:'Wipro Ltd',price:'₹490',chg:'+0.30%',score:74,c:tk.blu,
+       sup:'₹475',res:'₹515',buy:'₹476–484',tgt:'₹515',sl:'₹468',
+       why:['Flag pattern forming on daily chart','MACD about to cross signal line positive','IT sector rotation catalyst building','Support held 3× — strong base forming']},
+      {sym:'BAJFINANCE',name:'Bajaj Finance',price:'₹7,240',chg:'-0.62%',score:71,c:tk.blu,
+       sup:'₹7,100',res:'₹7,450',buy:'₹7,110–7,160',tgt:'₹7,450',sl:'₹6,980',
+       why:['Price at 50-day EMA — historical bounce zone','RSI=41 approaching key support at RSI=40','Delivery % rising quietly = accumulation','NBFC near 52W lows — contrarian entry setup']},
+    ];
+    const list=tab===0?mom:swg;
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <div style={{padding:`${SAFE_TOP}px 16px 10px`,flexShrink:0}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <div style={{fontSize:22,fontWeight:800,color:T.txt}}>ML Signals</div>
+            <div style={{fontSize:11,fontWeight:700,padding:'4px 9px',borderRadius:20,background:`${tk.grn}15`,border:`1px solid ${tk.grn}44`,color:tk.grn}}>Live</div>
+          </div>
+          <div style={{display:'flex',background:T.surf2,borderRadius:12,padding:3,gap:2}}>
+            {['🚀 Momentum','🔄 Swing'].map((l,i)=>(
+              <div key={i} onClick={()=>setTab(i)} style={{flex:1,textAlign:'center',padding:'8px 0',borderRadius:9,
+                background:tab===i?tk.blu:'transparent',color:tab===i?'#fff':T.dim,
+                fontWeight:700,fontSize:13,cursor:'pointer'}}>{l}</div>
+            ))}
+          </div>
+        </div>
+        <div style={{flex:1,overflow:'auto',padding:'0 14px 10px',display:'flex',flexDirection:'column',gap:12}}>
+          {list.map((s,si)=>(
+            <div key={s.sym} onClick={()=>navigate('stock-detail')}
+              style={{borderRadius:16,background:T.surf,border:`1px solid ${s.c}28`,overflow:'hidden',cursor:'pointer'}}>
+              <div style={{padding:'11px 14px',borderBottom:`1px solid ${T.bdr}`,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                  <div style={{width:38,height:38,borderRadius:11,background:`${s.c}18`,border:`1px solid ${s.c}40`,
+                    display:'flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:900,color:s.c}}>
+                    {s.sym.substring(0,4)}
+                  </div>
+                  <div><div style={{fontSize:14,fontWeight:800,color:T.txt}}>{s.sym}</div><div style={{fontSize:11,color:T.dim}}>{s.name}</div></div>
+                </div>
+                <div style={{textAlign:'right'}}>
+                  <div style={{fontSize:14,fontWeight:800,color:T.txt}}>{s.price}</div>
+                  <div style={{fontSize:12,color:s.chg.startsWith('+')?A.grn:A.red,fontWeight:700}}>{s.chg}</div>
+                </div>
+              </div>
+              {tab===1&&<div style={{padding:'8px 14px',borderBottom:`1px solid ${T.bdr}`,display:'flex',gap:6}}>
+                {[['Support',s.sup,A.grn],['Resist',s.res,A.red],['Target',s.tgt,A.grn],['S/L',s.sl,A.red]].map(([k,v,c])=>(
+                  <div key={k} style={{flex:1,textAlign:'center'}}>
+                    <div style={{fontSize:9,color:T.dim}}>{k}</div>
+                    <div style={{fontSize:11,fontWeight:700,color:c}}>{v}</div>
+                  </div>
+                ))}
+              </div>}
+              <div style={{padding:'10px 14px 12px',display:'flex',flexDirection:'column',gap:5}}>
+                <div style={{fontSize:10,fontWeight:700,color:T.dim,letterSpacing:0.5,marginBottom:2}}>WHY ML PICKED THIS</div>
+                {s.why.map((r,i)=>(
+                  <div key={i} style={{display:'flex',gap:8,alignItems:'flex-start'}}>
+                    <div style={{width:14,height:14,borderRadius:4,background:`${s.c}20`,border:`1px solid ${s.c}40`,
+                      display:'flex',alignItems:'center',justifyContent:'center',flexShrink:0,marginTop:1}}>
+                      <svg width="8" height="8" viewBox="0 0 8 8"><path d="M1 4L3 6L7 2" stroke={s.c} strokeWidth="1.6" strokeLinecap="round" fill="none"/></svg>
+                    </div>
+                    <span style={{fontSize:11.5,color:T.dim,lineHeight:1.4}}>{r}</span>
+                  </div>
+                ))}
+                <div style={{marginTop:5}}>
+                  <div style={{display:'flex',justifyContent:'space-between',marginBottom:3}}>
+                    <span style={{fontSize:10,color:T.dim}}>ML Confidence</span>
+                    <span style={{fontSize:11,fontWeight:800,color:s.c}}>{s.score}/100</span>
+                  </div>
+                  <div style={{height:4,borderRadius:4,background:T.bdr,overflow:'hidden'}}>
+                    <div style={{height:'100%',width:`${s.score}%`,borderRadius:4,background:s.c}}/>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          <div style={{padding:'9px 12px',borderRadius:11,background:T.surf,border:`1px solid ${T.bdr}`,margin:'4px 0 2px'}}>
+            <div style={{fontSize:10,color:T.dim,lineHeight:1.6,textAlign:'center'}}>
+              ⚠️ <span style={{fontWeight:600,color:T.txt}}>Disclaimer:</span> SIGNAL is not SEBI registered. All signals are for educational purposes only and do not constitute investment advice. Consult a SEBI-registered advisor before investing.
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── P17 : Subscription Plans ─────────────────────────────────── */
+  function P17_Subscription() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const [sel,setSel]=us4(2);
+    const plans=[
+      {id:'free',name:'Free',price:'₹0',period:'forever',color:T.dim,
+       feats:['5 stocks portfolio track','Basic NSE/BSE live prices','3 price alerts']},
+      {id:'starter',name:'Starter',price:'₹199',period:'/month',color:tk.blu,badge:'Popular',
+       feats:['25 stocks · ML buy/sell signals','Excel import · Swing + Momentum picks','𝕏 Twitter sentiment analysis','Basic algo builder access']},
+      {id:'pro',name:'Pro',price:'₹599',period:'/month',color:tk.org,badge:'Best Value',
+       feats:['Unlimited stocks · Advanced ML signals','Algo builder + Python code generator','Backtesting 1Y/2Y/5Y','Commodities + Forex + Global cues','Broker API connect (Zerodha/mStock)','Earnings calendar + impact prediction']},
+      {id:'elite',name:'Elite',price:'₹1,499',period:'/month',color:A.pur,
+       feats:['Everything in Pro','Direct broker API + auto-execute orders','Custom ML model for your portfolio','Priority 24/7 support (WhatsApp)','Dedicated AI portfolio manager','Early feature access + beta testing']},
+    ];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <div style={{padding:`${SAFE_TOP}px 16px 10px`,flexShrink:0}}>
+          <div style={{fontSize:22,fontWeight:800,color:T.txt}}>Choose Your Plan</div>
+          <div style={{fontSize:13,color:T.dim,marginTop:4}}>Unlock India's smartest trading platform</div>
+        </div>
+        <div style={{flex:1,overflow:'auto',padding:'0 14px',display:'flex',flexDirection:'column',gap:9}}>
+          {plans.map((p,i)=>(
+            <div key={p.id} onClick={()=>setSel(i)} style={{borderRadius:16,padding:'13px 14px',
+              background:sel===i?`${p.color}10`:T.surf,border:`2px solid ${sel===i?p.color:T.bdr}`,
+              cursor:'pointer',position:'relative',overflow:'hidden'}}>
+              {p.badge&&<div style={{position:'absolute',top:0,right:0,padding:'4px 11px',background:p.color,
+                color:'#fff',fontSize:9.5,fontWeight:800,borderBottomLeftRadius:10}}>{p.badge}</div>}
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:9}}>
+                <div>
+                  <div style={{fontSize:15,fontWeight:800,color:sel===i?p.color:T.txt}}>{p.name}</div>
+                  <div style={{display:'flex',gap:2,alignItems:'baseline',marginTop:2}}>
+                    <span style={{fontSize:22,fontWeight:900,color:sel===i?p.color:T.txt}}>{p.price}</span>
+                    <span style={{fontSize:11,color:T.dim}}>{p.period}</span>
+                  </div>
+                </div>
+                <div style={{width:22,height:22,borderRadius:11,border:`2px solid ${sel===i?p.color:T.bdr}`,
+                  background:sel===i?p.color:'transparent',display:'flex',alignItems:'center',justifyContent:'center',marginTop:3}}>
+                  {sel===i&&<svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5L4.5 7.5L8 3" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" fill="none"/></svg>}
+                </div>
+              </div>
+              <div style={{display:'flex',flexDirection:'column',gap:5}}>
+                {(sel===i?p.feats:p.feats.slice(0,3)).map((f,fi)=>(
+                  <div key={fi} style={{display:'flex',gap:8,alignItems:'center'}}>
+                    <svg width="14" height="14" viewBox="0 0 14 14"><circle cx="7" cy="7" r="7" fill={`${p.color}22`}/><path d="M3.5 7L6 9.5L10.5 4.5" stroke={p.color} strokeWidth="1.6" strokeLinecap="round" fill="none"/></svg>
+                    <span style={{fontSize:12,color:T.dim}}>{f}</span>
+                  </div>
+                ))}
+                {sel!==i&&p.feats.length>3&&<span style={{fontSize:11,color:T.dim,marginLeft:22}}>+{p.feats.length-3} more features</span>}
+              </div>
+            </div>
+          ))}
+          <div style={{display:'flex',flexDirection:'column',gap:9,paddingBottom:8}}>
+            <button style={{width:'100%',height:52,borderRadius:14,
+              background:`linear-gradient(135deg,${tk.blu},${tk.org})`,
+              border:'none',color:'#fff',fontSize:16,fontWeight:700,
+              boxShadow:`0 6px 20px ${tk.blu}44`}}>Start Free Trial — 14 Days</button>
+            <div style={{textAlign:'center',fontSize:12,color:T.dim}}>Cancel anytime · No credit card required for Free plan</div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  /* ── P18 : Markets · News / Commodities / Forex ───────────────── */
+  function P18_Markets() {
+    const {T,A}=useTheme(); const {navigate}=useNav(); const tk=useTk();
+    const [tab,setTab]=us4(0);
+    const cues=[
+      {n:'S&P 500',v:'5,847',c:'+0.42%',up:true},{n:'NASDAQ',v:'19,240',c:'+0.61%',up:true},
+      {n:'Nikkei',v:'39,180',c:'-0.18%',up:false},{n:'Hang Seng',v:'19,820',c:'+0.35%',up:true},
+      {n:'Crude Oil',v:'$82.4',c:'-0.9%',up:false},{n:'Gold',v:'$2,380',c:'+0.3%',up:true},
+      {n:'DXY',v:'104.2',c:'+0.18%',up:true},{n:'VIX',v:'13.2',c:'+0.4',up:true},
+    ];
+    const news=[
+      {t:'2m',src:'ET',h:'FII net buyers ₹2,840Cr; NIFTY eyes 25,000 milestone',tag:'Bullish',tc:A.grn},
+      {t:'18m',src:'Mint',h:'RBI holds repo at 6.5% — GDP growth upgraded to 7.4% for FY27',tag:'Neutral',tc:A.ylw},
+      {t:'45m',src:'Reuters',h:'US Fed signals one rate cut in 2026 — dollar index firms at 104',tag:'Cautious',tc:A.ylw},
+      {t:'1h',src:'MC',h:'RELIANCE Q4 PAT ₹21,137Cr — beats estimates by 8%',tag:'Bullish',tc:A.grn},
+      {t:'2h',src:'BQ',h:'TCS + Infosys win large deal wins from European clients — IT re-rating',tag:'Bullish',tc:A.grn},
+      {t:'3h',src:'ET',h:'SEBI tightens F&O margin norms — derivatives volumes may drop 15%',tag:'Bearish',tc:A.red},
+    ];
+    const commo=[
+      {n:'Gold (MCX)',p:'₹72,840',u:'/10g',c:'+0.28%',up:true,d:'Safe-haven demand · Fed pause priced in'},
+      {n:'Silver (MCX)',p:'₹88,420',u:'/kg',c:'+0.45%',up:true,d:'Industrial demand from solar sector rising'},
+      {n:'Crude Oil',p:'₹6,890',u:'/bbl',c:'-0.92%',up:false,d:'OPEC+ production steady · demand uncertain'},
+      {n:'Copper',p:'₹874',u:'/kg',c:'+1.1%',up:true,d:'EV demand surge · Chile supply constrained'},
+      {n:'Natural Gas',p:'₹213',u:'/mmBtu',c:'-1.4%',up:false,d:'Warmer forecasts reduce heating demand'},
+    ];
+    const forex=[
+      {p:'USD/INR',r:'83.42',c:'-0.12%',up:false,d:'Mild INR appreciation · FII inflows supportive'},
+      {p:'EUR/INR',r:'89.18',c:'+0.08%',up:true,d:'EUR firm · India rate differential stable'},
+      {p:'GBP/INR',r:'105.60',c:'+0.22%',up:true,d:'UK inflation surprised upward'},
+      {p:'JPY/INR',r:'0.5488',c:'-0.31%',up:false,d:'Yen weakness on Bank of Japan hold'},
+      {p:'DXY Index',r:'104.2',c:'+0.18%',up:true,d:'Dollar firming on hawkish Fed tone'},
+    ];
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <div style={{padding:`${SAFE_TOP}px 16px 8px`,flexShrink:0}}>
+          <div style={{fontSize:22,fontWeight:800,color:T.txt,marginBottom:8}}>Markets</div>
+          <div style={{display:'flex',gap:7,overflowX:'auto',paddingBottom:3}}>
+            {cues.map(g=>(
+              <div key={g.n} style={{flexShrink:0,padding:'7px 10px',borderRadius:12,background:T.surf,border:`1px solid ${T.bdr}`,minWidth:72}}>
+                <div style={{fontSize:9,color:T.dim,whiteSpace:'nowrap'}}>{g.n}</div>
+                <div style={{fontSize:12,fontWeight:800,color:T.txt,marginTop:2}}>{g.v}</div>
+                <div style={{fontSize:10.5,color:g.up?A.grn:A.red,fontWeight:700}}>{g.c}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{padding:'0 16px 8px',flexShrink:0}}>
+          <div style={{display:'flex',background:T.surf2,borderRadius:12,padding:3,gap:2}}>
+            {['📰 News','🪙 Commo','💱 Forex','🏆 Aces'].map((l,i)=>(
+              <div key={i} onClick={()=>setTab(i)} style={{flex:1,textAlign:'center',padding:'7px 0',borderRadius:9,
+                background:tab===i?tk.blu:'transparent',color:tab===i?'#fff':T.dim,fontWeight:700,fontSize:11.5,cursor:'pointer'}}>{l}</div>
+            ))}
+          </div>
+        </div>
+        <div style={{flex:1,overflow:'auto',padding:'2px 14px 8px',display:'flex',flexDirection:'column',gap:9}}>
+          {tab===0&&news.map((n,i)=>(
+            <div key={i} style={{padding:'11px 13px',borderRadius:14,background:T.surf,border:`1px solid ${T.bdr}`}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:6}}>
+                <div style={{display:'flex',gap:7,alignItems:'center'}}>
+                  <span style={{fontSize:10.5,color:T.dim,fontWeight:600}}>{n.src}</span>
+                  <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:5,background:`${n.tc}18`,color:n.tc}}>{n.tag}</span>
+                </div>
+                <span style={{fontSize:10,color:T.dim}}>{n.t} ago</span>
+              </div>
+              <div style={{fontSize:13,color:T.txt,lineHeight:1.45,fontWeight:500}}>{n.h}</div>
+            </div>
+          ))}
+          {tab===1&&commo.map((c,i)=>(
+            <div key={i} style={{padding:'11px 13px',borderRadius:14,background:T.surf,border:`1px solid ${T.bdr}`,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+              <div style={{flex:1}}><div style={{fontSize:14,fontWeight:700,color:T.txt}}>{c.n}</div><div style={{fontSize:11,color:T.dim,marginTop:3,lineHeight:1.4}}>{c.d}</div></div>
+              <div style={{textAlign:'right',flexShrink:0,marginLeft:12}}>
+                <div style={{fontSize:15,fontWeight:800,color:T.txt}}>{c.p}</div>
+                <div style={{fontSize:11,color:c.up?A.grn:A.red,fontWeight:700}}>{c.c} {c.u}</div>
+              </div>
+            </div>
+          ))}
+          {tab===2&&forex.map((f,i)=>(
+            <div key={i} style={{padding:'11px 13px',borderRadius:14,background:T.surf,border:`1px solid ${T.bdr}`,display:'flex',justifyContent:'space-between',alignItems:'flex-start'}}>
+              <div style={{flex:1}}><div style={{fontSize:15,fontWeight:800,color:T.txt}}>{f.p}</div><div style={{fontSize:11,color:T.dim,marginTop:3,lineHeight:1.4}}>{f.d}</div></div>
+              <div style={{textAlign:'right',flexShrink:0,marginLeft:10}}>
+                <div style={{fontSize:16,fontWeight:900,color:T.txt}}>{f.r}</div>
+                <div style={{fontSize:12,color:f.up?A.grn:A.red,fontWeight:700}}>{f.c}</div>
+              </div>
+            </div>
+          ))}
+          {tab===3&&(
+            <div style={{display:'flex',flexDirection:'column',gap:9}}>
+              <div style={{padding:'8px 11px',borderRadius:10,background:`${A.ylw}09`,border:`1px solid ${A.ylw}28`}}>
+                <div style={{fontSize:10.5,color:T.dim,lineHeight:1.5}}>📋 Based on public BSE/NSE disclosures (≥1% stake). Typically one quarter old.</div>
+              </div>
+              {[
+                {initials:'AK',c:A.pur,name:'Ashish Kacholia',tag:'Small-cap Hunter',val:'~₹2,800Cr',cagr:'+34%'},
+                {initials:'DK',c:'#E87722',name:'Dolly Khanna',tag:'Mid-cap Queen',val:'~₹1,200Cr',cagr:'+28%'},
+                {initials:'VK',c:tk.grn,name:'Vijay Kedia',tag:'QGLP Investor',val:'~₹950Cr',cagr:'+31%'},
+                {initials:'PV',c:'#E63946',name:'Porinju Veliyath',tag:'Contrarian',val:'~₹480Cr',cagr:'+22%'},
+                {initials:'RD',c:tk.blu,name:'Radhakishan Damani',tag:'Value Legend',val:'~₹4,200Cr',cagr:'+41%'},
+              ].map(inv=>(
+                <div key={inv.initials} onClick={()=>navigate('investor-detail')}
+                  style={{padding:'11px 13px',borderRadius:14,background:T.surf,border:`1px solid ${T.bdr}`,display:'flex',alignItems:'center',gap:12,cursor:'pointer'}}>
+                  <div style={{width:40,height:40,borderRadius:12,background:`${inv.c}20`,border:`1px solid ${inv.c}40`,display:'flex',alignItems:'center',justifyContent:'center',fontSize:13,fontWeight:900,color:inv.c,flexShrink:0}}>{inv.initials}</div>
+                  <div style={{flex:1,minWidth:0}}>
+                    <div style={{display:'flex',alignItems:'center',gap:7,flexWrap:'wrap',rowGap:2}}>
+                      <span style={{fontSize:13,fontWeight:700,color:T.txt}}>{inv.name}</span>
+                      <span style={{fontSize:9.5,fontWeight:700,padding:'2px 6px',borderRadius:4,background:`${inv.c}18`,color:inv.c}}>{inv.tag}</span>
+                    </div>
+                    <div style={{display:'flex',gap:10,marginTop:3}}>
+                      <span style={{fontSize:10.5,color:T.dim}}>{inv.val}</span>
+                      <span style={{fontSize:10.5,color:tk.grn,fontWeight:600}}>{inv.cagr} est.</span>
+                    </div>
+                  </div>
+                  <span style={{fontSize:16,color:T.dim}}>›</span>
+                </div>
+              ))}
+              <div onClick={()=>navigate('top-investors')} style={{padding:'10px 13px',borderRadius:13,background:`${A.pur}10`,border:`1px solid ${A.pur}30`,display:'flex',alignItems:'center',justifyContent:'center',gap:7,cursor:'pointer'}}>
+                <span style={{fontSize:12,fontWeight:700,color:A.pur}}>View Full Profiles →</span>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── P19 : Trade History ──────────────────────────────────────── */
+  function P19_TradeHistory() {
+    const {T,A}=useTheme(); const {goBack}=useNav(); const tk=useTk();
+    const [flt,setFlt]=us4('Month');
+    const raw=[
+      {d:'17 Jun',s:'RELIANCE', q:10,bp:2840,sp:2912},
+      {d:'16 Jun',s:'TATAMOTORS',q:25,bp:920, sp:978},
+      {d:'14 Jun',s:'ZOMATO',   q:100,bp:220, sp:198},
+      {d:'12 Jun',s:'WIPRO',    q:30, bp:512, sp:490},
+      {d:'10 Jun',s:'HDFCBANK', q:15, bp:1580,sp:1640},
+      {d:'08 Jun',s:'INFY',     q:20, bp:1380,sp:1441},
+      {d:'05 Jun',s:'PAYTM',    q:50, bp:580, sp:490},
+      {d:'01 Jun',s:'SBIN',     q:40, bp:780, sp:812},
+    ];
+    const trades=raw.map(t=>({...t,pl:(t.sp-t.bp)*t.q,pct:+((t.sp-t.bp)/t.bp*100).toFixed(2),win:t.sp>t.bp}));
+    const wins=trades.filter(t=>t.win).length;
+    const totalPL=trades.reduce((s,t)=>s+t.pl,0);
+    const wr=Math.round(wins/trades.length*100);
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <NavBar title="Trade History"/>
+        <div style={{margin:'0 14px 10px',padding:'12px 15px',borderRadius:16,background:T.cg,border:`1px solid ${T.bdr}`}}>
+          <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:'8px 0',marginBottom:9}}>
+            {[['Total P&L',`${totalPL>=0?'+':''}₹${Math.abs(totalPL).toLocaleString()}`,totalPL>=0?tk.grn:A.red],
+              ['Win Rate',wr+'%',wr>=50?tk.grn:A.red],
+              ['Trades',trades.length,T.txt]].map(([l,v,c])=>(
+              <div key={l}>
+                <div style={{fontSize:9.5,color:T.dim}}>{l}</div>
+                <div style={{fontSize:17,fontWeight:800,color:c,marginTop:1}}>{v}</div>
+              </div>
+            ))}
+          </div>
+          <PBar val={wr} color={wr>=50?tk.grn:A.red} h={4}/>
+          <div style={{display:'flex',justifyContent:'space-between',marginTop:4}}>
+            <span style={{fontSize:10,color:T.dim}}>{wins} profitable</span>
+            <span style={{fontSize:10,color:T.dim}}>{trades.length-wins} at loss</span>
+          </div>
+        </div>
+        <div style={{padding:'0 14px 8px',display:'flex',gap:6,alignItems:'center'}}>
+          <div style={{flex:1,display:'flex',gap:6,overflowX:'auto'}}>
+            {['Today','Week','Month','3M','All'].map(f=>(
+              <div key={f} onClick={()=>setFlt(f)} style={{flexShrink:0,padding:'5px 12px',borderRadius:20,
+                background:flt===f?tk.blu:T.surf,border:`1px solid ${flt===f?tk.blu:T.bdr}`,
+                color:flt===f?'#fff':T.dim,fontSize:12,fontWeight:flt===f?700:500,cursor:'pointer'}}>{f}</div>
+            ))}
+          </div>
+          <div style={{flexShrink:0,padding:'5px 12px',borderRadius:20,background:`${tk.org}14`,
+            border:`1px solid ${tk.org}44`,color:tk.org,fontSize:12,fontWeight:700,cursor:'pointer'}}>↓ CSV</div>
+        </div>
+        <div style={{padding:'4px 14px 2px',display:'grid',gridTemplateColumns:'0.9fr 1.1fr 0.9fr 0.9fr 1fr',gap:4}}>
+          {['Date','Stock','Buy ₹','Sell ₹','P&L'].map(h=><span key={h} style={{fontSize:10,color:T.dim,fontWeight:700}}>{h}</span>)}
+        </div>
+        <div style={{flex:1,overflow:'auto',padding:'4px 14px 10px',display:'flex',flexDirection:'column',gap:6}}>
+          {trades.map((t,i)=>(
+            <div key={i} style={{padding:'9px 12px',borderRadius:12,background:T.surf,
+              border:`1px solid ${t.win?tk.grn+'28':A.red+'28'}`,
+              display:'grid',gridTemplateColumns:'0.9fr 1.1fr 0.9fr 0.9fr 1fr',gap:4,alignItems:'center'}}>
+              <span style={{fontSize:11,color:T.dim}}>{t.d}</span>
+              <div><div style={{fontSize:12,fontWeight:800,color:T.txt}}>{t.s}</div><div style={{fontSize:9.5,color:T.dim}}>×{t.q}</div></div>
+              <span style={{fontSize:11,color:T.dim}}>₹{t.bp.toLocaleString()}</span>
+              <span style={{fontSize:11,color:T.dim}}>₹{t.sp.toLocaleString()}</span>
+              <div style={{textAlign:'right'}}>
+                <div style={{fontSize:12,fontWeight:800,color:t.win?tk.grn:A.red}}>
+                  {t.win?'+':''}{t.pl>=0?'₹'+t.pl.toLocaleString():'-₹'+Math.abs(t.pl).toLocaleString()}
+                </div>
+                <div style={{fontSize:10,color:t.win?tk.grn:A.red}}>{t.win?'+':''}{t.pct}%</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  /* ── P20 : Notifications / Alerts ─────────────────────────────── */
+  function P20_Notifications() {
+    const {T,A}=useTheme(); const {goBack}=useNav(); const tk=useTk();
+    const [flt,setFlt]=us4('All');
+    const alerts=[
+      {i:'🤖',title:'BUY — RELIANCE',body:'RSI(14)=68, EMA golden cross confirmed. ML confidence 87%.',t:'2m',read:false,c:tk.grn,tag:'ML Signal'},
+      {i:'𝕏', title:'Sentiment Spike — ADANIENT',body:'𝕏 mentions +340% in 4h. 82% bullish — possible breakout.',t:'8m',read:false,c:tk.blu,tag:'Sentiment'},
+      {i:'📊',title:'Earnings Tomorrow — HDFCBANK',body:'Q1 FY27 results at 4 PM. Consensus PAT ₹16,200Cr (+12% YoY).',t:'1h',read:true,c:A.ylw,tag:'Earnings'},
+      {i:'⚡',title:'Circuit Warning — PAYTM',body:'Approaching lower circuit at ₹480. Review your position.',t:'2h',read:false,c:A.red,tag:'Circuit'},
+      {i:'🤖',title:'EXIT Signal — ZOMATO',body:'RSI overbought at 74. Profit-taking zone ₹195–200.',t:'3h',read:true,c:A.red,tag:'ML Signal'},
+      {i:'𝕏', title:'FII Alert — NIFTY 50',body:'FII net bought ₹2,840Cr today. Broad market positive.',t:'4h',read:true,c:tk.grn,tag:'Sentiment'},
+      {i:'🌐',title:'Pre-Market Global Cues',body:'S&P500 +0.42%. Nikkei -0.18%. Crude -0.9%. Positive open.',t:'8h',read:true,c:tk.blu,tag:'Global'},
+      {i:'📊',title:'INFY — Earnings Beat',body:'Infosys Q4 PAT ₹7,969Cr — beat by 6%. Stock up 2.2% pre-market.',t:'1d',read:true,c:A.ylw,tag:'Earnings'},
+    ];
+    const cats=['All','ML Signal','Sentiment','Earnings','Circuit','Global'];
+    const list=flt==='All'?alerts:alerts.filter(a=>a.tag===flt);
+    const unread=alerts.filter(a=>!a.read).length;
+    return (
+      <div style={{width:'100%',height:'100%',background:T.bg,display:'flex',flexDirection:'column',paddingBottom:52+SAFE_BOT}}>
+        <div style={{padding:`${SAFE_TOP}px 16px 8px`,flexShrink:0}}>
+          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:10}}>
+            <div style={{display:'flex',alignItems:'center',gap:9}}>
+              <div onClick={goBack} style={{width:30,height:30,borderRadius:8,background:T.surf2,display:'flex',alignItems:'center',justifyContent:'center',fontSize:18,color:T.txt,cursor:'pointer'}}>‹</div>
+              <div style={{fontSize:22,fontWeight:800,color:T.txt}}>Alerts</div>
+              {unread>0&&<div style={{minWidth:20,height:20,borderRadius:10,background:A.red,
+                display:'flex',alignItems:'center',justifyContent:'center',fontSize:11,fontWeight:800,color:'#fff',padding:'0 5px'}}>{unread}</div>}
+            </div>
+            <span style={{fontSize:12,color:tk.blu,fontWeight:600,cursor:'pointer'}}>Mark all read</span>
+          </div>
+          <div style={{display:'flex',gap:6,overflowX:'auto',paddingBottom:3}}>
+            {cats.map(c=>(
+              <div key={c} onClick={()=>setFlt(c)} style={{flexShrink:0,padding:'5px 11px',borderRadius:20,
+                background:flt===c?tk.blu:T.surf,border:`1px solid ${flt===c?tk.blu:T.bdr}`,
+                color:flt===c?'#fff':T.dim,fontSize:11.5,fontWeight:flt===c?700:500,cursor:'pointer'}}>{c}</div>
+            ))}
+          </div>
+        </div>
+        <div style={{flex:1,overflow:'auto',padding:'4px 14px 10px',display:'flex',flexDirection:'column',gap:8}}>
+          {list.map((a,i)=>(
+            <div key={i} style={{padding:'11px 13px',borderRadius:14,
+              background:a.read?T.surf:`${a.c}08`,border:`1px solid ${a.read?T.bdr:`${a.c}30`}`,
+              display:'flex',gap:12,alignItems:'flex-start',position:'relative'}}>
+              {!a.read&&<div style={{position:'absolute',top:13,right:13,width:7,height:7,borderRadius:4,background:a.c}}/>}
+              <div style={{width:38,height:38,borderRadius:11,background:`${a.c}18`,border:`1px solid ${a.c}30`,
+                display:'flex',alignItems:'center',justifyContent:'center',fontSize:17,flexShrink:0}}>{a.i}</div>
+              <div style={{flex:1,minWidth:0}}>
+                <div style={{display:'flex',alignItems:'center',gap:7,marginBottom:4,flexWrap:'wrap'}}>
+                  <span style={{fontSize:13,fontWeight:700,color:T.txt}}>{a.title}</span>
+                </div>
+                <span style={{fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:5,
+                  background:`${a.c}18`,color:a.c,marginBottom:5,display:'inline-block'}}>{a.tag}</span>
+                <div style={{fontSize:12,color:T.dim,lineHeight:1.45,marginTop:2}}>{a.body}</div>
+                <div style={{fontSize:10.5,color:T.dim,marginTop:5}}>{a.t} ago</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  Object.assign(window, { P04b_Preferences, P15_Signals, P17_Subscription, P18_Markets, P19_TradeHistory, P20_Notifications });
+  </script>
+
+  <!-- ── S6 · New Screens: Multi-Portfolio + Ace Investors ──────── -->
+  <script type="text/babel" src="screens-new.jsx"></script>
+
+  <!-- ── S4 · App Shell + Tweaks + Router ─────────────────────── -->
+  <script type="text/babel">
+  const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+    "tradingMode": "Swing",
+    "skin": [
+      "#00875A",
+      "#FF5C1A",
+      "#06D6A0"
+    ],
+    "density": "Standard"
+  }/*EDITMODE-END*/;
+
+  const MAIN = ['analysis','dashboard','stock-detail','algo-hub','param-explorer','algo-builder','code-gen','deploy','signals','markets','subscription','history','notifications','my-portfolios','top-investors','investor-detail'];
+  const TAB_ACTIVE = { dashboard:0,'stock-detail':0,analysis:0,history:0,notifications:0,'my-portfolios':0, markets:1,'top-investors':1,'investor-detail':1, signals:2,'algo-hub':3,'param-explorer':3,'algo-builder':3,'code-gen':3,deploy:3, subscription:4 };
+  const TABS = [{id:'dashboard',icon:'📊',label:'Portfolio'},{id:'markets',icon:'🌐',label:'Markets'},{id:'signals',icon:'🚀',label:'Signals'},{id:'algo-hub',icon:'⚙️',label:'Algo'},{id:'subscription',icon:'👤',label:'Profile'}];
+
+  function TabBar() {
+    const {screen,navigate}=useNav(); const {T,A}=useTheme(); const tk=useTk();
+    if (!MAIN.includes(screen)) return null;
+    const at = TAB_ACTIVE[screen] ?? 0;
+    return (
+      <div style={{height:52,background:T.surf,borderTop:`1px solid ${T.bdr}`,display:'flex',alignItems:'center',flexShrink:0}}>
+        {TABS.map((t,i)=>(
+          <div key={t.id} onClick={()=>navigate(t.id)} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:2,cursor:'pointer',padding:'5px 0'}}>
+            <span style={{fontSize:19}}>{t.icon}</span>
+            <span style={{fontSize:10,fontWeight:i===at?700:500,color:i===at?tk.blu:T.dim}}>{t.label}</span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  const SCREEN_MAP = {
+    welcome:P01_Welcome, signup:P02_SignUp, verify:P03_Verify,
+    preferences:P04b_Preferences,
+    broker:P04_BrokerConnect, excel:P05_ExcelUpload, analyzing:P06_Analyzing,
+    analysis:P07_Analysis, dashboard:P08_Dashboard, 'stock-detail':P09_StockDetail,
+    'algo-hub':P10_AlgoHub, 'param-explorer':P11_ParamExplorer,
+    'algo-builder':P12_AlgoBuilder, 'code-gen':P13_CodeGen, deploy:P14_Deploy,
+    signals:P15_Signals, markets:P18_Markets, subscription:P17_Subscription,
+    history:P19_TradeHistory, notifications:P20_Notifications,
+    settings:P17_Subscription,
+    'my-portfolios':P_MultiPortfolio, 'top-investors':P_TopInvestors, 'investor-detail':P_InvestorDetail,
+  };
+
+  function Router() {
+    const {screen}=useNav();
+    const Screen = SCREEN_MAP[screen] || P01_Welcome;
+    return (
+      <div style={{width:'100%',height:'100%',display:'flex',flexDirection:'column',overflow:'hidden'}}>
+        <div key={screen} className="si" style={{flex:1,overflow:'hidden',display:'flex',flexDirection:'column',minHeight:0}}>
+          <Screen/>
+        </div>
+        <TabBar/>
+      </div>
+    );
+  }
+
+  function DeviceShell({ children }) {
+    const { dark } = React.useContext(ThemeCtx);
+    const [scale, setScale] = React.useState(1);
+    React.useEffect(() => {
+      const PHONE_W = 402, PHONE_H = 874;
+      const calc = () => setScale(
+        Math.min(window.innerWidth / PHONE_W, window.innerHeight / PHONE_H) * 0.97
+      );
+      calc();
+      window.addEventListener('resize', calc);
+      return () => window.removeEventListener('resize', calc);
+    }, []);
+    return (
+      <div style={{ transform:`scale(${scale})`, transformOrigin:'center center', lineHeight:'normal', flexShrink:0 }}>
+        <IOSDevice dark={dark}>{children}</IOSDevice>
+      </div>
+    );
+  }
+
+  function App() {
+    const [t, setTweak] = useTweaks(TWEAK_DEFAULTS);
+
+    /* Resolve tweaks → trading context */
+    const skin = Array.isArray(t.skin) ? t.skin : TWEAK_DEFAULTS.skin;
+    const mode = t.tradingMode || 'Swing';
+    const density = t.density || 'Standard';
+    const labels = {
+      Scalper:  { buy:'ENTRY NOW', sell:'EXIT NOW',  sig:'SCALP!' },
+      Swing:    { buy:'BUY',       sell:'SELL',       sig:'STRONG BUY' },
+      Investor: { buy:'ACCUMULATE',sell:'REDUCE',     sig:'CONVICTION' },
+    };
+    const lb = labels[mode] || labels.Swing;
+    const tkVal = {
+      blu: skin[0], org: skin[1], grn: skin[2],
+      buyLabel: lb.buy, sellLabel: lb.sell, signalLabel: lb.sig,
+      density, isEssential: density==='Essential', isPro: density==='Pro',
+      tradingMode: mode,
+      setPrefs: (newMode, newDensity) => {
+        setTweak('tradingMode', newMode);
+        setTweak('density', newDensity);
+      },
+    };
+
+    return (
+      <AppProviders>
+        <TweaksCtx.Provider value={tkVal}>
+          <div style={{width:'100vw',height:'100vh',display:'flex',alignItems:'center',justifyContent:'center',background:'#0A0A12',overflow:'hidden'}}>
+            <DeviceShell><Router/></DeviceShell>
+          </div>
+          <TweaksPanel>
+            <TweakSection label="How do you trade?"/>
+            <TweakRadio label="Trading style" value={t.tradingMode}
+              options={['Scalper','Swing','Investor']}
+              onChange={v=>setTweak('tradingMode',v)}/>
+            <TweakSection label="How much do you want to see?"/>
+            <TweakRadio label="Layout" value={t.density}
+              options={['Essential','Standard','Pro']}
+              onChange={v=>setTweak('density',v)}/>
+            <TweakSection label="Your colour theme"/>
+            <TweakColor label="Accent palette" value={t.skin}
+              options={[
+                ['#1740F5','#FF5C1A','#00D4A0'],
+                ['#6C3DE0','#FF8C42','#00D4A0'],
+                ['#00875A','#FF5C1A','#06D6A0'],
+                ['#E63946','#FF8C00','#00C2A0'],
+              ]}
+              onChange={v=>setTweak('skin',v)}/>
+          </TweaksPanel>
+        </TweaksCtx.Provider>
+      </AppProviders>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+  </script>
+</body>
+</html>

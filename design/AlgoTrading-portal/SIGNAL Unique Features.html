@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Unique Features & Roadmap</title>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #07101F; color: #E2E8F0; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+
+    .page { max-width: 840px; margin: 0 auto; padding: 52px 32px 80px; }
+
+    /* Header */
+    .header { display: flex; align-items: center; gap: 18px; margin-bottom: 52px; }
+    .logo { width: 64px; height: 64px; border-radius: 18px; background: linear-gradient(145deg, #1740F5, #4F6FFA); display: flex; align-items: center; justify-content: center; box-shadow: 0 8px 32px rgba(23,64,245,0.48); flex-shrink: 0; }
+    .header-text h1 { font-size: 32px; font-weight: 900; letter-spacing: -1px; background: linear-gradient(135deg, #fff, #7A8BAA); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header-text p  { font-size: 15px; color: #7A8BAA; margin-top: 4px; }
+    .date-badge { margin-left: auto; padding: 6px 14px; border-radius: 20px; background: rgba(23,64,245,0.15); border: 1px solid rgba(23,64,245,0.35); font-size: 12px; color: #4F6FFA; font-weight: 600; flex-shrink: 0; }
+
+    /* Section headers */
+    .sec-header { display: flex; align-items: center; gap: 12px; margin: 48px 0 20px; }
+    .sec-num { width: 32px; height: 32px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 900; flex-shrink: 0; }
+    .sec-title { font-size: 22px; font-weight: 800; color: #fff; letter-spacing: -0.4px; }
+    .sec-sub { font-size: 13px; color: #7A8BAA; margin-top: 2px; }
+
+    /* Unique feature cards */
+    .feat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .feat-card { background: #0E1628; border-radius: 16px; padding: 20px; border: 1px solid #1C2E4A; position: relative; overflow: hidden; }
+    .feat-card::before { content: ''; position: absolute; top: -30px; right: -30px; width: 100px; height: 100px; border-radius: 50%; opacity: 0.08; }
+    .feat-card.blue::before { background: #1740F5; }
+    .feat-card.orange::before { background: #FF5C1A; }
+    .feat-card.green::before { background: #00D4A0; }
+    .feat-card.purple::before { background: #8B5CF6; }
+    .feat-icon-lg { font-size: 30px; margin-bottom: 10px; }
+    .feat-title-lg { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .feat-desc-lg { font-size: 13px; color: #7A8BAA; line-height: 1.6; }
+    .feat-badge { display: inline-block; margin-top: 10px; font-size: 10px; font-weight: 700; padding: 3px 10px; border-radius: 6px; letter-spacing: 0.3px; }
+
+    /* Competitor table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    thead tr { background: #162038; }
+    th { padding: 12px 14px; text-align: left; font-weight: 700; color: #7A8BAA; font-size: 11px; letter-spacing: 0.5px; text-transform: uppercase; }
+    td { padding: 11px 14px; border-bottom: 1px solid #1C2E4A; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,0.02); }
+    .check { color: #00D4A0; font-weight: 700; font-size: 15px; }
+    .cross { color: #FF3B5C; font-size: 15px; }
+    .partial { color: #FFB800; font-size: 13px; }
+    td:first-child { color: #fff; font-weight: 600; }
+    td.signal-col { color: #4F6FFA; font-weight: 700; }
+
+    /* Subscription table */
+    .sub-grid { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 12px; }
+    .sub-card { background: #0E1628; border-radius: 16px; padding: 20px 16px; border: 2px solid #1C2E4A; }
+    .sub-card.highlight { border-color: #FF5C1A; background: linear-gradient(145deg, rgba(255,92,26,0.08), #0E1628); }
+    .sub-name  { font-size: 14px; font-weight: 800; margin-bottom: 4px; }
+    .sub-price { font-size: 24px; font-weight: 900; margin-bottom: 2px; }
+    .sub-per   { font-size: 11px; color: #7A8BAA; margin-bottom: 14px; }
+    .sub-why   { font-size: 11.5px; color: #7A8BAA; line-height: 1.6; margin-bottom: 12px; }
+    .sub-feats { display: flex; flex-direction: column; gap: 5px; }
+    .sub-feat  { font-size: 12px; color: #7A8BAA; display: flex; gap: 6px; align-items: flex-start; }
+    .sub-feat::before { content: '→'; color: #4F6FFA; flex-shrink: 0; font-weight: 700; }
+    .sub-best  { display: inline-block; font-size: 9.5px; font-weight: 800; padding: 3px 9px; border-radius: 20px; margin-bottom: 10px; }
+
+    /* Roadmap */
+    .timeline { display: flex; flex-direction: column; gap: 0; }
+    .t-item { display: flex; gap: 20px; }
+    .t-left { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; width: 44px; }
+    .t-dot  { width: 14px; height: 14px; border-radius: 7px; flex-shrink: 0; margin-top: 4px; }
+    .t-line { flex: 1; width: 2px; background: #1C2E4A; margin: 4px 0; min-height: 40px; }
+    .t-content { flex: 1; padding-bottom: 28px; }
+    .t-month { font-size: 11px; font-weight: 700; color: #7A8BAA; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+    .t-title { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .t-items { display: flex; flex-direction: column; gap: 5px; }
+    .t-feat  { font-size: 13px; color: #7A8BAA; display: flex; gap: 8px; align-items: flex-start; line-height: 1.45; }
+    .t-feat::before { content: '·'; color: #4F6FFA; flex-shrink: 0; font-weight: 900; font-size: 16px; line-height: 1.2; }
+
+    /* Insight boxes */
+    .insight { background: rgba(23,64,245,0.08); border: 1px solid rgba(23,64,245,0.25); border-radius: 14px; padding: 16px 18px; margin: 14px 0; }
+    .insight.orange { background: rgba(255,92,26,0.08); border-color: rgba(255,92,26,0.25); }
+    .insight.green  { background: rgba(0,212,160,0.08); border-color: rgba(0,212,160,0.25); }
+    .insight-title  { font-size: 12px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 6px; }
+    .insight p { font-size: 13px; color: #7A8BAA; line-height: 1.65; }
+    .insight strong { color: #E2E8F0; }
+
+    hr.divider { border: none; border-top: 1px solid #1C2E4A; margin: 8px 0; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- Header -->
+  <div class="header">
+    <div class="logo">
+      <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+        <polyline points="2,28 10,17 16,23 22,10 28,15 34,7" stroke="white" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="28" cy="15" r="4" fill="#FF5C1A"/>
+      </svg>
+    </div>
+    <div class="header-text">
+      <h1>SIGNAL — Unique Features & Roadmap</h1>
+      <p>Product brief · Indian algo-trading app · NSE · BSE</p>
+    </div>
+    <div class="date-badge">June 2026</div>
+  </div>
+
+  <!-- ── 1. Executive Summary ───────────────────────────────── -->
+  <div class="sec-header">
+    <div class="sec-num" style="background:rgba(23,64,245,0.18);color:#4F6FFA;">01</div>
+    <div><div class="sec-title">Executive Summary</div><div class="sec-sub">The gap in the Indian retail trading market</div></div>
+  </div>
+
+  <div class="insight green">
+    <div class="insight-title" style="color:#00D4A0;">The Opportunity</div>
+    <p>India has <strong>90 million+ demat accounts</strong>, yet every trading app (Zerodha, Groww, mStock, Angel One) is a glorified order-entry system. <strong>None explain why to buy or sell. None generate deployable code. None integrate social sentiment.</strong> SIGNAL is the first Indian app to bridge ML intelligence with the retail trader.</p>
+  </div>
+
+  <div class="insight orange">
+    <div class="insight-title" style="color:#FF7D46;">The Core Thesis</div>
+    <p>A trader who understands <strong>why</strong> a signal is generated will trust it, learn from it, and retain subscription. Explainability is the product moat — not just the signals themselves.</p>
+  </div>
+
+  <!-- ── 2. What No Competitor Offers ──────────────────────── -->
+  <div class="sec-header" style="margin-top:52px;">
+    <div class="sec-num" style="background:rgba(0,212,160,0.18);color:#00D4A0;">02</div>
+    <div><div class="sec-title">10 Things No Indian App Does</div><div class="sec-sub">SIGNAL's genuine differentiation vs. Zerodha, mStock, Groww, Angel One, Upstox</div></div>
+  </div>
+
+  <div class="feat-grid">
+    <div class="feat-card blue">
+      <div class="feat-icon-lg">🤖</div>
+      <div class="feat-title-lg">Explainable ML Signals</div>
+      <div class="feat-desc-lg">Every buy/sell signal shows exactly why — RSI level, EMA cross, delivery %, Twitter sentiment, FII activity. Not a black box.</div>
+      <span class="feat-badge" style="background:rgba(23,64,245,0.2);color:#4F6FFA;">ZERO competitors offer this</span>
+    </div>
+    <div class="feat-card orange">
+      <div class="feat-icon-lg">𝕏</div>
+      <div class="feat-title-lg">Real-time Twitter Sentiment</div>
+      <div class="feat-desc-lg">Per-stock Twitter/𝕏 sentiment tracked in real-time. % bullish vs. bearish, post count, 4-hour trend. Beat retail FOMO by minutes.</div>
+      <span class="feat-badge" style="background:rgba(255,92,26,0.2);color:#FF7D46;">NSE/BSE specific, not global</span>
+    </div>
+    <div class="feat-card green">
+      <div class="feat-icon-lg">⚙️</div>
+      <div class="feat-title-lg">Algo Builder + Code Generator</div>
+      <div class="feat-desc-lg">Select indicators visually → set entry/exit rules → generate Python or Pine Script → backtest → deploy. Full loop in one app.</div>
+      <span class="feat-badge" style="background:rgba(0,212,160,0.2);color:#00D4A0;">India's only in-app code gen</span>
+    </div>
+    <div class="feat-card purple">
+      <div class="feat-icon-lg">📬</div>
+      <div class="feat-title-lg">Pre-Market Global Cue Digest</div>
+      <div class="feat-desc-lg">Daily 8 AM notification: US market close, Asian open, crude, gold, DXY — and what it means for YOUR specific holdings. Contextual, not generic.</div>
+      <span class="feat-badge" style="background:rgba(139,92,246,0.2);color:#A78BFA;">Personalised to portfolio</span>
+    </div>
+    <div class="feat-card orange">
+      <div class="feat-icon-lg">📦</div>
+      <div class="feat-title-lg">Portfolio ML Classifier</div>
+      <div class="feat-desc-lg">Your holdings automatically sorted into: Momentum, Swing, Long-term, Exit Now, Watch. With confidence scores and reasoning per category.</div>
+      <span class="feat-badge" style="background:rgba(255,92,26,0.2);color:#FF7D46;">Not available anywhere in India</span>
+    </div>
+    <div class="feat-card blue">
+      <div class="feat-icon-lg">⚡</div>
+      <div class="feat-title-lg">Circuit Breaker Early Warning</div>
+      <div class="feat-desc-lg">Alert before a stock hits upper/lower circuit — at 80%, 90% thresholds. Act before the circuit freezes trading.</div>
+      <span class="feat-badge" style="background:rgba(23,64,245,0.2);color:#4F6FFA;">Exclusive feature</span>
+    </div>
+    <div class="feat-card green">
+      <div class="feat-icon-lg">🏛️</div>
+      <div class="feat-title-lg">FII/DII Sector Rotation Heatmap</div>
+      <div class="feat-desc-lg">Daily view of which sectors FIIs are rotating into/out of. Follow institutional money before retail catches up.</div>
+      <span class="feat-badge" style="background:rgba(0,212,160,0.2);color:#00D4A0;">Roadmap Q3 2026</span>
+    </div>
+    <div class="feat-card purple">
+      <div class="feat-icon-lg">📋</div>
+      <div class="feat-title-lg">Delivery % Intelligence</div>
+      <div class="feat-desc-lg">Alert when delivery % for any holding spikes above 60%. High delivery = institutional conviction buying. One of the most reliable signals in Indian markets.</div>
+      <span class="feat-badge" style="background:rgba(139,92,246,0.2);color:#A78BFA;">Unique to SIGNAL</span>
+    </div>
+    <div class="feat-card blue">
+      <div class="feat-icon-lg">📐</div>
+      <div class="feat-title-lg">Options Max Pain Calculator</div>
+      <div class="feat-desc-lg">Weekly and monthly options pain point for NIFTY, BANKNIFTY and F&O stocks. Know where markets are likely to gravitate before expiry.</div>
+      <span class="feat-badge" style="background:rgba(23,64,245,0.2);color:#4F6FFA;">Roadmap Q4 2026</span>
+    </div>
+    <div class="feat-card orange">
+      <div class="feat-icon-lg">🧪</div>
+      <div class="feat-title-lg">Paper Trading Mode for Algos</div>
+      <div class="feat-desc-lg">Test your generated algorithm with real market data but virtual money before going live. Tracks simulated P&L, win rate, and drawdown in real-time.</div>
+      <span class="feat-badge" style="background:rgba(255,92,26,0.2);color:#FF7D46;">Roadmap Q3 2026</span>
+    </div>
+  </div>
+
+  <!-- ── 3. Competitive Analysis ────────────────────────────── -->
+  <div class="sec-header" style="margin-top:52px;">
+    <div class="sec-num" style="background:rgba(255,92,26,0.18);color:#FF7D46;">03</div>
+    <div><div class="sec-title">Competitive Analysis</div><div class="sec-sub">What exists today vs. what SIGNAL offers</div></div>
+  </div>
+
+  <div style="background:#0E1628;border-radius:16px;overflow:hidden;border:1px solid #1C2E4A;">
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th style="color:#4F6FFA;">SIGNAL</th>
+          <th>Zerodha</th>
+          <th>mStock</th>
+          <th>Groww</th>
+          <th>Angel One</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Explainable ML signals</td><td class="signal-col check">✓ Full</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="partial">Partial</td></tr>
+        <tr><td>𝕏 / Social sentiment</td><td class="signal-col check">✓ Real-time</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Algo builder (visual)</td><td class="signal-col check">✓ Full</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Python code generation</td><td class="signal-col check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Backtesting</td><td class="signal-col check">✓ 1Y/2Y/5Y</td><td class="partial">Kite Streak</td><td class="cross">✗</td><td class="cross">✗</td><td class="partial">SmartAPI</td></tr>
+        <tr><td>Excel portfolio import</td><td class="signal-col check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Portfolio ML classifier</td><td class="signal-col check">✓</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Commodities (MCX)</td><td class="signal-col check">✓</td><td class="partial">View only</td><td class="partial">View only</td><td class="cross">✗</td><td class="partial">View only</td></tr>
+        <tr><td>Forex rates</td><td class="signal-col check">✓</td><td class="partial">View only</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Global pre-market digest</td><td class="signal-col check">✓ Personalised</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Circuit breaker alert</td><td class="signal-col check">✓ Early warning</td><td class="partial">On circuit</td><td class="partial">On circuit</td><td class="cross">✗</td><td class="partial">On circuit</td></tr>
+        <tr><td>Delivery % intelligence</td><td class="signal-col check">✓ With alerts</td><td class="partial">View only</td><td class="cross">✗</td><td class="cross">✗</td><td class="cross">✗</td></tr>
+        <tr><td>Dark/Light theme</td><td class="signal-col check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td><td class="check">✓</td></tr>
+        <tr><td>Broker API connect</td><td class="signal-col check">✓ (Pro+)</td><td class="check">✓ Native</td><td class="check">✓ Native</td><td class="check">✓ Native</td><td class="check">✓ Native</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="insight" style="margin-top:16px;">
+    <p><strong>Key insight:</strong> Brokers are order-entry platforms by design — they cannot easily add ML intelligence without it conflicting with their brokerage revenue model. <strong>SIGNAL as an independent overlay is the only viable path.</strong></p>
+  </div>
+
+  <!-- ── 4. Subscription Model ──────────────────────────────── -->
+  <div class="sec-header" style="margin-top:52px;">
+    <div class="sec-num" style="background:rgba(139,92,246,0.18);color:#A78BFA;">04</div>
+    <div><div class="sec-title">Subscription Model</div><div class="sec-sub">Pricing rationale and tier differentiation</div></div>
+  </div>
+
+  <div class="sub-grid">
+    <div class="sub-card">
+      <div class="sub-name" style="color:#7A8BAA;">Free</div>
+      <div class="sub-price" style="color:#E2E8F0;">₹0</div>
+      <div class="sub-per">forever</div>
+      <div class="sub-why">The acquisition hook. Enough to demonstrate value, not enough to replace a paid plan.</div>
+      <hr class="divider">
+      <div class="sub-feats">
+        <div class="sub-feat">5 stocks tracked</div>
+        <div class="sub-feat">Basic price alerts × 3</div>
+        <div class="sub-feat">NSE/BSE live prices</div>
+        <div class="sub-feat" style="color:#FF3B5C;opacity:0.6;">No ML signals</div>
+        <div class="sub-feat" style="color:#FF3B5C;opacity:0.6;">No algo builder</div>
+      </div>
+    </div>
+    <div class="sub-card">
+      <div class="sub-best" style="background:rgba(23,64,245,0.2);color:#4F6FFA;">MOST SIGNUPS</div>
+      <div class="sub-name" style="color:#4F6FFA;">Starter</div>
+      <div class="sub-price" style="color:#4F6FFA;">₹199</div>
+      <div class="sub-per">/month · ~cost of a restaurant meal</div>
+      <div class="sub-why">The "try it" plan. ML signals will generate this cost back from one good swing trade. Converts free users who have seen the ML explanation quality.</div>
+      <hr class="divider">
+      <div class="sub-feats">
+        <div class="sub-feat">25 stocks · ML signals</div>
+        <div class="sub-feat">Excel portfolio import</div>
+        <div class="sub-feat">𝕏 Twitter sentiment</div>
+        <div class="sub-feat">Swing + Momentum picks</div>
+        <div class="sub-feat">Basic algo builder</div>
+      </div>
+    </div>
+    <div class="sub-card highlight">
+      <div class="sub-best" style="background:rgba(255,92,26,0.25);color:#FF7D46;">BEST VALUE</div>
+      <div class="sub-name" style="color:#FF5C1A;">Pro</div>
+      <div class="sub-price" style="color:#FF5C1A;">₹599</div>
+      <div class="sub-per">/month · ~₹20/day</div>
+      <div class="sub-why">The power-user plan. A single good trade from the algo builder covers 3 months of subscription. Designed for serious part-time traders.</div>
+      <hr class="divider">
+      <div class="sub-feats">
+        <div class="sub-feat">Unlimited stocks</div>
+        <div class="sub-feat">Full algo builder + backtesting</div>
+        <div class="sub-feat">Python + Pine code gen</div>
+        <div class="sub-feat">Broker API connect</div>
+        <div class="sub-feat">Commodities + Forex</div>
+        <div class="sub-feat">Market news + earnings</div>
+      </div>
+    </div>
+    <div class="sub-card">
+      <div class="sub-best" style="background:rgba(139,92,246,0.2);color:#A78BFA;">SERIOUS TRADERS</div>
+      <div class="sub-name" style="color:#8B5CF6;">Elite</div>
+      <div class="sub-price" style="color:#8B5CF6;">₹1,499</div>
+      <div class="sub-per">/month · auto-execution + AI</div>
+      <div class="sub-why">For algo traders running live automated strategies. The auto-execute feature alone justifies the price — saves hours of manual monitoring.</div>
+      <hr class="divider">
+      <div class="sub-feats">
+        <div class="sub-feat">Everything in Pro</div>
+        <div class="sub-feat">Direct API auto-execute</div>
+        <div class="sub-feat">Custom ML model training</div>
+        <div class="sub-feat">24/7 WhatsApp support</div>
+        <div class="sub-feat">AI portfolio manager</div>
+        <div class="sub-feat">Early feature access</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="insight orange" style="margin-top:18px;">
+    <div class="insight-title" style="color:#FF7D46;">Subscription Model Philosophy</div>
+    <p><strong>Free → Starter</strong>: The ML explanation quality is the conversion driver. Once a user sees "WHY ML PICKED THIS" for their own stocks, ₹199/mo feels trivial.<br><br>
+    <strong>Starter → Pro</strong>: The algo builder is the upgrade trigger. When a Starter user wants to automate their strategy, Pro is the only path.<br><br>
+    <strong>Pro → Elite</strong>: Auto-execution is the differentiator. Traders spending hours at their screen watching for entry points will pay ₹1,499 to automate it.</p>
+  </div>
+
+  <!-- ── 5. Technical Roadmap ───────────────────────────────── -->
+  <div class="sec-header" style="margin-top:52px;">
+    <div class="sec-num" style="background:rgba(0,212,160,0.18);color:#00D4A0;">05</div>
+    <div><div class="sec-title">6-Month Roadmap</div><div class="sec-sub">Feature delivery plan aligned to subscription tiers</div></div>
+  </div>
+
+  <div class="timeline">
+    <div class="t-item">
+      <div class="t-left"><div class="t-dot" style="background:#1740F5;"></div><div class="t-line"></div></div>
+      <div class="t-content">
+        <div class="t-month">Month 1–2 · Foundation</div>
+        <div class="t-title">Core ML + Portfolio Intelligence</div>
+        <div class="t-items">
+          <div class="t-feat">Portfolio classifier (Momentum / Swing / Long-term / Exit / Watch)</div>
+          <div class="t-feat">Explainable ML signals with technical reasons per stock</div>
+          <div class="t-feat">NSE/BSE live data integration via broker API (Zerodha Kite, mStock)</div>
+          <div class="t-feat">Excel / CSV portfolio import with auto-symbol resolution</div>
+          <div class="t-feat">𝕏 Twitter sentiment engine (per NSE symbol, 4-hour rolling window)</div>
+          <div class="t-feat">Dark/Light theme · Onboarding preferences flow</div>
+        </div>
+      </div>
+    </div>
+    <div class="t-item">
+      <div class="t-left"><div class="t-dot" style="background:#FF5C1A;"></div><div class="t-line"></div></div>
+      <div class="t-content">
+        <div class="t-month">Month 3–4 · Algo Builder</div>
+        <div class="t-title">Code Generation + Backtesting + Markets</div>
+        <div class="t-items">
+          <div class="t-feat">Visual algo builder (indicator selection → condition editor → code gen)</div>
+          <div class="t-feat">Python and Pine Script output with deploy instructions</div>
+          <div class="t-feat">Backtesting engine (1Y/2Y/5Y) with Sharpe ratio, win rate, max drawdown</div>
+          <div class="t-feat">Commodities screen (MCX Gold, Silver, Crude, Copper)</div>
+          <div class="t-feat">Forex screen (USD/INR, EUR/INR, GBP/INR, DXY)</div>
+          <div class="t-feat">Global pre-market digest notifications (8 AM daily)</div>
+          <div class="t-feat">Circuit breaker early warning system (at 80%, 90% thresholds)</div>
+        </div>
+      </div>
+    </div>
+    <div class="t-item">
+      <div class="t-left"><div class="t-dot" style="background:#00D4A0;"></div><div class="t-line"></div></div>
+      <div class="t-content">
+        <div class="t-month">Month 5–6 · Automation + Advanced</div>
+        <div class="t-title">Auto-Execution + Custom ML + Options Intelligence</div>
+        <div class="t-items">
+          <div class="t-feat">Direct broker API auto-execute (place orders from algo signals automatically)</div>
+          <div class="t-feat">Custom ML model fine-tuning per user portfolio (Elite tier)</div>
+          <div class="t-feat">Paper trading mode for strategy testing before going live</div>
+          <div class="t-feat">FII/DII sector rotation heatmap (daily institutional flows)</div>
+          <div class="t-feat">Options max pain calculator (NIFTY, BANKNIFTY, top F&O stocks)</div>
+          <div class="t-feat">Earnings calendar with ML-predicted post-earnings move estimates</div>
+          <div class="t-feat">Delivery % spike alerts (configurable threshold per stock)</div>
+        </div>
+      </div>
+    </div>
+    <div class="t-item">
+      <div class="t-left"><div class="t-dot" style="background:#8B5CF6;"></div></div>
+      <div class="t-content">
+        <div class="t-month">Beyond Month 6 · Platform</div>
+        <div class="t-title">Community + Strategy Marketplace</div>
+        <div class="t-items">
+          <div class="t-feat">Strategy marketplace — publish and subscribe to other traders' algos</div>
+          <div class="t-feat">Social portfolio leaderboard (opt-in, anonymous by default)</div>
+          <div class="t-feat">WhatsApp / Telegram bot integration for alerts</div>
+          <div class="t-feat">Multi-broker portfolio aggregation (all your accounts in one view)</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── 6. Key Risks ───────────────────────────────────────── -->
+  <div class="sec-header" style="margin-top:52px;">
+    <div class="sec-num" style="background:rgba(255,59,92,0.18);color:#FF3B5C;">06</div>
+    <div><div class="sec-title">Risks to Address</div><div class="sec-sub">Honest assessment of challenges</div></div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:10px;">
+    <div style="background:#0E1628;border-radius:14px;padding:16px 18px;border-left:3px solid #FF3B5C;">
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">SEBI Registration Required</div>
+      <div style="font-size:13px;color:#7A8BAA;">Providing investment signals may require SEBI Research Analyst registration (RA). Algo Builder is educational — but must be framed carefully to avoid "investment advice" classification.</div>
+    </div>
+    <div style="background:#0E1628;border-radius:14px;padding:16px 18px;border-left:3px solid #FFB800;">
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">Broker API Access Delays</div>
+      <div style="font-size:13px;color:#7A8BAA;">Zerodha Kite API, mStock API approval takes 1–3 business days. For launch, Excel import must be robust fallback. Rate limits (1 req/sec) require smart caching.</div>
+    </div>
+    <div style="background:#0E1628;border-radius:14px;padding:16px 18px;border-left:3px solid #4F6FFA;">
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">𝕏 API Cost at Scale</div>
+      <div style="font-size:13px;color:#7A8BAA;">𝕏 API Basic tier limits 1M tweets/month. At scale, Pro tier (~$5K/mo) required. Include Twitter sentiment only from Starter plan onwards to control costs.</div>
+    </div>
+    <div style="background:#0E1628;border-radius:14px;padding:16px 18px;border-left:3px solid #00D4A0;">
+      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:4px;">ML Model Accuracy</div>
+      <div style="font-size:13px;color:#7A8BAA;">Indian markets have unique behaviour (SGX Nifty gap-ups, budget day volatility, T+1 settlement impact). Model must be trained on NSE-specific data, not US benchmarks.</div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div style="margin-top:60px;padding-top:24px;border-top:1px solid #1C2E4A;display:flex;justify-content:space-between;align-items:center;">
+    <div style="display:flex;align-items:center;gap:10px;">
+      <div style="width:28px;height:28px;border-radius:8px;background:linear-gradient(145deg,#1740F5,#4F6FFA);display:flex;align-items:center;justify-content:center;">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><polyline points="1,11 4,7 7,9 9,4 12,6 13,3" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <span style="font-size:13px;color:#7A8BAA;">SIGNAL — India's ML Trading Platform</span>
+    </div>
+    <span style="font-size:12px;color:#4A5568;">Confidential · June 2026</span>
+  </div>
+
+</div>
+</body>
+</html>

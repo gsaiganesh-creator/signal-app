@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Developer Setup Guide</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap');
+
+    :root {
+      --bg: #F8F9FC; --surf: #FFFFFF; --surf2: #F2F5FF;
+      --bdr: #E2E8F4; --txt: #0A1628; --dim: #5A6A8A; --dim2: #8A9AB8;
+      --blu: #1740F5; --bluL: #4F6FFA; --org: #FF5C1A; --grn: #00D4A0;
+      --pur: #8B5CF6; --red: #FF3B5C; --ylw: #FFB800;
+    }
+
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); font-family: 'Inter', system-ui, sans-serif; color: var(--txt); }
+    .doc { max-width: 8.5in; margin: 0 auto; padding: 48px clamp(20px,5vw,0.75in) 96px; }
+
+    h1 { font-size: 34px; font-weight: 800; letter-spacing: -1px; margin: 0 0 6px; line-height: 1.1; }
+    h2 { font-size: 18px; font-weight: 700; margin: 44px 0 16px; letter-spacing: -0.3px;
+         padding-bottom: 8px; border-bottom: 2px solid var(--bdr); color: var(--txt); }
+    h3 { font-size: 14px; font-weight: 700; margin: 0 0 7px; color: var(--txt); }
+    p  { font-size: 14px; line-height: 1.7; color: #334155; margin: 0 0 12px; text-wrap: pretty; }
+    ul, ol { padding-left: 20px; margin: 0 0 12px; }
+    li { font-size: 14px; line-height: 1.7; color: #334155; }
+    li + li { margin-top: 3px; }
+    strong { font-weight: 600; color: var(--txt); }
+    a  { color: var(--blu); text-decoration: none; }
+    hr { border: none; border-top: 1px solid var(--bdr); margin: 32px 0; }
+
+    .eyebrow { font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase;
+               color: var(--blu); margin: 0 0 10px; }
+    .subtitle { font-size: 15px; color: var(--dim); margin: 0 0 28px; line-height: 1.5; }
+    .meta-row { display: flex; gap: 24px; flex-wrap: wrap; margin-bottom: 28px; }
+    .meta-item { font-size: 12px; color: var(--dim2); }
+    .meta-item strong { color: #334155; font-weight: 600; }
+
+    /* Code blocks */
+    pre { background: #0A1628; color: #E2E8F4; border-radius: 12px; padding: 18px 20px;
+          font-family: 'JetBrains Mono', monospace; font-size: 12.5px; line-height: 1.7;
+          overflow-x: auto; margin: 0 0 14px; }
+    code { font-family: 'JetBrains Mono', monospace; font-size: 12px;
+           background: #F2F5FF; color: var(--blu); padding: 2px 6px; border-radius: 4px; }
+    .c-comment { color: #4A6080; }
+    .c-key { color: #4F6FFA; }
+    .c-str { color: #00D4A0; }
+    .c-fn  { color: #FFB800; }
+    .c-kw  { color: #FF7D46; }
+
+    /* Cards */
+    .card-grid  { display: grid; grid-template-columns: repeat(3,1fr); gap: 13px; margin-bottom: 18px; }
+    .card-grid-2{ display: grid; grid-template-columns: repeat(2,1fr); gap: 13px; margin-bottom: 18px; }
+    .card { background: var(--surf); border: 1px solid var(--bdr); border-radius: 12px; padding: 16px 18px; }
+    .card-bl { border-left: 3px solid var(--blu); }
+    .card-or { border-left: 3px solid var(--org); }
+    .card-gr { border-left: 3px solid var(--grn); }
+    .card-pu { border-left: 3px solid var(--pur); }
+    .card-re { border-left: 3px solid var(--red); }
+    .card-yl { border-left: 3px solid var(--ylw); }
+    .card-label { font-size: 10px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase;
+                  color: var(--dim2); margin-bottom: 5px; }
+    .card-value { font-size: 18px; font-weight: 800; color: var(--txt); line-height: 1.2; }
+    .card-sub   { font-size: 12px; color: var(--dim); margin-top: 4px; line-height: 1.5; }
+
+    /* Steps */
+    .steps { display: flex; flex-direction: column; gap: 12px; margin-bottom: 18px; }
+    .step { display: flex; gap: 14px; align-items: flex-start; }
+    .step-num { width: 30px; height: 30px; border-radius: 9px; background: var(--blu);
+                color: #fff; font-size: 13px; font-weight: 800;
+                display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .step-num.or { background: var(--org); }
+    .step-num.gr { background: var(--grn); }
+    .step-num.pu { background: var(--pur); }
+    .step-body  { flex: 1; padding-top: 4px; }
+    .step-title { font-size: 14px; font-weight: 700; color: var(--txt); margin-bottom: 3px; }
+    .step-desc  { font-size: 13px; color: var(--dim); line-height: 1.55; }
+
+    /* Tags */
+    .tag { display: inline-flex; align-items: center; font-size: 10.5px; font-weight: 700;
+           padding: 2px 9px; border-radius: 5px; white-space: nowrap; }
+    .tag-free  { background: #EDFCF7; color: #00875A; }
+    .tag-paid  { background: #FFF4EF; color: #C74400; }
+    .tag-now   { background: #EFF3FF; color: var(--blu); }
+    .tag-soon  { background: #F5F0FF; color: #6D3EC1; }
+    .tag-warn  { background: #FFFBEA; color: #9A6C00; }
+
+    /* Table */
+    table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 16px; }
+    thead th { background: var(--surf2); font-size: 11px; font-weight: 700; letter-spacing: 0.5px;
+               text-transform: uppercase; color: var(--dim); padding: 9px 12px;
+               text-align: left; border-bottom: 1px solid var(--bdr); }
+    tbody td { padding: 9px 12px; border-bottom: 1px solid #F0F4FA; color: #334155; vertical-align: top; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #F8FAFF; }
+
+    /* Callout */
+    .callout { border-radius: 10px; padding: 13px 16px; margin-bottom: 14px; }
+    .callout-blue   { background: #EFF3FF; border: 1px solid #C5D3FF; }
+    .callout-orange { background: #FFF4EF; border: 1px solid #FFD4BE; }
+    .callout-green  { background: #EDFCF7; border: 1px solid #A0EDD8; }
+    .callout-yellow { background: #FFFBEA; border: 1px solid #FFE88A; }
+    .callout p { margin: 0; font-size: 13px; line-height: 1.6; }
+
+    /* Stack badges */
+    .stack-row { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+    .badge { font-size: 12px; font-weight: 600; padding: 5px 12px; border-radius: 7px; }
+    .badge-bl  { background: #EFF3FF; border: 1px solid #C5D3FF; color: var(--blu); }
+    .badge-or  { background: #FFF4EF; border: 1px solid #FFD4BE; color: #C74400; }
+    .badge-gr  { background: #EDFCF7; border: 1px solid #A0EDD8; color: #00875A; }
+    .badge-pu  { background: #F5F0FF; border: 1px solid #D4BCFF; color: #6D3EC1; }
+    .badge-ne  { background: #F4F6FA; border: 1px solid #DDE2EE; color: #334155; }
+
+    /* Arch row */
+    .arch-row { display: flex; gap: 0; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px; }
+    .arch-box { background: var(--surf); border: 1px solid var(--bdr); border-radius: 10px;
+                padding: 10px 14px; font-size: 12px; font-weight: 600; text-align: center; color: var(--txt); }
+    .arch-box small { display: block; font-size: 10px; font-weight: 400; color: var(--dim); margin-top: 2px; }
+    .arch-arr { color: #C4CDD8; font-size: 18px; flex-shrink: 0; }
+    .arch-bl { background: #EFF3FF; border-color: var(--blu); color: var(--blu); }
+    .arch-or { background: #FFF4EF; border-color: var(--org); color: var(--org); }
+    .arch-gr { background: #EDFCF7; border-color: var(--grn); color: #00875A; }
+    .arch-pu { background: #F5F0FF; border-color: var(--pur); color: #6D3EC1; }
+
+    /* Phase */
+    .phase-grid { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+    .phase-row  { display: flex; gap: 13px; align-items: flex-start; }
+    .phase-dot  { width: 34px; height: 34px; border-radius: 10px; display: flex; align-items: center;
+                  justify-content: center; font-size: 13px; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .phase-body { flex: 1; padding-top: 3px; }
+    .phase-title{ font-size: 14px; font-weight: 700; color: var(--txt); margin: 0 0 3px; }
+    .phase-desc { font-size: 13px; color: var(--dim); margin: 0; line-height: 1.5; }
+
+    @media print {
+      html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .doc { padding: 0 0.75in; }
+      h2,h3,h4 { break-after: avoid; }
+      pre, .card, .step, .callout { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+<main class="doc">
+
+  <div class="eyebrow">SIGNAL App · Developer Setup Guide</div>
+  <h1>Build Plan: VS Code → App Stores</h1>
+  <p class="subtitle">Complete walkthrough for Vaasudev Amitav — from design prototype to production app on iOS, Android &amp; Web. Free-first approach using mStock, then Kite API.</p>
+  <div class="meta-row">
+    <div class="meta-item"><strong>Owner</strong> Vaasudev Amitav</div>
+    <div class="meta-item"><strong>Version</strong> 1.0</div>
+    <div class="meta-item"><strong>Date</strong> June 2026</div>
+    <div class="meta-item"><strong>Stack</strong> React Native + Next.js + Node.js</div>
+  </div>
+
+  <hr>
+
+  <!-- ══ 1: VS Code Setup ══════════════════════════════════ -->
+  <h2>1 · VS Code Setup — Getting Started</h2>
+
+  <p>Your SIGNAL design prototypes live in this project. Download them, open in VS Code, and use them as your reference while building the actual app in React Native + Next.js.</p>
+
+  <div class="steps">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <div class="step-title">Download project files</div>
+        <div class="step-desc">Click ↓ Download in the top bar of this design tool to get a ZIP of all prototype files. Unzip to <code>~/Projects/signal-design/</code></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <div class="step-title">Install VS Code extensions</div>
+        <div class="step-desc">Open VS Code → Extensions → install: <code>ES7+ React/Redux Snippets</code>, <code>Prettier</code>, <code>ESLint</code>, <code>Tailwind CSS IntelliSense</code>, <code>React Native Tools</code>, <code>Thunder Client</code> (API testing)</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <div class="step-title">Create the monorepo</div>
+        <div class="step-desc">Use <code>npm create turbo@latest signal-app</code> — picks up both the mobile and web workspaces in one repo. Or just two folders: <code>signal-mobile/</code> + <code>signal-web/</code></div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">4</div>
+      <div class="step-body">
+        <div class="step-title">Scaffold React Native with Expo</div>
+        <div class="step-desc"><code>npx create-expo-app signal-mobile --template blank-typescript</code> — Expo handles iOS + Android build, no Xcode config needed to start.</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num">5</div>
+      <div class="step-body">
+        <div class="step-title">Scaffold the website</div>
+        <div class="step-desc"><code>npx create-next-app@latest signal-web --typescript --tailwind --app</code> — Next.js 14 with App Router. Deploy free on Vercel.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-blue">
+    <p><strong>📁 Recommended folder layout</strong><br>
+    <code>signal-app/</code><br>
+    &nbsp;&nbsp;<code>apps/mobile/</code> — React Native (Expo)<br>
+    &nbsp;&nbsp;<code>apps/web/</code> — Next.js landing + dashboard<br>
+    &nbsp;&nbsp;<code>packages/api/</code> — shared API client (mStock, Kite)<br>
+    &nbsp;&nbsp;<code>packages/ml/</code> — Python Random Forest service<br>
+    &nbsp;&nbsp;<code>packages/ui/</code> — shared design tokens + components<br>
+    &nbsp;&nbsp;<code>design/</code> — copy your downloaded HTML prototypes here as reference</p>
+  </div>
+
+  <!-- ══ 2: Tech Stack ═══════════════════════════════════ -->
+  <h2>2 · Full Tech Stack (Free-First)</h2>
+
+  <div class="card-grid">
+    <div class="card card-bl">
+      <div class="card-label">Mobile App</div>
+      <div class="card-value" style="font-size:16px;">React Native + Expo</div>
+      <div class="card-sub">iOS + Android from one codebase. Expo Go for instant testing — no Xcode needed day 1. Same component model as your prototype.</div>
+    </div>
+    <div class="card card-or">
+      <div class="card-label">Website</div>
+      <div class="card-value" style="font-size:16px;">Next.js 14</div>
+      <div class="card-sub">Landing page + web dashboard. Deploy free on Vercel. SEO-friendly for organic discovery.</div>
+    </div>
+    <div class="card card-gr">
+      <div class="card-label">Backend API</div>
+      <div class="card-value" style="font-size:16px;">Node.js + Express</div>
+      <div class="card-sub">REST + WebSocket server. Deploy free on Railway or Render. Handles data fan-out from mStock → clients.</div>
+    </div>
+    <div class="card card-pu">
+      <div class="card-label">Database + Auth</div>
+      <div class="card-value" style="font-size:16px;">Supabase</div>
+      <div class="card-sub">Free tier: Postgres DB + Auth + Row-Level Security + Realtime. OTP/email login built-in.</div>
+    </div>
+    <div class="card card-yl">
+      <div class="card-label">ML Service</div>
+      <div class="card-value" style="font-size:16px;">Python + Flask</div>
+      <div class="card-sub">Random Forest model served as REST API. Host free on Hugging Face Spaces or Railway.</div>
+    </div>
+    <div class="card card-re">
+      <div class="card-label">Payments</div>
+      <div class="card-value" style="font-size:16px;">Razorpay</div>
+      <div class="card-sub">Indian payment gateway. Supports UPI, cards, net banking. Free to integrate — 2% fee only on transactions.</div>
+    </div>
+  </div>
+
+  <div class="stack-row">
+    <span class="badge badge-ne">Node 20 LTS</span>
+    <span class="badge badge-bl">React Native 0.74</span>
+    <span class="badge badge-bl">Expo SDK 51</span>
+    <span class="badge badge-bl">Next.js 14</span>
+    <span class="badge badge-gr">Supabase</span>
+    <span class="badge badge-gr">Vercel (free)</span>
+    <span class="badge badge-or">Railway (free)</span>
+    <span class="badge badge-pu">Python 3.11</span>
+    <span class="badge badge-pu">scikit-learn</span>
+    <span class="badge badge-ne">Razorpay</span>
+    <span class="badge badge-ne">TypeScript</span>
+    <span class="badge badge-ne">Tailwind CSS</span>
+  </div>
+
+  <!-- ══ 3: mStock API ════════════════════════════════════ -->
+  <h2>3 · Live Data: mStock API (Free)</h2>
+
+  <p>mStock by Mirae Asset provides real-time NSE/BSE data via API. As your existing broker, you get API access with your account. This is your primary free data layer before adding Kite.</p>
+
+  <div class="callout callout-green">
+    <p><strong>✅ mStock API — What you get free</strong>: Real-time quotes · Historical OHLCV · Options chain · Indices (NIFTY, SENSEX, BANK NIFTY) · Portfolio sync · Order placement</p>
+  </div>
+
+  <h3>Setup: Get mStock API credentials</h3>
+  <div class="steps">
+    <div class="step">
+      <div class="step-num" style="background:var(--red);">1</div>
+      <div class="step-body">
+        <div class="step-title">Login to mStock → Developer Portal</div>
+        <div class="step-desc">Go to <a href="https://www.mstock.com" target="_blank">mstock.com</a> → My Account → API Access → Generate API Key + Secret</div>
+      </div>
+    </div>
+    <div class="step">
+      <div class="step-num" style="background:var(--red);">2</div>
+      <div class="step-body">
+        <div class="step-title">Store credentials securely</div>
+        <div class="step-desc">Never put API keys in your app code. Add to <code>.env.local</code>: <code>MSTOCK_API_KEY=xxx</code> and <code>MSTOCK_SECRET=xxx</code></div>
+      </div>
+    </div>
+  </div>
+
+  <h3>Real-time quote — Node.js backend</h3>
+  <pre><span class="c-comment">// packages/api/src/mstock.js</span>
+<span class="c-kw">const</span> axios = require(<span class="c-str">'axios'</span>);
+
+<span class="c-kw">const</span> MSTOCK_BASE = <span class="c-str">'https://api.mstock.com/v1'</span>;
+
+<span class="c-kw">async function</span> <span class="c-fn">getQuote</span>(symbol) {
+  <span class="c-kw">const</span> res = <span class="c-kw">await</span> axios.get(<span class="c-str">`${MSTOCK_BASE}/quote/${symbol}`</span>, {
+    headers: {
+      <span class="c-str">'x-api-key'</span>: process.env.MSTOCK_API_KEY,
+      <span class="c-str">'Authorization'</span>: <span class="c-str">`Bearer ${process.env.MSTOCK_TOKEN}`</span>
+    }
+  });
+  <span class="c-kw">return</span> res.data;
+}
+
+<span class="c-comment">// WebSocket feed for real-time tick data</span>
+<span class="c-kw">const</span> WebSocket = require(<span class="c-str">'ws'</span>);
+<span class="c-kw">const</span> ws = <span class="c-kw">new</span> WebSocket(<span class="c-str">'wss://stream.mstock.com/v1/live'</span>);
+
+ws.on(<span class="c-str">'open'</span>, () => {
+  ws.send(JSON.stringify({
+    action: <span class="c-str">'subscribe'</span>,
+    symbols: [<span class="c-str">'RELIANCE'</span>, <span class="c-str">'HDFCBANK'</span>, <span class="c-str">'NIFTY50'</span>],
+    apiKey: process.env.MSTOCK_API_KEY
+  }));
+});
+
+ws.on(<span class="c-str">'message'</span>, (data) => {
+  <span class="c-kw">const</span> tick = JSON.parse(data);
+  <span class="c-comment">// Fan out to connected clients via your own WebSocket server</span>
+  broadcastToClients(tick);
+});</pre>
+
+  <h3>Historical OHLCV for ML model</h3>
+  <pre><span class="c-comment"># packages/ml/data_fetch.py</span>
+<span class="c-kw">import</span> requests, pandas <span class="c-kw">as</span> pd
+
+<span class="c-kw">def</span> <span class="c-fn">fetch_ohlcv</span>(symbol, from_date, to_date):
+    url = <span class="c-str">f"https://api.mstock.com/v1/historical/{symbol}"</span>
+    headers = {<span class="c-str">"x-api-key"</span>: API_KEY}
+    params  = {<span class="c-str">"from"</span>: from_date, <span class="c-str">"to"</span>: to_date, <span class="c-str">"interval"</span>: <span class="c-str">"day"</span>}
+    r = requests.get(url, headers=headers, params=params)
+    <span class="c-kw">return</span> pd.DataFrame(r.json()[<span class="c-str">"candles"</span>],
+                        columns=[<span class="c-str">"date"</span>,<span class="c-str">"open"</span>,<span class="c-str">"high"</span>,<span class="c-str">"low"</span>,<span class="c-str">"close"</span>,<span class="c-str">"volume"</span>])</pre>
+
+  <table>
+    <thead><tr><th>Data Source</th><th>Type</th><th>Cost</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><strong>mStock API</strong></td><td>Real-time · Historical</td><td><span class="tag tag-free">Free</span></td><td>Your existing broker. Primary source.</td></tr>
+      <tr><td>NSE India (unofficial)</td><td>Indices · Corp actions</td><td><span class="tag tag-free">Free</span></td><td>Use <code>nsetools</code> Python lib. No auth needed.</td></tr>
+      <tr><td>Yahoo Finance (yfinance)</td><td>Historical OHLCV</td><td><span class="tag tag-free">Free</span></td><td>15-min delay. Good for ML training data.</td></tr>
+      <tr><td>Screener.in</td><td>Fundamentals</td><td><span class="tag tag-free">Free</span></td><td>P/E, EPS, promoter holding. Scrape or use API.</td></tr>
+      <tr><td>Zerodha Kite API</td><td>Real-time · Orders</td><td><span class="tag tag-paid">₹2000/mo</span></td><td>Add after subscription. Best ecosystem.</td></tr>
+      <tr><td>Upstox API</td><td>Real-time · Orders</td><td><span class="tag tag-free">Free</span></td><td>Free with trading account. Good alternative.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══ 4: Twitter/X Automation ══════════════════════════ -->
+  <h2>4 · Twitter/X Automation Integration</h2>
+
+  <p>Your Twitter automation shares charts, achievement cards, trend summaries, and Random Forest picks. Integrate this directly into the SIGNAL backend so posts auto-fire on signal generation.</p>
+
+  <div class="card-grid-2">
+    <div class="card card-bl">
+      <div class="card-label">What to Post</div>
+      <h3>Daily Auto-tweets</h3>
+      <ul>
+        <li>📈 Chart screenshots of top signals</li>
+        <li>🎯 RF Pick of the Day card</li>
+        <li>📊 Weekly accuracy scorecard</li>
+        <li>🔥 Trending stocks heatmap</li>
+        <li>✅ Trade outcome cards (P&amp;L)</li>
+      </ul>
+    </div>
+    <div class="card card-or">
+      <div class="card-label">API Tier</div>
+      <h3>Twitter API v2 — Free</h3>
+      <ul>
+        <li>1,500 tweets/month (free tier)</li>
+        <li>Post text + 1 image per tweet</li>
+        <li>Use <code>twitter-api-v2</code> npm package</li>
+        <li>Or <code>tweepy</code> in Python</li>
+        <li>Basic tier (₹1200/mo) for more volume</li>
+      </ul>
+    </div>
+  </div>
+
+  <h3>Auto-tweet setup — Node.js</h3>
+  <pre><span class="c-comment">// packages/api/src/twitter.js</span>
+<span class="c-kw">const</span> { TwitterApi } = require(<span class="c-str">'twitter-api-v2'</span>);
+<span class="c-kw">const</span> puppeteer = require(<span class="c-str">'puppeteer'</span>); <span class="c-comment">// to screenshot chart cards</span>
+
+<span class="c-kw">const</span> twitter = <span class="c-kw">new</span> TwitterApi({
+  appKey:       process.env.TWITTER_API_KEY,
+  appSecret:    process.env.TWITTER_API_SECRET,
+  accessToken:  process.env.TWITTER_ACCESS_TOKEN,
+  accessSecret: process.env.TWITTER_ACCESS_SECRET,
+});
+
+<span class="c-comment">// 1. Generate chart card as PNG using Puppeteer</span>
+<span class="c-kw">async function</span> <span class="c-fn">captureSignalCard</span>(symbol, signal, pct) {
+  <span class="c-kw">const</span> browser = <span class="c-kw">await</span> puppeteer.launch({ headless: <span class="c-str">'new'</span> });
+  <span class="c-kw">const</span> page    = <span class="c-kw">await</span> browser.newPage();
+  <span class="c-comment">// Load your React chart card component as a local HTML file</span>
+  <span class="c-kw">await</span> page.goto(<span class="c-str">`http://localhost:3001/card/${symbol}`</span>);
+  <span class="c-kw">await</span> page.setViewport({ width: 1200, height: 630 });
+  <span class="c-kw">const</span> img = <span class="c-kw">await</span> page.screenshot({ type: <span class="c-str">'png'</span> });
+  <span class="c-kw">await</span> browser.close();
+  <span class="c-kw">return</span> img;
+}
+
+<span class="c-comment">// 2. Upload image + post tweet</span>
+<span class="c-kw">async function</span> <span class="c-fn">tweetSignal</span>(symbol, signal, pct, accuracy) {
+  <span class="c-kw">const</span> img     = <span class="c-kw">await</span> captureSignalCard(symbol, signal, pct);
+  <span class="c-kw">const</span> mediaId = <span class="c-kw">await</span> twitter.v1.uploadMedia(img, { mimeType: <span class="c-str">'image/png'</span> });
+  <span class="c-kw">await</span> twitter.v2.tweet({
+    text: <span class="c-str">`🎯 SIGNAL: $${symbol} — ${signal} (+${pct}%)\n`</span> +
+          <span class="c-str">`Model accuracy: ${accuracy}% | RF Score: HIGH\n`</span> +
+          <span class="c-str">`📊 Trade responsibly. DYOR.\n#NSE #AlgoTrading #SIGNAL`</span>,
+    media: { media_ids: [mediaId] }
+  });
+}
+
+<span class="c-comment">// 3. Schedule: run at 9:30am (market open) via cron</span>
+<span class="c-kw">const</span> cron = require(<span class="c-str">'node-cron'</span>);
+cron.schedule(<span class="c-str">'30 9 * * 1-5'</span>, () => tweetTopPicks());  <span class="c-comment">// Weekdays 9:30am IST</span>
+cron.schedule(<span class="c-str">'30 15 * * 1-5'</span>, () => tweetDaySummary()); <span class="c-comment">// 3:30pm market close</span></pre>
+
+  <h3>Chart card components to build</h3>
+  <div class="card-grid">
+    <div class="card card-bl">
+      <div class="card-label">Card Type 1</div>
+      <h3>Signal Card</h3>
+      <div class="card-sub">Stock name · Buy/Sell signal · Entry price · Target · Stop loss · RF confidence score. 1200×630px. Share on open.</div>
+    </div>
+    <div class="card card-gr">
+      <div class="card-label">Card Type 2</div>
+      <h3>Scorecard</h3>
+      <div class="card-sub">Weekly/monthly accuracy. Wins vs losses. Best picks of the week. Show track record to build trust.</div>
+    </div>
+    <div class="card card-pu">
+      <div class="card-label">Card Type 3</div>
+      <h3>RF Pick of the Day</h3>
+      <div class="card-sub">Random Forest top-ranked stock for the day. Confidence %, sector, expected move. Auto-generates at 9am.</div>
+    </div>
+  </div>
+
+  <!-- ══ 5: Brokerage Connection ══════════════════════════ -->
+  <h2>5 · Brokerage Connection — Ticker Tape Style</h2>
+
+  <p>Like Ticker Tape, users authorize SIGNAL to read their portfolio data from their broker via OAuth. SIGNAL never stores credentials — it just reads holdings and live P&amp;L.</p>
+
+  <div class="arch-row">
+    <div class="arch-box arch-bl">User logs in<small>SIGNAL Auth</small></div>
+    <div class="arch-arr">→</div>
+    <div class="arch-box arch-or">Selects broker<small>Zerodha / mStock / Upstox</small></div>
+    <div class="arch-arr">→</div>
+    <div class="arch-box arch-pu">OAuth redirect<small>Broker login page</small></div>
+    <div class="arch-arr">→</div>
+    <div class="arch-box arch-gr">Token stored<small>Supabase (encrypted)</small></div>
+    <div class="arch-arr">→</div>
+    <div class="arch-box arch-bl">Live portfolio<small>Read-only sync</small></div>
+  </div>
+
+  <pre><span class="c-comment">// Kite OAuth flow (same pattern for all brokers)</span>
+<span class="c-comment">// Step 1: Redirect user to Kite login</span>
+<span class="c-kw">const</span> kiteLoginUrl = <span class="c-str">`https://kite.zerodha.com/connect/login?v=3&api_key=${KITE_API_KEY}`</span>;
+
+<span class="c-comment">// Step 2: User logs in, Kite redirects to your callback with ?request_token=xxx</span>
+app.get(<span class="c-str">'/auth/kite/callback'</span>, <span class="c-kw">async</span> (req, res) => {
+  <span class="c-kw">const</span> { request_token } = req.query;
+  <span class="c-comment">// Exchange request_token for access_token</span>
+  <span class="c-kw">const</span> session = <span class="c-kw">await</span> kite.generateSession(request_token, KITE_API_SECRET);
+  <span class="c-comment">// Store encrypted access_token in Supabase against user.id</span>
+  <span class="c-kw">await</span> supabase.from(<span class="c-str">'broker_tokens'</span>).upsert({
+    user_id: req.user.id,
+    broker: <span class="c-str">'zerodha'</span>,
+    access_token: encrypt(session.access_token),
+    expires_at: <span class="c-kw">new</span> Date(Date.now() + 86400000)
+  });
+  res.redirect(<span class="c-str">'/dashboard'</span>);
+});
+
+<span class="c-comment">// Step 3: Fetch live portfolio holdings</span>
+<span class="c-kw">async function</span> <span class="c-fn">getPortfolio</span>(userId) {
+  <span class="c-kw">const</span> { data } = <span class="c-kw">await</span> supabase
+    .from(<span class="c-str">'broker_tokens'</span>).select().eq(<span class="c-str">'user_id'</span>, userId).single();
+  <span class="c-kw">const</span> kite = <span class="c-kw">new</span> KiteConnect({ api_key: KITE_API_KEY });
+  kite.setAccessToken(decrypt(data.access_token));
+  <span class="c-kw">return</span> kite.getHoldings(); <span class="c-comment">// Live holdings with LTP, P&L</span>
+}</pre>
+
+  <table>
+    <thead><tr><th>Broker</th><th>API Type</th><th>OAuth</th><th>Real-time</th><th>Cost</th></tr></thead>
+    <tbody>
+      <tr><td><strong>mStock</strong></td><td>REST + WS</td><td>✅</td><td>✅</td><td><span class="tag tag-free">Free</span></td></tr>
+      <tr><td><strong>Upstox</strong></td><td>REST + WS</td><td>✅</td><td>✅</td><td><span class="tag tag-free">Free</span></td></tr>
+      <tr><td><strong>Angel One</strong></td><td>REST + WS</td><td>✅</td><td>✅</td><td><span class="tag tag-free">Free</span></td></tr>
+      <tr><td><strong>Zerodha Kite</strong></td><td>REST + WS</td><td>✅</td><td>✅</td><td><span class="tag tag-paid">₹2000/mo</span></td></tr>
+      <tr><td><strong>HDFC Sec</strong></td><td>REST</td><td>✅</td><td>Delayed</td><td><span class="tag tag-free">Free</span></td></tr>
+      <tr><td><strong>Groww</strong></td><td>REST</td><td>✅</td><td>Partial</td><td><span class="tag tag-free">Free</span></td></tr>
+    </tbody>
+  </table>
+
+  <!-- ══ 6: ML — Random Forest ════════════════════════════ -->
+  <h2>6 · ML Model: Random Forest Signal Generator</h2>
+
+  <pre><span class="c-comment"># packages/ml/signal_model.py</span>
+<span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd
+<span class="c-kw">import</span> numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> sklearn.ensemble <span class="c-kw">import</span> RandomForestClassifier
+<span class="c-kw">from</span> sklearn.preprocessing <span class="c-kw">import</span> StandardScaler
+<span class="c-kw">from</span> ta <span class="c-kw">import</span> add_all_ta_features  <span class="c-comment"># pip install ta</span>
+
+<span class="c-kw">def</span> <span class="c-fn">engineer_features</span>(df):
+    df = add_all_ta_features(df, open=<span class="c-str">"open"</span>, high=<span class="c-str">"high"</span>, low=<span class="c-str">"low"</span>,
+                              close=<span class="c-str">"close"</span>, volume=<span class="c-str">"volume"</span>)
+    df[<span class="c-str">'target'</span>] = (df[<span class="c-str">'close'</span>].shift(-3) > df[<span class="c-str">'close'</span>] * 1.02).astype(int)
+    <span class="c-comment"># Target = 1 if stock rises >2% in next 3 days</span>
+    <span class="c-kw">return</span> df.dropna()
+
+FEATURES = [<span class="c-str">'momentum_rsi'</span>, <span class="c-str">'trend_macd'</span>, <span class="c-str">'volatility_bbh'</span>,
+            <span class="c-str">'volume_obv'</span>, <span class="c-str">'trend_adx'</span>, <span class="c-str">'momentum_stoch_signal'</span>]
+
+model = RandomForestClassifier(n_estimators=200, max_depth=8,
+                                min_samples_leaf=5, random_state=42)
+
+<span class="c-kw">def</span> <span class="c-fn">train</span>(df):
+    df = engineer_features(df)
+    X = df[FEATURES]; y = df[<span class="c-str">'target'</span>]
+    model.fit(X[:<span class="c-str">-60</span>], y[:<span class="c-str">-60</span>])  <span class="c-comment"># hold last 60 days for validation</span>
+
+<span class="c-kw">def</span> <span class="c-fn">predict</span>(df):
+    df = engineer_features(df)
+    proba = model.predict_proba(df[FEATURES].tail(1))[0][1]
+    <span class="c-kw">return</span> {
+      <span class="c-str">"signal"</span>: <span class="c-str">"BUY"</span> <span class="c-kw">if</span> proba > 0.65 <span class="c-kw">else</span> <span class="c-str">"HOLD"</span>,
+      <span class="c-str">"confidence"</span>: round(proba * 100, 1),
+      <span class="c-str">"rf_score"</span>: round(proba, 3)
+    }</pre>
+
+  <!-- ══ 7: Subscription Model ════════════════════════════ -->
+  <h2>7 · Premium Subscription Model</h2>
+
+  <p>Your positioning is clear: existing premium trading call services charge ₹15,000–₹50,000/year. SIGNAL undercuts them massively with ML-backed accuracy and real-time delivery.</p>
+
+  <div class="card-grid">
+    <div class="card">
+      <div class="card-label">Free Tier</div>
+      <div class="card-value">₹0 / mo</div>
+      <div class="card-sub">3 signals/week · 7-day delayed performance · Basic portfolio analysis</div>
+    </div>
+    <div class="card card-bl">
+      <div class="card-label">Essential — Launch Price</div>
+      <div class="card-value" style="color:var(--blu);">₹299 / mo</div>
+      <div class="card-sub">Unlimited signals · Real-time alerts · RF picks daily · WhatsApp + push notifications</div>
+    </div>
+    <div class="card card-or">
+      <div class="card-label">Pro — Power User</div>
+      <div class="card-value" style="color:var(--org);">₹799 / mo</div>
+      <div class="card-sub">Everything + Algo Builder · Options signals · Priority support · Twitter card access</div>
+    </div>
+  </div>
+
+  <div class="callout callout-yellow">
+    <p><strong>⚡ Competitive angle:</strong> Typical premium telegram channels charge ₹2,000–5,000/month for calls with no accountability. SIGNAL shows full accuracy stats, automated P&amp;L tracking, and charges a fraction. Pitch this on your Twitter with weekly scorecards.</p>
+  </div>
+
+  <h3>Razorpay subscription integration</h3>
+  <pre><span class="c-comment">// Create subscription plan (one-time setup via Razorpay dashboard)</span>
+<span class="c-kw">const</span> Razorpay = require(<span class="c-str">'razorpay'</span>);
+<span class="c-kw">const</span> rzp = <span class="c-kw">new</span> Razorpay({ key_id: RZP_KEY, key_secret: RZP_SECRET });
+
+<span class="c-comment">// Subscribe user to Essential plan</span>
+<span class="c-kw">async function</span> <span class="c-fn">createSubscription</span>(userId, planId) {
+  <span class="c-kw">const</span> sub = <span class="c-kw">await</span> rzp.subscriptions.create({
+    plan_id: planId,           <span class="c-comment">// plan_Essential or plan_Pro</span>
+    total_count: 12,           <span class="c-comment">// 12 months</span>
+    quantity: 1,
+    customer_notify: 1,
+    notes: { user_id: userId }
+  });
+  <span class="c-comment">// Store sub.id in Supabase, update user tier on payment webhook</span>
+  <span class="c-kw">return</span> sub.short_url;       <span class="c-comment">// Payment link — open in Razorpay sheet</span>
+}</pre>
+
+  <!-- ══ 8: Deployment ════════════════════════════════════ -->
+  <h2>8 · Deployment Plan — Free First</h2>
+
+  <div class="phase-grid">
+    <div class="phase-row">
+      <div class="phase-dot" style="background:var(--grn);">W1</div>
+      <div class="phase-body">
+        <div class="phase-title">Week 1–2 · Website live on Vercel (free)</div>
+        <div class="phase-desc"><code>git push</code> → Vercel auto-deploys. Custom domain <code>signal.in</code> ≈ ₹800/yr. This is your landing page + web dashboard.</div>
+      </div>
+    </div>
+    <div class="phase-row">
+      <div class="phase-dot" style="background:var(--blu);">W3</div>
+      <div class="phase-body">
+        <div class="phase-title">Week 3–4 · Backend on Railway (free tier)</div>
+        <div class="phase-desc">Node.js + Python ML service. Railway gives $5/mo free credit. Supabase free tier = 500MB DB + 50K auth users.</div>
+      </div>
+    </div>
+    <div class="phase-row">
+      <div class="phase-dot" style="background:var(--org);">W5</div>
+      <div class="phase-body">
+        <div class="phase-title">Week 5–6 · Expo app → TestFlight (iOS) + Internal Testing (Android)</div>
+        <div class="phase-desc"><code>eas build --platform all</code> → Expo builds IPA + APK in cloud. No Mac needed for Android. iOS requires Apple Dev account ($99/yr) for TestFlight.</div>
+      </div>
+    </div>
+    <div class="phase-row">
+      <div class="phase-dot" style="background:var(--pur);">W8</div>
+      <div class="phase-body">
+        <div class="phase-title">Week 7–8 · App Store + Play Store submission</div>
+        <div class="phase-desc">Apple App Store: $99/yr. Google Play: $25 one-time. Submit via EAS Submit: <code>eas submit --platform all</code>. Review ≈ 2–7 days (Apple), 1–3 days (Google).</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout callout-orange">
+    <p><strong>⚠️ App Store note:</strong> Financial apps on Apple require proof of regulatory compliance. Have a disclaimer ready: "SIGNAL provides AI-powered analysis for informational purposes only. Not SEBI registered. Not financial advice." This is standard language — most algo apps use it.</p>
+  </div>
+
+  <!-- ══ 9: Future — Kite API ═════════════════════════════ -->
+  <h2>9 · Future: Kite API (When You Subscribe)</h2>
+
+  <div class="card-grid-2">
+    <div class="card card-pu">
+      <div class="card-label">What Kite adds</div>
+      <h3>Zerodha Kite API</h3>
+      <ul>
+        <li>WebSocket tick-by-tick data</li>
+        <li>Options chain in real-time</li>
+        <li>Order placement from app</li>
+        <li>GTT (Good Till Triggered) orders</li>
+        <li>Full trade history export</li>
+      </ul>
+    </div>
+    <div class="card card-bl">
+      <div class="card-label">Migration plan</div>
+      <h3>Swap in Kite, keep mStock</h3>
+      <ul>
+        <li>mStock stays for portfolio sync</li>
+        <li>Kite handles real-time tick feed</li>
+        <li>Abstract behind a <code>DataProvider</code> interface</li>
+        <li>Switch by changing 1 env var</li>
+        <li>Upstox free API as backup</li>
+      </ul>
+    </div>
+  </div>
+
+  <pre><span class="c-comment">// Abstract data provider pattern — swap mStock ↔ Kite ↔ Upstox</span>
+<span class="c-kw">class</span> DataProvider {
+  <span class="c-kw">constructor</span>(provider = process.env.DATA_PROVIDER) {
+    <span class="c-kw">if</span> (provider === <span class="c-str">'kite'</span>)    <span class="c-kw">this</span>.client = <span class="c-kw">new</span> KiteProvider();
+    <span class="c-kw">if</span> (provider === <span class="c-str">'mstock'</span>) <span class="c-kw">this</span>.client = <span class="c-kw">new</span> MStockProvider();
+    <span class="c-kw">if</span> (provider === <span class="c-str">'upstox'</span>) <span class="c-kw">this</span>.client = <span class="c-kw">new</span> UpstoxProvider();
+  }
+  getQuote(symbol)             { <span class="c-kw">return this</span>.client.getQuote(symbol); }
+  subscribe(symbols, callback) { <span class="c-kw">return this</span>.client.subscribe(symbols, callback); }
+  getHistory(symbol, from, to) { <span class="c-kw">return this</span>.client.getHistory(symbol, from, to); }
+}
+
+<span class="c-comment">// Switch: DATA_PROVIDER=kite → done. Zero other code changes.</span></pre>
+
+  <hr>
+
+  <div class="callout callout-blue">
+    <p><strong>🚀 Your next 3 actions:</strong><br>
+    1. Download this project → Open in VS Code<br>
+    2. Run <code>npx create-expo-app signal-mobile</code> + <code>npx create-next-app signal-web</code><br>
+    3. Get mStock API key from your account portal and test the quote endpoint<br><br>
+    Your design prototype (14 screens) is your exact build spec. Rebuild screen-by-screen in React Native following the same layout, colors, and interactions shown in the mockups.</p>
+  </div>
+
+</td></tr></tbody>
+<tfoot><tr><td class="ftr-space"></td></tr></tfoot>
+</table>
+</main>
+</body>
+</html>

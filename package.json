@@ -1,0 +1,16 @@
+{
+  "name": "signal",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "mobile": "npm run start --workspace=apps/signal-mobile",
+    "web": "npm run dev --workspace=apps/web",
+    "api": "npm run dev --workspace=apps/api"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.0"
+  }
+}

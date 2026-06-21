@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Public Track Record</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root {
+      --bg:#070D1A; --surf:#0E1628; --surf2:#162038; --bdr:#1C2E4A;
+      --txt:#FFFFFF; --dim:#7A8BAA; --dim2:#3A4E6A;
+      --blu:#1740F5; --bluL:#4F6FFA; --org:#FF5C1A;
+      --grn:#00D4A0; --red:#FF3B5C; --ylw:#FFB800; --pur:#8B5CF6;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    html { scroll-behavior:smooth; }
+    body { background:var(--bg); color:var(--txt); font-family:'Inter',system-ui,sans-serif; }
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+    @keyframes countup { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+
+    /* Nav */
+    nav { display:flex; align-items:center; justify-content:space-between;
+          height:62px; padding:0 clamp(16px,5vw,80px);
+          background:rgba(7,13,26,0.92); backdrop-filter:blur(20px);
+          border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:100; }
+    .nav-logo { display:flex; align-items:center; gap:9px; font-size:19px; font-weight:900; letter-spacing:-0.5px; text-decoration:none; color:var(--txt); }
+    .nav-links { display:flex; gap:24px; align-items:center; }
+    .nav-links a { font-size:13px; font-weight:500; color:var(--dim); text-decoration:none; }
+    .nav-links a:hover { color:var(--txt); }
+    .nav-links a.active { color:var(--bluL); font-weight:600; }
+    .nav-cta { display:flex; gap:10px; }
+    .btn-ghost   { height:36px; padding:0 16px; border-radius:9px; background:transparent; border:1px solid var(--bdr); color:var(--txt); font-size:13px; font-weight:600; cursor:pointer; font-family:inherit; }
+    .btn-primary { height:36px; padding:0 18px; border-radius:9px; background:var(--blu); border:none; color:#fff; font-size:13px; font-weight:700; cursor:pointer; font-family:inherit; }
+
+    /* SEBI banner */
+    .sebi-banner { background:rgba(255,184,0,0.07); border-bottom:1px solid rgba(255,184,0,0.18); padding:8px clamp(16px,5vw,80px); text-align:center; }
+    .sebi-banner span { font-size:11.5px; color:rgba(255,184,0,0.8); line-height:1.5; }
+
+    /* Section wrapper */
+    .wrap { max-width:1200px; margin:0 auto; padding:0 clamp(20px,5vw,80px); }
+
+    /* Hero */
+    .hero { padding:60px clamp(20px,5vw,80px) 48px; position:relative; overflow:hidden; }
+    .hero-glow { position:absolute; top:-200px; left:50%; transform:translateX(-50%); width:700px; height:700px; border-radius:50%; background:radial-gradient(circle,rgba(23,64,245,0.13) 0%,transparent 65%); pointer-events:none; }
+    .eyebrow { font-size:11px; font-weight:700; letter-spacing:2.5px; text-transform:uppercase; color:var(--bluL); margin-bottom:12px; }
+    h1 { font-size:clamp(36px,5.5vw,68px); font-weight:900; letter-spacing:-2.5px; line-height:1.0; margin-bottom:16px; }
+    .hero-sub { font-size:16px; color:var(--dim); line-height:1.65; max-width:600px; margin-bottom:40px; }
+
+    /* Big stats row */
+    .big-stats { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; margin-bottom:0; animation:countup 0.6s ease-out; }
+    .bs-card { background:var(--surf); border:1px solid var(--bdr); border-radius:16px; padding:22px 20px; }
+    .bs-val  { font-size:36px; font-weight:900; letter-spacing:-1.5px; line-height:1; margin-bottom:6px; }
+    .bs-lbl  { font-size:12px; color:var(--dim); line-height:1.4; }
+
+    /* Section */
+    .section { padding:56px 0; border-top:1px solid var(--bdr); }
+    .section-title { font-size:clamp(24px,3vw,38px); font-weight:900; letter-spacing:-1px; margin-bottom:8px; }
+    .section-sub   { font-size:14px; color:var(--dim); line-height:1.65; max-width:560px; margin-bottom:32px; }
+
+    /* Weekly scorecards */
+    .weeks-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .week-card  { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:20px; transition:border-color 0.2s; }
+    .week-card:hover { border-color:var(--dim2); }
+    .week-hdr   { display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; }
+    .week-num   { font-size:13px; font-weight:800; }
+    .week-dates { font-size:11px; color:var(--dim); }
+    .week-acc   { font-size:26px; font-weight:900; letter-spacing:-0.5px; }
+    .week-bar   { height:5px; background:rgba(255,255,255,0.07); border-radius:3px; overflow:hidden; margin:8px 0; }
+    .week-fill  { height:100%; border-radius:3px; }
+    .week-row   { display:flex; justify-content:space-between; font-size:12px; margin-top:8px; color:var(--dim); }
+    .week-pill  { display:inline-flex; align-items:center; gap:4px; padding:3px 10px; border-radius:6px; font-size:11px; font-weight:700; }
+
+    /* Twitter posts */
+    .tweets-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+    .tweet-card  { background:var(--surf); border:1px solid var(--bdr); border-radius:16px; padding:20px; }
+    .tw-hdr      { display:flex; align-items:center; gap:9px; margin-bottom:12px; }
+    .tw-av       { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,var(--blu),var(--org)); display:flex; align-items:center; justify-content:center; font-size:12px; font-weight:900; color:#fff; flex-shrink:0; }
+    .tw-name     { font-size:13px; font-weight:700; }
+    .tw-handle   { font-size:11px; color:var(--dim); }
+    .tw-x        { margin-left:auto; font-size:16px; font-weight:900; color:var(--dim); }
+    .tw-body     { font-size:13px; color:#C4D0E8; line-height:1.65; margin-bottom:12px; }
+    .tw-inner    { border-radius:11px; padding:12px 14px; margin-bottom:10px; }
+    .tw-meta     { font-size:11px; color:var(--dim2); }
+    .sig-pill    { display:inline-flex; align-items:center; padding:2px 9px; border-radius:20px; font-size:11.5px; font-weight:700; }
+
+    /* Full signal history */
+    .filter-row  { display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; align-items:center; }
+    .fchip       { height:32px; padding:0 13px; border-radius:7px; font-size:12px; font-weight:700; background:transparent; border:1px solid var(--bdr); color:var(--dim); cursor:pointer; font-family:inherit; transition:all 0.16s; }
+    .fchip:hover { border-color:var(--dim); color:var(--txt); }
+    .fchip.on    { background:var(--blu); border-color:var(--blu); color:#fff; }
+    .fchip.buy.on   { background:rgba(0,212,160,0.8); border-color:transparent; color:#001A12; }
+    .fchip.sell.on  { background:rgba(255,59,92,0.8); border-color:transparent; color:#fff; }
+    .fchip.win.on   { background:rgba(0,212,160,0.15); border-color:rgba(0,212,160,0.4); color:var(--grn); }
+    .fchip.loss.on  { background:rgba(255,59,92,0.1); border-color:rgba(255,59,92,0.3); color:var(--red); }
+
+    .sig-table { width:100%; border-collapse:collapse; font-size:13px; }
+    .sig-table th { font-size:10.5px; font-weight:700; color:var(--dim); padding:9px 12px; text-align:left; border-bottom:1px solid var(--bdr); text-transform:uppercase; letter-spacing:0.4px; background:var(--surf2); }
+    .sig-table td { padding:11px 12px; border-bottom:1px solid rgba(28,46,74,0.5); }
+    .sig-table tr:last-child td { border-bottom:none; }
+    .sig-table tr:hover td { background:rgba(255,255,255,0.02); }
+    .sig-badge { font-size:10.5px; font-weight:700; padding:2px 9px; border-radius:5px; }
+    .badge-sbuy { background:rgba(0,212,160,0.12); color:var(--grn); border:1px solid rgba(0,212,160,0.25); }
+    .badge-buy  { background:rgba(0,212,160,0.08); color:var(--grn); border:1px solid rgba(0,212,160,0.18); }
+    .badge-sell { background:rgba(255,59,92,0.1); color:var(--red); border:1px solid rgba(255,59,92,0.22); }
+    .badge-hold { background:rgba(255,184,0,0.1); color:var(--ylw); border:1px solid rgba(255,184,0,0.22); }
+    .out-win  { color:var(--grn); font-weight:700; }
+    .out-loss { color:var(--red); font-weight:700; }
+    .out-open { color:var(--ylw); font-weight:700; }
+
+    /* CTA strip */
+    .cta-strip { background:linear-gradient(135deg,rgba(23,64,245,0.1),rgba(0,212,160,0.06)); border:1px solid rgba(23,64,245,0.2); border-radius:20px; padding:40px; display:grid; grid-template-columns:1fr auto; gap:32px; align-items:center; margin:56px 0; }
+    .cta-strip h2 { font-size:clamp(22px,3vw,34px); font-weight:900; letter-spacing:-0.8px; margin-bottom:8px; }
+    .cta-strip p  { font-size:14px; color:var(--dim); line-height:1.65; max-width:500px; }
+    .cta-actions  { display:flex; flex-direction:column; gap:10px; min-width:200px; }
+    .btn-xl-primary { height:52px; padding:0 28px; border-radius:13px; background:linear-gradient(135deg,var(--blu),var(--bluL)); border:none; color:#fff; font-size:16px; font-weight:700; cursor:pointer; font-family:inherit; white-space:nowrap; box-shadow:0 8px 24px rgba(23,64,245,0.35); }
+    .btn-xl-ghost   { height:52px; padding:0 24px; border-radius:13px; background:transparent; border:1px solid var(--bdr); color:var(--txt); font-size:15px; font-weight:600; cursor:pointer; font-family:inherit; }
+
+    /* Disclaimer */
+    .disclaimer { background:rgba(255,184,0,0.05); border:1px solid rgba(255,184,0,0.15); border-radius:14px; padding:18px 22px; margin:0 0 48px; }
+    .disclaimer p { font-size:12.5px; color:rgba(255,184,0,0.75); line-height:1.75; }
+
+    /* Footer */
+    footer { border-top:1px solid var(--bdr); padding:32px clamp(20px,5vw,80px); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:16px; }
+    .footer-logo { font-size:18px; font-weight:900; letter-spacing:-0.5px; }
+    .footer-links { display:flex; gap:20px; flex-wrap:wrap; }
+    .footer-links a { font-size:12px; color:var(--dim); text-decoration:none; }
+    .footer-copy { font-size:11.5px; color:var(--dim2); }
+
+    @media(max-width:900px) {
+      .big-stats  { grid-template-columns:repeat(3,1fr); }
+      .weeks-grid { grid-template-columns:1fr 1fr; }
+      .tweets-grid { grid-template-columns:1fr; }
+      .cta-strip  { grid-template-columns:1fr; }
+      .nav-links  { display:none; }
+    }
+    @media(max-width:600px) {
+      .big-stats { grid-template-columns:1fr 1fr; }
+      .weeks-grid { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="sebi-banner">
+  <span>⚠️ <strong>NOT SEBI REGISTERED.</strong> All signals are for informational purposes only. Not financial advice. Trade at your own risk.</span>
+</div>
+
+<nav>
+  <a class="nav-logo" href="SIGNAL Landing Page.html">
+    <svg width="24" height="24" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div class="nav-links">
+    <a href="SIGNAL Landing Page.html">Home</a>
+    <a href="SIGNAL ML Parameters.html">ML Signals</a>
+    <a href="#scorecards">Scorecards</a>
+    <a href="#history">Signal History</a>
+    <a href="SIGNAL Landing Page.html#pricing">Pricing</a>
+    <a href="#" class="active">Track Record</a>
+  </div>
+  <div class="nav-cta">
+    <button class="btn-ghost" onclick="location.href='SIGNAL Sign In.html'">Sign In</button>
+    <button class="btn-primary" onclick="location.href='SIGNAL Sign In.html'">Start Free →</button>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-glow"></div>
+  <div class="wrap" style="position:relative;z-index:1;">
+    <div class="eyebrow">100% Public · Zero Hidden</div>
+    <h1>Every signal.<br><span style="color:var(--blu);">Every result.</span><br><span style="color:var(--org);">All public.</span></h1>
+    <p class="hero-sub">Unlike premium Telegram channels, SIGNAL posts every single signal on Twitter the moment it fires — with entry, target, and stop loss. Here's the complete record.</p>
+    <div class="big-stats">
+      <div class="bs-card">
+        <div class="bs-val" style="color:var(--grn);">71.4%</div>
+        <div class="bs-lbl">Overall accuracy<br>last 90 days</div>
+      </div>
+      <div class="bs-card">
+        <div class="bs-val">142</div>
+        <div class="bs-lbl">Total signals<br>last 90 days</div>
+      </div>
+      <div class="bs-card">
+        <div class="bs-val" style="color:var(--grn);">101</div>
+        <div class="bs-lbl">Targets hit<br>profitably</div>
+      </div>
+      <div class="bs-card">
+        <div class="bs-val" style="color:var(--red);">32</div>
+        <div class="bs-lbl">Stop losses<br>hit</div>
+      </div>
+      <div class="bs-card">
+        <div class="bs-val" style="color:var(--ylw);">9</div>
+        <div class="bs-lbl">Currently<br>open signals</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Weekly Scorecards -->
+<section class="section" id="scorecards">
+  <div class="wrap">
+    <div class="eyebrow" style="color:var(--org);">Weekly Scorecards</div>
+    <div class="section-title">Published every Monday.</div>
+    <p class="section-sub">Every week's full signal record — how many fired, how many hit target, how many hit stop loss. No cherry-picking, no hiding the bad weeks.</p>
+
+    <div class="weeks-grid">
+
+      <div class="week-card" style="border-color:rgba(0,212,160,0.3);">
+        <div class="week-hdr">
+          <div><div class="week-num">Week 23 — Best Week</div><div class="week-dates">Jun 9–13, 2026</div></div>
+          <span class="week-pill" style="background:rgba(0,212,160,0.12);color:var(--grn);">🏆 Best</span>
+        </div>
+        <div class="week-acc" style="color:var(--grn);">71.4%</div>
+        <div class="week-bar"><div class="week-fill" style="width:71.4%;background:var(--grn);"></div></div>
+        <div class="week-row"><span>14 signals fired</span><span style="color:var(--grn);">10 ✅ wins</span><span style="color:var(--red);">2 ⛔ SL</span><span style="color:var(--ylw);">2 ⏳ open</span></div>
+        <div style="margin-top:10px;font-size:12px;color:var(--dim);">Top pick: TATAMOTORS +8.4% in 3 days</div>
+      </div>
+
+      <div class="week-card">
+        <div class="week-hdr">
+          <div><div class="week-num">Week 22</div><div class="week-dates">Jun 2–6, 2026</div></div>
+          <span class="week-pill" style="background:rgba(23,64,245,0.1);color:var(--bluL);">Solid</span>
+        </div>
+        <div class="week-acc" style="color:var(--grn);">66.7%</div>
+        <div class="week-bar"><div class="week-fill" style="width:66.7%;background:var(--bluL);"></div></div>
+        <div class="week-row"><span>12 signals fired</span><span style="color:var(--grn);">8 ✅ wins</span><span style="color:var(--red);">3 ⛔ SL</span><span style="color:var(--ylw);">1 ⏳</span></div>
+        <div style="margin-top:10px;font-size:12px;color:var(--dim);">Top pick: TCS +5.7% · SBIN +4.9%</div>
+      </div>
+
+      <div class="week-card">
+        <div class="week-hdr">
+          <div><div class="week-num">Week 21</div><div class="week-dates">May 26–30, 2026</div></div>
+          <span class="week-pill" style="background:rgba(255,184,0,0.1);color:var(--ylw);">Average</span>
+        </div>
+        <div class="week-acc" style="color:var(--ylw);">58.3%</div>
+        <div class="week-bar"><div class="week-fill" style="width:58.3%;background:var(--ylw);"></div></div>
+        <div class="week-row"><span>12 signals fired</span><span style="color:var(--grn);">7 ✅ wins</span><span style="color:var(--red);">4 ⛔ SL</span><span style="color:var(--ylw);">1 ⏳</span></div>
+        <div style="margin-top:10px;font-size:12px;color:var(--dim);">FII selloff week — high volatility impacted signals</div>
+      </div>
+
+      <div class="week-card">
+        <div class="week-hdr">
+          <div><div class="week-num">Week 20</div><div class="week-dates">May 19–23, 2026</div></div>
+          <span class="week-pill" style="background:rgba(0,212,160,0.1);color:var(--grn);">Strong</span>
+        </div>
+        <div class="week-acc" style="color:var(--grn);">75.0%</div>
+        <div class="week-bar"><div class="week-fill" style="width:75%;background:var(--grn);"></div></div>
+        <div class="week-row"><span>8 signals fired</span><span style="color:var(--grn);">6 ✅ wins</span><span style="color:var(--red);">1 ⛔ SL</span><span style="color:var(--ylw);">1 ⏳</span></div>
+        <div style="margin-top:10px;font-size:12px;color:var(--dim);">Budget rally week · IT sector +4.1%</div>
+      </div>
+
+      <div class="week-card">
+        <div class="week-hdr">
+          <div><div class="week-num">Week 19</div><div class="week-dates">May 12–16, 2026</div></div>
+          <span class="week-pill" style="background:rgba(255,92,26,0.1);color:var(--org);">Below avg</span>
+        </div>
+        <div class="week-acc" style="color:var(--org);">54.5%</div>
+        <div class="week-bar"><div class="week-fill" style="width:54.5%;background:var(--org);"></div></div>
+        <div class="week-row"><span>11 signals fired</span><span style="color:var(--grn);">6 ✅ wins</span><span style="color:var(--red);">5 ⛔ SL</span><span>0 open</span></div>
+        <div style="margin-top:10px;font-size:12px;color:var(--dim);">Global risk-off: US inflation data miss</div>
+      </div>
+
+      <div class="week-card">
+        <div class="week-hdr">
+          <div><div class="week-num">Week 18</div><div class="week-dates">May 5–9, 2026</div></div>
+          <span class="week-pill" style="background:rgba(0,212,160,0.1);color:var(--grn);">Strong</span>
+        </div>
+        <div class="week-acc" style="color:var(--grn);">76.9%</div>
+        <div class="week-bar"><div class="week-fill" style="width:76.9%;background:var(--grn);"></div></div>
+        <div class="week-row"><span>13 signals fired</span><span style="color:var(--grn);">10 ✅ wins</span><span style="color:var(--red);">2 ⛔ SL</span><span style="color:var(--ylw);">1 ⏳</span></div>
+        <div style="margin-top:10px;font-size:12px;color:var(--dim);">Post-election rally · pharma + auto strong</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- Twitter Cards -->
+<section class="section">
+  <div class="wrap">
+    <div class="eyebrow" style="color:var(--bluL);">𝕏 Posted on Twitter</div>
+    <div class="section-title">Real signals. Real time.</div>
+    <p class="section-sub">Follow <strong style="color:var(--txt);">@signal_in</strong> to get every signal the moment it fires — with full entry/target/SL details and outcome updates.</p>
+
+    <div class="tweets-grid">
+      <div class="tweet-card">
+        <div class="tw-hdr"><div class="tw-av">VA</div><div><div class="tw-name">Vaasudev Amitav</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">🎯 RF PICK — $TATAMOTORS<br><span class="sig-pill" style="background:rgba(0,212,160,0.15);color:var(--grn);">STRONG BUY</span> · Conf: 81%<br>Entry ₹960 · Target ₹1,040 · SL ₹930<br>RSI=34 · EMA golden cross · Del%=68</div>
+        <div class="tw-inner" style="background:rgba(0,212,160,0.05);border:1px solid rgba(0,212,160,0.18);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-weight:700;">TATAMOTORS</span><span style="font-weight:900;color:var(--grn);">+8.4% ✅</span></div>
+          <div style="font-size:11px;color:var(--dim);">Target hit · Day 3 · Jun 12, 2026</div>
+        </div>
+        <div class="tw-meta">Jun 9, 2026 · 9:31 AM · Week 23</div>
+      </div>
+
+      <div class="tweet-card">
+        <div class="tw-hdr"><div class="tw-av">VA</div><div><div class="tw-name">Vaasudev Amitav</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">📊 WEEK 23 SCORECARD<br>Signals: 14 · ✅ Wins: 10 (71.4%)<br>⛔ SL hit: 2 · ⏳ Open: 2<br><br>Full details in thread 🧵 No hiding the misses.</div>
+        <div class="tw-inner" style="background:rgba(23,64,245,0.05);border:1px solid rgba(23,64,245,0.18);">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;"><span style="font-size:11px;color:var(--dim);">Model accuracy</span><span style="font-size:22px;font-weight:900;color:var(--grn);">71.4%</span></div>
+          <div style="height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;"><div style="height:100%;width:71.4%;background:var(--grn);border-radius:3px;"></div></div>
+        </div>
+        <div class="tw-meta">Jun 16, 2026 · 8:00 AM · Weekly Scorecard</div>
+      </div>
+
+      <div class="tweet-card">
+        <div class="tw-hdr"><div class="tw-av">VA</div><div><div class="tw-name">Vaasudev Amitav</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">⚠️ TRANSPARENCY POST<br>Week 19 was bad. 54.5% accuracy. 5 stop losses in a row.<br>Why? US inflation data caused global selloff. Model wasn't wrong — market conditions changed.<br>Full log attached. 👇</div>
+        <div class="tw-inner" style="background:rgba(255,92,26,0.05);border:1px solid rgba(255,92,26,0.18);">
+          <div style="font-size:12px;color:var(--org);font-weight:700;">Week 19 · 54.5% accuracy</div>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px;">6 wins · 5 stop losses · external macro event</div>
+        </div>
+        <div class="tw-meta">May 19, 2026 · 8:00 AM · Transparency post</div>
+      </div>
+
+      <div class="tweet-card">
+        <div class="tw-hdr"><div class="tw-av">VA</div><div><div class="tw-name">Vaasudev Amitav</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">🚀 MOMENTUM ALERT — $SBIN<br>Breaking 3-week consolidation<br>Volume: 2.8× average · Del%=64<br>Entry ₹808 · Target ₹860 · SL ₹785<br>RF score: 0.76 · ADX=27 ✓</div>
+        <div class="tw-inner" style="background:rgba(0,212,160,0.05);border:1px solid rgba(0,212,160,0.18);">
+          <div style="display:flex;justify-content:space-between;"><span style="font-weight:700;">SBIN</span><span style="font-weight:900;color:var(--grn);">+5.9% ✅</span></div>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px;">Hit ₹856 · Day 2 · Jun 10</div>
+        </div>
+        <div class="tw-meta">Jun 10, 2026 · 9:42 AM · Week 23</div>
+      </div>
+
+      <div class="tweet-card">
+        <div class="tw-hdr"><div class="tw-av">VA</div><div><div class="tw-name">Vaasudev Amitav</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">🧪 PAPER TRADE UPDATE — Harshit's review<br>RSI+EMA strategy: +8.4% in 6 days on ₹1L virtual capital<br>71% win rate on 7 signals<br>Going live next week with ₹50,000 real capital!</div>
+        <div class="tw-inner" style="background:rgba(139,92,246,0.05);border:1px solid rgba(139,92,246,0.18);">
+          <div style="display:flex;justify-content:space-between;"><span style="font-weight:700;color:var(--pur);">+₹8,420 virtual</span><span style="color:var(--grn);font-weight:700;">71% win rate</span></div>
+        </div>
+        <div class="tw-meta">Jun 18, 2026 · 5:30 PM · Paper Trade</div>
+      </div>
+
+      <div class="tweet-card">
+        <div class="tw-hdr"><div class="tw-av">VA</div><div><div class="tw-name">Vaasudev Amitav</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">📈 90-DAY REPORT<br>142 signals · 71.4% accuracy<br>Avg win: +5.2% · Avg loss: -2.4%<br>Expectancy: +2.8% per trade<br><br>Compare this to any Telegram channel. We'll wait. 🙂</div>
+        <div class="tw-inner" style="background:rgba(23,64,245,0.05);border:1px solid rgba(23,64,245,0.18);">
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+            <div><div style="font-size:16px;font-weight:900;color:var(--grn);">71.4%</div><div style="font-size:10px;color:var(--dim);">Accuracy</div></div>
+            <div><div style="font-size:16px;font-weight:900;color:var(--grn);">+5.2%</div><div style="font-size:10px;color:var(--dim);">Avg win</div></div>
+            <div><div style="font-size:16px;font-weight:900;">2.2:1</div><div style="font-size:10px;color:var(--dim);">R:R ratio</div></div>
+          </div>
+        </div>
+        <div class="tw-meta">Jun 19, 2026 · 90-Day Report</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Full Signal History -->
+<section class="section" id="history">
+  <div class="wrap">
+    <div class="eyebrow" style="color:var(--grn);">Signal Archive</div>
+    <div class="section-title">Full signal history</div>
+    <p class="section-sub">Every signal, every outcome. Filter by type, sector, or result. Nothing deleted, nothing edited after posting.</p>
+
+    <div class="filter-row">
+      <button class="fchip on" onclick="filterHistory('all',this)">All (142)</button>
+      <button class="fchip buy" onclick="filterHistory('buy',this)">BUY (98)</button>
+      <button class="fchip sell" onclick="filterHistory('sell',this)">SELL (44)</button>
+      <button class="fchip win" onclick="filterHistory('win',this)">✅ Wins (101)</button>
+      <button class="fchip loss" onclick="filterHistory('loss',this)">⛔ Losses (32)</button>
+      <span style="margin-left:auto;font-size:12px;color:var(--dim);">Showing most recent 15</span>
+    </div>
+
+    <div style="border:1px solid var(--bdr);border-radius:14px;overflow:hidden;">
+      <table class="sig-table">
+        <thead><tr>
+          <th>Date</th><th>Stock</th><th>Signal</th><th>Entry</th><th>Target</th><th>SL</th><th>Exit</th><th>Return</th><th>Days</th><th>Outcome</th>
+        </tr></thead>
+        <tbody id="history-tbody">
+          <tr data-type="buy" data-out="open"><td style="color:var(--dim2);font-size:11px;">Jun 19</td><td style="font-weight:700;">RELIANCE</td><td><span class="sig-badge badge-sbuy">STRONG BUY</span></td><td>₹2,880</td><td>₹3,048</td><td>₹2,808</td><td>—</td><td class="out-open">Running</td><td>—</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,184,0,0.1);color:var(--ylw);font-weight:700;">OPEN</span></td></tr>
+          <tr data-type="buy" data-out="win"><td style="color:var(--dim2);font-size:11px;">Jun 17</td><td style="font-weight:700;">TCS</td><td><span class="sig-badge badge-buy">BUY</span></td><td>₹3,820</td><td>₹4,049</td><td>₹3,724</td><td>₹3,945</td><td class="out-win">+3.3%</td><td>2d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="sell" data-out="win"><td style="color:var(--dim2);font-size:11px;">Jun 16</td><td style="font-weight:700;">ZOMATO</td><td><span class="sig-badge badge-sell">SELL</span></td><td>₹204</td><td>₹182</td><td>₹214</td><td>₹188</td><td class="out-win">+7.8%</td><td>3d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="buy" data-out="win"><td style="color:var(--dim2);font-size:11px;">Jun 13</td><td style="font-weight:700;">SBIN</td><td><span class="sig-badge badge-buy">BUY</span></td><td>₹808</td><td>₹860</td><td>₹785</td><td>₹856</td><td class="out-win">+5.9%</td><td>2d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="buy" data-out="win"><td style="color:var(--dim2);font-size:11px;">Jun 12</td><td style="font-weight:700;">TATAMOTORS</td><td><span class="sig-badge badge-sbuy">STRONG BUY</span></td><td>₹960</td><td>₹1,040</td><td>₹930</td><td>₹1,038</td><td class="out-win">+8.1%</td><td>3d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="buy" data-out="loss"><td style="color:var(--dim2);font-size:11px;">Jun 11</td><td style="font-weight:700;">WIPRO</td><td><span class="sig-badge badge-buy">BUY</span></td><td>₹492</td><td>₹521</td><td>₹480</td><td>₹480</td><td class="out-loss">-2.4%</td><td>1d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,59,92,0.1);color:var(--red);font-weight:700;">⛔ SL</span></td></tr>
+          <tr data-type="buy" data-out="win"><td style="color:var(--dim2);font-size:11px;">Jun 10</td><td style="font-weight:700;">INFY</td><td><span class="sig-badge badge-buy">BUY</span></td><td>₹1,450</td><td>₹1,537</td><td>₹1,414</td><td>₹1,498</td><td class="out-win">+3.3%</td><td>4d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="sell" data-out="loss"><td style="color:var(--dim2);font-size:11px;">Jun 9</td><td style="font-weight:700;">HDFCBANK</td><td><span class="sig-badge badge-sell">SELL</span></td><td>₹1,590</td><td>₹1,510</td><td>₹1,630</td><td>₹1,630</td><td class="out-loss">-2.5%</td><td>1d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,59,92,0.1);color:var(--red);font-weight:700;">⛔ SL</span></td></tr>
+          <tr data-type="buy" data-out="win"><td style="color:var(--dim2);font-size:11px;">Jun 6</td><td style="font-weight:700;">ADANIENT</td><td><span class="sig-badge badge-buy">BUY</span></td><td>₹2,280</td><td>₹2,417</td><td>₹2,223</td><td>₹2,398</td><td class="out-win">+5.2%</td><td>3d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="buy" data-out="win"><td style="color:var(--dim2);font-size:11px;">Jun 5</td><td style="font-weight:700;">BAJFINANCE</td><td><span class="sig-badge badge-buy">BUY</span></td><td>₹6,740</td><td>₹7,144</td><td>₹6,571</td><td>₹7,098</td><td class="out-win">+5.3%</td><td>5d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="sell" data-out="win"><td style="color:var(--dim2);font-size:11px;">Jun 4</td><td style="font-weight:700;">PAYTM</td><td><span class="sig-badge badge-sell">SELL</span></td><td>₹330</td><td>₹294</td><td>₹348</td><td>₹298</td><td class="out-win">+9.7%</td><td>4d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="buy" data-out="loss"><td style="color:var(--dim2);font-size:11px;">Jun 3</td><td style="font-weight:700;">INDUSINDBK</td><td><span class="sig-badge badge-buy">BUY</span></td><td>₹1,080</td><td>₹1,145</td><td>₹1,053</td><td>₹1,053</td><td class="out-loss">-2.5%</td><td>1d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(255,59,92,0.1);color:var(--red);font-weight:700;">⛔ SL</span></td></tr>
+          <tr data-type="buy" data-out="win"><td style="color:var(--dim2);font-size:11px;">Jun 2</td><td style="font-weight:700;">HINDUNILVR</td><td><span class="sig-badge badge-buy">BUY</span></td><td>₹2,380</td><td>₹2,523</td><td>₹2,321</td><td>₹2,499</td><td class="out-win">+5.0%</td><td>3d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="buy" data-out="win"><td style="color:var(--dim2);font-size:11px;">May 30</td><td style="font-weight:700;">NIFTY50 ETF</td><td><span class="sig-badge badge-buy">BUY</span></td><td>₹240</td><td>₹254</td><td>₹234</td><td>₹252</td><td class="out-win">+5.0%</td><td>4d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+          <tr data-type="sell" data-out="win"><td style="color:var(--dim2);font-size:11px;">May 28</td><td style="font-weight:700;">ZOMATO</td><td><span class="sig-badge badge-sell">SELL</span></td><td>₹218</td><td>₹195</td><td>₹228</td><td>₹197</td><td class="out-win">+9.6%</td><td>2d</td><td><span style="font-size:11px;padding:2px 8px;border-radius:5px;background:rgba(0,212,160,0.1);color:var(--grn);font-weight:700;">✅ WIN</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="text-align:center;margin-top:16px;">
+      <button style="height:40px;padding:0 24px;border-radius:10px;background:transparent;border:1px solid var(--bdr);color:var(--dim);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;">Load more signals ↓</button>
+    </div>
+  </div>
+</section>
+
+<!-- CTA strip -->
+<div class="wrap">
+  <div class="cta-strip">
+    <div>
+      <h2>This is the standard.<br>Now get your own signals.</h2>
+      <p>Every user on SIGNAL gets the same ML-powered signals — backed by the same Random Forest model that generated this track record. Start free, no card needed.</p>
+    </div>
+    <div class="cta-actions">
+      <button class="btn-xl-primary" onclick="location.href='SIGNAL Sign In.html'">Start Free →</button>
+      <button class="btn-xl-ghost" onclick="location.href='SIGNAL Landing Page.html#pricing'">View Pricing</button>
+    </div>
+  </div>
+
+  <div class="disclaimer">
+    <p><strong>⚠️ SEBI DISCLAIMER:</strong> SIGNAL is <strong>NOT registered with SEBI</strong>. All signals and analysis shown on this page are for <strong>informational and educational purposes only</strong>. Past signal performance is <strong>not a guarantee of future results</strong>. Markets involve significant risk. The track record shown reflects model outputs — actual returns will vary depending on execution price, brokerage fees, slippage, and market conditions. <strong>Please consult a SEBI-registered investment advisor before making any financial decisions.</strong> You are solely responsible for all trading decisions and their outcomes.</p>
+  </div>
+</div>
+
+<footer>
+  <div class="footer-logo">SIGNAL</div>
+  <div class="footer-links">
+    <a href="SIGNAL Landing Page.html">Home</a>
+    <a href="SIGNAL ML Parameters.html">ML Parameters</a>
+    <a href="SIGNAL Sign In.html">Sign In</a>
+    <a href="#">Privacy</a>
+    <a href="#">Terms</a>
+    <a href="#">SEBI Disclaimer</a>
+  </div>
+  <div class="footer-copy">© 2026 SIGNAL · Vaasudev Amitav · NOT SEBI registered · Not financial advice</div>
+</footer>
+
+<script>
+function filterHistory(type, btn) {
+  document.querySelectorAll('.fchip').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  document.querySelectorAll('#history-tbody tr').forEach(row => {
+    const t = row.dataset.type, o = row.dataset.out;
+    const show = type === 'all' ||
+                 (type === 'buy'  && t === 'buy') ||
+                 (type === 'sell' && t === 'sell') ||
+                 (type === 'win'  && o === 'win') ||
+                 (type === 'loss' && o === 'loss');
+    row.style.display = show ? '' : 'none';
+  });
+}
+</script>
+</body>
+</html>
