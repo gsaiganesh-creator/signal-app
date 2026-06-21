@@ -50,9 +50,22 @@ export default function LandingPage() {
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:10, fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)' }}>
           <SignalLogo /> SIGNAL
         </Link>
-        <div style={{ display:'flex', alignItems:'center', gap:24, fontSize:13, fontWeight:500 }}>
-          {[['#portfolio','Portfolio'],['#signals','Signals'],['#etf-mf','ETF & MF'],['#algo','Algo Builder'],['#paper','Paper Trade'],['#pricing','Pricing']].map(([h,l]) => (
-            <a key={h} href={h} style={{ color:'var(--dim)', transition:'color 0.2s' }} onMouseOver={e=>(e.currentTarget.style.color='var(--txt)')} onMouseOut={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>
+        <div style={{ display:'flex', alignItems:'center', gap:16, fontSize:12.5, fontWeight:500, flexWrap:'wrap' }}>
+          {[
+            { h:'#portfolio', l:'Portfolio' },
+            { h:'#etf-mf',    l:'ETF & MF' },
+            { h:'#signals',   l:'Signals' },
+            { h:'#algo',      l:'Algo Builder' },
+            { h:'#paper',     l:'Paper Trade' },
+            { h:'/signals',   l:'ML Signals ↗' },
+            { h:'/track-record', l:'Track Record' },
+            { h:'/about',     l:'About' },
+            { h:'#pricing',   l:'Pricing' },
+            { h:'#download',  l:'↓ Get App', special:true },
+          ].map(({ h, l, special }) => (
+            special
+              ? <a key={h} href={h} style={{ color:'var(--grn)', fontWeight:600, transition:'color 0.2s' }}>{l}</a>
+              : <a key={h} href={h} style={{ color:'var(--dim)', transition:'color 0.2s' }} onMouseOver={e=>(e.currentTarget.style.color='var(--txt)')} onMouseOut={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>
           ))}
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:10 }}>
