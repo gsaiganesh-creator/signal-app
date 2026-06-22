@@ -1,5 +1,5 @@
 'use client';
-import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { createClient } from './supabase/client';
 
@@ -39,7 +39,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [activeId, setActiveIdState] = useState<string | null>(null);
   const [holdings, setHoldings] = useState<RawHolding[]>([]);
   const [loading, setLoading] = useState(true);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   function setActiveId(id: string) {
     setActiveIdState(id);

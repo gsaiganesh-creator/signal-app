@@ -39,7 +39,7 @@ export default function LandingPage() {
   }
 
   return (
-    <>
+    <div data-theme="dark" style={{ background:'#070D1A', color:'#FFFFFF', minHeight:'100vh' }}>
       {/* SEBI Banner */}
       <div style={{ background:'rgba(255,184,0,0.08)', borderBottom:'1px solid rgba(255,184,0,0.2)', padding:'9px 5vw', display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:10 }}>
         <span style={{ fontSize:12, color:'var(--ylw)', lineHeight:1.5 }}>⚠️ <strong>IMPORTANT DISCLAIMER:</strong> SIGNAL is <strong>NOT SEBI registered</strong>. All signals, picks, and analysis are for <strong>informational and educational purposes only</strong>. Not financial advice. Trade at your own risk.</span>
@@ -769,6 +769,6 @@ export default function LandingPage() {
           </div>
         </div>
       </footer>
-    </>
+    </div>
   );
 }
