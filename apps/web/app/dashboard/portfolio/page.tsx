@@ -80,16 +80,25 @@ function cleanSymbol(raw: string): string {
     .replace(/\.BO$/i, '');
 }
 
-function parseRows(rows: string[][]): ParsedRow[] {
-  if (!rows.length) return [];
+function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
+  if (!rows.length) return { result: [], debug: 'File is empty' };
 
   const VALID_EXCH = ['NSE','BSE','NYSE','NASDAQ'];
 
-  // Column name lists — order matters (most specific first)
-  const SYM_NAMES   = ['instrument','tradingsymbol','trading symbol','stock symbol','scrip','symbol','ticker','stock'];
-  const QTY_NAMES   = ['net qty','net quantity','qty','quantity','shares','units','total qty','total quantity'];
-  const PRICE_NAMES = ['avg. cost','avg cost','average price','average cost','avg price','vwap','average buy price','ltp at buy','buy price','purchase price','cost price'];
-  const EXCH_NAMES  = ['exchange','market','exch'];
+  // Broker coverage: Zerodha Kite/Console, Upstox, Groww, HDFC Securities,
+  // Angel One, 5paisa, ICICI Direct, Kotak, Motilal Oswal
+  const SYM_NAMES   = ['instrument','tradingsymbol','trading symbol','stock symbol','scrip name','scrip','symbol','ticker','security name','security'];
+  const QTY_NAMES   = ['net qty','net quantity','holdingqty','total qty','total quantity','free qty','qty','quantity','shares','units'];
+  const PRICE_NAMES = [
+    'avg. buy rate','avg buy rate',          // HDFC Securities
+    'avg cost price','average cost price',   // Angel One
+    'avg. cost','avg cost',                  // Zerodha Kite / Upstox
+    'average price','average cost',          // Zerodha Console / Groww
+    'avg price','avg rate','average rate',   // 5paisa / generic
+    'vwap','average buy price','ltp at buy',
+    'buy price','purchase price','cost price','cost',
+  ];
+  const EXCH_NAMES  = ['exchange','market','exch','nse/bse'];
 
   // Find header row — scan first 8 rows for any known symbol column name
   let headerIdx = -1;
@@ -126,51 +135,51 @@ function parseRows(rows: string[][]): ParsedRow[] {
           return { symbol: sym, qty, avg_price: avg, exchange };
         })
         .filter(Boolean) as ParsedRow[];
-      if (parsed.length) return parsed;
+      const hdr = `hdr@${headerIdx}:[${headers.slice(0,8).join('|')}] sym=${symIdx} qty=${qtyIdx} price=${priceIdx}`;
+      if (parsed.length) return { result: parsed, debug: hdr };
+      return { result: [], debug: `${hdr} — 0 valid data rows` };
     }
+    const hdr = `hdr@${headerIdx}:[${headers.slice(0,8).join('|')}] sym=${symIdx} qty=${qtyIdx} price=${priceIdx}`;
+    return { result: [], debug: `${hdr} — missing column` };
   }
 
-  // Fallback: SIGNAL format — skip rows where col0 looks like a header word
-  // For Console format where col1=ISIN, also try col0=sym, col3=qty, col5=price
-  const isHeaderWord = (v: string) => SYM_NAMES.concat(['isin','name','ltp','symbol','p&l']).includes(v.toLowerCase().trim());
+  // No header row detected — try fixed column positions
+  const skip = (v: string) => ['instrument','tradingsymbol','trading symbol','stock symbol','scrip','symbol','ticker','isin','name','ltp','p&l'].includes(v.toLowerCase().trim());
+  const scanned = rows.slice(0,4).map((r,i) => `row${i}:[${r.slice(0,5).join('|')}]`).join(' ');
 
-  const attempts: Array<[number, number, number]> = [
-    [0, 1, 2],   // Kite: Instrument, Qty, Avg cost
-    [0, 3, 5],   // Console: Tradingsymbol, Quantity(col3), Average price(col5)
-    [0, 3, 4],   // alternate
-  ];
-  for (const [si, qi, pi] of attempts) {
+  for (const [si, qi, pi] of [[0,1,2],[0,3,5],[0,3,4]] as [number,number,number][]) {
     const parsed = rows
-      .filter(r => r.length > Math.max(si, qi, pi) && !isHeaderWord(String(r[si])))
+      .filter(r => r.length > Math.max(si, qi, pi) && !skip(String(r[si])))
       .map(r => {
         const sym = cleanSymbol(String(r[si]));
         const qty = parseInt(String(r[qi] ?? '').replace(/,/g, ''), 10);
         const avg = parseFloat(String(r[pi] ?? '').replace(/,/g, ''));
         if (!sym || sym.length < 2 || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0) return null;
-        const rawX = String(r[si + 1] ?? '').toUpperCase();
-        const exchange: Exchange = (VALID_EXCH.includes(rawX) ? rawX : 'NSE') as Exchange;
-        return { symbol: sym, qty, avg_price: avg, exchange };
+        return { symbol: sym, qty, avg_price: avg, exchange: 'NSE' as Exchange };
       })
       .filter(Boolean) as ParsedRow[];
-    if (parsed.length >= 1) return parsed;
+    if (parsed.length >= 1) return { result: parsed, debug: `fallback[${si},${qi},${pi}]: ${parsed.length} rows` };
   }
 
-  return [];
+  return { result: [], debug: `no header found. ${scanned}` };
 }
 
-async function parseFile(file: File): Promise<ParsedRow[]> {
-  const isExcel = file.name.match(/\.xlsx?$/i);
-  if (isExcel) {
-    const buf = await file.arrayBuffer();
-    const wb = XLSX.read(buf, { type:'array' });
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const raw: string[][] = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+async function parseFile(file: File): Promise<{ result: ParsedRow[]; debug: string }> {
+  try {
+    const isExcel = file.name.match(/\.xlsx?$/i);
+    if (isExcel) {
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type:'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' }) as string[][];
+      return parseRows(raw);
+    }
+    const text = await file.text();
+    const raw = text.split('\n').map(l => l.split(',').map(c => c.replace(/^"|"$/g,'').trim()));
     return parseRows(raw);
+  } catch (e) {
+    return { result: [], debug: `parse error: ${e instanceof Error ? e.message : e}` };
   }
-  // CSV
-  const text = await file.text();
-  const raw = text.split('\n').map(l => l.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
-  return parseRows(raw);
 }
 
 const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' };
@@ -213,14 +222,14 @@ export default function PortfolioPage() {
     const file = e.target.files?.[0];
     if (!file || !activeId || !session) return;
     setSyncing(true); setUploadMsg('Parsing file…');
-    const rows = await parseFile(file);
-    if (!rows.length) {
-      setUploadMsg('❌ Could not parse. Supported: Zerodha, Upstox, Groww CSV/Excel — or SIGNAL format: SYMBOL,QTY,AVG_PRICE,EXCHANGE');
+    const { result, debug } = await parseFile(file);
+    if (!result.length) {
+      setUploadMsg(`❌ Could not parse file.\nDebug: ${debug}`);
       setSyncing(false); return;
     }
-    const insertErr = await restInsertHoldings(activeId, session.user.id, session.access_token, rows);
+    const insertErr = await restInsertHoldings(activeId, session.user.id, session.access_token, result);
     if (insertErr) { setUploadMsg(`❌ ${insertErr}`); setSyncing(false); return; }
-    setUploadMsg(`✅ ${rows.length} holdings imported — running ML analysis…`);
+    setUploadMsg(`✅ ${result.length} holdings imported — running ML analysis…`);
     await refreshContext();
     setSyncing(false);
     e.target.value = '';
