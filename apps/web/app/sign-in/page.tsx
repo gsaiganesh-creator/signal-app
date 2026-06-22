@@ -2,7 +2,6 @@
 export const dynamic = 'force-dynamic';
 import { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 export default function SignInPage() {
@@ -12,7 +11,6 @@ export default function SignInPage() {
   const [name,  setName ] = useState('');
   const [msg,   setMsg  ] = useState('');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
   const supabase = createClient();
 
   async function doOAuth(provider: 'google' | 'twitter') {
@@ -41,8 +39,8 @@ export default function SignInPage() {
       }
       setLoading(false); return;
     }
-    router.push('/dashboard');
-    router.refresh();
+    // Hard redirect so middleware sees fresh session cookie on the server
+    window.location.href = '/dashboard';
   }
 
   async function doSignUp() {
@@ -59,8 +57,7 @@ export default function SignInPage() {
     if (error) { setMsg(`❌ ${error.message}`); setLoading(false); return; }
     if (data.session) {
       // email confirmation is disabled — signed in immediately
-      router.push('/dashboard');
-      router.refresh();
+      window.location.href = '/dashboard';
       return;
     }
     // email confirmation required
