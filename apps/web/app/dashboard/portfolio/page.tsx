@@ -170,7 +170,8 @@ export default function PortfolioPage() {
       setUploadMsg('❌ Could not parse. Supported: Zerodha, Upstox, Groww CSV/Excel — or SIGNAL format: SYMBOL,QTY,AVG_PRICE,EXCHANGE');
       setSyncing(false); return;
     }
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session: s1 } } = await supabase.auth.getSession();
+    const user = s1?.user ?? null;
     if (!user) { setUploadMsg('❌ Not logged in.'); setSyncing(false); return; }
     const inserts = rows.map(r => ({ portfolio_id: activeId, user_id: user.id, symbol: r.symbol, exchange: r.exchange, qty: r.qty, avg_price: r.avg_price }));
     const { error } = await supabase.from('holdings').upsert(inserts, { onConflict: 'portfolio_id,symbol,exchange' });
@@ -186,7 +187,8 @@ export default function PortfolioPage() {
     const qty = parseInt(form.qty, 10);
     const avg = parseFloat(form.avg_price);
     if (!sym || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0 || !activeId) return;
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session: s2 } } = await supabase.auth.getSession();
+    const user = s2?.user ?? null;
     if (!user) return;
     await supabase.from('holdings').upsert([{ portfolio_id: activeId, user_id: user.id, symbol: sym, exchange: form.exchange, qty, avg_price: avg }], { onConflict: 'portfolio_id,symbol,exchange' });
     setForm({ symbol:'', qty:'', avg_price:'', exchange:'NSE' }); setAddOpen(false);
@@ -220,7 +222,8 @@ export default function PortfolioPage() {
     setUploadMsg('Parsing file…');
     const rows = await parseFile(file);
     if (!rows.length) { setUploadMsg('❌ Could not parse file. Check format below.'); setSyncing(false); return; }
-    const { data: { user } } = await supabase.auth.getUser();
+    const { data: { session: s3 } } = await supabase.auth.getSession();
+    const user = s3?.user ?? null;
     if (!user) { setUploadMsg('❌ Not logged in.'); setSyncing(false); return; }
     const inserts = rows.map(r => ({ portfolio_id: newId, user_id: user.id, symbol: r.symbol, exchange: r.exchange, qty: r.qty, avg_price: r.avg_price }));
     const { error } = await supabase.from('holdings').upsert(inserts, { onConflict: 'portfolio_id,symbol,exchange' });

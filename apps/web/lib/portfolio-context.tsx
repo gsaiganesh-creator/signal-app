@@ -59,7 +59,10 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: { user: u } } = await supabase.auth.getUser();
+      // getSession() reads from local cookie storage — no network call.
+      // getUser() makes a live server call that can fail if token is mid-refresh.
+      const { data: { session } } = await supabase.auth.getSession();
+      const u = session?.user ?? null;
       setUser(u);
       if (!u) { setLoading(false); return; }
 
@@ -96,8 +99,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   }, [activeId, prevActiveId, fetchHoldings]);
 
   async function createPortfolio(name: string): Promise<{ id: string | null; error: string | null }> {
-    // Always fetch fresh user — never rely on stale context state for auth
-    const { data: { user: freshUser } } = await supabase.auth.getUser();
+    const { data: { session } } = await supabase.auth.getSession();
+    const freshUser = session?.user ?? null;
     if (!freshUser) return { id: null, error: 'Not logged in. Please sign in again.' };
     // Upsert profile first — handles users who signed up before the trigger was deployed
     const { error: profileErr } = await supabase.from('profiles').upsert({
