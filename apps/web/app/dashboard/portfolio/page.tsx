@@ -83,52 +83,79 @@ function cleanSymbol(raw: string): string {
 function parseRows(rows: string[][]): ParsedRow[] {
   if (!rows.length) return [];
 
-  // Find the header row (first row that looks like column headers)
-  let headerIdx = 0;
+  const VALID_EXCH = ['NSE','BSE','NYSE','NASDAQ'];
+
+  // Column name lists — order matters (most specific first)
+  const SYM_NAMES   = ['instrument','tradingsymbol','trading symbol','stock symbol','scrip','symbol','ticker','stock'];
+  const QTY_NAMES   = ['net qty','net quantity','qty','quantity','shares','units','total qty','total quantity'];
+  const PRICE_NAMES = ['avg. cost','avg cost','average price','average cost','avg price','vwap','average buy price','ltp at buy','buy price','purchase price','cost price'];
+  const EXCH_NAMES  = ['exchange','market','exch'];
+
+  // Find header row — scan first 8 rows for any known symbol column name
+  let headerIdx = -1;
   let headers: string[] = [];
-  for (let i = 0; i < Math.min(rows.length, 6); i++) {
-    const r = rows[i].map(c => (c ?? '').toString().toLowerCase().trim());
-    if (r.some(c => ['instrument','symbol','trading symbol','stock symbol'].includes(c))) {
-      headerIdx = i; headers = r; break;
+  for (let i = 0; i < Math.min(rows.length, 8); i++) {
+    const r = rows[i].map(c => (c ?? '').toString().toLowerCase().replace(/ /g, ' ').trim());
+    if (r.some(h => SYM_NAMES.includes(h))) { headerIdx = i; headers = r; break; }
+  }
+
+  // Column finder: exact match then partial contains
+  const col = (names: string[]) => {
+    const exact = names.map(n => headers.indexOf(n)).find(i => i >= 0);
+    if (exact !== undefined) return exact;
+    return headers.findIndex(h => names.some(n => h === n || h.startsWith(n) || n.startsWith(h)));
+  };
+
+  if (headerIdx >= 0 && headers.length) {
+    const symIdx   = col(SYM_NAMES);
+    const qtyIdx   = col(QTY_NAMES);
+    const priceIdx = col(PRICE_NAMES);
+    const exchIdx  = col(EXCH_NAMES);
+
+    if (symIdx >= 0 && qtyIdx >= 0 && priceIdx >= 0) {
+      const parsed = rows
+        .slice(headerIdx + 1)
+        .filter(r => r.length > Math.max(symIdx, qtyIdx, priceIdx))
+        .map(r => {
+          const sym = cleanSymbol(String(r[symIdx] ?? ''));
+          const qty = parseInt(String(r[qtyIdx] ?? '0').replace(/,/g, ''), 10);
+          const avg = parseFloat(String(r[priceIdx] ?? '0').replace(/,/g, ''));
+          const rawX = exchIdx >= 0 ? String(r[exchIdx] ?? '').toUpperCase() : '';
+          const exchange: Exchange = (VALID_EXCH.includes(rawX) ? rawX : 'NSE') as Exchange;
+          if (!sym || sym.length < 2 || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0) return null;
+          return { symbol: sym, qty, avg_price: avg, exchange };
+        })
+        .filter(Boolean) as ParsedRow[];
+      if (parsed.length) return parsed;
     }
   }
-  if (!headers.length) {
-    // fallback: assume SIGNAL format (SYMBOL,QTY,AVG_PRICE,EXCHANGE)
-    return rows
-      .filter(r => r.length >= 3)
+
+  // Fallback: SIGNAL format — skip rows where col0 looks like a header word
+  // For Console format where col1=ISIN, also try col0=sym, col3=qty, col5=price
+  const isHeaderWord = (v: string) => SYM_NAMES.concat(['isin','name','ltp','symbol','p&l']).includes(v.toLowerCase().trim());
+
+  const attempts: Array<[number, number, number]> = [
+    [0, 1, 2],   // Kite: Instrument, Qty, Avg cost
+    [0, 3, 5],   // Console: Tradingsymbol, Quantity(col3), Average price(col5)
+    [0, 3, 4],   // alternate
+  ];
+  for (const [si, qi, pi] of attempts) {
+    const parsed = rows
+      .filter(r => r.length > Math.max(si, qi, pi) && !isHeaderWord(String(r[si])))
       .map(r => {
-        const sym = cleanSymbol(String(r[0]));
-        const qty = parseInt(String(r[1]), 10);
-        const avg = parseFloat(String(r[2]));
-        const exch = (String(r[3] ?? 'NSE').toUpperCase() as Exchange) || 'NSE';
-        if (!sym || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0) return null;
-        return { symbol: sym, qty, avg_price: avg, exchange: exch };
+        const sym = cleanSymbol(String(r[si]));
+        const qty = parseInt(String(r[qi] ?? '').replace(/,/g, ''), 10);
+        const avg = parseFloat(String(r[pi] ?? '').replace(/,/g, ''));
+        if (!sym || sym.length < 2 || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0) return null;
+        const rawX = String(r[si + 1] ?? '').toUpperCase();
+        const exchange: Exchange = (VALID_EXCH.includes(rawX) ? rawX : 'NSE') as Exchange;
+        return { symbol: sym, qty, avg_price: avg, exchange };
       })
       .filter(Boolean) as ParsedRow[];
+    if (parsed.length >= 1) return parsed;
   }
 
-  // Detect column indices by header name
-  const col = (names: string[]) => names.map(n => headers.indexOf(n)).find(i => i >= 0) ?? -1;
-  const symIdx  = col(['instrument','symbol','trading symbol','stock symbol','scrip']);
-  const qtyIdx  = col(['qty','quantity','shares','units']);
-  const priceIdx = col(['avg cost','avg. cost','average price','average cost','avg price','average buy price','ltp at buy']);
-  const exchIdx  = col(['exchange','market']);
-
-  if (symIdx < 0 || qtyIdx < 0 || priceIdx < 0) return [];
-
-  return rows
-    .slice(headerIdx + 1)
-    .filter(r => r.length > Math.max(symIdx, qtyIdx, priceIdx))
-    .map(r => {
-      const sym = cleanSymbol(String(r[symIdx] ?? ''));
-      const qty = parseInt(String(r[qtyIdx] ?? '0').replace(/,/g, ''), 10);
-      const avg = parseFloat(String(r[priceIdx] ?? '0').replace(/,/g, ''));
-      const rawExch = exchIdx >= 0 ? String(r[exchIdx] ?? 'NSE').toUpperCase() : 'NSE';
-      const exchange: Exchange = (['NSE','BSE','NYSE','NASDAQ'].includes(rawExch) ? rawExch : 'NSE') as Exchange;
-      if (!sym || sym.length < 2 || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0) return null;
-      return { symbol: sym, qty, avg_price: avg, exchange };
-    })
-    .filter(Boolean) as ParsedRow[];
+  return [];
 }
 
 async function parseFile(file: File): Promise<ParsedRow[]> {
