@@ -1,4 +1,5 @@
-const API = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000';
+// Always use the Next.js proxy path so this works on both localhost and Vercel
+const API = '/api/ml';
 
 export interface LiveQuote {
   ticker: string;

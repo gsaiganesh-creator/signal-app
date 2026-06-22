@@ -1,9 +1,11 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import * as XLSX from 'xlsx';
 import { createClient } from '@/lib/supabase/client';
 import { fetchQuote } from '@/lib/api';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
+import type { MlClass } from '@/lib/supabase/types';
 
 type Exchange = 'NSE' | 'BSE' | 'NYSE' | 'NASDAQ';
 
@@ -15,29 +17,107 @@ interface Holding extends RawHolding {
   pl?: number;
   pl_pct?: number;
   exchange: Exchange;
+  ml_class?: MlClass;
 }
 
-function classify(signal: string, rsi: number | null, plPct: number) {
+type MLBucket = { label: string; key: MlClass; color: string; bg: string; border: string; desc: string };
+
+const BUCKET_META: Record<MlClass, MLBucket> = {
+  Momentum:   { key:'Momentum',   label:'🚀 Momentum',  color:'var(--grn)',  bg:'rgba(0,212,160,0.10)', border:'rgba(0,212,160,0.25)',  desc:'Strong trend — ride or add more' },
+  Swing:      { key:'Swing',      label:'🔄 Swing',     color:'var(--bluL)', bg:'rgba(23,64,245,0.10)', border:'rgba(23,64,245,0.25)',  desc:'Short-term opportunity — good entry' },
+  Accumulate: { key:'Accumulate', label:'📦 Accumulate',color:'var(--pur)',  bg:'rgba(139,92,246,0.10)',border:'rgba(139,92,246,0.25)', desc:'Oversold + quality — good to add SIPs' },
+  Hold:       { key:'Hold',       label:'🏛️ Hold',      color:'var(--txt)',  bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.1)', desc:'Long-term winner — hold, no action' },
+  Exit:       { key:'Exit',       label:'⚠️ Exit',      color:'var(--red)',  bg:'rgba(255,59,92,0.10)', border:'rgba(255,59,92,0.25)',  desc:'Sell signal — exit or trail SL' },
+  Dead:       { key:'Dead',       label:'💀 Dead',       color:'var(--dim)',  bg:'rgba(100,100,100,0.08)',border:'rgba(100,100,100,0.2)', desc:'Stuck in loss, no signal — review' },
+  Watch:      { key:'Watch',      label:'⏳ Watch',      color:'var(--ylw)',  bg:'rgba(255,184,0,0.08)', border:'rgba(255,184,0,0.2)',   desc:'Neutral zone — monitor before acting' },
+};
+
+function classify(signal: string, rsi: number | null, plPct: number): MlClass {
   const r = rsi ?? 50;
-  if (signal === 'STRONG_BUY' || (signal === 'BUY' && r < 50))
-    return { label:'🚀 Momentum', color:'var(--grn)', bg:'rgba(0,212,160,0.1)' };
-  if (signal === 'BUY' && r < 62)
-    return { label:'🔄 Swingable', color:'var(--bluL)', bg:'rgba(23,64,245,0.1)' };
-  if (plPct > 20 && signal !== 'SELL' && signal !== 'STRONG_SELL')
-    return { label:'🏛️ Long Term', color:'var(--pur)', bg:'rgba(139,92,246,0.1)' };
-  if (signal === 'SELL' || signal === 'STRONG_SELL' || r > 70)
-    return { label:'⚠️ Exit Now', color:'var(--red)', bg:'rgba(255,59,92,0.1)' };
-  return { label:'⏳ Watch', color:'var(--ylw)', bg:'rgba(255,184,0,0.1)' };
+  if (signal === 'STRONG_BUY') return 'Momentum';
+  if (signal === 'BUY' && r < 44) return 'Accumulate';
+  if (signal === 'BUY' && r <= 62) return 'Swing';
+  if (signal === 'BUY') return 'Momentum';
+  if (signal === 'STRONG_SELL' || signal === 'SELL') return 'Exit';
+  if (r > 70 && plPct < 0) return 'Exit';
+  if (plPct > 15 && signal === 'HOLD') return 'Hold';
+  if (plPct < -15 && signal === 'HOLD') return 'Dead';
+  return 'Watch';
 }
 
-function parseCSV(text: string): Array<{ symbol: string; qty: number; avg_price: number; exchange: Exchange }> {
-  return text.split('\n').map(l => l.trim()).filter(l => l && !l.toLowerCase().startsWith('symbol'))
-    .map(l => {
-      const [sym, qty, price, exch] = l.split(',').map(s => s.trim().toUpperCase());
-      const q = parseInt(qty, 10); const p = parseFloat(price);
-      if (!sym || isNaN(q) || isNaN(p) || q <= 0 || p <= 0) return null;
-      return { symbol: sym, qty: q, avg_price: p, exchange: (exch as Exchange) || 'NSE' };
-    }).filter(Boolean) as Array<{ symbol: string; qty: number; avg_price: number; exchange: Exchange }>;
+type ParsedRow = { symbol: string; qty: number; avg_price: number; exchange: Exchange };
+
+function cleanSymbol(raw: string): string {
+  return raw.trim().toUpperCase()
+    .replace(/-EQ$/i, '')     // Upstox suffix
+    .replace(/\.NS$/i, '')    // already has suffix
+    .replace(/\.BO$/i, '');
+}
+
+function parseRows(rows: string[][]): ParsedRow[] {
+  if (!rows.length) return [];
+
+  // Find the header row (first row that looks like column headers)
+  let headerIdx = 0;
+  let headers: string[] = [];
+  for (let i = 0; i < Math.min(rows.length, 6); i++) {
+    const r = rows[i].map(c => (c ?? '').toString().toLowerCase().trim());
+    if (r.some(c => ['instrument','symbol','trading symbol','stock symbol'].includes(c))) {
+      headerIdx = i; headers = r; break;
+    }
+  }
+  if (!headers.length) {
+    // fallback: assume SIGNAL format (SYMBOL,QTY,AVG_PRICE,EXCHANGE)
+    return rows
+      .filter(r => r.length >= 3)
+      .map(r => {
+        const sym = cleanSymbol(String(r[0]));
+        const qty = parseInt(String(r[1]), 10);
+        const avg = parseFloat(String(r[2]));
+        const exch = (String(r[3] ?? 'NSE').toUpperCase() as Exchange) || 'NSE';
+        if (!sym || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0) return null;
+        return { symbol: sym, qty, avg_price: avg, exchange: exch };
+      })
+      .filter(Boolean) as ParsedRow[];
+  }
+
+  // Detect column indices by header name
+  const col = (names: string[]) => names.map(n => headers.indexOf(n)).find(i => i >= 0) ?? -1;
+  const symIdx  = col(['instrument','symbol','trading symbol','stock symbol','scrip']);
+  const qtyIdx  = col(['qty','quantity','shares','units']);
+  const priceIdx = col(['avg cost','avg. cost','average price','average cost','avg price','average buy price','ltp at buy']);
+  const exchIdx  = col(['exchange','market']);
+
+  if (symIdx < 0 || qtyIdx < 0 || priceIdx < 0) return [];
+
+  return rows
+    .slice(headerIdx + 1)
+    .filter(r => r.length > Math.max(symIdx, qtyIdx, priceIdx))
+    .map(r => {
+      const sym = cleanSymbol(String(r[symIdx] ?? ''));
+      const qty = parseInt(String(r[qtyIdx] ?? '0').replace(/,/g, ''), 10);
+      const avg = parseFloat(String(r[priceIdx] ?? '0').replace(/,/g, ''));
+      const rawExch = exchIdx >= 0 ? String(r[exchIdx] ?? 'NSE').toUpperCase() : 'NSE';
+      const exchange: Exchange = (['NSE','BSE','NYSE','NASDAQ'].includes(rawExch) ? rawExch : 'NSE') as Exchange;
+      if (!sym || sym.length < 2 || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0) return null;
+      return { symbol: sym, qty, avg_price: avg, exchange };
+    })
+    .filter(Boolean) as ParsedRow[];
+}
+
+async function parseFile(file: File): Promise<ParsedRow[]> {
+  const isExcel = file.name.match(/\.xlsx?$/i);
+  if (isExcel) {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, { type:'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const raw: string[][] = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' });
+    return parseRows(raw);
+  }
+  // CSV
+  const text = await file.text();
+  const raw = text.split('\n').map(l => l.split(',').map(c => c.replace(/^"|"$/g, '').trim()));
+  return parseRows(raw);
 }
 
 const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' };
@@ -55,7 +135,8 @@ export default function PortfolioPage() {
   const [creatingPortfolio, setCreatingPortfolio] = useState(false);
   const [showNewPortfolio, setShowNewPortfolio] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const supabase = createClient();
+  const supabaseRef = useRef(createClient());
+  const supabase = supabaseRef.current;
 
   async function enrichHoldings(raw: RawHolding[]) {
     if (!raw.length) { setHoldings([]); setLoading(false); return; }
@@ -66,27 +147,38 @@ export default function PortfolioPage() {
       const cur = q?.current_price ?? null;
       const pl = cur != null ? (cur - h.avg_price) * h.qty : undefined;
       const pl_pct = cur != null ? ((cur - h.avg_price) / h.avg_price) * 100 : 0;
-      return { ...h, current_price: cur, change_pct: q?.change_pct ?? null, signal: q?.signal ?? 'HOLD', rsi: q?.rsi ?? null, pl, pl_pct, exchange: h.exchange as Exchange } as Holding;
+      const signal = q?.signal ?? 'HOLD';
+      const ml_class = classify(signal, q?.rsi ?? null, pl_pct);
+      return { ...h, current_price: cur, change_pct: q?.change_pct ?? null, signal, rsi: q?.rsi ?? null, pl, pl_pct, exchange: h.exchange as Exchange, ml_class } as Holding;
     }));
     setHoldings(enriched);
     setLoading(false);
+    // Persist ml_class back to Supabase
+    await Promise.all(enriched.map(h =>
+      (h.id && h.ml_class) ? supabase.from('holdings').update({ ml_class: h.ml_class }).eq('id', h.id) : Promise.resolve()
+    ));
   }
 
   useEffect(() => { enrichHoldings(rawHoldings); }, [rawHoldings]);
 
-  async function handleCSV(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !activeId) return;
-    setSyncing(true); setUploadMsg('');
-    const text = await file.text();
-    const rows = parseCSV(text);
-    if (!rows.length) { setUploadMsg('❌ No valid rows. Format: SYMBOL,QTY,AVG_PRICE,EXCHANGE'); setSyncing(false); return; }
+    setSyncing(true); setUploadMsg('Parsing file…');
+    const rows = await parseFile(file);
+    if (!rows.length) {
+      setUploadMsg('❌ Could not parse. Supported: Zerodha, Upstox, Groww CSV/Excel — or SIGNAL format: SYMBOL,QTY,AVG_PRICE,EXCHANGE');
+      setSyncing(false); return;
+    }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setUploadMsg('❌ Not logged in.'); setSyncing(false); return; }
     const inserts = rows.map(r => ({ portfolio_id: activeId, user_id: user.id, symbol: r.symbol, exchange: r.exchange, qty: r.qty, avg_price: r.avg_price }));
     const { error } = await supabase.from('holdings').upsert(inserts, { onConflict: 'portfolio_id,symbol,exchange' });
-    if (error) { setUploadMsg(`❌ ${error.message}`); } else { setUploadMsg(`✅ ${rows.length} holdings imported`); await refreshContext(); }
-    setSyncing(false); e.target.value = '';
+    if (error) { setUploadMsg(`❌ ${error.message}`); setSyncing(false); return; }
+    setUploadMsg(`✅ ${rows.length} holdings imported — running ML analysis…`);
+    await refreshContext();
+    setSyncing(false);
+    e.target.value = '';
   }
 
   async function handleAdd() {
@@ -258,7 +350,7 @@ export default function PortfolioPage() {
             style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: syncing ? 0.6 : 1 }}>
             {syncing ? '⏳ Importing…' : '📤 Import CSV'}
           </button>
-          <input ref={fileRef} type="file" accept=".csv,.txt" style={{ display:'none' }} onChange={handleCSV}/>
+          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.txt" style={{ display:'none' }} onChange={handleFile}/>
           <button onClick={() => setAddOpen(o => !o)} disabled={!activeId}
             style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
             + Add Stock
@@ -331,19 +423,40 @@ export default function PortfolioPage() {
       )}
 
       {holdings.length > 0 && (
-        <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>
-          {[
-            { label:'Total Invested', val:`₹${totalInvested.toLocaleString('en-IN', { maximumFractionDigits:0 })}` },
-            { label:'Current Value',  val:`₹${totalCurrent.toLocaleString('en-IN', { maximumFractionDigits:0 })}` },
-            { label:'Total P&L', val:fmt(totalPL), sub:fmtPct(totalPLPct), valC: totalPL >= 0 ? 'var(--grn)' : 'var(--red)', subC: totalPL >= 0 ? 'var(--grn)' : 'var(--red)' },
-          ].map(m => (
-            <div key={m.label} style={card}>
-              <div style={{ fontSize:11, fontWeight:600, color:'var(--dim)', marginBottom:6 }}>{m.label}</div>
-              <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:(m as { valC?: string }).valC ?? 'var(--txt)' }}>{m.val}</div>
-              {(m as { sub?: string }).sub && <div style={{ fontSize:13, fontWeight:700, color:(m as { subC?: string }).subC, marginTop:3 }}>{(m as { sub?: string }).sub}</div>}
+        <>
+          <div className="g3" style={{ display:'grid', gap:12, marginBottom:16 }}>
+            {[
+              { label:'Total Invested', val:`₹${totalInvested.toLocaleString('en-IN', { maximumFractionDigits:0 })}` },
+              { label:'Current Value',  val:`₹${totalCurrent.toLocaleString('en-IN', { maximumFractionDigits:0 })}` },
+              { label:'Total P&L', val:fmt(totalPL), sub:fmtPct(totalPLPct), valC: totalPL >= 0 ? 'var(--grn)' : 'var(--red)', subC: totalPL >= 0 ? 'var(--grn)' : 'var(--red)' },
+            ].map(m => (
+              <div key={m.label} style={card}>
+                <div style={{ fontSize:11, fontWeight:600, color:'var(--dim)', marginBottom:6 }}>{m.label}</div>
+                <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:(m as { valC?: string }).valC ?? 'var(--txt)' }}>{m.val}</div>
+                {(m as { sub?: string }).sub && <div style={{ fontSize:13, fontWeight:700, color:(m as { subC?: string }).subC, marginTop:3 }}>{(m as { sub?: string }).sub}</div>}
+              </div>
+            ))}
+          </div>
+
+          {/* ML Bucket breakdown */}
+          <div style={{ marginBottom:20 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>ML Classification Breakdown</div>
+            <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+              {(Object.keys(BUCKET_META) as MlClass[]).map(key => {
+                const count = holdings.filter(h => (h.ml_class ?? classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0)) === key).length;
+                if (count === 0) return null;
+                const meta = BUCKET_META[key];
+                return (
+                  <div key={key} style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:30, background:meta.bg, border:`1px solid ${meta.border}` }}>
+                    <span style={{ fontSize:13, fontWeight:800, color:meta.color }}>{meta.label}</span>
+                    <span style={{ fontSize:15, fontWeight:900, color:meta.color }}>{count}</span>
+                    <span style={{ fontSize:10, color:'var(--dim)', maxWidth:120 }}>{meta.desc}</span>
+                  </div>
+                );
+              })}
             </div>
-          ))}
-        </div>
+          </div>
+        </>
       )}
 
       <div style={card}>
@@ -377,7 +490,8 @@ export default function PortfolioPage() {
               </thead>
               <tbody>
                 {holdings.map(h => {
-                  const cls = classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
+                  const clsKey = classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
+                  const cls = BUCKET_META[clsKey];
                   const plPos = (h.pl ?? 0) >= 0;
                   return (
                     <tr key={h.id}>

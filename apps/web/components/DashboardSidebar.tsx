@@ -8,7 +8,7 @@ interface NavSection { section: string; links: NavLink[]; }
 const SIDEBAR: NavSection[] = [
   { section:'Main', links:[
     { href:'/dashboard',                  icon:'📊', label:'Dashboard'        },
-    { href:'/dashboard/signals',          icon:'📈', label:'Live Signals',    badge:'3' },
+    { href:'/dashboard/signals',          icon:'📈', label:'Live Signals' },
     { href:'/dashboard/portfolio',        icon:'💼', label:'My Portfolio'     },
     { href:'/dashboard/etf-mf',           icon:'🏦', label:'ETF & MF'        },
   ]},
