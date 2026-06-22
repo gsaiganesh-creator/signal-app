@@ -348,7 +348,7 @@ export default function PortfolioPage() {
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={() => fileRef.current?.click()} disabled={syncing || !activeId}
             style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: syncing ? 0.6 : 1 }}>
-            {syncing ? '⏳ Importing…' : '📤 Import CSV'}
+            {syncing ? '⏳ Importing…' : '📤 Upload (CSV / Excel)'}
           </button>
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.txt" style={{ display:'none' }} onChange={handleFile}/>
           <button onClick={() => setAddOpen(o => !o)} disabled={!activeId}
@@ -466,16 +466,34 @@ export default function PortfolioPage() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign:'center', padding:'40px 0', color:'var(--dim)', fontSize:14 }}>Loading holdings…</div>
+          <div style={{ textAlign:'center', padding:'40px 0', color:'var(--dim)', fontSize:14 }}>⏳ Running ML analysis on your holdings…</div>
         ) : holdings.length === 0 ? (
-          <div style={{ textAlign:'center', padding:'48px 0' }}>
-            <div style={{ fontSize:32, marginBottom:12 }}>📂</div>
-            <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No holdings in {activePortfolio?.name}</div>
-            <div style={{ fontSize:13, color:'var(--dim)', marginBottom:20 }}>Import a CSV or add stocks manually.</div>
-            <div style={{ fontSize:12, color:'var(--dim2)', background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:10, padding:'12px 16px', display:'inline-block', textAlign:'left' }}>
-              <strong style={{ color:'var(--dim)' }}>CSV format:</strong><br/>
-              <code style={{ color:'var(--bluL)' }}>SYMBOL,QUANTITY,AVG_PRICE,EXCHANGE</code><br/>
-              <code style={{ color:'var(--dim)' }}>RELIANCE,50,2800,NSE</code>
+          <div style={{ textAlign:'center', padding:'40px 0' }}>
+            <div style={{ fontSize:40, marginBottom:16 }}>📂</div>
+            <div style={{ fontSize:17, fontWeight:800, marginBottom:6 }}>No holdings in {activePortfolio?.name}</div>
+            <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Upload your broker export — Zerodha, Upstox, Groww, or any CSV/Excel.</div>
+
+            {/* Big upload button inside the empty state */}
+            <button onClick={() => fileRef.current?.click()} disabled={syncing}
+              style={{ height:48, padding:'0 32px', borderRadius:12, background:'var(--blu)', border:'none', color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:16, display:'inline-flex', alignItems:'center', gap:10 }}>
+              {syncing ? '⏳ Importing…' : '📤 Upload Holdings (CSV / Excel)'}
+            </button>
+            <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>or use <strong style={{ color:'var(--txt)' }}>+ Add Stock</strong> above to add manually</div>
+
+            <div style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:12, padding:'16px 20px', display:'inline-block', textAlign:'left', maxWidth:420 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:10 }}>Supported formats</div>
+              {[
+                ['Zerodha Kite', 'Download Holdings → Export CSV'],
+                ['Zerodha Console', 'Reports → Holdings → Download'],
+                ['Upstox', 'Portfolio → Holdings → Download CSV'],
+                ['Groww', 'Portfolio → Download statement'],
+                ['SIGNAL CSV', 'SYMBOL, QTY, AVG_PRICE, EXCHANGE'],
+              ].map(([broker, hint]) => (
+                <div key={broker} style={{ display:'flex', gap:8, marginBottom:7, fontSize:12 }}>
+                  <span style={{ color:'var(--grn)', fontWeight:700, minWidth:90 }}>{broker}</span>
+                  <span style={{ color:'var(--dim)' }}>{hint}</span>
+                </div>
+              ))}
             </div>
           </div>
         ) : (
