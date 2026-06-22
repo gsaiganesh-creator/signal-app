@@ -45,12 +45,12 @@ export default function LandingPage() {
         <span style={{ fontSize:12, color:'var(--ylw)', lineHeight:1.5 }}>⚠️ <strong>IMPORTANT DISCLAIMER:</strong> SIGNAL is <strong>NOT SEBI registered</strong>. All signals, picks, and analysis are for <strong>informational and educational purposes only</strong>. Not financial advice. Trade at your own risk.</span>
       </div>
 
-      {/* Nav */}
-      <nav style={{ position:'sticky', top:0, zIndex:100, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 clamp(16px,5vw,80px)', height:62, background:'rgba(7,13,26,0.92)', backdropFilter:'blur(20px)', borderBottom:'1px solid var(--bdr)' }}>
-        <Link href="/" style={{ display:'flex', alignItems:'center', gap:10, fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)' }}>
+      {/* Nav — always dark bg, always white text */}
+      <nav style={{ position:'sticky', top:0, zIndex:100, display:'flex', alignItems:'center', gap:0, padding:'0 clamp(16px,4vw,60px)', height:62, background:'rgba(7,13,26,0.95)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+        <Link href="/" style={{ display:'flex', alignItems:'center', gap:9, fontSize:19, fontWeight:900, letterSpacing:-0.5, color:'#fff', flexShrink:0, marginRight:24 }}>
           <SignalLogo /> SIGNAL
         </Link>
-        <div className="dash-topnav-links" style={{ gap:14, fontSize:12.5, fontWeight:500 }}>
+        <div className="dash-topnav-links" style={{ gap:10, fontSize:12, fontWeight:500 }}>
           {[
             { h:'#portfolio',    l:'Portfolio' },
             { h:'#etf-mf',       l:'ETF & MF' },
@@ -63,14 +63,14 @@ export default function LandingPage() {
             { h:'#download',     l:'↓ Get App', special:true },
           ].map(({ h, l, special }) => (
             special
-              ? <a key={h} href={h} style={{ color:'var(--grn)', fontWeight:600, transition:'color 0.2s', whiteSpace:'nowrap' }}>{l}</a>
-              : <a key={h} href={h} style={{ color:'var(--dim)', transition:'color 0.2s', whiteSpace:'nowrap' }} onMouseOver={e=>(e.currentTarget.style.color='var(--txt)')} onMouseOut={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>
+              ? <a key={h} href={h} style={{ color:'var(--grn)', fontWeight:600, transition:'color 0.15s', whiteSpace:'nowrap', padding:'0 6px' }}>{l}</a>
+              : <a key={h} href={h} style={{ color:'rgba(255,255,255,0.55)', transition:'color 0.15s', whiteSpace:'nowrap', padding:'0 6px' }} onMouseOver={e=>(e.currentTarget.style.color='#fff')} onMouseOut={e=>(e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{l}</a>
           ))}
         </div>
-        <div className="dash-right">
-          <ThemeToggle />
-          <Link href="/sign-in" style={{ height:36, padding:'0 16px', borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', flexShrink:0 }}>Sign In</Link>
-          <Link href="/sign-in" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', flexShrink:0 }}>Get Started Free →</Link>
+        <div className="dash-right" style={{ marginLeft:16 }}>
+          <ThemeToggle style={{ background:'rgba(255,255,255,0.08)', borderColor:'rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.7)' }} />
+          <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.18)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', flexShrink:0, whiteSpace:'nowrap' }}>Sign In</Link>
+          <Link href="/sign-in" style={{ height:34, padding:'0 16px', borderRadius:8, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', flexShrink:0, whiteSpace:'nowrap' }}>Get Started →</Link>
         </div>
       </nav>
 
