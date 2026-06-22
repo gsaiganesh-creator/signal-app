@@ -2,22 +2,16 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { createClient } from './supabase/client';
-import { serverCreatePortfolio } from '@/app/dashboard/portfolio/actions';
+import {
+  serverGetPortfolios,
+  serverGetHoldings,
+  serverCreatePortfolio,
+  type ServerPortfolio,
+  type ServerHolding,
+} from '@/app/dashboard/portfolio/actions';
 
-export interface Portfolio {
-  id: string;
-  name: string;
-  broker: string | null;
-  created_at: string;
-}
-
-export interface RawHolding {
-  id: string;
-  symbol: string;
-  exchange: string;
-  qty: number;
-  avg_price: number;
-}
+export type Portfolio = ServerPortfolio;
+export type RawHolding = ServerHolding;
 
 interface PortfolioCtx {
   user: User | null;
@@ -40,6 +34,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [activeId, setActiveIdState] = useState<string | null>(null);
   const [holdings, setHoldings] = useState<RawHolding[]>([]);
   const [loading, setLoading] = useState(true);
+  // Browser client only used for auth state — all data fetching via server actions
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -49,21 +44,12 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   }
 
   const fetchHoldings = useCallback(async (portfolioId: string) => {
-    const { data } = await supabase
-      .from('holdings')
-      .select('id, symbol, exchange, qty, avg_price')
-      .eq('portfolio_id', portfolioId)
-      .order('symbol');
-    setHoldings(data ?? []);
-  }, [supabase]);
+    const data = await serverGetHoldings(portfolioId);
+    setHoldings(data);
+  }, []);
 
-  const fetchPortfolios = useCallback(async (uid: string) => {
-    const { data: ps } = await supabase
-      .from('portfolios')
-      .select('id, name, broker, created_at')
-      .eq('user_id', uid)
-      .order('created_at');
-    const pList = ps ?? [];
+  const fetchPortfolios = useCallback(async () => {
+    const pList = await serverGetPortfolios();
     setPortfolios(pList);
     const stored = typeof window !== 'undefined' ? localStorage.getItem('signal_active_portfolio') : null;
     const aid = (stored && pList.find(p => p.id === stored)) ? stored : (pList[0]?.id ?? null);
@@ -71,24 +57,20 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setActiveIdState(aid);
     if (aid) await fetchHoldings(aid);
     else setHoldings([]);
-  }, [supabase, fetchHoldings]);
+  }, [fetchHoldings]);
 
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const u = session?.user ?? null;
-      if (u) await fetchPortfolios(u.id);
-      else { setPortfolios([]); setHoldings([]); }
+      await fetchPortfolios();
     } catch (err) {
       console.error('[portfolio-context] refresh error:', err);
     } finally {
       setLoading(false);
     }
-  }, [supabase, fetchPortfolios]);
+  }, [fetchPortfolios]);
 
-  // onAuthStateChange is the correct Supabase pattern for client components.
-  // It fires immediately with the current session on mount, then on every change.
+  // Track auth state via onAuthStateChange — fires immediately with current session
   useEffect(() => {
     setLoading(true);
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -96,7 +78,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         const u = session?.user ?? null;
         setUser(u);
         if (u) {
-          await fetchPortfolios(u.id);
+          await fetchPortfolios();
         } else {
           setPortfolios([]);
           setHoldings([]);
@@ -107,7 +89,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [supabase, fetchPortfolios]);
 
-  // Re-fetch holdings when user switches active portfolio
+  // Re-fetch holdings when user switches portfolio
   const [prevActiveId, setPrevActiveId] = useState<string | null>(null);
   useEffect(() => {
     if (activeId && activeId !== prevActiveId) {
@@ -117,10 +99,11 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   }, [activeId, prevActiveId, fetchHoldings]);
 
   async function createPortfolio(name: string): Promise<{ id: string | null; error: string | null }> {
-    // Server action: createServerClient reads auth from middleware cookies — always reliable
-    const result = await serverCreatePortfolio(name);
+    if (!name.trim()) return { id: null, error: 'Portfolio name is required.' };
+    const result = await serverCreatePortfolio(name.trim());
     if (result.id) {
-      await refresh();
+      // Reload portfolio list via server action (no browser client auth needed)
+      await fetchPortfolios();
       setActiveId(result.id);
     }
     return result;

@@ -1,13 +1,48 @@
 'use server';
 import { createClient } from '@/lib/supabase/server';
 
+async function getAuthenticatedSupabase() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  return { supabase, user };
+}
+
+export interface ServerPortfolio {
+  id: string; name: string; broker: string | null; created_at: string;
+}
+export interface ServerHolding {
+  id: string; symbol: string; exchange: string; qty: number; avg_price: number;
+}
+
+export async function serverGetPortfolios(): Promise<ServerPortfolio[]> {
+  const { supabase, user } = await getAuthenticatedSupabase();
+  if (!user) return [];
+  const { data } = await supabase
+    .from('portfolios')
+    .select('id, name, broker, created_at')
+    .eq('user_id', user.id)
+    .order('created_at');
+  return (data ?? []) as ServerPortfolio[];
+}
+
+export async function serverGetHoldings(portfolioId: string): Promise<ServerHolding[]> {
+  const { supabase, user } = await getAuthenticatedSupabase();
+  if (!user) return [];
+  const { data } = await supabase
+    .from('holdings')
+    .select('id, symbol, exchange, qty, avg_price')
+    .eq('portfolio_id', portfolioId)
+    .order('symbol');
+  return (data ?? []) as ServerHolding[];
+}
+
 export async function serverCreatePortfolio(
   name: string
 ): Promise<{ id: string | null; error: string | null }> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthenticatedSupabase();
   if (!user) return { id: null, error: 'Not logged in. Please sign in again.' };
 
+  // Ensure profile row exists (users who signed up before trigger)
   await supabase.from('profiles').upsert({
     id: user.id,
     email: user.email ?? null,
@@ -32,8 +67,7 @@ export async function serverInsertHoldings(
   portfolioId: string,
   rows: Array<{ symbol: string; exchange: string; qty: number; avg_price: number }>
 ): Promise<{ error: string | null }> {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const { supabase, user } = await getAuthenticatedSupabase();
   if (!user) return { error: 'Not logged in. Please sign in again.' };
 
   const inserts = rows.map(r => ({
