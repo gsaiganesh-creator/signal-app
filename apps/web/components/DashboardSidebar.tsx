@@ -4,27 +4,27 @@ import { usePathname } from 'next/navigation';
 
 const SIDEBAR = [
   { section:'Main', links:[
-    { href:'/dashboard',           icon:'📊', label:'Dashboard'    },
-    { href:'/signals',             icon:'📈', label:'Live Signals', badge:'3' },
-    { href:'/dashboard/portfolio', icon:'💼', label:'My Portfolio'  },
-    { href:'/dashboard/etf-mf',    icon:'🏦', label:'ETF & MF'     },
+    { href:'/dashboard',                  icon:'📊', label:'Dashboard'        },
+    { href:'/dashboard/signals',          icon:'📈', label:'Live Signals',    badge:'3' },
+    { href:'/dashboard/portfolio',        icon:'💼', label:'My Portfolio'     },
+    { href:'/dashboard/etf-mf',           icon:'🏦', label:'ETF & MF'        },
   ]},
   { section:'Tools', links:[
-    { href:'/algo-builder',        icon:'⚙️', label:'Algo Builder'  },
-    { href:'/paper-trading',       icon:'🧪', label:'Paper Trading' },
-    { href:'/dashboard/backtest',  icon:'📋', label:'Backtest'      },
+    { href:'/dashboard/algo-builder',     icon:'⚙️', label:'Algo Builder'    },
+    { href:'/paper-trading',              icon:'🧪', label:'Paper Trading'   },
+    { href:'/dashboard/backtest',         icon:'📋', label:'Backtest'        },
   ]},
   { section:'Insights', links:[
-    { href:'/dashboard/sectors',   icon:'🔥', label:'Sector Heatmap'    },
-    { href:'/dashboard/fii-dii',   icon:'🌍', label:'FII / DII Flow'    },
-    { href:'/dashboard/feed',      icon:'𝕏',  label:'Twitter Feed'      },
-    { href:'/dashboard/earnings',  icon:'📅', label:'Earnings Calendar' },
+    { href:'/dashboard/sectors',          icon:'🔥', label:'Sector Heatmap'  },
+    { href:'/dashboard/fii-dii',          icon:'🌍', label:'FII / DII Flow'  },
+    { href:'/dashboard/feed',             icon:'𝕏',  label:'Twitter Feed'    },
+    { href:'/dashboard/earnings',         icon:'📅', label:'Earnings'        },
   ]},
   { section:'Account', links:[
-    { href:'/dashboard/upgrade',   icon:'⚡', label:'Upgrade Plan'   },
-    { href:'/dashboard/brokers',   icon:'🔗', label:'Connect Broker' },
-    { href:'/dashboard/refer',     icon:'🎁', label:'Refer & Earn'   },
-    { href:'/sign-out',            icon:'🚪', label:'Sign Out'       },
+    { href:'/dashboard/upgrade',          icon:'⚡', label:'Upgrade Plan'    },
+    { href:'/dashboard/brokers',          icon:'🔗', label:'Connect Broker'  },
+    { href:'/dashboard/refer',            icon:'🎁', label:'Refer & Earn'    },
+    { href:'/sign-out',                   icon:'🚪', label:'Sign Out'        },
   ]},
 ];
 

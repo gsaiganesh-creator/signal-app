@@ -148,10 +148,36 @@ export default function PortfolioPage() {
 
   return (
     <>
+      {/* Hero banner */}
+      <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.07),rgba(0,212,160,0.04))', border:'1px solid rgba(23,64,245,0.15)', borderRadius:16, padding:'20px 24px', marginBottom:20, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16 }}>
+        <div>
+          <div style={{ fontSize:20, fontWeight:800, letterSpacing:-0.4 }}>My Portfolios</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginTop:4, lineHeight:1.6, maxWidth:560 }}>
+            Upload your holdings once — SIGNAL tracks live P&L, runs ML classification (Momentum / Swing / Long-Term / Exit Now) and fires BUY/SELL signals for every stock you own.
+          </div>
+          <div style={{ display:'flex', gap:16, marginTop:12, flexWrap:'wrap' }}>
+            {[
+              { icon:'🤖', t:'ML Classified', d:'Every stock auto-bucketed' },
+              { icon:'📊', t:'Live P&L', d:'Prices from SIGNAL API' },
+              { icon:'🔔', t:'Signal Alerts', d:'BUY/SELL on your holdings' },
+            ].map(f => (
+              <div key={f.t} style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <span style={{ fontSize:16 }}>{f.icon}</span>
+                <div>
+                  <div style={{ fontSize:12, fontWeight:700 }}>{f.t}</div>
+                  <div style={{ fontSize:11, color:'var(--dim)' }}>{f.d}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div style={{ fontSize:32, opacity:0.15, flexShrink:0 }}>📈</div>
+      </div>
+
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div>
-          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>My Portfolios</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>ML-classified holdings · Live prices via SIGNAL API</div>
+          <div style={{ fontSize:15, fontWeight:700 }}>Holdings</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginTop:2 }}>ML-classified · Live prices via SIGNAL API</div>
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={() => fileRef.current?.click()} disabled={syncing || !activeId}

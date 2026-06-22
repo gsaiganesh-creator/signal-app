@@ -97,9 +97,9 @@ export default function ReferPage() {
               <div key={t.refs} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', position:'relative', zIndex:1 }}>
                 <div style={{ borderRadius:'8px 8px 0 0', width:52, height:t.height, background:barBg, border: !achieved ? `1px dashed ${['rgba(255,184,0,0.4)','rgba(255,92,26,0.3)','rgba(139,92,246,0.4)'][i-3] ?? 'transparent'}` : 'none', position:'relative' }}>
                   {i === 5 && <div style={{ position:'absolute', top:8, left:'50%', transform:'translateX(-50%)', fontSize:10, fontWeight:700, color:'var(--pur)', whiteSpace:'nowrap' }}>MAX</div>}
+                  <div style={{ width:16, height:16, borderRadius:'50%', background:dotBg, border:'2px solid var(--bg)', position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', zIndex:2, boxShadow: current ? '0 0 0 4px rgba(255,184,0,0.2)' : 'none' }}/>
                 </div>
-                <div style={{ width:16, height:16, borderRadius:'50%', background:dotBg, border:'2px solid var(--bg)', position:'absolute', bottom:12, left:'50%', transform:'translateX(-50%)', boxShadow: current ? '0 0 0 4px rgba(255,184,0,0.2)' : 'none' }}/>
-                <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginTop:16 }}>{t.refs} {t.refs===1?'ref':'refs'}</div>
+                <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginTop:20 }}>{t.refs} {t.refs===1?'ref':'refs'}</div>
                 <div style={{ fontSize:14, fontWeight:900, color:t.color, marginTop:3 }}>{t.disc}%</div>
                 <div style={{ fontSize:10, color: current ? 'var(--ylw)' : i===5 ? 'var(--pur)' : 'var(--dim2)', marginTop:2, fontWeight: current||i===5 ? 700 : 400 }}>{t.label}</div>
               </div>
