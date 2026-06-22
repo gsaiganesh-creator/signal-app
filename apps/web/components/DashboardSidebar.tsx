@@ -23,6 +23,7 @@ const SIDEBAR = [
   { section:'Account', links:[
     { href:'/dashboard/upgrade',   icon:'⚡', label:'Upgrade Plan'   },
     { href:'/dashboard/brokers',   icon:'🔗', label:'Connect Broker' },
+    { href:'/dashboard/refer',     icon:'🎁', label:'Refer & Earn'   },
     { href:'/sign-out',            icon:'🚪', label:'Sign Out'       },
   ]},
 ];
