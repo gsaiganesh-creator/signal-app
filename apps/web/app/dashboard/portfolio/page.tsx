@@ -6,6 +6,7 @@ import { fetchQuote } from '@/lib/api';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
 import type { MlClass } from '@/lib/supabase/types';
+import { serverInsertHoldings } from './actions';
 
 type Exchange = 'NSE' | 'BSE' | 'NYSE' | 'NASDAQ';
 
@@ -170,12 +171,8 @@ export default function PortfolioPage() {
       setUploadMsg('❌ Could not parse. Supported: Zerodha, Upstox, Groww CSV/Excel — or SIGNAL format: SYMBOL,QTY,AVG_PRICE,EXCHANGE');
       setSyncing(false); return;
     }
-    const { data: { session: s1 } } = await supabase.auth.getSession();
-    const user = s1?.user ?? null;
-    if (!user) { setUploadMsg('❌ Not logged in.'); setSyncing(false); return; }
-    const inserts = rows.map(r => ({ portfolio_id: activeId, user_id: user.id, symbol: r.symbol, exchange: r.exchange, qty: r.qty, avg_price: r.avg_price }));
-    const { error } = await supabase.from('holdings').upsert(inserts, { onConflict: 'portfolio_id,symbol,exchange' });
-    if (error) { setUploadMsg(`❌ ${error.message}`); setSyncing(false); return; }
+    const { error: insertErr } = await serverInsertHoldings(activeId, rows);
+    if (insertErr) { setUploadMsg(`❌ ${insertErr}`); setSyncing(false); return; }
     setUploadMsg(`✅ ${rows.length} holdings imported — running ML analysis…`);
     await refreshContext();
     setSyncing(false);
@@ -187,10 +184,7 @@ export default function PortfolioPage() {
     const qty = parseInt(form.qty, 10);
     const avg = parseFloat(form.avg_price);
     if (!sym || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0 || !activeId) return;
-    const { data: { session: s2 } } = await supabase.auth.getSession();
-    const user = s2?.user ?? null;
-    if (!user) return;
-    await supabase.from('holdings').upsert([{ portfolio_id: activeId, user_id: user.id, symbol: sym, exchange: form.exchange, qty, avg_price: avg }], { onConflict: 'portfolio_id,symbol,exchange' });
+    await serverInsertHoldings(activeId, [{ symbol: sym, exchange: form.exchange, qty, avg_price: avg }]);
     setForm({ symbol:'', qty:'', avg_price:'', exchange:'NSE' }); setAddOpen(false);
     await refreshContext();
   }
@@ -222,12 +216,8 @@ export default function PortfolioPage() {
     setUploadMsg('Parsing file…');
     const rows = await parseFile(file);
     if (!rows.length) { setUploadMsg('❌ Could not parse file. Check format below.'); setSyncing(false); return; }
-    const { data: { session: s3 } } = await supabase.auth.getSession();
-    const user = s3?.user ?? null;
-    if (!user) { setUploadMsg('❌ Not logged in.'); setSyncing(false); return; }
-    const inserts = rows.map(r => ({ portfolio_id: newId, user_id: user.id, symbol: r.symbol, exchange: r.exchange, qty: r.qty, avg_price: r.avg_price }));
-    const { error } = await supabase.from('holdings').upsert(inserts, { onConflict: 'portfolio_id,symbol,exchange' });
-    if (error) { setUploadMsg(`❌ ${error.message}`); setSyncing(false); return; }
+    const { error: insertErr } = await serverInsertHoldings(newId, rows);
+    if (insertErr) { setUploadMsg(`❌ ${insertErr}`); setSyncing(false); return; }
     setUploadMsg(`✅ ${rows.length} holdings imported — running ML analysis…`);
     await refreshContext();
     setSyncing(false);

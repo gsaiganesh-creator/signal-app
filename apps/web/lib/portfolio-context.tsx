@@ -2,6 +2,7 @@
 import { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
 import type { User } from '@supabase/supabase-js';
 import { createClient } from './supabase/client';
+import { serverCreatePortfolio } from '@/app/dashboard/portfolio/actions';
 
 export interface Portfolio {
   id: string;
@@ -116,29 +117,13 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   }, [activeId, prevActiveId, fetchHoldings]);
 
   async function createPortfolio(name: string): Promise<{ id: string | null; error: string | null }> {
-    // Use user from state — populated by onAuthStateChange which is always current
-    if (!user) return { id: null, error: 'Not logged in. Please sign in again.' };
-    // Upsert profile first — handles users who signed up before the trigger was deployed
-    const { error: profileErr } = await supabase.from('profiles').upsert({
-      id: user.id,
-      email: user.email ?? null,
-      full_name: (user.user_metadata?.full_name ?? user.user_metadata?.name) || null,
-      avatar_url: user.user_metadata?.avatar_url ?? null,
-    }, { onConflict: 'id' });
-    if (profileErr) console.error('[createPortfolio] profile upsert failed:', profileErr.message);
-    const { data, error } = await supabase
-      .from('portfolios')
-      .insert({ user_id: user.id, name, broker: 'manual' })
-      .select('id')
-      .single();
-    if (error) {
-      console.error('[createPortfolio] portfolio insert failed:', error.message, error.details, error.hint);
-      return { id: null, error: error.message };
+    // Server action: createServerClient reads auth from middleware cookies — always reliable
+    const result = await serverCreatePortfolio(name);
+    if (result.id) {
+      await refresh();
+      setActiveId(result.id);
     }
-    const newId = data?.id ?? null;
-    await refresh();
-    if (newId) setActiveId(newId);
-    return { id: newId, error: null };
+    return result;
   }
 
   const activePortfolio = portfolios.find(p => p.id === activeId) ?? null;
