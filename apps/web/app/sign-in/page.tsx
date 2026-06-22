@@ -31,7 +31,16 @@ export default function SignInPage() {
     if (!email || !pass) { setMsg('Enter email and password.'); return; }
     setLoading(true); setMsg('');
     const { error } = await supabase.auth.signInWithPassword({ email, password: pass });
-    if (error) { setMsg(error.message); setLoading(false); return; }
+    if (error) {
+      if (error.message.toLowerCase().includes('email not confirmed') || error.message.toLowerCase().includes('not confirmed')) {
+        setMsg('⚠️ Check your inbox — click the confirmation email link first, then sign in here.');
+      } else if (error.message.toLowerCase().includes('invalid login') || error.message.toLowerCase().includes('invalid credentials')) {
+        setMsg('❌ Wrong email or password. Did you sign up with Google instead?');
+      } else {
+        setMsg(`❌ ${error.message}`);
+      }
+      setLoading(false); return;
+    }
     router.push('/dashboard');
     router.refresh();
   }
@@ -39,7 +48,7 @@ export default function SignInPage() {
   async function doSignUp() {
     if (!email || pass.length < 8) { setMsg('Email + password (min 8 chars) required.'); return; }
     setLoading(true); setMsg('');
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password: pass,
       options: {
@@ -47,8 +56,15 @@ export default function SignInPage() {
         emailRedirectTo: `${location.origin}/auth/callback`,
       },
     });
-    if (error) { setMsg(error.message); setLoading(false); return; }
-    setMsg('✅ Check your email to confirm your account.');
+    if (error) { setMsg(`❌ ${error.message}`); setLoading(false); return; }
+    if (data.session) {
+      // email confirmation is disabled — signed in immediately
+      router.push('/dashboard');
+      router.refresh();
+      return;
+    }
+    // email confirmation required
+    setMsg('✅ Account created! Check your inbox and click the confirmation link — then come back here to sign in.');
     setLoading(false);
   }
 

@@ -13,7 +13,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh' }}>
 
         {/* Top Nav */}
-        <nav style={{ display:'flex', alignItems:'center', flexWrap:'nowrap', height:58, padding:'0 clamp(12px,3vw,32px)', background:'var(--surf)', borderBottom:'1px solid var(--bdr)', position:'sticky', top:0, zIndex:100, overflow:'hidden' }}>
+        <nav style={{ display:'flex', alignItems:'center', flexWrap:'nowrap', height:58, padding:'0 clamp(12px,3vw,32px)', background:'var(--surf)', borderBottom:'1px solid var(--bdr)', position:'sticky', top:0, zIndex:100, overflow:'visible' }}>
           <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, fontSize:18, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)', marginRight:28, flexShrink:0 }}>
             <svg width="22" height="22" viewBox="0 0 26 26" fill="none">
               <rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/>
