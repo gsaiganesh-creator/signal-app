@@ -38,7 +38,7 @@ button { font-family: inherit; }
 .dash-layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 58px); }
 .dash-sidebar { display: flex !important; flex-direction: column; gap: 4px; }
 .dash-topnav-links { display: flex; align-items: center; flex: 1; gap: 2px; }
-.dash-right { display: flex; align-items: center; gap: 10px; }
+.dash-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
 .dash-username { display: inline; }
 .dash-mobile-nav { display: none; }
 

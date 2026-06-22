@@ -50,21 +50,27 @@ export default function LandingPage() {
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:10, fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)' }}>
           <SignalLogo /> SIGNAL
         </Link>
-        <div className="dash-topnav-links" style={{ gap:16, fontSize:12.5, fontWeight:500 }}>
+        <div className="dash-topnav-links" style={{ gap:14, fontSize:12.5, fontWeight:500 }}>
           {[
-            { h:'#portfolio', l:'Portfolio' },
-            { h:'#signals',   l:'Signals' },
-            { h:'#pricing',   l:'Pricing' },
+            { h:'#portfolio',    l:'Portfolio' },
+            { h:'#etf-mf',       l:'ETF & MF' },
+            { h:'#signals',      l:'Signals' },
+            { h:'#algo',         l:'Algo Builder' },
+            { h:'#paper',        l:'Paper Trade' },
             { h:'/track-record', l:'Track Record' },
-            { h:'/about',     l:'About' },
-          ].map(({ h, l }) => (
-            <a key={h} href={h} style={{ color:'var(--dim)', transition:'color 0.2s' }} onMouseOver={e=>(e.currentTarget.style.color='var(--txt)')} onMouseOut={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>
+            { h:'/about',        l:'About' },
+            { h:'#pricing',      l:'Pricing' },
+            { h:'#download',     l:'↓ Get App', special:true },
+          ].map(({ h, l, special }) => (
+            special
+              ? <a key={h} href={h} style={{ color:'var(--grn)', fontWeight:600, transition:'color 0.2s', whiteSpace:'nowrap' }}>{l}</a>
+              : <a key={h} href={h} style={{ color:'var(--dim)', transition:'color 0.2s', whiteSpace:'nowrap' }} onMouseOver={e=>(e.currentTarget.style.color='var(--txt)')} onMouseOut={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>
           ))}
         </div>
         <div className="dash-right">
           <ThemeToggle />
           <Link href="/sign-in" style={{ height:36, padding:'0 16px', borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', flexShrink:0 }}>Sign In</Link>
-          <Link href="/sign-in" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', flexShrink:0 }}>Start Free →</Link>
+          <Link href="/sign-in" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', flexShrink:0 }}>Get Started Free →</Link>
         </div>
       </nav>
 
