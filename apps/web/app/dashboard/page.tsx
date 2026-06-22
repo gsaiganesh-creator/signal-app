@@ -43,7 +43,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Hero metrics */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:20 }}>
+      <div className="g4" style={{ display:'grid', gap:12, marginBottom:20 }}>
         {[
           { label:'Total Portfolio Value', val:'₹18,70,420', sub:'▲ +₹1,24,320', sub2:'+7.1% all-time', subC:'var(--grn)' },
           { label:"Today's P&L",          val:'+₹8,240', valC:'var(--grn)', sub:'▲ +0.44%', sub2:'unrealised', subC:'var(--grn)' },
@@ -68,7 +68,7 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:16 }}>
+      <div className="g-side" style={{ display:'grid', gap:16 }}>
         <div>
 
           {/* Market Overview */}
@@ -80,7 +80,7 @@ export default function DashboardPage() {
                 Pre-market
               </span>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+            <div className="g2" style={{ display:'grid', gap:10 }}>
               {[
                 { name:'NIFTY 50',   val:'24,812', chg:'▲ +112 (+0.45%)', up:true,  pts:'0,22 15,18 30,20 45,14 60,10 75,8 85,6 100,4' },
                 { name:'SENSEX',     val:'81,540', chg:'▲ +384 (+0.47%)', up:true,  pts:'0,24 20,20 40,22 55,16 70,11 85,7 100,5' },
@@ -148,7 +148,7 @@ export default function DashboardPage() {
               <div style={{ fontSize:14, fontWeight:700 }}>Sector Heatmap</div>
               <span style={{ fontSize:11, color:'var(--dim)' }}>5-day performance</span>
             </div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+            <div className="g3" style={{ display:'grid', gap:8 }}>
               {SECTORS.map(s => (
                 <div key={s.name} style={{ padding:'10px 12px', borderRadius:10, background:s.bg, textAlign:'center' }}>
                   <div style={{ fontSize:10, fontWeight:700, opacity:0.7, marginBottom:3, color:s.c }}>{s.name}</div>

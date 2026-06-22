@@ -47,7 +47,7 @@ export default function SectorHeatmapPage() {
       </div>
 
       {/* Heatmap grid */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:24 }}>
+      <div className="g3" style={{ display:'grid', gap:12, marginBottom:24 }}>
         {SECTORS.map(s => {
           const c = sectorColor(s.signal);
           return (

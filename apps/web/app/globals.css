@@ -29,3 +29,64 @@ button { font-family: inherit; }
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: var(--surf); }
 ::-webkit-scrollbar-thumb { background: var(--bdr); border-radius: 3px; }
+
+/* =====================================================
+   RESPONSIVE LAYOUT UTILITIES
+   ===================================================== */
+
+/* Dashboard shell */
+.dash-layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 58px); }
+.dash-sidebar { display: flex !important; flex-direction: column; gap: 4px; }
+.dash-topnav-links { display: flex; align-items: center; flex: 1; gap: 2px; }
+.dash-right { display: flex; align-items: center; gap: 10px; }
+.dash-username { display: inline; }
+.dash-mobile-nav { display: none; }
+
+/* Responsive grid helpers — column template only; keep gap/margin inline */
+.g4 { grid-template-columns: repeat(4, 1fr); }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g3-earnings { grid-template-columns: repeat(3, 1fr); }
+.g2 { grid-template-columns: 1fr 1fr; }
+.g-side { grid-template-columns: 1fr 340px; }
+.g-mission { grid-template-columns: 1fr 1fr; gap: 60px; }
+.g-founder { grid-template-columns: 1fr 1fr; }
+.g-story { grid-template-columns: 1fr 1fr; }
+.g-contact { grid-template-columns: repeat(3, 1fr); }
+.g-values { grid-template-columns: repeat(3, 1fr); }
+
+/* ---- Tablet (≤ 900px) ---- */
+@media (max-width: 900px) {
+  .dash-layout { grid-template-columns: 1fr; }
+  .dash-sidebar { display: none !important; }
+  .dash-topnav-links { display: none; }
+  .dash-mobile-nav { display: flex; position: fixed; bottom: 0; left: 0; right: 0; height: 60px; background: var(--surf); border-top: 1px solid var(--bdr); z-index: 200; align-items: stretch; }
+  .dash-mobile-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; font-weight: 600; color: var(--dim); text-decoration: none; transition: color 0.15s; }
+  .dash-mobile-nav a.active { color: var(--bluL); }
+  .dash-mobile-nav a span.icon { font-size: 18px; line-height: 1; }
+  main { padding-bottom: 80px !important; }
+  .g4 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: 1fr 1fr; }
+  .g3-earnings { grid-template-columns: 1fr 1fr; }
+  .g-side { grid-template-columns: 1fr; }
+  .g-mission { grid-template-columns: 1fr; }
+  .g-founder { grid-template-columns: 1fr; }
+  .g-story { grid-template-columns: 1fr; }
+  .g-contact { grid-template-columns: 1fr 1fr; }
+  .g-values { grid-template-columns: 1fr 1fr; }
+  .dash-username { display: none; }
+}
+
+/* ---- Phone (≤ 480px) ---- */
+@media (max-width: 480px) {
+  .g4 { grid-template-columns: 1fr 1fr; }
+  .g3 { grid-template-columns: 1fr; }
+  .g3-earnings { grid-template-columns: 1fr; }
+  .g2 { grid-template-columns: 1fr; }
+  .g-contact { grid-template-columns: 1fr; }
+  .g-values { grid-template-columns: 1fr; }
+}
+
+/* ---- Small phone (≤ 360px) ---- */
+@media (max-width: 360px) {
+  .g4 { grid-template-columns: 1fr; }
+}

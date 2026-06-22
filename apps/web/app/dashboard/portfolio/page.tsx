@@ -232,7 +232,7 @@ export default function PortfolioPage() {
 
       {/* Summary cards */}
       {holdings.length > 0 && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:12, marginBottom:20 }}>
+        <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>
           {[
             { label:'Total Invested', val:`₹${totalInvested.toLocaleString('en-IN',{maximumFractionDigits:0})}`, sub:null, subC:'var(--dim)' },
             { label:'Current Value',  val:`₹${totalCurrent.toLocaleString('en-IN',{maximumFractionDigits:0})}`,  sub:null, subC:'var(--dim)' },

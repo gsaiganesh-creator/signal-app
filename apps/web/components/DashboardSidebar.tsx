@@ -32,7 +32,7 @@ export function DashboardSidebar() {
   const pathname = usePathname();
 
   return (
-    <aside style={{ background:'var(--surf)', borderRight:'1px solid var(--bdr)', padding:'16px 10px', display:'flex', flexDirection:'column', gap:4 }}>
+    <aside className="dash-sidebar" style={{ background:'var(--surf)', borderRight:'1px solid var(--bdr)', padding:'16px 10px' }}>
       {SIDEBAR.map(group => (
         <div key={group.section}>
           <div style={{ fontSize:10, fontWeight:700, color:'var(--dim2)', letterSpacing:1, textTransform:'uppercase', padding:'12px 10px 6px' }}>{group.section}</div>

@@ -50,28 +50,21 @@ export default function LandingPage() {
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:10, fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)' }}>
           <SignalLogo /> SIGNAL
         </Link>
-        <div style={{ display:'flex', alignItems:'center', gap:16, fontSize:12.5, fontWeight:500, flexWrap:'wrap' }}>
+        <div className="dash-topnav-links" style={{ gap:16, fontSize:12.5, fontWeight:500 }}>
           {[
             { h:'#portfolio', l:'Portfolio' },
-            { h:'#etf-mf',    l:'ETF & MF' },
             { h:'#signals',   l:'Signals' },
-            { h:'#algo',      l:'Algo Builder' },
-            { h:'#paper',     l:'Paper Trade' },
-            { h:'/signals',   l:'ML Signals ↗' },
+            { h:'#pricing',   l:'Pricing' },
             { h:'/track-record', l:'Track Record' },
             { h:'/about',     l:'About' },
-            { h:'#pricing',   l:'Pricing' },
-            { h:'#download',  l:'↓ Get App', special:true },
-          ].map(({ h, l, special }) => (
-            special
-              ? <a key={h} href={h} style={{ color:'var(--grn)', fontWeight:600, transition:'color 0.2s' }}>{l}</a>
-              : <a key={h} href={h} style={{ color:'var(--dim)', transition:'color 0.2s' }} onMouseOver={e=>(e.currentTarget.style.color='var(--txt)')} onMouseOut={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>
+          ].map(({ h, l }) => (
+            <a key={h} href={h} style={{ color:'var(--dim)', transition:'color 0.2s' }} onMouseOver={e=>(e.currentTarget.style.color='var(--txt)')} onMouseOut={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>
           ))}
         </div>
-        <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+        <div className="dash-right">
           <ThemeToggle />
-          <Link href="/sign-in" style={{ height:36, padding:'0 16px', borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center' }}>Sign In</Link>
-          <Link href="/sign-in" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center' }}>Get Started Free →</Link>
+          <Link href="/sign-in" style={{ height:36, padding:'0 16px', borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', flexShrink:0 }}>Sign In</Link>
+          <Link href="/sign-in" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', flexShrink:0 }}>Start Free →</Link>
         </div>
       </nav>
 
@@ -119,7 +112,7 @@ export default function LandingPage() {
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--bluL)', marginBottom:12 }}>How It Works</div>
           <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>From account to signals<br/>in under 5 minutes</h2>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', border:'1px solid var(--bdr)', borderRadius:16, overflow:'hidden', marginTop:40 }}>
+          <div className="g4" style={{ display:'grid', border:'1px solid var(--bdr)', borderRadius:16, overflow:'hidden', marginTop:40 }}>
             {[
               { n:1, c:'var(--bluL)', bg:'rgba(23,64,245,0.12)', title:'Connect your broker', desc:'Link mStock, Zerodha, Upstox, Angel One or upload your Excel portfolio. Secure OAuth — we never see your credentials.' },
               { n:2, c:'var(--pur)',  bg:'rgba(139,92,246,0.12)', title:'ML classifies your portfolio', desc:"Random Forest model analyses your holdings and tags each stock: Momentum, Swing, Long Term, Exit Now, or Watch." },
@@ -178,7 +171,7 @@ export default function LandingPage() {
             </table>
           </div>
 
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, marginTop:24 }}>
+          <div style={{ display:'grid', gap:20, marginTop:24 }}>
             <div style={{ background:'rgba(255,59,92,0.06)', border:'1px solid rgba(255,59,92,0.2)', borderRadius:16, padding:28 }}>
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, textTransform:'uppercase', color:'var(--red)', marginBottom:16 }}>What you're paying for now</div>
               {['₹5,000–₹20,000/month — no accuracy proof','Same call blasted to 50,000 subscribers','Human bias, emotion, no backtesting','Telegram-only, no portfolio sync','No algo builder, no paper trading'].map((item,i) => (
@@ -204,7 +197,7 @@ export default function LandingPage() {
       {/* Portfolio Intelligence */}
       <section id="portfolio" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+          <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div>
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--bluL)', marginBottom:12 }}>Portfolio Intelligence</div>
               <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>Your holdings,<br/>classified by ML</h2>
@@ -225,7 +218,7 @@ export default function LandingPage() {
                 <div style={{ fontSize:16, fontWeight:800 }}>Portfolio Analysis</div>
                 <div style={{ fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:20, background:'rgba(0,212,160,0.12)', border:'1px solid rgba(0,212,160,0.3)', color:'var(--grn)' }}>ML ✓ Live</div>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8, marginBottom:16 }}>
+              <div style={{ display:'grid', gap:8, marginBottom:16 }}>
                 {[['MS','mStock','Connected ✓','#E63946','rgba(230,57,70,0.12)'],['ZE','Zerodha','Connect →','#387ED1','rgba(56,126,209,0.12)'],['UP','Upstox','Connect →','#7B2FBE','rgba(123,47,190,0.12)']].map(([ab,name,tag,c,bg]) => (
                   <div key={ab} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
                     <div style={{ width:38, height:38, borderRadius:10, background:bg, color:c, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900, flexShrink:0 }}>{ab}</div>
@@ -233,7 +226,7 @@ export default function LandingPage() {
                   </div>
                 ))}
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+              <div style={{ display:'grid', gap:8 }}>
                 {[
                   { label:'🚀 Momentum (5)', stocks:'RELIANCE, TATAMOTORS, SBIN, INDUSINDBK, ADANIENT', c:'var(--grn)', bg:'rgba(0,212,160,0.07)', bc:'rgba(0,212,160,0.2)' },
                   { label:'🔄 Swingable (4)', stocks:'HDFCBANK, WIPRO, BAJFINANCE, LTIM', c:'var(--bluL)', bg:'rgba(23,64,245,0.07)', bc:'rgba(23,64,245,0.2)' },
@@ -254,7 +247,7 @@ export default function LandingPage() {
       {/* Signals */}
       <section id="signals" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+          <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:22 }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
                 <div><div style={{ fontSize:18, fontWeight:800 }}>RELIANCE</div><div style={{ fontSize:12, color:'var(--dim)' }}>Reliance Industries · NSE</div></div>
@@ -288,7 +281,7 @@ export default function LandingPage() {
                   <span style={{ color:'var(--red)', fontWeight:700 }}>24% Bearish</span>
                 </div>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:8 }}>
+              <div className="g3" style={{ display:'grid', gap:8 }}>
                 {[['Mkt Cap','₹19.7L Cr'],['P/E','28.4×'],['Delivery%','63.2%']].map(([k,v]) => (
                   <div key={k} style={{ textAlign:'center' }}>
                     <div style={{ fontSize:10, color:'var(--dim)' }}>{k}</div>
@@ -319,7 +312,7 @@ export default function LandingPage() {
       {/* ETF & Mutual Funds */}
       <section id="etf-mf" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+          <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div>
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--ylw)', marginBottom:12 }}>ETF &amp; Mutual Funds</div>
               <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>Your SIPs and ETFs,<br/>now intelligent.</h2>
@@ -372,14 +365,14 @@ export default function LandingPage() {
       {/* Account Aggregator */}
       <section id="aa" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+          <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:22 }}>
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
                 <div style={{ width:9, height:9, borderRadius:'50%', background:'var(--grn)', flexShrink:0 }}/>
                 <span style={{ fontSize:13, fontWeight:700 }}>Jaitik · AA sync complete</span>
                 <span style={{ fontSize:11, color:'var(--grn)', marginLeft:'auto' }}>4 institutions linked</span>
               </div>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+              <div style={{ display:'grid', gap:10, marginBottom:16 }}>
                 {[
                   { logo:'SBI', lc:'#E63946', name:'Savings Bank', val:'₹2.1L' },
                   { logo:'HDFC', lc:'#387ED1', name:'FD Portfolio', val:'₹5.0L' },
@@ -430,11 +423,11 @@ export default function LandingPage() {
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--org)', marginBottom:12 }}>Algo Builder</div>
           <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>Build your strategy.<br/>Generate the code.</h2>
           <p style={{ fontSize:16, color:'var(--dim)', lineHeight:1.65, maxWidth:580, marginBottom:48 }}>Pick a strategy type, select indicators, set entry and exit conditions. SIGNAL generates production-ready Python — with 1-year backtested results.</p>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'start' }}>
+          <div className="g-mission" style={{ display:'grid', alignItems:'start' }}>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'16px 18px' }}>
                 <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Strategy Type</div>
-                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                <div style={{ display:'grid', gap:8 }}>
                   {[
                     { e:'🚀',icon:'Momentum',    sub:'RSI + volume surge', active:true, c:'var(--org)', bg:'rgba(255,92,26,0.08)', bc:'rgba(255,92,26,0.25)' },
                     { e:'📈',icon:'Trend Following', sub:'EMAs + ADX', active:false },
@@ -507,7 +500,7 @@ export default function LandingPage() {
               </div>
               <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:16 }}>
                 <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, marginBottom:12 }}>1Y BACKTEST RESULTS</div>
-                <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+                <div className="g4" style={{ display:'grid', gap:10 }}>
                   {[['var(--grn)','+24.3%','Returns'],['var(--bluL)','1.84','Sharpe Ratio'],['var(--grn)','64%','Win Rate'],['var(--red)','−8.2%','Max Drawdown']].map(([c,v,l]) => (
                     <div key={l} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:11, padding:'12px 14px', textAlign:'center' }}>
                       <div style={{ fontSize:20, fontWeight:900, color:c }}>{v}</div>
@@ -533,7 +526,7 @@ export default function LandingPage() {
               <span style={{ fontSize:13, fontWeight:700, color:'var(--pur)' }}>Paper Trading · RSI + EMA Strategy · Running Day 6 of 7</span>
             </div>
             <div style={{ fontSize:13, color:'var(--dim)', marginBottom:20 }}>Virtual capital: ₹1,00,000 · Stocks: RELIANCE, HDFCBANK, INFY</div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+            <div className="g4" style={{ display:'grid', gap:14 }}>
               {[['var(--grn)','₹1,08,420','Virtual Portfolio'],['var(--grn)','+8.4%','Paper Returns'],['var(--txt)','7','Signals Fired'],['var(--grn)','5/7','Win Rate (71%)']].map(([c,v,l]) => (
                 <div key={l} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid var(--bdr)', borderRadius:12, padding:'14px 16px', textAlign:'center' }}>
                   <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:c }}>{v}</div>
@@ -604,7 +597,7 @@ export default function LandingPage() {
               <p style={{ fontSize:16, color:'var(--dim)', lineHeight:1.65, maxWidth:580 }}>SIGNAL is extending to US markets — giving Indian investors ML-powered signals on S&amp;P 500 and NASDAQ stocks, via LRS (Liberalised Remittance Scheme) compatible brokers like Vested, INDmoney, and Interactive Brokers.</p>
             </div>
           </div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
+          <div className="g3" style={{ display:'grid', gap:14 }}>
             {[
               { icon:'🇺🇸', title:'Phase 1 — Indian LRS Users', desc:'S&P 500 + NASDAQ 100 stocks. SIGNAL adapts its RF model for US market microstructure — different liquidity, options flow, Fed rate sensitivity, and earnings seasonality.' },
               { icon:'🌍', title:'Phase 2 — Global Launch', desc:'Expand to Singapore, UAE, UK, and US resident investors. Multi-currency portfolio tracking. Localised tax implications (LTCG/STCG for India, capital gains for US).' },
@@ -649,7 +642,7 @@ export default function LandingPage() {
             ))}
           </div>
           {pr.note && <div style={{ fontSize:13, color:'var(--grn)', marginBottom:24, fontWeight:600 }}>{pr.note}</div>}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:14 }}>
+          <div className="g4" style={{ display:'grid', gap:14 }}>
             {[
               { name:'Free', nameC:'var(--dim)', price:'₹0', cycle:'forever · no card needed', feats:['5 stocks portfolio tracking','3 ML signals per week','NIFTY 50 basic prices','ETF & MF tracking (5 funds)','7-day delayed scorecard'], nope:['No real-time alerts','No broker/AA sync','No Algo Builder'], featured:false },
               { name:'Starter', nameC:'var(--bluL)', price:pr.s, cycle:pr.cy, feats:['25 stocks · ML buy/sell signals','ETF & MF tracking (20 funds)','Excel import · Swing + Momentum','𝕏 Twitter sentiment per stock','RF Pick of the Day','Real-time push alerts'], nope:['No broker/AA sync','No Algo Builder'], featured:false },
@@ -697,7 +690,7 @@ export default function LandingPage() {
       {/* Download App */}
       <section id="download" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+          <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div>
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--grn)', marginBottom:12 }}>Mobile App</div>
               <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>SIGNAL in<br/>your pocket</h2>

@@ -20,7 +20,7 @@ export default function AboutPage() {
 
       {/* Mission */}
       <section style={{ padding:'72px 40px', borderTop:'1px solid var(--bdr)' }}>
-        <div style={{ maxWidth:1100, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'center' }}>
+        <div className="g-mission" style={{ maxWidth:1100, margin:'0 auto', display:'grid', gap:60, alignItems:'center' }}>
           <div>
             <div style={{ fontSize:11, fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase' as const, color:'var(--org)', marginBottom:12 }}>Our Mission</div>
             <div style={{ fontSize:'clamp(22px,3vw,34px)', fontWeight:800, letterSpacing:-0.8, lineHeight:1.25, marginBottom:20 }}>
@@ -51,7 +51,7 @@ export default function AboutPage() {
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase' as const, color:'var(--pur)', marginBottom:12 }}>The Team</div>
           <div style={{ fontSize:'clamp(30px,4.5vw,52px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:16 }}>Who&apos;s building SIGNAL</div>
           <p style={{ fontSize:16, color:'var(--dim)', lineHeight:1.7, maxWidth:600, marginBottom:36 }}>A small, focused team building the algo trading platform we always wished existed.</p>
-          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24 }}>
+          <div className="g-founder" style={{ display:'grid', gap:24 }}>
 
             {/* Sai Ganesh Gella */}
             <div style={{ background:'linear-gradient(145deg,rgba(23,64,245,0.06),var(--surf))', border:'1px solid rgba(23,64,245,0.3)', borderRadius:20, padding:32, position:'relative', overflow:'hidden' }}>
@@ -107,7 +107,7 @@ export default function AboutPage() {
 
       {/* Origin Story Timeline */}
       <section style={{ padding:'72px 40px', borderTop:'1px solid var(--bdr)' }} id="story">
-        <div style={{ maxWidth:1100, margin:'0 auto', display:'grid', gridTemplateColumns:'1fr 1fr', gap:60, alignItems:'flex-start' }}>
+        <div className="g-story" style={{ maxWidth:1100, margin:'0 auto', display:'grid', gap:60, alignItems:'flex-start' }}>
           <div>
             <div style={{ fontSize:11, fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase' as const, color:'var(--grn)', marginBottom:12 }}>Origin Story</div>
             <div style={{ fontSize:'clamp(24px,3.5vw,40px)', fontWeight:900, letterSpacing:-1.5, marginBottom:16 }}>Why we built this</div>
@@ -144,7 +144,7 @@ export default function AboutPage() {
         <div style={{ maxWidth:1100, margin:'0 auto' }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase' as const, color:'var(--bluL)', marginBottom:12 }}>Our Principles</div>
           <div style={{ fontSize:'clamp(30px,4.5vw,52px)', fontWeight:900, letterSpacing:-1.5, marginBottom:32 }}>What we stand for</div>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14 }}>
+          <div className="g-values" style={{ display:'grid', gap:14 }}>
             {[
               { icon:'📊', title:'Radical transparency', desc:"Every signal is posted publicly before the outcome. Every week's accuracy — including bad weeks — is published. No cherry-picking, no hiding losses." },
               { icon:'🤖', title:'Data over opinion', desc:'No human analyst calls. No "gut feel". Every signal comes from a quantitative model — the same model every time, with no emotion, no bias.' },
@@ -169,7 +169,7 @@ export default function AboutPage() {
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase' as const, color:'var(--org)', marginBottom:12 }}>Get in Touch</div>
           <div style={{ fontSize:'clamp(30px,4.5vw,52px)', fontWeight:900, letterSpacing:-1.5, marginBottom:8 }}>We&apos;d love to hear from you</div>
           <p style={{ fontSize:16, color:'var(--dim)', lineHeight:1.7, maxWidth:600, marginBottom:32 }}>Questions about the platform, partnership inquiries, or just want to talk trading — reach out.</p>
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:24 }}>
+          <div className="g-contact" style={{ display:'grid', gap:14, marginBottom:24 }}>
             {[
               { icon:'✉️', label:'General enquiries',    val:'hello@getsignal.in',        sub:'Response within 24 hours', href:'mailto:hello@getsignal.in' },
               { icon:'🛟', label:'Customer support',     val:'support@getsignal.in',      sub:'Pro users: WhatsApp support', href:'mailto:support@getsignal.in' },

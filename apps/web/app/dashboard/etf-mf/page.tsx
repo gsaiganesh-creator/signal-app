@@ -36,7 +36,7 @@ export default function ETFMFPage() {
       </div>
 
       {/* Summary cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:20 }}>
+      <div className="g4" style={{ display:'grid', gap:12, marginBottom:20 }}>
         {[
           { lbl:'Total Invested', val:'₹1,23,000', sub:'Across 6 funds', sc:'var(--dim)' },
           { lbl:'Current Value',  val:'₹1,53,140', sub:'+₹30,140 · +24.5%', vc:'var(--grn)', sc:'var(--grn)' },
@@ -111,7 +111,7 @@ export default function ETFMFPage() {
       <div style={{ background:'rgba(0,212,160,0.05)', border:'1px solid rgba(0,212,160,0.2)', borderRadius:14, padding:20 }}>
         <div style={{ fontSize:14, fontWeight:700, marginBottom:6 }}>🎯 SIP Optimizer — ML Recommendation</div>
         <div style={{ fontSize:13, color:'var(--dim)', marginBottom:14 }}>Based on current NIFTY P/E (22.4×), market cycle (mid-bull), and your fund performance</div>
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:10 }}>
+        <div className="g3" style={{ display:'grid', gap:10 }}>
           {[
             { fund:'Mirae Large Cap', action:'↑ Increase SIP', color:'var(--grn)', bg:'rgba(0,212,160,0.07)', bdr:'rgba(0,212,160,0.2)', note:'+₹1,000/mo recommended' },
             { fund:'HDFC Mid Cap', action:'⏸ Pause SIP', color:'var(--ylw)', bg:'rgba(255,184,0,0.06)', bdr:'rgba(255,184,0,0.2)', note:'Underperforming benchmark' },

@@ -40,7 +40,7 @@ export default function ReferPage() {
   return (
     <>
       {/* Hero banner */}
-      <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.08),rgba(23,64,245,0.06))', border:'1px solid rgba(0,212,160,0.2)', borderRadius:20, padding:'36px 40px', display:'grid', gridTemplateColumns:'1fr auto', gap:32, alignItems:'center', marginBottom:24 }}>
+      <div className="g2" style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.08),rgba(23,64,245,0.06))', border:'1px solid rgba(0,212,160,0.2)', borderRadius:20, padding:'clamp(20px,4vw,36px) clamp(16px,4vw,40px)', display:'grid', gap:32, alignItems:'center', marginBottom:24 }}>
         <div>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:'uppercase' as const, color:'var(--grn)', marginBottom:10 }}>Referral Programme</div>
           <h1 style={{ fontSize:'clamp(24px,3vw,38px)', fontWeight:900, letterSpacing:-1, marginBottom:12 }}>
@@ -67,7 +67,7 @@ export default function ReferPage() {
       </div>
 
       {/* Stats row */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:12, marginBottom:24 }}>
+      <div className="g4" style={{ display:'grid', gap:12, marginBottom:24 }}>
         {[
           { val:'2',  valColor:'var(--grn)', lbl:'Paid referrals' },
           { val:'1',  valColor:'var(--ylw)', lbl:'Pending (signed up, not paid)' },
@@ -146,7 +146,7 @@ export default function ReferPage() {
       </div>
 
       {/* Log + Rules grid */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:16 }}>
+      <div className="g-side" style={{ display:'grid', gap:16 }}>
 
         {/* Referral log */}
         <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, overflow:'hidden' }}>

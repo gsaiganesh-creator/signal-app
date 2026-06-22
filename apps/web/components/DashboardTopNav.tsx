@@ -13,7 +13,7 @@ const LINKS = [
 export function DashboardTopNav() {
   const path = usePathname();
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:2, flex:1 }}>
+    <div className="dash-topnav-links">
       {LINKS.map(l => {
         const active = path === l.href || (l.href !== '/dashboard' && path.startsWith(l.href));
         return (

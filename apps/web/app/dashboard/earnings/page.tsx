@@ -59,7 +59,7 @@ export default function EarningsCalendarPage() {
       </div>
 
       {/* Calendar grid */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:14, marginBottom:24 }}>
+      <div className="g3-earnings" style={{ display:'grid', gap:14, marginBottom:24 }}>
         {DAYS.map(day => (
           <div key={day.date} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, overflow:'hidden' }}>
             <div style={{ padding:'12px 16px', background:'var(--surf2)', borderBottom:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
@@ -95,7 +95,7 @@ export default function EarningsCalendarPage() {
       {/* ML predictions */}
       <div style={{ background:'rgba(23,64,245,0.05)', border:'1px solid rgba(23,64,245,0.18)', borderRadius:12, padding:16 }}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:8 }}>🎯 ML Earnings Prediction</div>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10 }}>
+        <div className="g2" style={{ display:'grid', gap:10 }}>
           <div style={{ padding:12, background:'rgba(0,212,160,0.06)', border:'1px solid rgba(0,212,160,0.2)', borderRadius:10 }}>
             <div style={{ fontSize:12, fontWeight:700, color:'var(--grn)', marginBottom:3 }}>TCS · Jun 23</div>
             <div style={{ fontSize:11, color:'var(--dim)' }}>Historical beat rate: 80% · Expected: Beat<br/>Avg post-results move: +3.4%</div>

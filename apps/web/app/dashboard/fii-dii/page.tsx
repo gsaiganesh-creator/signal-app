@@ -17,7 +17,7 @@ export default function FIIDIIPage() {
       <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Today · Jun 22, 2026</div>
 
       {/* FII / DII big cards */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, marginBottom:20 }}>
+      <div className="g2" style={{ display:'grid', gap:16, marginBottom:20 }}>
         <div style={{ background:'rgba(255,59,92,0.03)', border:'1px solid rgba(255,59,92,0.2)', borderRadius:16, padding:24 }}>
           <div style={{ fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, color:'var(--dim)', marginBottom:6 }}>FII — Foreign Institutional</div>
           <div style={{ fontSize:36, fontWeight:900, letterSpacing:-1.5, marginBottom:4, color:'var(--red)' }}>-₹1,240 Cr</div>
