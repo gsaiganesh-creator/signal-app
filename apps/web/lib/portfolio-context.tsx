@@ -1,20 +1,18 @@
 'use client';
 import { createContext, useContext, useEffect, useRef, useState, useCallback, ReactNode } from 'react';
-import type { User } from '@supabase/supabase-js';
+import type { User, Session } from '@supabase/supabase-js';
 import { createClient } from './supabase/client';
-import {
-  serverGetPortfolios,
-  serverGetHoldings,
-  serverCreatePortfolio,
-  type ServerPortfolio,
-  type ServerHolding,
-} from '@/app/dashboard/portfolio/actions';
 
-export type Portfolio = ServerPortfolio;
-export type RawHolding = ServerHolding;
+export interface Portfolio {
+  id: string; name: string; broker: string | null; created_at: string;
+}
+export interface RawHolding {
+  id: string; symbol: string; exchange: string; qty: number; avg_price: number;
+}
 
 interface PortfolioCtx {
   user: User | null;
+  session: Session | null;
   portfolios: Portfolio[];
   activeId: string | null;
   activePortfolio: Portfolio | null;
@@ -28,13 +26,38 @@ interface PortfolioCtx {
 
 const Ctx = createContext<PortfolioCtx | null>(null);
 
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+// Direct REST fetch — bypasses createBrowserClient cookie corruption entirely.
+// The access_token comes from onAuthStateChange (in-memory, always valid).
+async function restFetch(
+  path: string,
+  token: string,
+  options?: RequestInit & { prefer?: string }
+) {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${path}`, {
+    ...options,
+    headers: {
+      apikey: SUPA_KEY,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Prefer: options?.prefer ?? 'return=representation',
+      ...options?.headers,
+    },
+  });
+  const text = await res.text();
+  if (!res.ok) throw new Error(text || `HTTP ${res.status}`);
+  return text ? JSON.parse(text) : null;
+}
+
 export function PortfolioProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
   const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
   const [activeId, setActiveIdState] = useState<string | null>(null);
   const [holdings, setHoldings] = useState<RawHolding[]>([]);
   const [loading, setLoading] = useState(true);
-  // Browser client only used for auth state — all data fetching via server actions
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
@@ -43,45 +66,58 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     if (typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', id);
   }
 
-  const fetchHoldings = useCallback(async (portfolioId: string) => {
-    const data = await serverGetHoldings(portfolioId);
-    setHoldings(data);
+  const fetchHoldings = useCallback(async (portfolioId: string, token: string) => {
+    try {
+      const data: RawHolding[] = await restFetch(
+        `holdings?select=id,symbol,exchange,qty,avg_price&portfolio_id=eq.${portfolioId}&order=symbol`,
+        token
+      );
+      setHoldings(data ?? []);
+    } catch (err) {
+      console.error('[fetchHoldings]', err);
+      setHoldings([]);
+    }
   }, []);
 
-  const fetchPortfolios = useCallback(async () => {
-    const pList = await serverGetPortfolios();
-    setPortfolios(pList);
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('signal_active_portfolio') : null;
-    const aid = (stored && pList.find(p => p.id === stored)) ? stored : (pList[0]?.id ?? null);
-    if (aid && typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', aid);
-    setActiveIdState(aid);
-    if (aid) await fetchHoldings(aid);
-    else setHoldings([]);
+  const fetchPortfolios = useCallback(async (token: string, uid: string) => {
+    try {
+      const data: Portfolio[] = await restFetch(
+        `portfolios?select=id,name,broker,created_at&user_id=eq.${uid}&order=created_at`,
+        token
+      );
+      const pList = data ?? [];
+      setPortfolios(pList);
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('signal_active_portfolio') : null;
+      const aid = (stored && pList.find(p => p.id === stored)) ? stored : (pList[0]?.id ?? null);
+      if (aid && typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', aid);
+      setActiveIdState(aid);
+      if (aid) await fetchHoldings(aid, token);
+      else setHoldings([]);
+    } catch (err) {
+      console.error('[fetchPortfolios]', err);
+      setPortfolios([]);
+    }
   }, [fetchHoldings]);
 
   const refresh = useCallback(async () => {
+    if (!session) return;
     setLoading(true);
-    try {
-      await fetchPortfolios();
-    } catch (err) {
-      console.error('[portfolio-context] refresh error:', err);
-    } finally {
-      setLoading(false);
-    }
-  }, [fetchPortfolios]);
+    try { await fetchPortfolios(session.access_token, session.user.id); }
+    catch (err) { console.error('[refresh]', err); }
+    finally { setLoading(false); }
+  }, [session, fetchPortfolios]);
 
-  // Track auth state via onAuthStateChange — fires immediately with current session
   useEffect(() => {
     setLoading(true);
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        const u = session?.user ?? null;
+      async (_event, sess) => {
+        setSession(sess);
+        const u = sess?.user ?? null;
         setUser(u);
-        if (u) {
-          await fetchPortfolios();
+        if (sess && u) {
+          await fetchPortfolios(sess.access_token, u.id);
         } else {
-          setPortfolios([]);
-          setHoldings([]);
+          setPortfolios([]); setHoldings([]);
         }
         setLoading(false);
       }
@@ -89,31 +125,58 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [supabase, fetchPortfolios]);
 
-  // Re-fetch holdings when user switches portfolio
   const [prevActiveId, setPrevActiveId] = useState<string | null>(null);
   useEffect(() => {
-    if (activeId && activeId !== prevActiveId) {
+    if (activeId && activeId !== prevActiveId && session) {
       setPrevActiveId(activeId);
-      fetchHoldings(activeId);
+      fetchHoldings(activeId, session.access_token);
     }
-  }, [activeId, prevActiveId, fetchHoldings]);
+  }, [activeId, prevActiveId, fetchHoldings, session]);
 
   async function createPortfolio(name: string): Promise<{ id: string | null; error: string | null }> {
     if (!name.trim()) return { id: null, error: 'Portfolio name is required.' };
-    const result = await serverCreatePortfolio(name.trim());
-    if (result.id) {
-      // Reload portfolio list via server action (no browser client auth needed)
-      await fetchPortfolios();
-      setActiveId(result.id);
+    if (!session) return { id: null, error: 'Not logged in. Please sign in again.' };
+    const token = session.access_token;
+    const uid   = session.user.id;
+
+    try {
+      // Ensure profile row exists
+      await restFetch('profiles', token, {
+        method: 'POST',
+        prefer: 'resolution=merge-duplicates,return=minimal',
+        body: JSON.stringify({
+          id: uid,
+          email: session.user.email ?? null,
+          full_name: (session.user.user_metadata?.full_name ?? session.user.user_metadata?.name) || null,
+          avatar_url: session.user.user_metadata?.avatar_url ?? null,
+        }),
+      });
+    } catch (err) {
+      console.warn('[createPortfolio] profile upsert:', err);
     }
-    return result;
+
+    try {
+      const rows = await restFetch('portfolios', token, {
+        method: 'POST',
+        body: JSON.stringify({ user_id: uid, name: name.trim(), broker: 'manual' }),
+      });
+      const id = Array.isArray(rows) ? rows[0]?.id : rows?.id;
+      if (!id) return { id: null, error: 'Portfolio created but ID not returned.' };
+      await fetchPortfolios(token, uid);
+      setActiveId(id);
+      return { id, error: null };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[createPortfolio]', msg);
+      return { id: null, error: msg };
+    }
   }
 
   const activePortfolio = portfolios.find(p => p.id === activeId) ?? null;
   const symbols = holdings.map(h => h.symbol);
 
   return (
-    <Ctx.Provider value={{ user, portfolios, activeId, activePortfolio, setActiveId, holdings, symbols, loading, refresh, createPortfolio }}>
+    <Ctx.Provider value={{ user, session, portfolios, activeId, activePortfolio, setActiveId, holdings, symbols, loading, refresh, createPortfolio }}>
       {children}
     </Ctx.Provider>
   );

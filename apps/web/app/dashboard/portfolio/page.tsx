@@ -1,12 +1,37 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { createClient } from '@/lib/supabase/client';
 import { fetchQuote } from '@/lib/api';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
 import type { MlClass } from '@/lib/supabase/types';
-import { serverInsertHoldings } from './actions';
+
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+async function restInsertHoldings(
+  portfolioId: string,
+  userId: string,
+  token: string,
+  rows: Array<{ symbol: string; exchange: string; qty: number; avg_price: number }>
+): Promise<string | null> {
+  const body = rows.map(r => ({
+    portfolio_id: portfolioId, user_id: userId,
+    symbol: r.symbol, exchange: r.exchange, qty: r.qty, avg_price: r.avg_price,
+  }));
+  const res = await fetch(`${SUPA_URL}/rest/v1/holdings`, {
+    method: 'POST',
+    headers: {
+      apikey: SUPA_KEY,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Prefer: 'resolution=merge-duplicates,return=minimal',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) return await res.text() || `HTTP ${res.status}`;
+  return null;
+}
 
 type Exchange = 'NSE' | 'BSE' | 'NYSE' | 'NASDAQ';
 
@@ -125,7 +150,7 @@ const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid 
 const inp: React.CSSProperties = { height:40, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:'100%' };
 
 export default function PortfolioPage() {
-  const { portfolios, activeId, activePortfolio, holdings: rawHoldings, setActiveId, createPortfolio, refresh: refreshContext } = usePortfolio();
+  const { portfolios, activeId, activePortfolio, holdings: rawHoldings, setActiveId, createPortfolio, refresh: refreshContext, session } = usePortfolio();
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -137,8 +162,6 @@ export default function PortfolioPage() {
   const [portfolioJustCreated, setPortfolioJustCreated] = useState(false);
   const [showNewPortfolio, setShowNewPortfolio] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
-  const supabaseRef = useRef(createClient());
-  const supabase = supabaseRef.current;
 
   async function enrichHoldings(raw: RawHolding[]) {
     if (!raw.length) { setHoldings([]); setLoading(false); return; }
@@ -155,24 +178,20 @@ export default function PortfolioPage() {
     }));
     setHoldings(enriched);
     setLoading(false);
-    // Persist ml_class back to Supabase
-    await Promise.all(enriched.map(h =>
-      (h.id && h.ml_class) ? supabase.from('holdings').update({ ml_class: h.ml_class }).eq('id', h.id) : Promise.resolve()
-    ));
   }
 
   useEffect(() => { enrichHoldings(rawHoldings); }, [rawHoldings]);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !activeId) return;
+    if (!file || !activeId || !session) return;
     setSyncing(true); setUploadMsg('Parsing file…');
     const rows = await parseFile(file);
     if (!rows.length) {
       setUploadMsg('❌ Could not parse. Supported: Zerodha, Upstox, Groww CSV/Excel — or SIGNAL format: SYMBOL,QTY,AVG_PRICE,EXCHANGE');
       setSyncing(false); return;
     }
-    const { error: insertErr } = await serverInsertHoldings(activeId, rows);
+    const insertErr = await restInsertHoldings(activeId, session.user.id, session.access_token, rows);
     if (insertErr) { setUploadMsg(`❌ ${insertErr}`); setSyncing(false); return; }
     setUploadMsg(`✅ ${rows.length} holdings imported — running ML analysis…`);
     await refreshContext();
@@ -184,14 +203,18 @@ export default function PortfolioPage() {
     const sym = form.symbol.trim().toUpperCase();
     const qty = parseInt(form.qty, 10);
     const avg = parseFloat(form.avg_price);
-    if (!sym || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0 || !activeId) return;
-    await serverInsertHoldings(activeId, [{ symbol: sym, exchange: form.exchange, qty, avg_price: avg }]);
+    if (!sym || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0 || !activeId || !session) return;
+    await restInsertHoldings(activeId, session.user.id, session.access_token, [{ symbol: sym, exchange: form.exchange, qty, avg_price: avg }]);
     setForm({ symbol:'', qty:'', avg_price:'', exchange:'NSE' }); setAddOpen(false);
     await refreshContext();
   }
 
   async function handleDelete(id: string) {
-    await supabase.from('holdings').delete().eq('id', id);
+    if (!session) return;
+    await fetch(`${SUPA_URL}/rest/v1/holdings?id=eq.${id}`, {
+      method: 'DELETE',
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
+    });
     await refreshContext();
   }
 
