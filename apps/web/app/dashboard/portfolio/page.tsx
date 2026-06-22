@@ -166,6 +166,38 @@ export default function PortfolioPage() {
         </div>
       </div>
 
+      {/* Multiple portfolio benefits card */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:12, marginBottom:20 }}>
+        {[
+          { icon:'📂', color:'var(--bluL)', bg:'rgba(23,64,245,0.08)', border:'rgba(23,64,245,0.2)',
+            title:'Multiple Portfolios',
+            desc:'Separate "Swing Trades", "Long Term", "ELSS" — each tracked independently with its own P&L and signals.' },
+          { icon:'🤖', color:'var(--grn)', bg:'rgba(0,212,160,0.07)', border:'rgba(0,212,160,0.2)',
+            title:'ML Classification',
+            desc:'Every holding auto-bucketed: Momentum · Swing · Long-Term · Exit Now. Updated daily from RSI + EMA signals.' },
+          { icon:'📊', color:'var(--pur)', bg:'rgba(139,92,246,0.08)', border:'rgba(139,92,246,0.2)',
+            title:'Live P&L Tracking',
+            desc:'Real-time unrealised gains, invested value, and sector concentration — all from a single CSV upload.' },
+          { icon:'🔔', color:'var(--ylw)', bg:'rgba(255,184,0,0.07)', border:'rgba(255,184,0,0.2)',
+            title:'Signals on Your Stocks',
+            desc:'Live Signals page filters to only your holdings. Earnings alerts, FII/DII impact — personalised to your portfolio.' },
+        ].map(c => (
+          <div key={c.title} style={{ background:c.bg, border:`1px solid ${c.border}`, borderRadius:14, padding:'16px 18px' }}>
+            <div style={{ fontSize:22, marginBottom:10 }}>{c.icon}</div>
+            <div style={{ fontSize:13, fontWeight:700, color:c.color, marginBottom:5 }}>{c.title}</div>
+            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>{c.desc}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* Upload tip */}
+      <div style={{ background:'rgba(0,212,160,0.05)', border:'1px solid rgba(0,212,160,0.15)', borderRadius:12, padding:'12px 16px', marginBottom:20, display:'flex', alignItems:'center', gap:12 }}>
+        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
+        <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>
+          <strong style={{ color:'var(--grn)' }}>Tip:</strong> Create separate portfolios for different strategies — e.g. <em>Swing Picks</em>, <em>Core Holdings</em>, <em>F&O Hedges</em>. Switch between them from the top nav. CSV format: <code style={{ background:'var(--surf2)', padding:'1px 5px', borderRadius:4, fontSize:11 }}>SYMBOL, QUANTITY, AVG_PRICE, EXCHANGE</code>
+        </div>
+      </div>
+
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div>
           <div style={{ fontSize:15, fontWeight:700 }}>Holdings</div>
