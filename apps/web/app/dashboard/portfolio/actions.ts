@@ -3,8 +3,10 @@ import { createClient } from '@/lib/supabase/server';
 
 async function getAuthenticatedSupabase() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  return { supabase, user };
+  // getSession reads JWT from cookies — no network call, no hang.
+  // Middleware already verified the token; RLS enforces data access.
+  const { data: { session } } = await supabase.auth.getSession();
+  return { supabase, user: session?.user ?? null };
 }
 
 export interface ServerPortfolio {

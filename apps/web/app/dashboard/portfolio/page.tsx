@@ -134,6 +134,7 @@ export default function PortfolioPage() {
   const [form, setForm] = useState({ symbol:'', qty:'', avg_price:'', exchange:'NSE' as Exchange });
   const [newPortfolioName, setNewPortfolioName] = useState('');
   const [creatingPortfolio, setCreatingPortfolio] = useState(false);
+  const [portfolioJustCreated, setPortfolioJustCreated] = useState(false);
   const [showNewPortfolio, setShowNewPortfolio] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const supabaseRef = useRef(createClient());
@@ -197,11 +198,12 @@ export default function PortfolioPage() {
   async function handleCreatePortfolio() {
     const name = newPortfolioName.trim();
     if (!name) { setUploadMsg('❌ Enter a portfolio name first.'); return; }
-    setCreatingPortfolio(true); setUploadMsg('');
+    setCreatingPortfolio(true); setUploadMsg(''); setPortfolioJustCreated(false);
     const { id, error } = await createPortfolio(name);
     setCreatingPortfolio(false);
     if (!id) { setUploadMsg(`❌ ${error ?? 'Could not create portfolio'}`); return; }
-    setUploadMsg('✅ Portfolio created! Now upload your holdings file below.');
+    setPortfolioJustCreated(true);
+    setUploadMsg('✅ Portfolio created! Now upload your holdings file.');
   }
 
   const firstUploadRef = useRef<HTMLInputElement>(null);
@@ -215,7 +217,7 @@ export default function PortfolioPage() {
 
   if (portfolios.length === 0) {
     const nameOk = newPortfolioName.trim().length > 0;
-    const portfolioCreated = uploadMsg.startsWith('✅ Portfolio created');
+    const portfolioCreated = portfolioJustCreated;
     return (
       <>
         <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.10),rgba(0,212,160,0.05))', border:'1px solid rgba(23,64,245,0.22)', borderRadius:20, padding:'28px 36px', marginBottom:24 }}>
