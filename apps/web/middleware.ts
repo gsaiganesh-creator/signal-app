@@ -24,8 +24,27 @@ export async function middleware(request: NextRequest) {
 
   const { data: { user } } = await supabase.auth.getUser();
 
-  const PROTECTED = ['/dashboard', '/signals', '/algo-builder', '/paper-trading'];
-  const isProtected = PROTECTED.some(p => request.nextUrl.pathname.startsWith(p));
+  const { pathname } = request.nextUrl;
+
+  // Redirect old standalone routes → under /dashboard
+  if (pathname === '/paper-trading' || pathname.startsWith('/paper-trading/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace('/paper-trading', '/dashboard/paper-trading');
+    return NextResponse.redirect(url);
+  }
+  if (pathname === '/signals' || pathname.startsWith('/signals/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace('/signals', '/dashboard/signals');
+    return NextResponse.redirect(url);
+  }
+  if (pathname === '/algo-builder' || pathname.startsWith('/algo-builder/')) {
+    const url = request.nextUrl.clone();
+    url.pathname = pathname.replace('/algo-builder', '/dashboard/algo-builder');
+    return NextResponse.redirect(url);
+  }
+
+  const PROTECTED = ['/dashboard'];
+  const isProtected = PROTECTED.some(p => pathname.startsWith(p));
 
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
@@ -33,7 +52,7 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(url);
   }
 
-  if (user && request.nextUrl.pathname === '/sign-in') {
+  if (user && pathname === '/sign-in') {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);

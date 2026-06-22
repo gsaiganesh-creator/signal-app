@@ -2,7 +2,10 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-const SIDEBAR = [
+interface NavLink { href: string; icon: string; label: string; badge?: string; danger?: boolean; }
+interface NavSection { section: string; links: NavLink[]; }
+
+const SIDEBAR: NavSection[] = [
   { section:'Main', links:[
     { href:'/dashboard',                  icon:'📊', label:'Dashboard'        },
     { href:'/dashboard/signals',          icon:'📈', label:'Live Signals',    badge:'3' },
@@ -11,7 +14,7 @@ const SIDEBAR = [
   ]},
   { section:'Tools', links:[
     { href:'/dashboard/algo-builder',     icon:'⚙️', label:'Algo Builder'    },
-    { href:'/paper-trading',              icon:'🧪', label:'Paper Trading'   },
+    { href:'/dashboard/paper-trading',    icon:'🧪', label:'Paper Trading'   },
     { href:'/dashboard/backtest',         icon:'📋', label:'Backtest'        },
   ]},
   { section:'Insights', links:[
@@ -24,7 +27,7 @@ const SIDEBAR = [
     { href:'/dashboard/upgrade',          icon:'⚡', label:'Upgrade Plan'    },
     { href:'/dashboard/brokers',          icon:'🔗', label:'Connect Broker'  },
     { href:'/dashboard/refer',            icon:'🎁', label:'Refer & Earn'    },
-    { href:'/sign-out',                   icon:'🚪', label:'Sign Out'        },
+    { href:'/sign-out',                   icon:'🚪', label:'Sign Out',       danger:true },
   ]},
 ];
 
@@ -36,14 +39,16 @@ export function DashboardSidebar() {
       {SIDEBAR.map(group => (
         <div key={group.section}>
           <div style={{ fontSize:10, fontWeight:700, color:'var(--dim2)', letterSpacing:1, textTransform:'uppercase', padding:'12px 10px 6px' }}>{group.section}</div>
-          {group.links.map(l => {
-            const active = pathname === l.href || (l.href !== '/dashboard' && pathname.startsWith(l.href));
+          {group.links.map((link: NavLink) => {
+            const active = pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href));
+            const color = link.danger ? 'var(--red)' : active ? 'var(--bluL)' : 'var(--dim)';
+            const bg    = link.danger ? 'transparent' : active ? 'rgba(23,64,245,0.1)' : 'transparent';
             return (
-              <Link key={l.label} href={l.href}
-                style={{ display:'flex', alignItems:'center', gap:9, padding:'9px 10px', borderRadius:9, fontSize:13, fontWeight: active ? 600 : 500, color: active ? 'var(--bluL)' : 'var(--dim)', background: active ? 'rgba(23,64,245,0.1)' : 'transparent' }}>
-                <span style={{ width:16, textAlign:'center', fontSize:14 }}>{l.icon}</span>
-                {l.label}
-                {l.badge && <span style={{ marginLeft:'auto', fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:10, background:'var(--red)', color:'#fff' }}>{l.badge}</span>}
+              <Link key={link.label} href={link.href}
+                style={{ display:'flex', alignItems:'center', gap:9, padding:'9px 10px', borderRadius:9, fontSize:13, fontWeight: active ? 600 : 500, color, background: bg }}>
+                <span style={{ width:16, textAlign:'center', fontSize:14 }}>{link.icon}</span>
+                {link.label}
+                {link.badge && <span style={{ marginLeft:'auto', fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:10, background:'var(--red)', color:'#fff' }}>{link.badge}</span>}
               </Link>
             );
           })}
