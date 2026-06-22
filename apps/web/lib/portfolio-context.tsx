@@ -1,0 +1,122 @@
+'use client';
+import { createContext, useContext, useEffect, useState, useCallback, ReactNode } from 'react';
+import type { User } from '@supabase/supabase-js';
+import { createClient } from './supabase/client';
+
+export interface Portfolio {
+  id: string;
+  name: string;
+  broker: string | null;
+  created_at: string;
+}
+
+export interface RawHolding {
+  id: string;
+  symbol: string;
+  exchange: string;
+  qty: number;
+  avg_price: number;
+}
+
+interface PortfolioCtx {
+  user: User | null;
+  portfolios: Portfolio[];
+  activeId: string | null;
+  activePortfolio: Portfolio | null;
+  setActiveId: (id: string) => void;
+  holdings: RawHolding[];
+  symbols: string[];
+  loading: boolean;
+  refresh: () => Promise<void>;
+  createPortfolio: (name: string) => Promise<string | null>;
+}
+
+const Ctx = createContext<PortfolioCtx | null>(null);
+
+export function PortfolioProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [portfolios, setPortfolios] = useState<Portfolio[]>([]);
+  const [activeId, setActiveIdState] = useState<string | null>(null);
+  const [holdings, setHoldings] = useState<RawHolding[]>([]);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  function setActiveId(id: string) {
+    setActiveIdState(id);
+    if (typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', id);
+  }
+
+  const fetchHoldings = useCallback(async (portfolioId: string) => {
+    const { data } = await supabase
+      .from('holdings')
+      .select('id, symbol, exchange, qty, avg_price')
+      .eq('portfolio_id', portfolioId)
+      .order('symbol');
+    setHoldings(data ?? []);
+  }, [supabase]);
+
+  const refresh = useCallback(async () => {
+    setLoading(true);
+    const { data: { user: u } } = await supabase.auth.getUser();
+    setUser(u);
+    if (!u) { setLoading(false); return; }
+
+    const { data: ps } = await supabase
+      .from('portfolios')
+      .select('id, name, broker, created_at')
+      .eq('user_id', u.id)
+      .order('created_at');
+
+    const pList = ps ?? [];
+    setPortfolios(pList);
+
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('signal_active_portfolio') : null;
+    const aid = (stored && pList.find(p => p.id === stored)) ? stored : (pList[0]?.id ?? null);
+    if (aid && typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', aid);
+    setActiveIdState(aid);
+
+    if (aid) await fetchHoldings(aid);
+    else setHoldings([]);
+
+    setLoading(false);
+  }, [supabase, fetchHoldings]);
+
+  // Re-fetch holdings when user switches active portfolio
+  const [prevActiveId, setPrevActiveId] = useState<string | null>(null);
+  useEffect(() => {
+    if (activeId && activeId !== prevActiveId) {
+      setPrevActiveId(activeId);
+      fetchHoldings(activeId);
+    }
+  }, [activeId, prevActiveId, fetchHoldings]);
+
+  async function createPortfolio(name: string): Promise<string | null> {
+    if (!user) return null;
+    const { data } = await supabase
+      .from('portfolios')
+      .insert({ user_id: user.id, name, broker: 'manual' })
+      .select('id')
+      .single();
+    const newId = data?.id ?? null;
+    await refresh();
+    if (newId) setActiveId(newId);
+    return newId;
+  }
+
+  useEffect(() => { refresh(); }, [refresh]);
+
+  const activePortfolio = portfolios.find(p => p.id === activeId) ?? null;
+  const symbols = holdings.map(h => h.symbol);
+
+  return (
+    <Ctx.Provider value={{ user, portfolios, activeId, activePortfolio, setActiveId, holdings, symbols, loading, refresh, createPortfolio }}>
+      {children}
+    </Ctx.Provider>
+  );
+}
+
+export function usePortfolio() {
+  const ctx = useContext(Ctx);
+  if (!ctx) throw new Error('usePortfolio must be inside PortfolioProvider');
+  return ctx;
+}

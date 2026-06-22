@@ -1,3 +1,6 @@
+'use client';
+import { usePortfolio } from '@/lib/portfolio-context';
+
 const DAYS = [
   {
     date:'Mon · Jun 23', count:'4 results',
@@ -43,6 +46,12 @@ const DAYS = [
 ];
 
 export default function EarningsCalendarPage() {
+  const { symbols, portfolios } = usePortfolio();
+  const hasPortfolio = portfolios.length > 0;
+  const filteredDays = hasPortfolio
+    ? DAYS.map(d => ({ ...d, items: d.items.filter(i => symbols.includes(i.sym)) })).filter(d => d.items.length > 0)
+    : DAYS;
+
   return (
     <>
       <div style={{ marginBottom:20 }}>
@@ -58,9 +67,15 @@ export default function EarningsCalendarPage() {
         </div>
       </div>
 
+      {hasPortfolio && filteredDays.length === 0 && (
+        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'24px', marginBottom:20, textAlign:'center', color:'var(--dim)' }}>
+          No earnings this week for stocks in your portfolio.
+        </div>
+      )}
+
       {/* Calendar grid */}
       <div className="g3-earnings" style={{ display:'grid', gap:14, marginBottom:24 }}>
-        {DAYS.map(day => (
+        {filteredDays.map(day => (
           <div key={day.date} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, overflow:'hidden' }}>
             <div style={{ padding:'12px 16px', background:'var(--surf2)', borderBottom:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <div style={{ fontSize:13, fontWeight:800 }}>{day.date}</div>
