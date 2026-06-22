@@ -96,18 +96,20 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   }, [activeId, prevActiveId, fetchHoldings]);
 
   async function createPortfolio(name: string): Promise<{ id: string | null; error: string | null }> {
-    if (!user) return { id: null, error: 'Not logged in. Please sign in again.' };
+    // Always fetch fresh user — never rely on stale context state for auth
+    const { data: { user: freshUser } } = await supabase.auth.getUser();
+    if (!freshUser) return { id: null, error: 'Not logged in. Please sign in again.' };
     // Upsert profile first — handles users who signed up before the trigger was deployed
     const { error: profileErr } = await supabase.from('profiles').upsert({
-      id: user.id,
-      email: user.email ?? null,
-      full_name: (user.user_metadata?.full_name ?? user.user_metadata?.name) || null,
-      avatar_url: user.user_metadata?.avatar_url ?? null,
+      id: freshUser.id,
+      email: freshUser.email ?? null,
+      full_name: (freshUser.user_metadata?.full_name ?? freshUser.user_metadata?.name) || null,
+      avatar_url: freshUser.user_metadata?.avatar_url ?? null,
     }, { onConflict: 'id' });
     if (profileErr) console.error('[createPortfolio] profile upsert failed:', profileErr.message);
     const { data, error } = await supabase
       .from('portfolios')
-      .insert({ user_id: user.id, name, broker: 'manual' })
+      .insert({ user_id: freshUser.id, name, broker: 'manual' })
       .select('id')
       .single();
     if (error) {
