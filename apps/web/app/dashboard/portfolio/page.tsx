@@ -208,6 +208,29 @@ export default function PortfolioPage() {
     setNewPortfolioName(''); setShowNewPortfolio(false);
   }
 
+  // Create portfolio + immediately upload file — used on the empty state page
+  const firstUploadRef = useRef<HTMLInputElement>(null);
+  async function handleCreateAndUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setSyncing(true); setUploadMsg('Creating portfolio…');
+    const name = newPortfolioName.trim() || 'My Portfolio';
+    const newId = await createPortfolio(name);
+    if (!newId) { setUploadMsg('❌ Could not create portfolio. Try again.'); setSyncing(false); return; }
+    setUploadMsg('Parsing file…');
+    const rows = await parseFile(file);
+    if (!rows.length) { setUploadMsg('❌ Could not parse file. Check format.'); setSyncing(false); return; }
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) { setUploadMsg('❌ Not logged in.'); setSyncing(false); return; }
+    const inserts = rows.map(r => ({ portfolio_id: newId, user_id: user.id, symbol: r.symbol, exchange: r.exchange, qty: r.qty, avg_price: r.avg_price }));
+    const { error } = await supabase.from('holdings').upsert(inserts, { onConflict: 'portfolio_id,symbol,exchange' });
+    if (error) { setUploadMsg(`❌ ${error.message}`); setSyncing(false); return; }
+    setUploadMsg(`✅ ${rows.length} holdings imported — running ML analysis…`);
+    await refreshContext();
+    setSyncing(false);
+    e.target.value = '';
+  }
+
   const totalInvested = holdings.reduce((s, h) => s + h.avg_price * h.qty, 0);
   const totalCurrent  = holdings.reduce((s, h) => s + (h.current_price ?? h.avg_price) * h.qty, 0);
   const totalPL       = totalCurrent - totalInvested;
@@ -259,29 +282,66 @@ export default function PortfolioPage() {
           ))}
         </div>
 
-        {/* Create first portfolio */}
-        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:'28px 32px', maxWidth:520 }}>
-          <div style={{ fontSize:17, fontWeight:800, marginBottom:4 }}>📂 Create your first portfolio</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginBottom:20, lineHeight:1.6 }}>
-            Name it anything — <em>"Main Portfolio"</em>, <em>"Swing Trades"</em>, <em>"Long Term"</em>. You can create more later.
+        {/* Create portfolio + upload in one step */}
+        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:'28px 32px', maxWidth:560 }}>
+          <div style={{ fontSize:17, fontWeight:800, marginBottom:4 }}>📂 Set up your portfolio</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24, lineHeight:1.6 }}>
+            Give it a name, then upload your broker export — done in one step.
           </div>
-          <div style={{ marginBottom:14 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginBottom:6, letterSpacing:0.5, textTransform:'uppercase' }}>Portfolio name</div>
-            <input style={{ ...inp, maxWidth:340 }} placeholder="My Portfolio" value={newPortfolioName}
-              onChange={e => setNewPortfolioName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleCreatePortfolio()}
-              onFocus={e => e.target.style.borderColor='var(--blu)'} onBlur={e => e.target.style.borderColor='var(--bdr)'}/>
-          </div>
-          <button onClick={handleCreatePortfolio} disabled={!newPortfolioName.trim() || creatingPortfolio}
-            style={{ height:42, padding:'0 28px', borderRadius:10, background:'var(--blu)', border:'none', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity:(!newPortfolioName.trim() || creatingPortfolio) ? 0.5 : 1 }}>
-            {creatingPortfolio ? '⏳ Creating…' : 'Create Portfolio →'}
-          </button>
 
-          {/* CSV tip */}
-          <div style={{ marginTop:20, paddingTop:20, borderTop:'1px solid var(--bdr)', fontSize:12, color:'var(--dim)', lineHeight:1.7 }}>
-            <strong style={{ color:'var(--txt)' }}>After creating, import holdings via CSV:</strong><br/>
-            Format: <code style={{ background:'var(--surf2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>SYMBOL, QUANTITY, AVG_PRICE, EXCHANGE</code><br/>
-            Example: <code style={{ background:'var(--surf2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>RELIANCE, 10, 2800, NSE</code>
+          {/* Step 1 — name */}
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+            <div style={{ width:22, height:22, borderRadius:'50%', background:'var(--blu)', color:'#fff', fontSize:11, fontWeight:900, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>1</div>
+            <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5 }}>Portfolio name</div>
+          </div>
+          <input style={{ ...inp, maxWidth:360, marginBottom:20 }} placeholder="Zerodha / Swing Trades / Long Term…"
+            value={newPortfolioName} onChange={e => setNewPortfolioName(e.target.value)}
+            onFocus={e => e.target.style.borderColor='var(--blu)'} onBlur={e => e.target.style.borderColor='var(--bdr)'}/>
+
+          {/* Step 2 — upload */}
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+            <div style={{ width:22, height:22, borderRadius:'50%', background:'var(--blu)', color:'#fff', fontSize:11, fontWeight:900, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>2</div>
+            <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5 }}>Upload your broker export</div>
+          </div>
+
+          <button onClick={() => firstUploadRef.current?.click()} disabled={syncing}
+            style={{ height:52, padding:'0 32px', borderRadius:12, background:'linear-gradient(135deg,var(--blu),#4F6FFA)', border:'none', color:'#fff', fontSize:16, fontWeight:700, cursor: syncing ? 'not-allowed' : 'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:10, marginBottom:14, opacity: syncing ? 0.7 : 1 }}>
+            {syncing ? '⏳ Importing…' : '📤 Upload Holdings (CSV / Excel)'}
+          </button>
+          <input ref={firstUploadRef} type="file" accept=".csv,.xlsx,.xls,.txt" style={{ display:'none' }} onChange={handleCreateAndUpload}/>
+
+          {uploadMsg && (
+            <div style={{ fontSize:13, padding:'10px 14px', borderRadius:10, marginBottom:14,
+              background: uploadMsg.startsWith('✅') ? 'rgba(0,212,160,0.07)' : 'rgba(255,59,92,0.07)',
+              border: `1px solid ${uploadMsg.startsWith('✅') ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`,
+              color: uploadMsg.startsWith('✅') ? 'var(--grn)' : 'var(--red)' }}>
+              {uploadMsg}
+            </div>
+          )}
+
+          {/* Broker format list */}
+          <div style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:10, padding:'14px 16px', fontSize:12 }}>
+            <div style={{ fontWeight:700, color:'var(--dim)', marginBottom:8 }}>Supported broker formats (auto-detected)</div>
+            {[
+              ['Zerodha Kite', 'Holdings → ⋮ → Download CSV'],
+              ['Zerodha Console', 'Reports → P&L → Holdings → Download'],
+              ['Upstox', 'Portfolio → Holdings → Download CSV'],
+              ['Groww', 'Portfolio → Download statement'],
+              ['Manual CSV', 'SYMBOL, QTY, AVG_PRICE, EXCHANGE (one row per stock)'],
+            ].map(([b, h]) => (
+              <div key={b} style={{ display:'flex', gap:10, marginBottom:5 }}>
+                <span style={{ color:'var(--bluL)', fontWeight:700, minWidth:110 }}>{b}</span>
+                <span style={{ color:'var(--dim)' }}>{h}</span>
+              </div>
+            ))}
+          </div>
+
+          {/* Manual create without upload */}
+          <div style={{ marginTop:16, fontSize:12, color:'var(--dim)' }}>
+            No file? <button onClick={handleCreatePortfolio} disabled={!newPortfolioName.trim() || creatingPortfolio}
+              style={{ background:'none', border:'none', color:'var(--bluL)', fontSize:12, fontWeight:600, cursor:'pointer', padding:0, fontFamily:'inherit' }}>
+              {creatingPortfolio ? 'Creating…' : 'Create empty portfolio →'}
+            </button> (add stocks manually after)
           </div>
         </div>
       </>
