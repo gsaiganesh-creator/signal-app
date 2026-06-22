@@ -56,38 +56,55 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     setHoldings(data ?? []);
   }, [supabase]);
 
+  const fetchPortfolios = useCallback(async (uid: string) => {
+    const { data: ps } = await supabase
+      .from('portfolios')
+      .select('id, name, broker, created_at')
+      .eq('user_id', uid)
+      .order('created_at');
+    const pList = ps ?? [];
+    setPortfolios(pList);
+    const stored = typeof window !== 'undefined' ? localStorage.getItem('signal_active_portfolio') : null;
+    const aid = (stored && pList.find(p => p.id === stored)) ? stored : (pList[0]?.id ?? null);
+    if (aid && typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', aid);
+    setActiveIdState(aid);
+    if (aid) await fetchHoldings(aid);
+    else setHoldings([]);
+  }, [supabase, fetchHoldings]);
+
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      // getSession() reads from local cookie storage — no network call.
-      // getUser() makes a live server call that can fail if token is mid-refresh.
       const { data: { session } } = await supabase.auth.getSession();
       const u = session?.user ?? null;
-      setUser(u);
-      if (!u) { setLoading(false); return; }
-
-      const { data: ps } = await supabase
-        .from('portfolios')
-        .select('id, name, broker, created_at')
-        .eq('user_id', u.id)
-        .order('created_at');
-
-      const pList = ps ?? [];
-      setPortfolios(pList);
-
-      const stored = typeof window !== 'undefined' ? localStorage.getItem('signal_active_portfolio') : null;
-      const aid = (stored && pList.find(p => p.id === stored)) ? stored : (pList[0]?.id ?? null);
-      if (aid && typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', aid);
-      setActiveIdState(aid);
-
-      if (aid) await fetchHoldings(aid);
-      else setHoldings([]);
+      if (u) await fetchPortfolios(u.id);
+      else { setPortfolios([]); setHoldings([]); }
     } catch (err) {
       console.error('[portfolio-context] refresh error:', err);
     } finally {
       setLoading(false);
     }
-  }, [supabase, fetchHoldings]);
+  }, [supabase, fetchPortfolios]);
+
+  // onAuthStateChange is the correct Supabase pattern for client components.
+  // It fires immediately with the current session on mount, then on every change.
+  useEffect(() => {
+    setLoading(true);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        const u = session?.user ?? null;
+        setUser(u);
+        if (u) {
+          await fetchPortfolios(u.id);
+        } else {
+          setPortfolios([]);
+          setHoldings([]);
+        }
+        setLoading(false);
+      }
+    );
+    return () => subscription.unsubscribe();
+  }, [supabase, fetchPortfolios]);
 
   // Re-fetch holdings when user switches active portfolio
   const [prevActiveId, setPrevActiveId] = useState<string | null>(null);
@@ -99,20 +116,19 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   }, [activeId, prevActiveId, fetchHoldings]);
 
   async function createPortfolio(name: string): Promise<{ id: string | null; error: string | null }> {
-    const { data: { session } } = await supabase.auth.getSession();
-    const freshUser = session?.user ?? null;
-    if (!freshUser) return { id: null, error: 'Not logged in. Please sign in again.' };
+    // Use user from state — populated by onAuthStateChange which is always current
+    if (!user) return { id: null, error: 'Not logged in. Please sign in again.' };
     // Upsert profile first — handles users who signed up before the trigger was deployed
     const { error: profileErr } = await supabase.from('profiles').upsert({
-      id: freshUser.id,
-      email: freshUser.email ?? null,
-      full_name: (freshUser.user_metadata?.full_name ?? freshUser.user_metadata?.name) || null,
-      avatar_url: freshUser.user_metadata?.avatar_url ?? null,
+      id: user.id,
+      email: user.email ?? null,
+      full_name: (user.user_metadata?.full_name ?? user.user_metadata?.name) || null,
+      avatar_url: user.user_metadata?.avatar_url ?? null,
     }, { onConflict: 'id' });
     if (profileErr) console.error('[createPortfolio] profile upsert failed:', profileErr.message);
     const { data, error } = await supabase
       .from('portfolios')
-      .insert({ user_id: freshUser.id, name, broker: 'manual' })
+      .insert({ user_id: user.id, name, broker: 'manual' })
       .select('id')
       .single();
     if (error) {
@@ -124,8 +140,6 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     if (newId) setActiveId(newId);
     return { id: newId, error: null };
   }
-
-  useEffect(() => { refresh(); }, [refresh]);
 
   const activePortfolio = portfolios.find(p => p.id === activeId) ?? null;
   const symbols = holdings.map(h => h.symbol);
