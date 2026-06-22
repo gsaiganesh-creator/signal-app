@@ -580,7 +580,7 @@ export default function LandingPage() {
                   <div><div style={{ fontSize:13, fontWeight:700 }}>Vaasudev Amitav</div><div style={{ fontSize:11, color:'var(--dim)' }}>@signal_in</div></div>
                   <div style={{ marginLeft:'auto', fontSize:16, fontWeight:900, color:'var(--dim)' }}>𝕏</div>
                 </div>
-                <div style={{ fontSize:13, lineHeight:1.6, color:'#C4D0E8', marginBottom:11, whiteSpace:'pre-line' }}>{tw.body}</div>
+                <div style={{ fontSize:13, lineHeight:1.6, color:'var(--dim)', marginBottom:11, whiteSpace:'pre-line' }}>{tw.body}</div>
                 <div style={{ borderRadius:10, padding:12, marginBottom:10, background:tw.innerBg, border:`1px solid ${tw.innerBc}` }}>
                   <div style={{ fontSize:12, color:'var(--dim)' }}>{tw.inner}</div>
                 </div>
@@ -662,7 +662,7 @@ export default function LandingPage() {
                 <div style={{ fontSize:48, fontWeight:900, letterSpacing:-2, lineHeight:1, color:plan.nameC, marginBottom:4 }}>{plan.price}</div>
                 <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>{plan.cycle}</div>
                 <ul style={{ listStyle:'none', display:'flex', flexDirection:'column', gap:9, marginBottom:28 }}>
-                  {plan.feats.map(f => <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'#C4D0E8', lineHeight:1.4 }}><span style={{ color:'var(--grn)', fontWeight:700, flexShrink:0 }}>✓</span>{f}</li>)}
+                  {plan.feats.map(f => <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'var(--dim)', lineHeight:1.4 }}><span style={{ color:'var(--grn)', fontWeight:700, flexShrink:0 }}>✓</span>{f}</li>)}
                   {plan.nope.map(f => <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'var(--dim)', lineHeight:1.4 }}><span style={{ color:'var(--dim2)', flexShrink:0 }}>–</span>{f}</li>)}
                 </ul>
                 <button style={{ width:'100%', height:48, borderRadius:12, fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background: plan.featured ? 'linear-gradient(135deg,var(--blu),var(--bluL))' : 'transparent', border: plan.featured ? 'none' : '1px solid var(--bdr)', color: plan.featured ? '#fff' : 'var(--txt)' }}>

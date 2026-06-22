@@ -1,11 +1,10 @@
+import { PublicNav } from '@/components/PublicNav';
+
 export default function AboutPage() {
   return (
     <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh' }}>
 
-      {/* SEBI Banner */}
-      <div style={{ background:'rgba(255,184,0,0.07)', borderBottom:'1px solid rgba(255,184,0,0.18)', padding:'8px 40px', textAlign:'center' }}>
-        <span style={{ fontSize:11.5, color:'rgba(255,184,0,0.8)' }}>⚠️ <strong>NOT SEBI REGISTERED</strong> — All signals are for informational purposes only. Not financial advice. Trade at your own risk.</span>
-      </div>
+      <PublicNav />
 
       {/* Hero */}
       <section style={{ padding:'80px 40px 64px', position:'relative', overflow:'hidden', textAlign:'center' }}>
@@ -112,9 +111,9 @@ export default function AboutPage() {
           <div>
             <div style={{ fontSize:11, fontWeight:700, letterSpacing:'2.5px', textTransform:'uppercase' as const, color:'var(--grn)', marginBottom:12 }}>Origin Story</div>
             <div style={{ fontSize:'clamp(24px,3.5vw,40px)', fontWeight:900, letterSpacing:-1.5, marginBottom:16 }}>Why we built this</div>
-            <p style={{ marginBottom:16, fontSize:15, lineHeight:1.75, color:'#C4D0E8' }}>In 2023, Vaasudev was paying ₹4,500/month to a popular Telegram stock advisory channel. After 6 months, he tallied the actual results: 52% accuracy on their calls — barely better than a coin flip, at an annual cost of ₹54,000.</p>
-            <p style={{ marginBottom:16, fontSize:15, lineHeight:1.75, color:'#C4D0E8' }}>The frustrating part wasn&apos;t the accuracy. It was that they never published their accuracy. They only shared the wins on social media. The losses were quietly forgotten.</p>
-            <p style={{ fontSize:15, lineHeight:1.75, color:'#C4D0E8' }}>SIGNAL was built to answer one question: <strong style={{ color:'var(--txt)' }}>What if a trading signal service published every single call — wins and losses — and let the data speak for itself?</strong></p>
+            <p style={{ marginBottom:16, fontSize:15, lineHeight:1.75, color:'var(--dim)' }}>In 2023, Vaasudev was paying ₹4,500/month to a popular Telegram stock advisory channel. After 6 months, he tallied the actual results: 52% accuracy on their calls — barely better than a coin flip, at an annual cost of ₹54,000.</p>
+            <p style={{ marginBottom:16, fontSize:15, lineHeight:1.75, color:'var(--dim)' }}>The frustrating part wasn&apos;t the accuracy. It was that they never published their accuracy. They only shared the wins on social media. The losses were quietly forgotten.</p>
+            <p style={{ fontSize:15, lineHeight:1.75, color:'var(--dim)' }}>SIGNAL was built to answer one question: <strong style={{ color:'var(--txt)' }}>What if a trading signal service published every single call — wins and losses — and let the data speak for itself?</strong></p>
           </div>
           <div>
             {[

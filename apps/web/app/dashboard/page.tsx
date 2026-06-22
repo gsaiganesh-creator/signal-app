@@ -171,7 +171,7 @@ export default function DashboardPage() {
                   <div style={{ fontSize:12, fontWeight:700 }}>Vaasudev Amitav</div>
                   <div style={{ fontSize:10, color:'var(--dim2)', marginLeft:'auto' }}>{tw.time}</div>
                 </div>
-                <div style={{ fontSize:12, color:'#C4D0E8', lineHeight:1.55 }}>{tw.text}</div>
+                <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.55 }}>{tw.text}</div>
               </div>
             ))}
           </div>

@@ -222,7 +222,7 @@ export default function ReferPage() {
               'Maximum discount: 80% off annual (5 paid referrals). No further discount beyond 5.',
               'If a referred friend cancels their subscription, your discount tier adjusts accordingly at your next renewal.',
             ].map((rule, i) => (
-              <div key={i} style={{ display:'flex', gap:12, padding:'10px 0', borderBottom: i < 5 ? '1px solid var(--bdr)' : 'none', fontSize:13, color:'#C4D0E8', lineHeight:1.6 }}>
+              <div key={i} style={{ display:'flex', gap:12, padding:'10px 0', borderBottom: i < 5 ? '1px solid var(--bdr)' : 'none', fontSize:13, color:'var(--dim)', lineHeight:1.6 }}>
                 <div style={{ width:24, height:24, borderRadius:7, background:'var(--surf2)', border:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, color:'var(--dim)', flexShrink:0, marginTop:1 }}>{i+1}</div>
                 <div dangerouslySetInnerHTML={{ __html: rule.replace('only when', '<strong>only when</strong>').replace('annual subscriptions only', '<strong>annual subscriptions only</strong>').replace('incremental and non-expiring', '<strong>incremental and non-expiring</strong>').replace('80% off annual', '<strong style="color:var(--pur)">80% off annual</strong>') }}/>
               </div>
