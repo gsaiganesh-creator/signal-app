@@ -124,23 +124,71 @@ export default function PortfolioPage() {
   if (portfolios.length === 0) {
     return (
       <>
-        <div style={{ marginBottom:20 }}>
-          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>My Portfolio</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>Create your first portfolio to get started</div>
+        {/* Hero — same referral card style */}
+        <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.10),rgba(0,212,160,0.05))', border:'1px solid rgba(23,64,245,0.22)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
+          <div>
+            <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--bluL)', textTransform:'uppercase', marginBottom:8 }}>My Portfolio</div>
+            <div style={{ fontSize:26, fontWeight:900, letterSpacing:-0.6, lineHeight:1.2, marginBottom:10 }}>
+              Upload once.<br/><span style={{ color:'var(--grn)' }}>Track everything.</span>
+            </div>
+            <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.7, maxWidth:420 }}>
+              SIGNAL tracks live P&amp;L, runs ML signals on every stock you hold, and fires BUY / SELL alerts personalised to your portfolio — not generic picks.
+            </div>
+          </div>
+          <div style={{ textAlign:'center', flexShrink:0 }}>
+            <div style={{ fontSize:48, fontWeight:900, color:'var(--dim)', lineHeight:1 }}>—</div>
+            <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>no holdings yet</div>
+          </div>
         </div>
-        <div style={{ ...card, maxWidth:480 }}>
-          <div style={{ fontSize:16, fontWeight:700, marginBottom:6 }}>📂 Create your first portfolio</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginBottom:20 }}>Name it anything — "Main Portfolio", "Swing Trades", "TFSA".</div>
-          <div style={{ marginBottom:10 }}>
-            <div style={{ fontSize:11, fontWeight:600, color:'var(--dim)', marginBottom:5 }}>Portfolio name</div>
-            <input style={inp} placeholder="My Portfolio" value={newPortfolioName} onChange={e => setNewPortfolioName(e.target.value)}
+
+        {/* What this does — 4 benefit tiles */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:12, marginBottom:20 }}>
+          {[
+            { icon:'📂', color:'var(--bluL)', bg:'rgba(23,64,245,0.08)', border:'rgba(23,64,245,0.2)',
+              title:'Multiple Portfolios',
+              desc:'Separate "Swing Trades", "Core Holdings", "ELSS" — each tracked independently with its own P&L.' },
+            { icon:'🤖', color:'var(--grn)', bg:'rgba(0,212,160,0.07)', border:'rgba(0,212,160,0.2)',
+              title:'ML Classification',
+              desc:'Every holding auto-bucketed: Momentum · Swing · Long-Term · Exit Now. Refreshed daily from RSI + EMA signals.' },
+            { icon:'📊', color:'var(--pur)', bg:'rgba(139,92,246,0.08)', border:'rgba(139,92,246,0.2)',
+              title:'Live P&L Tracking',
+              desc:'Real-time unrealised gains, invested value, sector concentration — one CSV upload is all it takes.' },
+            { icon:'🔔', color:'var(--ylw)', bg:'rgba(255,184,0,0.07)', border:'rgba(255,184,0,0.2)',
+              title:'Signals on Your Stocks',
+              desc:'Live Signals page filters to your holdings. Earnings alerts, FII/DII impact — personalised, not generic.' },
+          ].map(c => (
+            <div key={c.title} style={{ background:c.bg, border:`1px solid ${c.border}`, borderRadius:14, padding:'16px 18px' }}>
+              <div style={{ fontSize:22, marginBottom:10 }}>{c.icon}</div>
+              <div style={{ fontSize:13, fontWeight:700, color:c.color, marginBottom:5 }}>{c.title}</div>
+              <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>{c.desc}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Create first portfolio */}
+        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:'28px 32px', maxWidth:520 }}>
+          <div style={{ fontSize:17, fontWeight:800, marginBottom:4 }}>📂 Create your first portfolio</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginBottom:20, lineHeight:1.6 }}>
+            Name it anything — <em>"Main Portfolio"</em>, <em>"Swing Trades"</em>, <em>"Long Term"</em>. You can create more later.
+          </div>
+          <div style={{ marginBottom:14 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginBottom:6, letterSpacing:0.5, textTransform:'uppercase' }}>Portfolio name</div>
+            <input style={{ ...inp, maxWidth:340 }} placeholder="My Portfolio" value={newPortfolioName}
+              onChange={e => setNewPortfolioName(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCreatePortfolio()}
               onFocus={e => e.target.style.borderColor='var(--blu)'} onBlur={e => e.target.style.borderColor='var(--bdr)'}/>
           </div>
           <button onClick={handleCreatePortfolio} disabled={!newPortfolioName.trim() || creatingPortfolio}
-            style={{ height:40, padding:'0 24px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: (!newPortfolioName.trim() || creatingPortfolio) ? 0.5 : 1 }}>
-            {creatingPortfolio ? 'Creating…' : 'Create Portfolio →'}
+            style={{ height:42, padding:'0 28px', borderRadius:10, background:'var(--blu)', border:'none', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity:(!newPortfolioName.trim() || creatingPortfolio) ? 0.5 : 1 }}>
+            {creatingPortfolio ? '⏳ Creating…' : 'Create Portfolio →'}
           </button>
+
+          {/* CSV tip */}
+          <div style={{ marginTop:20, paddingTop:20, borderTop:'1px solid var(--bdr)', fontSize:12, color:'var(--dim)', lineHeight:1.7 }}>
+            <strong style={{ color:'var(--txt)' }}>After creating, import holdings via CSV:</strong><br/>
+            Format: <code style={{ background:'var(--surf2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>SYMBOL, QUANTITY, AVG_PRICE, EXCHANGE</code><br/>
+            Example: <code style={{ background:'var(--surf2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>RELIANCE, 10, 2800, NSE</code>
+          </div>
         </div>
       </>
     );

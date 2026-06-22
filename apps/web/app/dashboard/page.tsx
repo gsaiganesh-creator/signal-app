@@ -50,9 +50,14 @@ function MarketOverview() {
   );
 }
 
-function WelcomeEmpty({ name }: { name: string }) {
+function WelcomeEmpty({ name, email }: { name: string; email?: string }) {
   return (
     <>
+      {/* signed-in confirmation — shows once, so user knows Google auth worked */}
+      <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(0,212,160,0.08)', border:'1px solid rgba(0,212,160,0.25)', borderRadius:30, padding:'6px 14px', marginBottom:20 }}>
+        <div style={{ width:8, height:8, borderRadius:'50%', background:'var(--grn)' }}/>
+        <span style={{ fontSize:12, color:'var(--grn)', fontWeight:600 }}>Signed in{email ? ` as ${email}` : ''}</span>
+      </div>
       <div style={{ marginBottom:24 }}>
         <div style={{ fontSize:26, fontWeight:800, letterSpacing:-0.5 }}>{greet()}, {name} 👋</div>
         <div style={{ fontSize:13, color:'var(--dim)', marginTop:4 }}>Welcome to SIGNAL. Set up your portfolio to unlock AI signals and P&L tracking.</div>
@@ -140,7 +145,7 @@ export default function DashboardPage() {
   }
 
   if (portfolios.length === 0) {
-    return <WelcomeEmpty name={name} />;
+    return <WelcomeEmpty name={name} email={user.email} />;
   }
 
   const invested = holdings.reduce((s, h) => s + h.avg_price * h.qty, 0);

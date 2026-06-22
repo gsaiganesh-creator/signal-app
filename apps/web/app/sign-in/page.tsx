@@ -151,6 +151,10 @@ export default function SignInPage() {
             {tab === 'signin' ? 'Continue' : 'Sign up'} with Google
           </button>
 
+          <div style={{ fontSize:11, color:'var(--dim)', textAlign:'center', marginBottom:14, lineHeight:1.5 }}>
+            ✅ Google sign-in works for both new and existing accounts — no separate sign-up needed.
+          </div>
+
           <div style={{ display:'flex', alignItems:'center', gap:12, margin:'16px 0' }}>
             <div style={{ flex:1, height:1, background:'var(--bdr)' }}/>
             <span style={{ fontSize:12, color:'var(--dim2)', whiteSpace:'nowrap' }}>or continue with email</span>
