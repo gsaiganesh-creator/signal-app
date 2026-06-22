@@ -148,30 +148,22 @@ export default function PortfolioPage() {
 
   return (
     <>
-      {/* Hero banner */}
-      <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.07),rgba(0,212,160,0.04))', border:'1px solid rgba(23,64,245,0.15)', borderRadius:16, padding:'20px 24px', marginBottom:20, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:16 }}>
+      {/* Hero — referral card style */}
+      <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.07),rgba(0,212,160,0.04))', border:'1px solid rgba(23,64,245,0.18)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
         <div>
-          <div style={{ fontSize:20, fontWeight:800, letterSpacing:-0.4 }}>My Portfolios</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:4, lineHeight:1.6, maxWidth:560 }}>
-            Upload your holdings once — SIGNAL tracks live P&L, runs ML classification (Momentum / Swing / Long-Term / Exit Now) and fires BUY/SELL signals for every stock you own.
+          <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--bluL)', textTransform:'uppercase', marginBottom:8 }}>My Portfolio</div>
+          <div style={{ fontSize:26, fontWeight:900, letterSpacing:-0.6, lineHeight:1.2, marginBottom:8 }}>
+            Upload once.<br/><span style={{ color:'var(--grn)' }}>Track everything.</span>
           </div>
-          <div style={{ display:'flex', gap:16, marginTop:12, flexWrap:'wrap' }}>
-            {[
-              { icon:'🤖', t:'ML Classified', d:'Every stock auto-bucketed' },
-              { icon:'📊', t:'Live P&L', d:'Prices from SIGNAL API' },
-              { icon:'🔔', t:'Signal Alerts', d:'BUY/SELL on your holdings' },
-            ].map(f => (
-              <div key={f.t} style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <span style={{ fontSize:16 }}>{f.icon}</span>
-                <div>
-                  <div style={{ fontSize:12, fontWeight:700 }}>{f.t}</div>
-                  <div style={{ fontSize:11, color:'var(--dim)' }}>{f.d}</div>
-                </div>
-              </div>
-            ))}
+          <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.7, maxWidth:440 }}>
+            SIGNAL tracks live P&L, runs ML classification on every holding (Momentum / Swing / Long-Term / Exit Now) and fires BUY/SELL signals for stocks you already own.
           </div>
         </div>
-        <div style={{ fontSize:32, opacity:0.15, flexShrink:0 }}>📈</div>
+        <div style={{ textAlign:'center', flexShrink:0 }}>
+          <div style={{ fontSize:48, fontWeight:900, color: totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)', lineHeight:1 }}>{totalPLPct >= 0 ? '+' : ''}{totalPLPct.toFixed(1)}%</div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>portfolio return</div>
+          <div style={{ marginTop:8, fontSize:11, color:'var(--dim)' }}>{holdings.length} holdings · {fmt(totalPL)}</div>
+        </div>
       </div>
 
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>

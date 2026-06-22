@@ -1,210 +1,405 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
 
-const SIGS = [
-  { sym:'RELIANCE',    sub:'Reliance Industries · NSE · Large Cap',  type:'buy',  cat:'momentum', badge:'STRONG BUY', btype:'sbuy', conf:87, cmp:'₹2,912', tgt:'₹3,080', sl:'₹2,820', rr:'1.8:1', tags:['RSI=34 ↑','EMA cross ✓','Del.%=66','Vol 2.1×','ADX=28'], time:'Today 09:32 IST', sector:'Energy',   sC:'var(--org)', sBg:'rgba(255,92,26,0.1)' },
-  { sym:'TATAMOTORS',  sub:'Tata Motors · NSE · Auto',               type:'buy',  cat:'momentum', badge:'STRONG BUY', btype:'sbuy', conf:81, cmp:'₹960',   tgt:'₹1,040', sl:'₹930',   rr:'2.7:1', tags:['RF score=0.81','Vol 2.4×','Sector ▲','OBV rising'], time:'Today 09:31 IST', sector:'Auto',    sC:'var(--bluL)', sBg:'rgba(23,64,245,0.1)' },
-  { sym:'TCS',         sub:'Tata Consultancy · NSE · IT',            type:'buy',  cat:'swing',    badge:'BUY',       btype:'buy',  conf:73, cmp:'₹3,880', tgt:'₹4,100', sl:'₹3,780', rr:'2.2:1', tags:['MACD cross ✓','IT sector +4.1%','Del.%=58'], time:'Today 09:35 IST', sector:'IT',     sC:'var(--pur)', sBg:'rgba(139,92,246,0.1)' },
-  { sym:'SBIN',        sub:'State Bank of India · NSE · Banking',    type:'buy',  cat:'momentum', badge:'BUY',       btype:'buy',  conf:76, cmp:'₹824',   tgt:'₹872',   sl:'₹798',   rr:'1.8:1', tags:['RSI=38','Vol surge 2.8×','BB lower band','DII buying'], time:'Today 09:40 IST', sector:'Banking', sC:'var(--ylw)', sBg:'rgba(255,184,0,0.1)' },
-  { sym:'INFY',        sub:'Infosys · NSE · IT',                     type:'buy',  cat:'swing',    badge:'BUY',       btype:'buy',  conf:69, cmp:'₹1,742', tgt:'₹1,840', sl:'₹1,698', rr:'2.3:1', tags:['Earnings beat','IT sector ▲','Del.%=54'], time:'Today 09:42 IST', sector:'IT',     sC:'var(--pur)', sBg:'rgba(139,92,246,0.1)' },
-  { sym:'BAJFINANCE',  sub:'Bajaj Finance · NSE · NBFC',             type:'buy',  cat:'swing',    badge:'BUY',       btype:'buy',  conf:67, cmp:'₹8,240', tgt:'₹8,700', sl:'₹8,020', rr:'2.1:1', tags:['RSI=41','EMA support','NBFC rally'], time:'Today 09:55 IST', sector:'Finance', sC:'var(--grn)', sBg:'rgba(0,212,160,0.1)' },
-  { sym:'HDFCBANK',    sub:'HDFC Bank · NSE · Banking',              type:'hold', cat:'swing',    badge:'HOLD',      btype:'hold', conf:58, cmp:'₹1,624', tgt:'₹1,680', sl:'₹1,580', rr:'1.4:1', tags:['RSI=52','EMA flat','Awaiting volume'], time:'Today 10:12 IST', sector:'Banking', sC:'var(--ylw)', sBg:'rgba(255,184,0,0.1)' },
-  { sym:'WIPRO',       sub:'Wipro Ltd · NSE · IT',                   type:'buy',  cat:'swing',    badge:'BUY',       btype:'buy',  conf:66, cmp:'₹512',   tgt:'₹545',   sl:'₹496',   rr:'2.1:1', tags:['RSI=40','MACD hist ▲','IT peer rally'], time:'Today 10:22 IST', sector:'IT',     sC:'var(--pur)', sBg:'rgba(139,92,246,0.1)' },
-  { sym:'ZOMATO',      sub:'Zomato Ltd · NSE · Consumer',            type:'sell', cat:'momentum', badge:'SELL',      btype:'sell', conf:74, cmp:'₹198',   tgt:'₹175',   sl:'₹210',   rr:'1.9:1', tags:['RSI=71','Below EMA50','FII net sell'], time:'Today 09:30 IST', sector:'Consumer', sC:'var(--red)', sBg:'rgba(255,59,92,0.1)' },
-  { sym:'PAYTM',       sub:'One97 Comms · NSE · Fintech',            type:'sell', cat:'momentum', badge:'SELL',      btype:'sell', conf:71, cmp:'₹562',   tgt:'₹510',   sl:'₹590',   rr:'1.9:1', tags:['RSI=68','Distribution pattern','Volume ▼'], time:'Today 10:05 IST', sector:'Fintech', sC:'var(--red)', sBg:'rgba(255,59,92,0.1)' },
-];
+// ── Types ────────────────────────────────────────────────────────────────────
+interface MLSignal {
+  symbol: string; name: string; sector: string;
+  cmp: number; chg: number; rsi: number; ema20: number;
+  ema_dist_pct: number; entry_low: number; entry_high: number;
+  target: number; sl: number; signal: string;
+  confidence: number; score: number;
+}
 
-const BADGE: Record<string,{c:string;bg:string;bc:string}> = {
-  sbuy: { c:'var(--grn)',  bg:'rgba(0,212,160,0.14)',  bc:'rgba(0,212,160,0.3)' },
-  buy:  { c:'var(--grn)',  bg:'rgba(0,212,160,0.09)',  bc:'rgba(0,212,160,0.2)' },
-  hold: { c:'var(--ylw)',  bg:'rgba(255,184,0,0.12)',  bc:'rgba(255,184,0,0.25)' },
-  sell: { c:'var(--red)',  bg:'rgba(255,59,92,0.12)',  bc:'rgba(255,59,92,0.25)' },
-};
+interface TADetail {
+  symbol: string; name: string; price: number; change_pct: number;
+  ema5: number; ema20: number; ema50: number; sma200: number | null;
+  rsi: number; macd: number; macd_signal: number;
+  bb_upper: number; bb_lower: number;
+  support_1: number; support_2: number;
+  resistance_1: number; resistance_2: number;
+  entry_lo: number; entry_hi: number;
+  target_1: number; target_2: number; stop: number;
+  w52_high: number; w52_low: number; pct_from_52h: number;
+  vol_ratio: number; bias: string;
+  signals: { type: string; reason: string }[];
+}
 
-const CONF_CLR: Record<string,string> = { sbuy:'linear-gradient(90deg,var(--grn),#00A87D)', buy:'linear-gradient(90deg,var(--grn),#00A87D)', hold:'linear-gradient(90deg,var(--ylw),#CC9200)', sell:'linear-gradient(90deg,var(--red),#CC1F3A)' };
+// ── Fetch helpers ─────────────────────────────────────────────────────────────
+async function fetchMLSignals(): Promise<MLSignal[]> {
+  try {
+    const r = await fetch('/api/ml/signals?limit=20', { next: { revalidate: 0 } });
+    if (!r.ok) return [];
+    const d = await r.json();
+    return d.signals ?? [];
+  } catch { return []; }
+}
 
-export default function SignalsPage() {
-  const [filter, setFilter] = useState('all');
-  const [search, setSearch] = useState('');
-  const [sort,   setSort  ] = useState<'conf'|'time'>('conf');
+async function fetchTA(symbol: string): Promise<TADetail | null> {
+  try {
+    const r = await fetch(`/api/ml/signals/${encodeURIComponent(symbol)}`);
+    if (!r.ok) return null;
+    return await r.json();
+  } catch { return null; }
+}
 
-  const { symbols: portfolioSymbols } = usePortfolio();
-  const hasPortfolio = portfolioSymbols.length > 0;
+// ── Colour helpers ────────────────────────────────────────────────────────────
+function confColor(c: number) {
+  if (c >= 80) return 'var(--grn)';
+  if (c >= 65) return 'var(--bluL)';
+  return 'var(--ylw)';
+}
+function chgColor(v: number) { return v >= 0 ? 'var(--grn)' : 'var(--red)'; }
+function sectorColor(s: string) {
+  const MAP: Record<string,string> = {
+    Defense:'rgba(255,59,92,0.1)',IT:'rgba(139,92,246,0.1)',Banking:'rgba(23,64,245,0.1)',
+    Energy:'rgba(255,92,26,0.1)',Auto:'rgba(0,212,160,0.1)',Finance:'rgba(0,212,160,0.1)',
+    Semiconductor_Electronics:'rgba(255,184,0,0.1)',FMCG:'rgba(255,184,0,0.1)',
+  };
+  const key = Object.keys(MAP).find(k => s.includes(k)) ?? '';
+  return MAP[key] ?? 'rgba(23,64,245,0.08)';
+}
 
-  const shown = SIGS
-    .filter(s => {
-      if (filter === 'portfolio') return portfolioSymbols.includes(s.sym);
-      if (filter === 'buy')       return s.type === 'buy';
-      if (filter === 'sell')      return s.type === 'sell';
-      if (filter === 'hold')      return s.type === 'hold';
-      if (filter === 'momentum')  return s.cat === 'momentum';
-      if (filter === 'swing')     return s.cat === 'swing';
-      return true;
-    })
-    .filter(s => s.sym.toLowerCase().includes(search.toLowerCase()) || s.sub.toLowerCase().includes(search.toLowerCase()))
-    .sort((a, b) => sort === 'conf' ? b.conf - a.conf : 0);
+// ── Detail Drawer ─────────────────────────────────────────────────────────────
+function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) {
+  const [ta, setTA] = useState<TADetail | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const buyCnt = SIGS.filter(s=>s.type==='buy').length;
-  const sellCnt = SIGS.filter(s=>s.type==='sell').length;
-  const holdCnt = SIGS.filter(s=>s.type==='hold').length;
-  const portfolioCnt = SIGS.filter(s=>portfolioSymbols.includes(s.sym)).length;
+  useEffect(() => {
+    setLoading(true);
+    fetchTA(sig.symbol).then(d => { setTA(d); setLoading(false); });
+  }, [sig.symbol]);
 
-  const FILTERS = [
-    { key:'all',       label:`All (${SIGS.length})`,            aC:'#1740F5',    bg:'rgba(23,64,245,0.15)' },
-    ...(hasPortfolio ? [{ key:'portfolio', label:`💼 My Portfolio (${portfolioCnt})`, aC:'var(--grn)', bg:'rgba(0,212,160,0.8)' }] : []),
-    { key:'buy',       label:`🟢 BUY (${buyCnt})`,              aC:'var(--grn)', bg:'rgba(0,212,160,0.8)' },
-    { key:'sell',      label:`🔴 SELL (${sellCnt})`,            aC:'var(--red)', bg:'rgba(255,59,92,0.8)' },
-    { key:'hold',      label:`🟡 HOLD (${holdCnt})`,            aC:'var(--ylw)', bg:'rgba(255,184,0,0.8)' },
-    { key:'momentum',  label:'🚀 Momentum',                     aC:'var(--org)', bg:'rgba(255,92,26,0.8)' },
-    { key:'swing',     label:'🔄 Swing',                        aC:'var(--pur)', bg:'rgba(139,92,246,0.8)' },
-  ];
+  const rr = ta
+    ? ((ta.target_1 - ta.entry_hi) / (ta.entry_hi - ta.stop)).toFixed(1)
+    : ((sig.target - sig.cmp) / (sig.cmp - sig.sl)).toFixed(1);
 
   return (
     <>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:18, flexWrap:'wrap', gap:12 }}>
-        <div>
-          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>Live Signals</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>
-            <span style={{ width:7, height:7, borderRadius:'50%', background:'var(--grn)', display:'inline-block', marginRight:5, animation:'blink 2s infinite' }}/>
-            Market open · {SIGS.length} signals fired today · Accuracy 90d: <span style={{ color:'var(--grn)', fontWeight:700 }}>71.4%</span>
+      {/* Backdrop */}
+      <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:300, backdropFilter:'blur(2px)' }}/>
+
+      {/* Drawer */}
+      <div style={{ position:'fixed', top:0, right:0, bottom:0, width:'min(480px,100vw)', background:'var(--surf)', borderLeft:'1px solid var(--bdr)', zIndex:301, overflowY:'auto', display:'flex', flexDirection:'column' }}>
+
+        {/* Header */}
+        <div style={{ padding:'20px 24px 16px', borderBottom:'1px solid var(--bdr)', background:'var(--surf2)', position:'sticky', top:0, zIndex:1 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+            <div>
+              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.4 }}>{sig.symbol.replace('.NS','')}</div>
+              <div style={{ fontSize:12, color:'var(--dim)', marginTop:2 }}>{sig.name} · NSE</div>
+            </div>
+            <button onClick={onClose} style={{ width:34, height:34, borderRadius:9, background:'var(--surf)', border:'1px solid var(--bdr)', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+          </div>
+          <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+            <span style={{ fontSize:24, fontWeight:900 }}>₹{sig.cmp.toLocaleString('en-IN', { maximumFractionDigits:2 })}</span>
+            <span style={{ fontSize:14, fontWeight:700, color:chgColor(sig.chg) }}>{sig.chg >= 0 ? '+' : ''}{sig.chg.toFixed(2)}%</span>
+            <span style={{ marginLeft:'auto', padding:'4px 12px', borderRadius:7, background: sig.confidence >= 75 ? 'rgba(0,212,160,0.15)' : 'rgba(23,64,245,0.12)', border:'1px solid', borderColor: sig.confidence >= 75 ? 'rgba(0,212,160,0.3)' : 'rgba(23,64,245,0.25)', fontSize:12, fontWeight:800, color: confColor(sig.confidence) }}>
+              🤖 {sig.confidence}% confidence
+            </span>
           </div>
         </div>
-        <div style={{ display:'flex', gap:8 }}>
-          <button style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>⚙️ Alert Settings</button>
-          <button style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>📥 Export CSV</button>
+
+        <div style={{ padding:'20px 24px', flex:1 }}>
+
+          {/* Signal summary card — referral card style */}
+          <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.08),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.2)', borderRadius:16, padding:'20px 22px', marginBottom:20, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16 }}>
+            <div>
+              <div style={{ fontSize:10, fontWeight:800, color:'var(--grn)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:6 }}>ML Swing Signal · BUY</div>
+              <div style={{ fontSize:16, fontWeight:800, letterSpacing:-0.3, marginBottom:4 }}>Entry ₹{sig.entry_low}–{sig.entry_high}</div>
+              <div style={{ fontSize:12, color:'var(--dim)' }}>Target ₹{sig.target} · SL ₹{sig.sl}</div>
+            </div>
+            <div style={{ textAlign:'center', flexShrink:0 }}>
+              <div style={{ fontSize:32, fontWeight:900, color:'var(--grn)', lineHeight:1 }}>{rr}×</div>
+              <div style={{ fontSize:10, color:'var(--dim)', marginTop:4 }}>Risk : Reward</div>
+            </div>
+          </div>
+
+          {loading && (
+            <div style={{ textAlign:'center', padding:'40px', color:'var(--dim)' }}>
+              <div style={{ fontSize:24, marginBottom:8 }}>⏳</div>
+              Loading technical analysis…
+            </div>
+          )}
+
+          {!loading && ta && (
+            <>
+              {/* ML signals list */}
+              {ta.signals.length > 0 && (
+                <div style={{ marginBottom:20 }}>
+                  <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Signals Fired</div>
+                  <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                    {ta.signals.map((s, i) => {
+                      const bull = ['BUY','STRONG BUY','BULLISH','GOLDEN CROSS','ABOVE 200 SMA','VOLUME SPIKE'].includes(s.type);
+                      const bear = ['SELL','STRONG SELL','BEARISH','DEATH CROSS','BELOW 200 SMA'].includes(s.type);
+                      const c = bull ? 'var(--grn)' : bear ? 'var(--red)' : 'var(--ylw)';
+                      const bg = bull ? 'rgba(0,212,160,0.07)' : bear ? 'rgba(255,59,92,0.07)' : 'rgba(255,184,0,0.07)';
+                      return (
+                        <div key={i} style={{ display:'flex', gap:10, alignItems:'flex-start', padding:'10px 14px', borderRadius:10, background:bg, border:`1px solid ${c.replace(')',',0.2)')}` }}>
+                          <span style={{ fontSize:10, fontWeight:800, color:c, flexShrink:0, marginTop:1, whiteSpace:'nowrap' }}>{s.type}</span>
+                          <span style={{ fontSize:12, color:'var(--dim)' }}>{s.reason}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Key indicators */}
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Key Indicators</div>
+                <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+                  {[
+                    { l:'RSI (14)',     v:`${ta.rsi}`, c: ta.rsi < 40 ? 'var(--grn)' : ta.rsi > 65 ? 'var(--red)' : 'var(--txt)' },
+                    { l:'Vol Ratio',    v:`${ta.vol_ratio}×`, c: ta.vol_ratio >= 2 ? 'var(--grn)' : 'var(--txt)' },
+                    { l:'EMA 20',       v:`₹${ta.ema20.toLocaleString('en-IN',{maximumFractionDigits:0})}`, c:'var(--txt)' },
+                    { l:'EMA 50',       v:`₹${ta.ema50.toLocaleString('en-IN',{maximumFractionDigits:0})}`, c:'var(--txt)' },
+                    { l:'MACD',         v:`${ta.macd > 0 ? '+' : ''}${ta.macd.toFixed(2)}`, c: ta.macd > ta.macd_signal ? 'var(--grn)' : 'var(--red)' },
+                    { l:'52W High',     v:`₹${ta.w52_high.toLocaleString('en-IN',{maximumFractionDigits:0})}`, c:'var(--dim)' },
+                    { l:'52W Low',      v:`₹${ta.w52_low.toLocaleString('en-IN',{maximumFractionDigits:0})}`,  c:'var(--dim)' },
+                    { l:'From 52H',     v:`${ta.pct_from_52h.toFixed(1)}%`, c: ta.pct_from_52h > -10 ? 'var(--org)' : 'var(--grn)' },
+                  ].map(row => (
+                    <div key={row.l} style={{ background:'var(--surf2)', borderRadius:10, padding:'10px 14px' }}>
+                      <div style={{ fontSize:11, color:'var(--dim)', marginBottom:3 }}>{row.l}</div>
+                      <div style={{ fontSize:15, fontWeight:800, color:row.c }}>{row.v}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Price levels */}
+              <div style={{ marginBottom:20 }}>
+                <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Price Map</div>
+                {[
+                  { l:'🔴 Stop Loss',     v:`₹${ta.stop}`,      c:'var(--red)'  },
+                  { l:'🟢 Entry Zone',    v:`₹${ta.entry_lo}–${ta.entry_hi}`, c:'var(--grn)' },
+                  { l:'🟡 Resistance 1',  v:`₹${ta.resistance_1}`, c:'var(--ylw)' },
+                  { l:'🎯 Target 1',      v:`₹${ta.target_1}`,  c:'var(--grn)'  },
+                  { l:'🎯 Target 2',      v:`₹${ta.target_2}`,  c:'var(--grn)'  },
+                  { l:'🔷 BB Upper',      v:`₹${ta.bb_upper}`,  c:'var(--pur)'  },
+                ].map(row => (
+                  <div key={row.l} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 0', borderBottom:'1px solid var(--bdr)' }}>
+                    <span style={{ fontSize:12, color:'var(--dim)' }}>{row.l}</span>
+                    <span style={{ fontSize:13, fontWeight:700, color:row.c }}>{row.v}</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bollinger bands visual */}
+              <div style={{ background:'var(--surf2)', borderRadius:12, padding:'14px 16px', marginBottom:16 }}>
+                <div style={{ fontSize:11, color:'var(--dim)', marginBottom:8 }}>Bollinger Band Position</div>
+                {(() => {
+                  const range = ta.bb_upper - ta.bb_lower;
+                  const pos = range > 0 ? Math.min(100, Math.max(0, (ta.price - ta.bb_lower) / range * 100)) : 50;
+                  return (
+                    <>
+                      <div style={{ position:'relative', height:6, background:'var(--bdr)', borderRadius:3 }}>
+                        <div style={{ position:'absolute', left:0, width:`${pos}%`, height:'100%', background: pos < 30 ? 'var(--grn)' : pos > 70 ? 'var(--red)' : 'var(--bluL)', borderRadius:3, transition:'width 0.4s' }}/>
+                        <div style={{ position:'absolute', left:`${pos}%`, top:-3, width:12, height:12, borderRadius:'50%', background:'#fff', border:'2px solid var(--bluL)', transform:'translateX(-50%)' }}/>
+                      </div>
+                      <div style={{ display:'flex', justifyContent:'space-between', marginTop:6, fontSize:10, color:'var(--dim)' }}>
+                        <span>Lower ₹{ta.bb_lower}</span>
+                        <span style={{ fontWeight:700, color: pos < 30 ? 'var(--grn)' : pos > 70 ? 'var(--red)' : 'var(--bluL)' }}>{pos.toFixed(0)}%</span>
+                        <span>Upper ₹{ta.bb_upper}</span>
+                      </div>
+                    </>
+                  );
+                })()}
+              </div>
+            </>
+          )}
+
+          {!loading && !ta && (
+            <div style={{ background:'rgba(255,184,0,0.08)', border:'1px solid rgba(255,184,0,0.2)', borderRadius:12, padding:'16px', fontSize:13, color:'var(--dim)' }}>
+              ⚠️ Full technical analysis unavailable. ML API may be offline. Start it with:<br/>
+              <code style={{ display:'block', marginTop:8, fontSize:12, color:'var(--grn)', background:'rgba(0,0,0,0.2)', padding:'8px', borderRadius:6 }}>cd signal-app/apps/api && uvicorn main:app --reload</code>
+            </div>
+          )}
+        </div>
+
+        {/* Footer */}
+        <div style={{ padding:'14px 24px', borderTop:'1px solid var(--bdr)', background:'var(--surf2)' }}>
+          <div style={{ fontSize:10, color:'var(--dim2)', marginBottom:8 }}>⚠️ NOT SEBI REGISTERED · ML signals are probabilistic · Not financial advice · DYOR</div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button style={{ flex:1, height:40, borderRadius:10, background:'var(--grn)', border:'none', color:'#000', fontWeight:800, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>🧪 Paper Trade</button>
+            <button style={{ flex:1, height:40, borderRadius:10, background:'var(--surf)', border:'1px solid var(--bdr)', color:'var(--txt)', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📋 Add to Watchlist</button>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ── Main Page ─────────────────────────────────────────────────────────────────
+export default function SignalsPage() {
+  const { symbols: portfolioSymbols } = usePortfolio();
+  const [mlSignals, setMlSignals] = useState<MLSignal[]>([]);
+  const [mlLoading, setMlLoading] = useState(true);
+  const [mlError, setMlError] = useState(false);
+  const [filter, setFilter] = useState('all');
+  const [search, setSearch] = useState('');
+  const [selected, setSelected] = useState<MLSignal | null>(null);
+
+  const load = useCallback(async () => {
+    setMlLoading(true); setMlError(false);
+    const sigs = await fetchMLSignals();
+    if (sigs.length === 0) setMlError(true);
+    setMlSignals(sigs);
+    setMlLoading(false);
+  }, []);
+
+  useEffect(() => { load(); }, [load]);
+
+  const hasPortfolio = portfolioSymbols.length > 0;
+  const portfolioCnt = mlSignals.filter(s => portfolioSymbols.includes(s.symbol.replace('.NS',''))).length;
+
+  const FILTERS = [
+    { key:'all',       label:`All (${mlSignals.length})` },
+    ...(hasPortfolio ? [{ key:'portfolio', label:`💼 My Portfolio (${portfolioCnt})` }] : []),
+    { key:'high',      label:'🔥 High Conf (80%+)' },
+    { key:'moderate',  label:'✅ Moderate (65–79%)' },
+  ];
+
+  const shown = mlSignals
+    .filter(s => {
+      if (filter === 'portfolio') return portfolioSymbols.includes(s.symbol.replace('.NS',''));
+      if (filter === 'high')      return s.confidence >= 80;
+      if (filter === 'moderate')  return s.confidence >= 65 && s.confidence < 80;
+      return true;
+    })
+    .filter(s => !search || s.symbol.toLowerCase().includes(search.toLowerCase()) || s.name.toLowerCase().includes(search.toLowerCase()) || s.sector.toLowerCase().includes(search.toLowerCase()));
+
+  return (
+    <>
+      {/* Hero — referral card style */}
+      <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.07),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.18)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
+        <div>
+          <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--grn)', textTransform:'uppercase', marginBottom:8 }}>ML Scanner · Live Signals</div>
+          <div style={{ fontSize:26, fontWeight:900, letterSpacing:-0.6, lineHeight:1.2, marginBottom:8 }}>
+            Signals from real<br/>
+            <span style={{ color:'var(--grn)' }}>machine learning.</span>
+          </div>
+          <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.7, maxWidth:440 }}>
+            RSI + EMA scan across 200+ NSE stocks. Confidence scored by proximity to EMA, RSI zone, and sector momentum. Updated every hour during market hours.
+          </div>
+        </div>
+        <div style={{ textAlign:'center', flexShrink:0 }}>
+          <div style={{ fontSize:52, fontWeight:900, color:'var(--grn)', lineHeight:1 }}>{mlSignals.length}</div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>signals today</div>
+          <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:6, justifyContent:'center' }}>
+            <span style={{ width:6, height:6, borderRadius:'50%', background: mlError ? 'var(--red)' : 'var(--grn)', display:'inline-block' }}/>
+            <span style={{ fontSize:11, color:'var(--dim)' }}>{mlError ? 'ML API offline' : 'ML API live'}</span>
+          </div>
         </div>
       </div>
 
-      {/* Filter bar */}
-      <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:20 }}>
+      {/* Controls */}
+      <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
+        <div style={{ position:'relative', flex:'1 1 220px', maxWidth:320 }}>
+          <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:14, opacity:0.5 }}>🔍</span>
+          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search symbol or sector…"
+            style={{ width:'100%', height:38, paddingLeft:36, paddingRight:12, borderRadius:10, border:'1px solid var(--bdr)', background:'var(--surf)', color:'var(--txt)', fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }}/>
+        </div>
         {FILTERS.map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)}
-            style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background: filter===f.key ? f.bg : 'transparent', border:`1px solid ${filter===f.key ? 'transparent' : 'var(--bdr)'}`, color: filter===f.key ? (f.key==='buy'||f.key==='hold' ? '#001A12' : '#fff') : 'var(--dim)', transition:'all 0.18s' }}>
+            style={{ height:38, padding:'0 16px', borderRadius:10, border:`1px solid ${filter===f.key ? 'var(--grn)' : 'var(--bdr)'}`, background: filter===f.key ? 'rgba(0,212,160,0.12)' : 'var(--surf)', color: filter===f.key ? 'var(--grn)' : 'var(--dim)', fontSize:13, fontWeight: filter===f.key ? 700 : 500, cursor:'pointer', fontFamily:'inherit' }}>
             {f.label}
           </button>
         ))}
-        <div style={{ display:'flex', alignItems:'center', gap:8, marginLeft:'auto' }}>
-          <select value={sort} onChange={e => setSort(e.target.value as any)}
-            style={{ height:34, padding:'0 10px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontFamily:'inherit', outline:'none' }}>
-            <option value="conf">Sort: Confidence</option>
-            <option value="time">Sort: Time</option>
-          </select>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="🔍 Search stocks…"
-            style={{ height:34, padding:'0 14px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontFamily:'inherit', outline:'none', minWidth:200 }}/>
-        </div>
+        <button onClick={load} style={{ height:38, padding:'0 16px', borderRadius:10, border:'1px solid var(--bdr)', background:'var(--surf)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto' }}>
+          🔄 Refresh
+        </button>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:16 }}>
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-          {shown.map(s => {
-            const bd = BADGE[s.btype];
+      {/* Loading skeleton */}
+      {mlLoading && (
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {[1,2,3,4].map(i => (
+            <div key={i} style={{ height:90, borderRadius:14, background:'var(--surf)', border:'1px solid var(--bdr)', animation:'pulse 1.5s infinite', opacity:0.7 }}/>
+          ))}
+        </div>
+      )}
+
+      {/* API offline warning */}
+      {!mlLoading && mlError && (
+        <div style={{ background:'rgba(255,184,0,0.08)', border:'1px solid rgba(255,184,0,0.25)', borderRadius:14, padding:'20px 24px', marginBottom:16 }}>
+          <div style={{ fontWeight:700, marginBottom:6 }}>⚠️ ML API is offline</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginBottom:10 }}>Start the FastAPI backend to see real ML signals:</div>
+          <code style={{ display:'block', fontSize:12, color:'var(--grn)', background:'rgba(0,0,0,0.15)', padding:'10px 14px', borderRadius:8 }}>
+            cd signal-app/apps/api && uvicorn main:app --reload
+          </code>
+        </div>
+      )}
+
+      {/* Signal cards */}
+      {!mlLoading && shown.length > 0 && (
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {shown.map(sig => {
+            const inPortfolio = portfolioSymbols.includes(sig.symbol.replace('.NS',''));
+            const rr = ((sig.target - sig.cmp) / (sig.cmp - sig.sl)).toFixed(1);
+            const secBg = sectorColor(sig.sector);
             return (
-              <div key={s.sym} style={{ background:'var(--surf)', border:`1px solid var(--bdr)`, borderRadius:14, padding:18, cursor:'pointer', transition:'border-color 0.2s' }}
-                onMouseOver={e => (e.currentTarget.style.borderColor = s.type==='sell' ? 'rgba(255,59,92,0.4)' : s.type==='buy' ? 'rgba(0,212,160,0.4)' : 'var(--dim2)')}
-                onMouseOut={e  => (e.currentTarget.style.borderColor = 'var(--bdr)')}>
-                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:12 }}>
-                  <div>
-                    <div style={{ fontSize:17, fontWeight:900, letterSpacing:-0.3 }}>{s.sym}</div>
-                    <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{s.sub}</div>
-                  </div>
-                  <span style={{ fontSize:11, fontWeight:800, padding:'4px 12px', borderRadius:7, whiteSpace:'nowrap', background:bd.bg, color:bd.c, border:`1px solid ${bd.bc}` }}>{s.badge}</span>
+              <div key={sig.symbol} onClick={() => setSelected(sig)}
+                style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'16px 20px', cursor:'pointer', transition:'border-color 0.15s, box-shadow 0.15s', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:14, alignItems:'center' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(0,212,160,0.4)'; (e.currentTarget as HTMLElement).style.boxShadow='0 2px 16px rgba(0,212,160,0.08)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='var(--bdr)'; (e.currentTarget as HTMLElement).style.boxShadow='none'; }}>
+
+                {/* Left: symbol chip */}
+                <div style={{ width:52, height:52, borderRadius:13, background:secBg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900, color:'var(--txt)', flexShrink:0, border:'1px solid rgba(255,255,255,0.06)' }}>
+                  {sig.symbol.replace('.NS','').slice(0,4)}
                 </div>
-                <div style={{ marginBottom:12 }}>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, color:'var(--dim)', marginBottom:5 }}>
-                    <span>Model confidence</span><span style={{ color:bd.c, fontWeight:700 }}>{s.conf}%</span>
+
+                {/* Middle */}
+                <div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
+                    <span style={{ fontSize:15, fontWeight:800 }}>{sig.symbol.replace('.NS','')}</span>
+                    {inPortfolio && <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)' }}>IN PORTFOLIO</span>}
+                    <span style={{ fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:4, background:'rgba(0,212,160,0.12)', color:'var(--grn)', border:'1px solid rgba(0,212,160,0.25)' }}>BUY</span>
+                    <span style={{ marginLeft:'auto', fontSize:11, color:'var(--dim)' }}>{sig.sector.replace(/_/g,' ')}</span>
                   </div>
-                  <div style={{ height:5, background:'rgba(255,255,255,0.07)', borderRadius:3, overflow:'hidden' }}>
-                    <div style={{ height:'100%', width:`${s.conf}%`, borderRadius:3, background:CONF_CLR[s.btype] }}/>
+                  <div style={{ fontSize:12, color:'var(--dim)', marginBottom:6 }}>{sig.name}</div>
+                  <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                    {[
+                      `RSI ${sig.rsi}`,
+                      `EMA dist ${sig.ema_dist_pct > 0 ? '+' : ''}${sig.ema_dist_pct}%`,
+                      `Chg ${sig.chg >= 0 ? '+' : ''}${sig.chg.toFixed(1)}%`,
+                    ].map(t => (
+                      <span key={t} style={{ fontSize:10, padding:'2px 7px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--bdr)' }}>{t}</span>
+                    ))}
                   </div>
                 </div>
-                <div style={{ display:'flex', gap:0, border:'1px solid var(--bdr)', borderRadius:10, overflow:'hidden', marginBottom:10 }}>
-                  {[['CMP', s.cmp, 'var(--txt)'],['Target', s.tgt, 'var(--grn)'],['Stop Loss', s.sl, 'var(--red)'],['R:R', s.rr, 'var(--txt)']].map(([l,v,c]) => (
-                    <div key={l as string} style={{ flex:1, padding:'8px 10px', borderRight:'1px solid var(--bdr)', textAlign:'center' }}>
-                      <div style={{ fontSize:10, color:'var(--dim)', marginBottom:3 }}>{l}</div>
-                      <div style={{ fontSize:13, fontWeight:800, color:c as string }}>{v}</div>
+
+                {/* Right */}
+                <div style={{ textAlign:'right', flexShrink:0 }}>
+                  <div style={{ fontSize:16, fontWeight:900 }}>₹{sig.cmp.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>Target ₹{sig.target.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+                  <div style={{ marginTop:6, display:'flex', alignItems:'center', gap:6, justifyContent:'flex-end' }}>
+                    {/* Confidence bar */}
+                    <div style={{ width:60, height:4, borderRadius:2, background:'var(--bdr)' }}>
+                      <div style={{ width:`${sig.confidence}%`, height:'100%', borderRadius:2, background:confColor(sig.confidence) }}/>
                     </div>
-                  ))}
-                  <div style={{ flex:1, padding:'8px 10px', textAlign:'center' }}>
-                    <div style={{ fontSize:10, color:'var(--dim)', marginBottom:3 }}>R:R</div>
-                    <div style={{ fontSize:13, fontWeight:800 }}>{s.rr}</div>
+                    <span style={{ fontSize:11, fontWeight:700, color:confColor(sig.confidence) }}>{sig.confidence}%</span>
                   </div>
-                </div>
-                <div style={{ display:'flex', flexWrap:'wrap', gap:5 }}>
-                  {s.tags.map(t => (
-                    <span key={t} style={{ fontSize:10.5, fontWeight:600, padding:'2px 8px', borderRadius:5, background:'rgba(23,64,245,0.1)', color:'var(--bluL)', border:'1px solid rgba(23,64,245,0.2)' }}>{t}</span>
-                  ))}
-                </div>
-                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:10, paddingTop:10, borderTop:'1px solid var(--bdr)' }}>
-                  <span style={{ fontSize:11, color:'var(--dim2)' }}>{s.time}</span>
-                  <span style={{ fontSize:10.5, fontWeight:700, padding:'2px 8px', borderRadius:5, background:s.sBg, color:s.sC }}>{s.sector}</span>
+                  <div style={{ fontSize:10, color:'var(--dim)', marginTop:3 }}>RR {rr}×</div>
                 </div>
               </div>
             );
           })}
-          {shown.length === 0 && (
-            <div style={{ gridColumn:'1/-1', padding:40, textAlign:'center', color:'var(--dim)' }}>No signals match your filter.</div>
-          )}
         </div>
+      )}
 
-        {/* Right rail */}
-        <div>
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18, marginBottom:14 }}>
-            <div style={{ fontSize:14, fontWeight:700, marginBottom:14 }}>90-Day Accuracy</div>
-            {[
-              { label:'Overall accuracy', val:'71.4%', pct:71, c:'var(--grn)' },
-              { label:'Strong BUY calls', val:'78.2%', pct:78, c:'var(--grn)' },
-              { label:'BUY calls',        val:'68.9%', pct:69, c:'var(--grn)' },
-              { label:'SELL calls',       val:'72.1%', pct:72, c:'var(--grn)' },
-            ].map(acc => (
-              <div key={acc.label} style={{ marginBottom:10 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:4 }}>
-                  <span style={{ color:'var(--dim)', fontSize:11 }}>{acc.label}</span>
-                  <span style={{ fontWeight:800, color:acc.c }}>{acc.val}</span>
-                </div>
-                <div style={{ height:5, background:'rgba(255,255,255,0.07)', borderRadius:3, overflow:'hidden' }}>
-                  <div style={{ height:'100%', width:`${acc.pct}%`, background:'linear-gradient(90deg,var(--grn),#00A87D)', borderRadius:3 }}/>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18, marginBottom:14 }}>
-            <div style={{ fontSize:14, fontWeight:700, marginBottom:14 }}>Signal Summary</div>
-            {[
-              { label:'Total fired today', val:SIGS.length.toString(), c:'var(--txt)' },
-              { label:'BUY signals',   val:buyCnt.toString(),   c:'var(--grn)' },
-              { label:'SELL signals',  val:sellCnt.toString(),  c:'var(--red)' },
-              { label:'HOLD signals',  val:holdCnt.toString(),  c:'var(--ylw)' },
-              { label:'Avg confidence',val:'74.3%',             c:'var(--bluL)' },
-            ].map(row => (
-              <div key={row.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'9px 0', borderBottom:'1px solid rgba(28,46,74,0.5)', fontSize:13 }}>
-                <span style={{ color:'var(--dim)', fontSize:12 }}>{row.label}</span>
-                <span style={{ fontWeight:800, color:row.c }}>{row.val}</span>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.08),rgba(0,212,160,0.05))', border:'1px solid rgba(23,64,245,0.22)', borderRadius:14, padding:18 }}>
-            <div style={{ fontSize:13, fontWeight:700, color:'var(--bluL)', marginBottom:8 }}>🤖 Top Pick Right Now</div>
-            <div style={{ fontSize:18, fontWeight:900, letterSpacing:-0.3 }}>TATAMOTORS</div>
-            <div style={{ fontSize:11, color:'var(--dim)', marginBottom:8 }}>Highest confidence BUY today</div>
-            {[['Entry','₹960'],['Target','₹1,040'],['SL','₹930'],['R:R','2.7:1']].map(([l,v]) => (
-              <div key={l} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'5px 0', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                <span style={{ color:'var(--dim)' }}>{l}</span>
-                <span style={{ fontWeight:700 }}>{v}</span>
-              </div>
-            ))}
-            <div style={{ marginTop:10 }}>
-              <div style={{ fontSize:11, color:'var(--dim)', marginBottom:4 }}>Confidence</div>
-              <div style={{ height:5, background:'rgba(255,255,255,0.07)', borderRadius:3, overflow:'hidden' }}>
-                <div style={{ height:'100%', width:'81%', background:'linear-gradient(90deg,var(--grn),#00A87D)', borderRadius:3 }}/>
-              </div>
-              <div style={{ fontSize:11, color:'var(--grn)', fontWeight:700, marginTop:3 }}>81% · STRONG BUY</div>
-            </div>
-          </div>
+      {!mlLoading && !mlError && shown.length === 0 && (
+        <div style={{ textAlign:'center', padding:'48px', color:'var(--dim)' }}>
+          No signals match current filter.
         </div>
+      )}
+
+      <div style={{ fontSize:11, color:'var(--dim2)', marginTop:20, textAlign:'center' }}>
+        ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · ML signals are for educational purposes only · Not financial advice · DYOR
       </div>
+
+      {/* Detail drawer */}
+      {selected && <DetailDrawer sig={selected} onClose={() => setSelected(null)} />}
     </>
   );
 }

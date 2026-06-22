@@ -75,10 +75,28 @@ export default function AlgoBuilderPage() {
 
   return (
     <>
+      {/* Hero card — referral style */}
+      <div style={{ background:'linear-gradient(135deg,rgba(139,92,246,0.08),rgba(23,64,245,0.04))', border:'1px solid rgba(139,92,246,0.2)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
+        <div>
+          <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--pur)', textTransform:'uppercase', marginBottom:8 }}>Algo Builder · Pro</div>
+          <div style={{ fontSize:26, fontWeight:900, letterSpacing:-0.6, lineHeight:1.2, marginBottom:8 }}>
+            Build it once.<br/><span style={{ color:'var(--pur)' }}>Trade it forever.</span>
+          </div>
+          <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.7, maxWidth:440 }}>
+            Pick your strategy type, configure indicators, set SL/Target — SIGNAL generates the logic, backtests on 10 years of NSE data, and deploys it to paper trade automatically.
+          </div>
+        </div>
+        <div style={{ textAlign:'center', flexShrink:0 }}>
+          <div style={{ fontSize:48, fontWeight:900, color:'var(--pur)', lineHeight:1 }}>3</div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>active strategies</div>
+          <div style={{ marginTop:8, padding:'4px 12px', borderRadius:6, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.25)', fontSize:11, fontWeight:700, color:'var(--pur)' }}>+24.3% avg returns</div>
+        </div>
+      </div>
+
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22, flexWrap:'wrap', gap:12 }}>
         <div>
-          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>Algo Builder</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>Build a strategy → backtest → paper trade → deploy. Pro feature.</div>
+          <div style={{ fontSize:18, fontWeight:800, letterSpacing:-0.4 }}>Strategy Builder</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginTop:2 }}>Configure → backtest → paper trade → deploy.</div>
         </div>
         <button style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>📂 My Strategies (3)</button>
       </div>
