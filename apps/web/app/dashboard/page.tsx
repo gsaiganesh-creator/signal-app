@@ -122,9 +122,19 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div style={{ padding:'80px 0', textAlign:'center', color:'var(--dim)' }}>
+      <div style={{ padding:'80px 0', textAlign:'center' }}>
         <div style={{ fontSize:28, marginBottom:12 }}>⏳</div>
-        <div style={{ fontSize:14 }}>Loading your dashboard…</div>
+        <div style={{ fontSize:14, color:'#4A5C7A' }}>Loading your dashboard…</div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div style={{ padding:'48px 0', textAlign:'center' }}>
+        <div style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>Session expired</div>
+        <div style={{ fontSize:13, color:'#4A5C7A', marginBottom:20 }}>Please sign in again.</div>
+        <a href="/sign-in" style={{ padding:'10px 24px', borderRadius:10, background:'#1740F5', color:'#fff', fontWeight:700, fontSize:14 }}>Sign In</a>
       </div>
     );
   }

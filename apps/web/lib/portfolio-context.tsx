@@ -57,28 +57,32 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
 
   const refresh = useCallback(async () => {
     setLoading(true);
-    const { data: { user: u } } = await supabase.auth.getUser();
-    setUser(u);
-    if (!u) { setLoading(false); return; }
+    try {
+      const { data: { user: u } } = await supabase.auth.getUser();
+      setUser(u);
+      if (!u) { setLoading(false); return; }
 
-    const { data: ps } = await supabase
-      .from('portfolios')
-      .select('id, name, broker, created_at')
-      .eq('user_id', u.id)
-      .order('created_at');
+      const { data: ps } = await supabase
+        .from('portfolios')
+        .select('id, name, broker, created_at')
+        .eq('user_id', u.id)
+        .order('created_at');
 
-    const pList = ps ?? [];
-    setPortfolios(pList);
+      const pList = ps ?? [];
+      setPortfolios(pList);
 
-    const stored = typeof window !== 'undefined' ? localStorage.getItem('signal_active_portfolio') : null;
-    const aid = (stored && pList.find(p => p.id === stored)) ? stored : (pList[0]?.id ?? null);
-    if (aid && typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', aid);
-    setActiveIdState(aid);
+      const stored = typeof window !== 'undefined' ? localStorage.getItem('signal_active_portfolio') : null;
+      const aid = (stored && pList.find(p => p.id === stored)) ? stored : (pList[0]?.id ?? null);
+      if (aid && typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', aid);
+      setActiveIdState(aid);
 
-    if (aid) await fetchHoldings(aid);
-    else setHoldings([]);
-
-    setLoading(false);
+      if (aid) await fetchHoldings(aid);
+      else setHoldings([]);
+    } catch (err) {
+      console.error('[portfolio-context] refresh error:', err);
+    } finally {
+      setLoading(false);
+    }
   }, [supabase, fetchHoldings]);
 
   // Re-fetch holdings when user switches active portfolio
