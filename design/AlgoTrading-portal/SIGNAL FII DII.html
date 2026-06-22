@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — FII / DII Flow</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root{--bg:#070D1A;--surf:#0E1628;--surf2:#162038;--bdr:#1C2E4A;--txt:#FFFFFF;--dim:#7A8BAA;--dim2:#3A4E6A;--blu:#1740F5;--bluL:#4F6FFA;--org:#FF5C1A;--grn:#00D4A0;--red:#FF3B5C;--ylw:#FFB800;--pur:#8B5CF6;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;min-height:100vh;}
+    nav{display:flex;align-items:center;height:58px;padding:0 clamp(16px,3vw,32px);background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:0;}
+    .nav-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--txt);margin-right:28px;}
+    .nav-link{height:34px;padding:0 13px;border-radius:8px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+    .nav-link:hover{background:var(--surf2);color:var(--txt);}
+    .nav-link.active{background:rgba(0,212,160,0.1);color:var(--grn);font-weight:600;}
+    .plan-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(255,92,26,0.12);border:1px solid rgba(255,92,26,0.25);color:var(--org);}
+    .user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;}
+    .user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blu),var(--org));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
+    .page{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px);}
+    .sidebar{background:var(--surf);border-right:1px solid var(--bdr);padding:16px 10px;display:flex;flex-direction:column;gap:4px;}
+    .sb-section{font-size:10px;font-weight:700;color:var(--dim2);letter-spacing:1px;text-transform:uppercase;padding:12px 10px 6px;}
+    .sb-link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;transition:all 0.15s;}
+    .sb-link:hover{background:var(--surf2);color:var(--txt);}
+    .sb-link.active{background:rgba(0,212,160,0.1);color:var(--grn);font-weight:600;}
+    .sb-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--red);color:#fff;}
+    .main{padding:24px clamp(16px,3vw,32px);}
+    .flow-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+    .flow-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:24px;}
+    .flow-label{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:0.5px;color:var(--dim);margin-bottom:6px;}
+    .flow-val{font-size:36px;font-weight:900;letter-spacing:-1.5px;margin-bottom:4px;}
+    .flow-sub{font-size:12px;color:var(--dim);}
+    .flow-bar{height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;margin:12px 0;}
+    .flow-fill{height:100%;border-radius:4px;}
+    .day-row{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--bdr);}
+    .day-row:last-child{border-bottom:none;}
+    .day-date{font-size:12px;color:var(--dim);width:70px;flex-shrink:0;}
+    .day-bar-wrap{flex:1;display:flex;align-items:center;gap:6px;}
+    .mini-bar{height:14px;border-radius:4px;}
+    .day-fii{font-size:12px;font-weight:700;width:90px;text-align:right;}
+    .day-dii{font-size:12px;font-weight:700;width:90px;text-align:right;}
+    @media(max-width:900px){.page{grid-template-columns:1fr;}.sidebar{display:none;}.flow-grid{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div style="display:flex;align-items:center;gap:2px;flex:1;">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Signals.html">📈 Signals</a>
+    <a class="nav-link" href="SIGNAL Sector Heatmap.html">🔥 Heatmap</a>
+    <a class="nav-link active" href="#">🌍 FII / DII</a>
+    <a class="nav-link" href="SIGNAL Earnings Calendar.html">📅 Earnings</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">SG</div><span style="font-size:12px;font-weight:600;">Sai Ganesh</span></div>
+  </div>
+</nav>
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals <span class="sb-badge">3</span></a>
+  <a class="sb-link" href="SIGNAL Portfolio.html">💼 My Portfolio</a>
+  <a class="sb-link" href="SIGNAL ETF MF.html">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link" href="SIGNAL Backtest.html">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="SIGNAL Sector Heatmap.html">🔥 Sector Heatmap</a>
+  <a class="sb-link active" href="#">🌍 FII / DII Flow</a>
+  <a class="sb-link" href="SIGNAL Twitter Feed.html">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="SIGNAL Earnings Calendar.html">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="SIGNAL Upgrade Plan.html">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="SIGNAL Connect Broker.html">🔗 Connect Broker</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+<main class="main">
+  <div style="margin-bottom:20px;">
+    <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">FII / DII Flow</div>
+    <div style="font-size:13px;color:var(--dim);margin-top:3px;">Institutional money movement — India's biggest market driver · Source: NSE/SEBI</div>
+  </div>
+
+  <!-- Today -->
+  <div style="font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Today · Jun 22, 2026</div>
+  <div class="flow-grid">
+    <div class="flow-card" style="border-color:rgba(255,59,92,0.2);background:rgba(255,59,92,0.03);">
+      <div class="flow-label">FII — Foreign Institutional</div>
+      <div class="flow-val" style="color:var(--red);">-₹1,240 Cr</div>
+      <div class="flow-sub">Equity net selling · Cash segment</div>
+      <div class="flow-bar"><div class="flow-fill" style="width:35%;background:var(--red);"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px;">
+        <span style="color:var(--dim);">Buy: ₹14,820 Cr</span>
+        <span style="color:var(--dim);">Sell: ₹16,060 Cr</span>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--dim);">5-day net: <span style="color:var(--red);font-weight:700;">-₹4,820 Cr</span> · Consistent selling</div>
+    </div>
+    <div class="flow-card" style="border-color:rgba(0,212,160,0.2);background:rgba(0,212,160,0.03);">
+      <div class="flow-label">DII — Domestic Institutional</div>
+      <div class="flow-val" style="color:var(--grn);">+₹2,180 Cr</div>
+      <div class="flow-sub">Equity net buying · Cash segment</div>
+      <div class="flow-bar"><div class="flow-fill" style="width:65%;background:var(--grn);"></div></div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;margin-top:4px;">
+        <span style="color:var(--dim);">Buy: ₹18,240 Cr</span>
+        <span style="color:var(--dim);">Sell: ₹16,060 Cr</span>
+      </div>
+      <div style="margin-top:12px;font-size:12px;color:var(--dim);">5-day net: <span style="color:var(--grn);font-weight:700;">+₹9,640 Cr</span> · Absorbing FII selling</div>
+    </div>
+  </div>
+
+  <!-- Signal impact box -->
+  <div style="background:rgba(23,64,245,0.06);border:1px solid rgba(23,64,245,0.2);border-radius:12px;padding:16px;margin-bottom:20px;">
+    <div style="font-size:13px;font-weight:700;margin-bottom:6px;">📊 SIGNAL ML impact on today's signals</div>
+    <div style="font-size:13px;color:var(--dim);line-height:1.7;">FII selling (-₹1,240 Cr) is a <strong style="color:var(--ylw);">moderate headwind</strong> — SIGNAL has applied a -8% confidence penalty on all BUY signals for large-cap banking stocks. DII buying (+₹2,180 Cr) is supportive for IT and consumer stocks — SIGNAL has applied a +5% confidence boost for those sectors.</div>
+  </div>
+
+  <!-- 10-day table -->
+  <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:20px;">
+    <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Last 10 Trading Days</div>
+    <div style="display:flex;gap:12px;margin-bottom:10px;font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:0.5px;">
+      <span style="width:70px;">Date</span><span style="flex:1;">FII Flow</span><span style="flex:1;">DII Flow</span><span style="width:100px;">Net Market</span>
+    </div>
+    <div class="day-row"><span class="day-date">Jun 22</span><div class="day-bar-wrap"><div class="mini-bar" style="width:40%;background:rgba(255,59,92,0.4);"></div></div><span class="day-fii" style="color:var(--red);">-₹1,240 Cr</span><div class="day-bar-wrap"><div class="mini-bar" style="width:65%;background:rgba(0,212,160,0.4);"></div></div><span class="day-dii" style="color:var(--grn);">+₹2,180 Cr</span></div>
+    <div class="day-row"><span class="day-date">Jun 21</span><div class="day-bar-wrap"><div class="mini-bar" style="width:35%;background:rgba(255,59,92,0.4);"></div></div><span class="day-fii" style="color:var(--red);">-₹980 Cr</span><div class="day-bar-wrap"><div class="mini-bar" style="width:55%;background:rgba(0,212,160,0.4);"></div></div><span class="day-dii" style="color:var(--grn);">+₹1,840 Cr</span></div>
+    <div class="day-row"><span class="day-date">Jun 20</span><div class="day-bar-wrap"><div class="mini-bar" style="width:50%;background:rgba(255,59,92,0.4);"></div></div><span class="day-fii" style="color:var(--red);">-₹1,420 Cr</span><div class="day-bar-wrap"><div class="mini-bar" style="width:70%;background:rgba(0,212,160,0.4);"></div></div><span class="day-dii" style="color:var(--grn);">+₹2,340 Cr</span></div>
+    <div class="day-row"><span class="day-date">Jun 19</span><div class="day-bar-wrap"><div class="mini-bar" style="width:60%;background:rgba(0,212,160,0.4);"></div></div><span class="day-fii" style="color:var(--grn);">+₹2,120 Cr</span><div class="day-bar-wrap"><div class="mini-bar" style="width:45%;background:rgba(0,212,160,0.4);"></div></div><span class="day-dii" style="color:var(--grn);">+₹1,540 Cr</span></div>
+    <div class="day-row"><span class="day-date">Jun 18</span><div class="day-bar-wrap"><div class="mini-bar" style="width:70%;background:rgba(0,212,160,0.4);"></div></div><span class="day-fii" style="color:var(--grn);">+₹2,480 Cr</span><div class="day-bar-wrap"><div class="mini-bar" style="width:40%;background:rgba(0,212,160,0.4);"></div></div><span class="day-dii" style="color:var(--grn);">+₹1,380 Cr</span></div>
+  </div>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Connect Broker</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root{--bg:#070D1A;--surf:#0E1628;--surf2:#162038;--bdr:#1C2E4A;--txt:#FFFFFF;--dim:#7A8BAA;--dim2:#3A4E6A;--blu:#1740F5;--bluL:#4F6FFA;--org:#FF5C1A;--grn:#00D4A0;--red:#FF3B5C;--ylw:#FFB800;--pur:#8B5CF6;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;min-height:100vh;}
+    nav{display:flex;align-items:center;height:58px;padding:0 clamp(16px,3vw,32px);background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:0;}
+    .nav-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--txt);margin-right:28px;}
+    .nav-link{height:34px;padding:0 13px;border-radius:8px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+    .nav-link:hover{background:var(--surf2);color:var(--txt);}
+    .plan-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(255,92,26,0.12);border:1px solid rgba(255,92,26,0.25);color:var(--org);}
+    .user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;}
+    .user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blu),var(--org));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
+    .page{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px);}
+    .sidebar{background:var(--surf);border-right:1px solid var(--bdr);padding:16px 10px;display:flex;flex-direction:column;gap:4px;}
+    .sb-section{font-size:10px;font-weight:700;color:var(--dim2);letter-spacing:1px;text-transform:uppercase;padding:12px 10px 6px;}
+    .sb-link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;transition:all 0.15s;}
+    .sb-link:hover{background:var(--surf2);color:var(--txt);}
+    .sb-link.active{background:rgba(0,212,160,0.1);color:var(--grn);font-weight:600;}
+    .sb-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--red);color:#fff;}
+    .main{padding:24px clamp(16px,3vw,32px);}
+    .broker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+    .broker-card{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:24px;transition:border-color 0.2s;}
+    .broker-card.connected{border-color:rgba(0,212,160,0.35);background:rgba(0,212,160,0.03);}
+    .broker-card:hover{border-color:var(--dim2);}
+    .broker-logo{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:900;margin-bottom:14px;}
+    .broker-name{font-size:16px;font-weight:800;margin-bottom:4px;}
+    .broker-desc{font-size:12px;color:var(--dim);line-height:1.55;margin-bottom:14px;}
+    .broker-features{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:16px;}
+    .bf-tag{font-size:10.5px;font-weight:600;padding:2px 8px;border-radius:5px;background:var(--surf2);color:var(--dim);}
+    .btn-connect{width:100%;height:40px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+    .btn-conn-primary{background:linear-gradient(135deg,var(--blu),var(--bluL));border:none;color:#fff;}
+    .btn-conn-connected{background:rgba(0,212,160,0.1);border:1px solid rgba(0,212,160,0.3);color:var(--grn);}
+    .btn-conn-soon{background:transparent;border:1px dashed var(--bdr);color:var(--dim);cursor:default;}
+    .conn-status{display:flex;align-items:center;gap:6px;font-size:11px;font-weight:700;margin-bottom:8px;}
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+    @media(max-width:1000px){.broker-grid{grid-template-columns:1fr 1fr;}}
+    @media(max-width:900px){.page{grid-template-columns:1fr;}.sidebar{display:none;}.broker-grid{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div style="display:flex;align-items:center;gap:2px;flex:1;">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Portfolio.html">💼 Portfolio</a>
+    <a class="nav-link" href="SIGNAL Signals.html">📈 Signals</a>
+    <a class="nav-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+    <a class="nav-link" href="SIGNAL Paper Trading.html">🧪 Paper Trade</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">SG</div><span style="font-size:12px;font-weight:600;">Sai Ganesh</span></div>
+  </div>
+</nav>
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals <span class="sb-badge">3</span></a>
+  <a class="sb-link" href="SIGNAL Portfolio.html">💼 My Portfolio</a>
+  <a class="sb-link" href="SIGNAL ETF MF.html">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link" href="SIGNAL Backtest.html">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="SIGNAL Sector Heatmap.html">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="SIGNAL FII DII.html">🌍 FII / DII Flow</a>
+  <a class="sb-link" href="SIGNAL Twitter Feed.html">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="SIGNAL Earnings Calendar.html">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="SIGNAL Upgrade Plan.html">⚡ Upgrade Plan</a>
+  <a class="sb-link active" href="#">🔗 Connect Broker</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+<main class="main">
+  <div style="margin-bottom:24px;">
+    <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Connect Broker</div>
+    <div style="font-size:13px;color:var(--dim);margin-top:4px;">Secure OAuth — SIGNAL never sees your password. Read-only portfolio access. Revoke anytime.</div>
+  </div>
+
+  <div style="background:rgba(0,212,160,0.05);border:1px solid rgba(0,212,160,0.2);border-radius:12px;padding:14px 18px;margin-bottom:24px;display:flex;align-items:center;gap:12px;">
+    <span style="font-size:20px;">🔒</span>
+    <div style="font-size:13px;color:#C4D0E8;line-height:1.6;"><strong>How it works:</strong> You click "Connect" → redirected to your broker's login page → you log in with your broker credentials → broker sends SIGNAL a read-only access token. We store it encrypted. We can read your holdings and prices — we cannot place orders without your explicit instruction.</div>
+  </div>
+
+  <div style="font-size:12px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">🇮🇳 Indian Brokers</div>
+  <div class="broker-grid">
+    <div class="broker-card connected">
+      <div class="conn-status"><span style="width:8px;height:8px;border-radius:50%;background:var(--grn);display:inline-block;animation:blink 2s infinite;"></span><span style="color:var(--grn);">Connected · Syncing live</span></div>
+      <div class="broker-logo" style="background:rgba(230,57,70,0.12);color:#E63946;">MS</div>
+      <div class="broker-name">mStock (Mirae Asset)</div>
+      <div class="broker-desc">Your primary broker. Free API access. Real-time quotes, live P&L, delivery %, order history.</div>
+      <div class="broker-features"><span class="bf-tag">Real-time</span><span class="bf-tag">Free API</span><span class="bf-tag">Delivery %</span><span class="bf-tag">Holdings sync</span></div>
+      <button class="btn-connect btn-conn-connected">✓ Connected · Last sync 2m ago</button>
+    </div>
+    <div class="broker-card">
+      <div class="broker-logo" style="background:rgba(56,126,209,0.12);color:#387ED1;">ZE</div>
+      <div class="broker-name">Zerodha Kite</div>
+      <div class="broker-desc">Best ecosystem. WebSocket tick data, options chain, GTT orders. Requires ₹2,000/mo API subscription.</div>
+      <div class="broker-features"><span class="bf-tag">WebSocket</span><span class="bf-tag">Options chain</span><span class="bf-tag">GTT orders</span></div>
+      <button class="btn-connect btn-conn-primary" onclick="connectBroker('zerodha')">Connect Zerodha →</button>
+    </div>
+    <div class="broker-card">
+      <div class="broker-logo" style="background:rgba(123,47,190,0.12);color:#7B2FBE;">UP</div>
+      <div class="broker-name">Upstox</div>
+      <div class="broker-desc">Free API with trading account. Good real-time data, portfolio sync, and options support.</div>
+      <div class="broker-features"><span class="bf-tag">Free API</span><span class="bf-tag">Real-time</span><span class="bf-tag">Options</span></div>
+      <button class="btn-connect btn-conn-primary" onclick="connectBroker('upstox')">Connect Upstox →</button>
+    </div>
+    <div class="broker-card">
+      <div class="broker-logo" style="background:rgba(255,92,26,0.12);color:var(--org);">AO</div>
+      <div class="broker-name">Angel One</div>
+      <div class="broker-desc">Free SmartAPI. NSE/BSE live data, historical OHLCV, algo order placement.</div>
+      <div class="broker-features"><span class="bf-tag">Free API</span><span class="bf-tag">Algo orders</span><span class="bf-tag">Historical</span></div>
+      <button class="btn-connect btn-conn-primary" onclick="connectBroker('angelone')">Connect Angel One →</button>
+    </div>
+    <div class="broker-card">
+      <div class="broker-logo" style="background:rgba(0,132,220,0.12);color:#0084DC;">GW</div>
+      <div class="broker-name">Groww</div>
+      <div class="broker-desc">Free API for MF + stocks. Good for mutual fund portfolio sync via Account Aggregator.</div>
+      <div class="broker-features"><span class="bf-tag">Free API</span><span class="bf-tag">MF sync</span><span class="bf-tag">AA compatible</span></div>
+      <button class="btn-connect btn-conn-primary" onclick="connectBroker('groww')">Connect Groww →</button>
+    </div>
+    <div class="broker-card">
+      <div class="broker-logo" style="background:rgba(0,150,0,0.1);color:#009900;">AA</div>
+      <div class="broker-name">Account Aggregator 🇮🇳</div>
+      <div class="broker-desc">RBI-regulated framework. Pulls stocks, MF, FD, NPS, EPF from all institutions in one consent tap.</div>
+      <div class="broker-features"><span class="bf-tag">RBI regulated</span><span class="bf-tag">All instruments</span><span class="bf-tag">Consent-based</span></div>
+      <button class="btn-connect btn-conn-primary" onclick="connectBroker('aa')">Connect via AA →</button>
+    </div>
+  </div>
+
+  <div style="font-size:12px;font-weight:700;color:var(--dim);letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;">🇺🇸 US Stocks from India (LRS)</div>
+  <div class="broker-grid">
+    <div class="broker-card">
+      <div class="broker-logo" style="background:rgba(23,64,245,0.12);color:var(--bluL);">VS</div>
+      <div class="broker-name">Vested Finance</div>
+      <div class="broker-desc">Invest in US stocks from India via LRS. API available. SIGNAL shows unified INR+USD portfolio.</div>
+      <div class="broker-features"><span class="bf-tag">LRS</span><span class="bf-tag">US stocks</span><span class="bf-tag">Free API</span></div>
+      <button class="btn-connect btn-conn-primary" onclick="connectBroker('vested')">Connect Vested →</button>
+    </div>
+    <div class="broker-card">
+      <div class="broker-logo" style="background:rgba(0,212,160,0.12);color:var(--grn);">IM</div>
+      <div class="broker-name">INDmoney</div>
+      <div class="broker-desc">AA-compatible. Pulls US + India stocks, MF, FD together. Good for unified view.</div>
+      <div class="broker-features"><span class="bf-tag">AA compatible</span><span class="bf-tag">US + India</span><span class="bf-tag">MF</span></div>
+      <button class="btn-connect btn-conn-primary" onclick="connectBroker('indmoney')">Connect INDmoney →</button>
+    </div>
+    <div class="broker-card">
+      <div class="broker-logo" style="background:rgba(139,92,246,0.12);color:var(--pur);">IB</div>
+      <div class="broker-name">Interactive Brokers</div>
+      <div class="broker-desc">Professional-grade broker. API available. US + international markets. For power users.</div>
+      <div class="broker-features"><span class="bf-tag">Global markets</span><span class="bf-tag">API</span><span class="bf-tag">Professional</span></div>
+      <button class="btn-connect btn-conn-primary" onclick="connectBroker('ibkr')">Connect IBKR →</button>
+    </div>
+  </div>
+
+  <div style="background:rgba(255,184,0,0.05);border:1px solid rgba(255,184,0,0.15);border-radius:12px;padding:14px 18px;">
+    <p style="font-size:12.5px;color:rgba(255,184,0,0.8);line-height:1.7;">🔒 <strong>Security:</strong> SIGNAL stores broker tokens AES-256 encrypted. Tokens are read-only — we cannot place orders. You can disconnect any broker anytime from this page. Tokens auto-expire in 24 hours (Kite) or 30 days (others) and require re-authentication.</p>
+  </div>
+</main>
+</div>
+<script>
+function connectBroker(broker) {
+  const names = { zerodha:'Zerodha', upstox:'Upstox', angelone:'Angel One', groww:'Groww', aa:'Account Aggregator', vested:'Vested Finance', indmoney:'INDmoney', ibkr:'Interactive Brokers' };
+  alert(`Connecting to ${names[broker]}...\n\nIn production this redirects to ${names[broker]}'s OAuth login page.\nAfter you log in, ${names[broker]} sends SIGNAL a secure read-only token.`);
+}
+</script>
+</body>
+</html>

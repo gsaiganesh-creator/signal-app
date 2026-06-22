@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Earnings Calendar</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root{--bg:#070D1A;--surf:#0E1628;--surf2:#162038;--bdr:#1C2E4A;--txt:#FFFFFF;--dim:#7A8BAA;--dim2:#3A4E6A;--blu:#1740F5;--bluL:#4F6FFA;--org:#FF5C1A;--grn:#00D4A0;--red:#FF3B5C;--ylw:#FFB800;--pur:#8B5CF6;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;min-height:100vh;}
+    nav{display:flex;align-items:center;height:58px;padding:0 clamp(16px,3vw,32px);background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:0;}
+    .nav-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--txt);margin-right:28px;}
+    .nav-link{height:34px;padding:0 13px;border-radius:8px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+    .nav-link:hover{background:var(--surf2);color:var(--txt);}
+    .nav-link.active{background:rgba(255,184,0,0.1);color:var(--ylw);font-weight:600;}
+    .plan-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(255,92,26,0.12);border:1px solid rgba(255,92,26,0.25);color:var(--org);}
+    .user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;}
+    .user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blu),var(--org));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
+    .page{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px);}
+    .sidebar{background:var(--surf);border-right:1px solid var(--bdr);padding:16px 10px;display:flex;flex-direction:column;gap:4px;}
+    .sb-section{font-size:10px;font-weight:700;color:var(--dim2);letter-spacing:1px;text-transform:uppercase;padding:12px 10px 6px;}
+    .sb-link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;transition:all 0.15s;}
+    .sb-link:hover{background:var(--surf2);color:var(--txt);}
+    .sb-link.active{background:rgba(255,184,0,0.1);color:var(--ylw);font-weight:600;}
+    .sb-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--red);color:#fff;}
+    .main{padding:24px clamp(16px,3vw,32px);}
+    .cal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:24px;}
+    .day-card{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;overflow:hidden;}
+    .day-header{padding:12px 16px;background:var(--surf2);border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;}
+    .day-date-label{font-size:13px;font-weight:800;}
+    .day-count{font-size:11px;color:var(--dim);}
+    .earnings-item{display:flex;align-items:center;gap:10px;padding:11px 14px;border-bottom:1px solid var(--bdr);}
+    .earnings-item:last-child{border-bottom:none;}
+    .ei-dot{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:900;flex-shrink:0;}
+    .ei-sym{font-size:13px;font-weight:700;}
+    .ei-name{font-size:10.5px;color:var(--dim);}
+    .ei-flag{margin-left:auto;}
+    .port-flag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(255,184,0,0.12);color:var(--ylw);border:1px solid rgba(255,184,0,0.25);}
+    .imp-pill{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;}
+    @media(max-width:1000px){.cal-grid{grid-template-columns:1fr 1fr;}}
+    @media(max-width:900px){.page{grid-template-columns:1fr;}.sidebar{display:none;}}
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div style="display:flex;align-items:center;gap:2px;flex:1;">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Signals.html">📈 Signals</a>
+    <a class="nav-link" href="SIGNAL Sector Heatmap.html">🔥 Heatmap</a>
+    <a class="nav-link" href="SIGNAL FII DII.html">🌍 FII / DII</a>
+    <a class="nav-link active" href="#">📅 Earnings</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">SG</div><span style="font-size:12px;font-weight:600;">Sai Ganesh</span></div>
+  </div>
+</nav>
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals <span class="sb-badge">3</span></a>
+  <a class="sb-link" href="SIGNAL Portfolio.html">💼 My Portfolio</a>
+  <a class="sb-link" href="SIGNAL ETF MF.html">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link" href="SIGNAL Backtest.html">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="SIGNAL Sector Heatmap.html">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="SIGNAL FII DII.html">🌍 FII / DII Flow</a>
+  <a class="sb-link" href="SIGNAL Twitter Feed.html">𝕏 Twitter Feed</a>
+  <a class="sb-link active" href="#">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="SIGNAL Upgrade Plan.html">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="SIGNAL Connect Broker.html">🔗 Connect Broker</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+<main class="main">
+  <div style="margin-bottom:20px;">
+    <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Earnings Calendar</div>
+    <div style="font-size:13px;color:var(--dim);margin-top:3px;">Upcoming quarterly results · <span style="background:rgba(255,184,0,0.12);color:var(--ylw);padding:1px 7px;border-radius:4px;font-size:11px;font-weight:700;">⚠️ In Portfolio</span> = stocks you hold</div>
+  </div>
+
+  <div style="background:rgba(255,184,0,0.06);border:1px solid rgba(255,184,0,0.2);border-radius:12px;padding:13px 16px;margin-bottom:20px;">
+    <div style="font-size:13px;color:rgba(255,184,0,0.9);line-height:1.6;">⚠️ <strong>Earnings flag active:</strong> SIGNAL reduces signal confidence by 15–30% for stocks with results due within 5 days. High uncertainty around earnings events.</div>
+  </div>
+
+  <div class="cal-grid">
+    <div class="day-card">
+      <div class="day-header"><div class="day-date-label">Mon · Jun 23</div><span class="day-count">4 results</span></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(0,212,160,0.12);color:var(--grn);">TC</div><div><div class="ei-sym">TCS</div><div class="ei-name">IT · Q1 FY27</div></div><div class="ei-flag"><span class="port-flag">⚠️ Portfolio</span></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(23,64,245,0.12);color:var(--bluL);">IN</div><div><div class="ei-sym">INFY</div><div class="ei-name">IT · Q1 FY27</div></div><div class="ei-flag"><span class="port-flag">⚠️ Portfolio</span></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(255,184,0,0.12);color:var(--ylw);">AS</div><div><div class="ei-sym">ASIANPAINT</div><div class="ei-name">Consumer · Q1 FY27</div></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(255,59,92,0.12);color:var(--red);">ZM</div><div><div class="ei-sym">ZOMATO</div><div class="ei-name">Consumer · Q1 FY27</div></div><div class="ei-flag"><span class="port-flag">⚠️ Portfolio</span></div></div>
+    </div>
+    <div class="day-card">
+      <div class="day-header"><div class="day-date-label">Tue · Jun 24</div><span class="day-count">3 results</span></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(23,64,245,0.12);color:var(--bluL);">HD</div><div><div class="ei-sym">HDFCBANK</div><div class="ei-name">Banking · Q1 FY27</div></div><div class="ei-flag"><span class="port-flag">⚠️ Portfolio</span></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(139,92,246,0.12);color:var(--pur);">IC</div><div><div class="ei-sym">ICICIBANK</div><div class="ei-name">Banking · Q1 FY27</div></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(0,212,160,0.12);color:var(--grn);">MR</div><div><div class="ei-sym">MARUTI</div><div class="ei-name">Auto · Q1 FY27</div></div></div>
+    </div>
+    <div class="day-card">
+      <div class="day-header"><div class="day-date-label">Wed · Jun 25</div><span class="day-count">5 results</span></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(255,92,26,0.12);color:var(--org);">RL</div><div><div class="ei-sym">RELIANCE</div><div class="ei-name">Energy · Q1 FY27</div></div><div class="ei-flag"><span class="port-flag">⚠️ Portfolio</span></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(0,212,160,0.12);color:var(--grn);">SB</div><div><div class="ei-sym">SBIN</div><div class="ei-name">Banking · Q1 FY27</div></div><div class="ei-flag"><span class="port-flag">⚠️ Portfolio</span></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(139,92,246,0.12);color:var(--pur);">BF</div><div><div class="ei-sym">BAJFINANCE</div><div class="ei-name">NBFC · Q1 FY27</div></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(23,64,245,0.12);color:var(--bluL);">WP</div><div><div class="ei-sym">WIPRO</div><div class="ei-name">IT · Q1 FY27</div></div></div>
+    </div>
+    <div class="day-card">
+      <div class="day-header"><div class="day-date-label">Thu · Jun 26</div><span class="day-count">2 results</span></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(0,212,160,0.12);color:var(--grn);">TM</div><div><div class="ei-sym">TATAMOTORS</div><div class="ei-name">Auto · Q1 FY27</div></div><div class="ei-flag"><span class="port-flag">⚠️ Portfolio</span></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(255,59,92,0.12);color:var(--red);">MH</div><div><div class="ei-sym">M&amp;M</div><div class="ei-name">Auto · Q1 FY27</div></div></div>
+    </div>
+    <div class="day-card">
+      <div class="day-header"><div class="day-date-label">Fri · Jun 27</div><span class="day-count">3 results</span></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(139,92,246,0.12);color:var(--pur);">HC</div><div><div class="ei-sym">HCLTECH</div><div class="ei-name">IT · Q1 FY27</div></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(255,184,0,0.12);color:var(--ylw);">NN</div><div><div class="ei-sym">NESTLEIND</div><div class="ei-name">FMCG · Q1 FY27</div></div></div>
+      <div class="earnings-item"><div class="ei-dot" style="background:rgba(23,64,245,0.12);color:var(--bluL);">LT</div><div><div class="ei-sym">LT</div><div class="ei-name">Infra · Q1 FY27</div></div></div>
+    </div>
+    <div class="day-card" style="background:rgba(255,255,255,0.01);">
+      <div class="day-header" style="background:rgba(255,255,255,0.02);"><div class="day-date-label" style="color:var(--dim);">Next Week</div><span class="day-count">12+ results</span></div>
+      <div style="padding:20px;text-align:center;color:var(--dim);font-size:13px;">More earnings loading...<br><br><a href="#" style="color:var(--bluL);font-weight:600;">View full calendar →</a></div>
+    </div>
+  </div>
+
+  <div style="background:rgba(23,64,245,0.05);border:1px solid rgba(23,64,245,0.18);border-radius:12px;padding:16px;">
+    <div style="font-size:13px;font-weight:700;margin-bottom:8px;">🎯 ML Earnings Prediction</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+      <div style="padding:12px;background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);border-radius:10px;"><div style="font-size:12px;font-weight:700;color:var(--grn);margin-bottom:3px;">TCS · Jun 23</div><div style="font-size:11px;color:var(--dim);">Historical beat rate: 80% · Expected: Beat<br>Avg post-results move: +3.4%</div></div>
+      <div style="padding:12px;background:rgba(255,59,92,0.05);border:1px solid rgba(255,59,92,0.15);border-radius:10px;"><div style="font-size:12px;font-weight:700;color:var(--red);margin-bottom:3px;">ZOMATO · Jun 23</div><div style="font-size:11px;color:var(--dim);">Historical beat rate: 45% · Volatile stock<br>Avg post-results swing: ±7.8%</div></div>
+    </div>
+  </div>
+</main>
+</div>
+</body>
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Upgrade Plan</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root{--bg:#070D1A;--surf:#0E1628;--surf2:#162038;--bdr:#1C2E4A;--txt:#FFFFFF;--dim:#7A8BAA;--dim2:#3A4E6A;--blu:#1740F5;--bluL:#4F6FFA;--org:#FF5C1A;--grn:#00D4A0;--red:#FF3B5C;--ylw:#FFB800;--pur:#8B5CF6;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;min-height:100vh;}
+    nav{display:flex;align-items:center;height:58px;padding:0 clamp(16px,3vw,32px);background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:0;}
+    .nav-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--txt);margin-right:28px;}
+    .nav-link{height:34px;padding:0 13px;border-radius:8px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+    .nav-link:hover{background:var(--surf2);color:var(--txt);}
+    .plan-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(255,92,26,0.12);border:1px solid rgba(255,92,26,0.25);color:var(--org);}
+    .user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;}
+    .user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blu),var(--org));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
+    .page{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px);}
+    .sidebar{background:var(--surf);border-right:1px solid var(--bdr);padding:16px 10px;display:flex;flex-direction:column;gap:4px;}
+    .sb-section{font-size:10px;font-weight:700;color:var(--dim2);letter-spacing:1px;text-transform:uppercase;padding:12px 10px 6px;}
+    .sb-link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;transition:all 0.15s;}
+    .sb-link:hover{background:var(--surf2);color:var(--txt);}
+    .sb-link.active{background:rgba(255,184,0,0.1);color:var(--ylw);font-weight:600;}
+    .sb-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--red);color:#fff;}
+    .main{padding:24px clamp(16px,3vw,32px);}
+    .pricing-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
+    .plan{background:var(--surf);border:1px solid var(--bdr);border-radius:18px;padding:24px;position:relative;}
+    .plan.featured{background:linear-gradient(145deg,#0D1E45,#0E1628);border-color:var(--blu);}
+    .plan.current{border-color:rgba(255,92,26,0.4);background:rgba(255,92,26,0.03);}
+    .plan-badge-top{position:absolute;top:-1px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;padding:3px 12px;border-radius:0 0 8px 8px;}
+    .plan-name{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:8px;}
+    .plan-price{font-size:40px;font-weight:900;letter-spacing:-1.5px;line-height:1;margin-bottom:4px;}
+    .plan-cycle{font-size:12px;color:var(--dim);margin-bottom:20px;}
+    .plan-feats{list-style:none;display:flex;flex-direction:column;gap:8px;margin-bottom:22px;}
+    .plan-feats li{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#C4D0E8;line-height:1.4;}
+    .plan-feats li::before{content:'✓';color:var(--grn);font-weight:700;flex-shrink:0;}
+    .plan-feats li.no::before{content:'–';color:var(--dim2);}
+    .plan-feats li.no{color:var(--dim);}
+    .btn-plan{width:100%;height:44px;border-radius:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+    .btn-primary{background:linear-gradient(135deg,var(--blu),var(--bluL));border:none;color:#fff;}
+    .btn-current{background:rgba(255,92,26,0.1);border:1px solid rgba(255,92,26,0.3);color:var(--org);cursor:default;}
+    .btn-outline{background:transparent;border:1px solid var(--bdr);color:var(--txt);}
+    .ptab-row{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap;}
+    .ptab{height:36px;padding:0 16px;border-radius:9px;font-size:13px;font-weight:600;background:transparent;border:1px solid var(--bdr);color:var(--dim);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;}
+    .ptab.on{background:var(--blu);border-color:var(--blu);color:#fff;}
+    .save-badge{font-size:10px;font-weight:700;padding:2px 6px;border-radius:4px;background:rgba(0,212,160,0.2);color:var(--grn);}
+    .ptab.on .save-badge{background:rgba(255,255,255,0.2);color:#fff;}
+    @media(max-width:1100px){.pricing-grid{grid-template-columns:1fr 1fr;}}
+    @media(max-width:900px){.page{grid-template-columns:1fr;}.sidebar{display:none;}}
+    @media(max-width:600px){.pricing-grid{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div style="display:flex;align-items:center;gap:2px;flex:1;">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Signals.html">📈 Signals</a>
+    <a class="nav-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="plan-badge">Pro · Active</span>
+    <div class="user-chip"><div class="user-av">SG</div><span style="font-size:12px;font-weight:600;">Sai Ganesh</span></div>
+  </div>
+</nav>
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals <span class="sb-badge">3</span></a>
+  <a class="sb-link" href="SIGNAL Portfolio.html">💼 My Portfolio</a>
+  <a class="sb-link" href="SIGNAL ETF MF.html">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link" href="SIGNAL Backtest.html">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="SIGNAL Sector Heatmap.html">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="SIGNAL FII DII.html">🌍 FII / DII Flow</a>
+  <a class="sb-link" href="SIGNAL Twitter Feed.html">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="SIGNAL Earnings Calendar.html">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link active" href="#">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="SIGNAL Connect Broker.html">🔗 Connect Broker</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+<main class="main">
+  <div style="margin-bottom:24px;">
+    <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Upgrade Plan</div>
+    <div style="font-size:13px;color:var(--dim);margin-top:3px;">Currently on <span style="color:var(--org);font-weight:700;">Pro</span> · Renews Jul 22, 2026</div>
+  </div>
+
+  <!-- Billing period tabs -->
+  <div class="ptab-row">
+    <button class="ptab on" onclick="switchPeriod('mo',this)">Monthly</button>
+    <button class="ptab" onclick="switchPeriod('qtr',this)">Quarterly <span class="save-badge">Save 10%</span></button>
+    <button class="ptab" onclick="switchPeriod('half',this)">Half-Yearly <span class="save-badge">Save 17%</span></button>
+    <button class="ptab" onclick="switchPeriod('yr',this)">Annual <span class="save-badge">Save 25%</span></button>
+  </div>
+
+  <div class="pricing-grid">
+    <div class="plan">
+      <div class="plan-name">Free</div>
+      <div class="plan-price">₹0</div>
+      <div class="plan-cycle">forever</div>
+      <ul class="plan-feats">
+        <li>5 stocks tracking</li>
+        <li>3 signals/week</li>
+        <li>7-day delayed stats</li>
+        <li class="no">No broker sync</li>
+        <li class="no">No Algo Builder</li>
+      </ul>
+      <button class="btn-plan btn-outline">Downgrade</button>
+    </div>
+    <div class="plan">
+      <div class="plan-name" style="color:var(--bluL);">Starter</div>
+      <div class="plan-price" style="color:var(--bluL);" id="p-starter">₹199</div>
+      <div class="plan-cycle" id="c-starter">per month</div>
+      <ul class="plan-feats">
+        <li>25 stocks</li>
+        <li>ML signals · RF picks</li>
+        <li>𝕏 Twitter sentiment</li>
+        <li>Real-time push alerts</li>
+        <li class="no">No Algo Builder</li>
+      </ul>
+      <button class="btn-plan btn-outline">Downgrade</button>
+    </div>
+    <div class="plan current">
+      <div class="plan-badge-top" style="background:var(--org);color:#fff;">✓ Current Plan</div>
+      <div class="plan-name" style="color:var(--org);">Pro</div>
+      <div class="plan-price" style="color:var(--org);" id="p-pro">₹599</div>
+      <div class="plan-cycle" id="c-pro">per month</div>
+      <ul class="plan-feats">
+        <li>Unlimited NSE/BSE stocks</li>
+        <li>Live broker sync</li>
+        <li>Full Algo Builder</li>
+        <li>Paper Trading (unlimited)</li>
+        <li>WhatsApp + push alerts</li>
+      </ul>
+      <button class="btn-plan btn-current">Current Plan ✓</button>
+    </div>
+    <div class="plan featured">
+      <div class="plan-badge-top" style="background:var(--pur);color:#fff;">⚡ Upgrade</div>
+      <div class="plan-name" style="color:var(--pur);">Elite</div>
+      <div class="plan-price" style="color:var(--pur);" id="p-elite">₹1,499</div>
+      <div class="plan-cycle" id="c-elite">per month</div>
+      <ul class="plan-feats">
+        <li>Everything in Pro</li>
+        <li>Auto-execute orders</li>
+        <li>Custom ML model</li>
+        <li>Priority 24/7 WhatsApp</li>
+        <li>Early US markets access</li>
+      </ul>
+      <button class="btn-plan btn-primary" onclick="upgradePlan()">Upgrade to Elite →</button>
+    </div>
+  </div>
+
+  <!-- Coupon -->
+  <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:20px;max-width:480px;">
+    <div style="font-size:14px;font-weight:700;margin-bottom:4px;">🎟️ Have a coupon code?</div>
+    <div style="font-size:12px;color:var(--dim);margin-bottom:12px;">Apply a discount to any plan upgrade.</div>
+    <div style="display:flex;gap:8px;">
+      <input type="text" id="coupon-input" placeholder="Enter code e.g. SIGNAL20" style="flex:1;height:42px;border-radius:10px;background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);font-size:13px;font-weight:600;padding:0 12px;font-family:inherit;outline:none;text-transform:uppercase;letter-spacing:0.5px;" onfocus="this.style.borderColor='var(--blu)'" onblur="this.style.borderColor='var(--bdr)'">
+      <button onclick="applyCoupon()" style="height:42px;padding:0 18px;border-radius:10px;background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;">Apply</button>
+    </div>
+    <div id="coupon-msg" style="font-size:12px;margin-top:8px;min-height:16px;"></div>
+  </div>
+</main>
+</div>
+<script>
+const pData = {
+  mo:   {s:'₹199', p:'₹599', e:'₹1,499', cy:'per month'},
+  qtr:  {s:'₹540', p:'₹1,620', e:'₹4,050', cy:'per quarter · save 10%'},
+  half: {s:'₹999', p:'₹2,995', e:'₹7,495', cy:'per 6 months · save 17%'},
+  yr:   {s:'₹1,790', p:'₹5,388', e:'₹13,490', cy:'per year · save 25%'},
+};
+function switchPeriod(k, btn) {
+  document.querySelectorAll('.ptab').forEach(t=>t.classList.remove('on'));
+  btn.classList.add('on');
+  const d = pData[k];
+  document.getElementById('p-starter').textContent = d.s;
+  document.getElementById('p-pro').textContent = d.p;
+  document.getElementById('p-elite').textContent = d.e;
+  ['c-starter','c-pro','c-elite'].forEach(id=>document.getElementById(id).textContent=d.cy);
+}
+const COUPONS = {'SIGNAL20':'20% off','LAUNCH50':'50% off — launch special!','EARLYBIRD':'30% off'};
+function applyCoupon() {
+  const code = document.getElementById('coupon-input').value.trim().toUpperCase();
+  const msg = document.getElementById('coupon-msg');
+  if (!code) { msg.style.color='var(--dim)'; msg.textContent='Enter a coupon code.'; return; }
+  if (COUPONS[code]) { msg.style.color='var(--grn)'; msg.textContent='✅ Code applied! ' + COUPONS[code]; }
+  else               { msg.style.color='var(--red)'; msg.textContent='❌ Invalid code.'; }
+}
+function upgradePlan() {
+  alert('Upgrading to Elite...\nIn production this opens Razorpay payment sheet.');
+}
+</script>
+</body>
+</html>

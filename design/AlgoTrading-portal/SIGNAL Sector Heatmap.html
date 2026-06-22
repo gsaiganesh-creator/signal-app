@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Sector Heatmap</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root{--bg:#070D1A;--surf:#0E1628;--surf2:#162038;--bdr:#1C2E4A;--txt:#FFFFFF;--dim:#7A8BAA;--dim2:#3A4E6A;--blu:#1740F5;--bluL:#4F6FFA;--org:#FF5C1A;--grn:#00D4A0;--red:#FF3B5C;--ylw:#FFB800;--pur:#8B5CF6;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;min-height:100vh;}
+    nav{display:flex;align-items:center;height:58px;padding:0 clamp(16px,3vw,32px);background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:0;}
+    .nav-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--txt);margin-right:28px;}
+    .nav-link{height:34px;padding:0 13px;border-radius:8px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+    .nav-link:hover{background:var(--surf2);color:var(--txt);}
+    .nav-link.active{background:rgba(255,92,26,0.1);color:var(--org);font-weight:600;}
+    .plan-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(255,92,26,0.12);border:1px solid rgba(255,92,26,0.25);color:var(--org);}
+    .user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;}
+    .user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blu),var(--org));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
+    .page{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px);}
+    .sidebar{background:var(--surf);border-right:1px solid var(--bdr);padding:16px 10px;display:flex;flex-direction:column;gap:4px;}
+    .sb-section{font-size:10px;font-weight:700;color:var(--dim2);letter-spacing:1px;text-transform:uppercase;padding:12px 10px 6px;}
+    .sb-link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;transition:all 0.15s;}
+    .sb-link:hover{background:var(--surf2);color:var(--txt);}
+    .sb-link.active{background:rgba(255,92,26,0.1);color:var(--org);font-weight:600;}
+    .sb-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--red);color:#fff;}
+    .main{padding:24px clamp(16px,3vw,32px);}
+    .heatmap-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:24px;}
+    .heat-card{border-radius:16px;padding:22px;cursor:pointer;transition:transform 0.15s;}
+    .heat-card:hover{transform:translateY(-2px);}
+    .heat-name{font-size:12px;font-weight:700;opacity:0.75;margin-bottom:6px;text-transform:uppercase;letter-spacing:0.5px;}
+    .heat-val{font-size:32px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;}
+    .heat-index{font-size:12px;opacity:0.6;margin-bottom:10px;}
+    .heat-stocks{font-size:11px;opacity:0.65;line-height:1.6;}
+    .heat-bar{height:4px;border-radius:2px;overflow:hidden;background:rgba(255,255,255,0.1);margin-top:10px;}
+    .heat-fill{height:100%;border-radius:2px;}
+    .period-row{display:flex;gap:8px;margin-bottom:20px;}
+    .period-btn{height:30px;padding:0 14px;border-radius:7px;font-size:12px;font-weight:700;background:transparent;border:1px solid var(--bdr);color:var(--dim);cursor:pointer;font-family:inherit;}
+    .period-btn.on{background:var(--surf2);border-color:var(--dim);color:var(--txt);}
+    @media(max-width:900px){.page{grid-template-columns:1fr;}.sidebar{display:none;}.heatmap-grid{grid-template-columns:1fr 1fr;}}
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div style="display:flex;align-items:center;gap:2px;flex:1;">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Signals.html">📈 Signals</a>
+    <a class="nav-link" href="SIGNAL Portfolio.html">💼 Portfolio</a>
+    <a class="nav-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+    <a class="nav-link active" href="#">🔥 Heatmap</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">SG</div><span style="font-size:12px;font-weight:600;">Sai Ganesh</span></div>
+  </div>
+</nav>
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals <span class="sb-badge">3</span></a>
+  <a class="sb-link" href="SIGNAL Portfolio.html">💼 My Portfolio</a>
+  <a class="sb-link" href="SIGNAL ETF MF.html">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link" href="SIGNAL Backtest.html">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link active" href="#">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="SIGNAL FII DII.html">🌍 FII / DII Flow</a>
+  <a class="sb-link" href="SIGNAL Twitter Feed.html">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="SIGNAL Earnings Calendar.html">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="SIGNAL Upgrade Plan.html">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="SIGNAL Connect Broker.html">🔗 Connect Broker</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+<main class="main">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:12px;">
+    <div>
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Sector Heatmap</div>
+      <div style="font-size:13px;color:var(--dim);margin-top:3px;">NIFTY sectoral indices · performance &amp; signal density</div>
+    </div>
+  </div>
+  <div class="period-row">
+    <button class="period-btn" onclick="setPeriod(this,'1d')">1D</button>
+    <button class="period-btn on" onclick="setPeriod(this,'5d')">5D</button>
+    <button class="period-btn" onclick="setPeriod(this,'1m')">1M</button>
+    <button class="period-btn" onclick="setPeriod(this,'3m')">3M</button>
+    <button class="period-btn" onclick="setPeriod(this,'1y')">1Y</button>
+  </div>
+  <div class="heatmap-grid" id="heatmap">
+    <div class="heat-card" style="background:rgba(0,212,160,0.15);border:1px solid rgba(0,212,160,0.3);">
+      <div class="heat-name" style="color:var(--grn);">IT</div>
+      <div class="heat-val" style="color:var(--grn);">+4.1%</div>
+      <div class="heat-index">NIFTY IT · 38,120</div>
+      <div class="heat-stocks">TCS, INFY, WIPRO, LTIM, HCLTECH — 5 BUY signals</div>
+      <div class="heat-bar"><div class="heat-fill" style="width:82%;background:var(--grn);"></div></div>
+    </div>
+    <div class="heat-card" style="background:rgba(0,212,160,0.12);border:1px solid rgba(0,212,160,0.25);">
+      <div class="heat-name" style="color:var(--grn);">AUTO</div>
+      <div class="heat-val" style="color:var(--grn);">+2.8%</div>
+      <div class="heat-index">NIFTY Auto · 21,480</div>
+      <div class="heat-stocks">TATAMOTORS, M&amp;M, MARUTI — 3 BUY signals</div>
+      <div class="heat-bar"><div class="heat-fill" style="width:56%;background:var(--grn);"></div></div>
+    </div>
+    <div class="heat-card" style="background:rgba(0,212,160,0.08);border:1px solid rgba(0,212,160,0.18);">
+      <div class="heat-name" style="color:var(--grn);">PHARMA</div>
+      <div class="heat-val" style="color:var(--grn);">+1.4%</div>
+      <div class="heat-index">NIFTY Pharma · 19,240</div>
+      <div class="heat-stocks">SUNPHARMA, DRREDDY — 2 BUY signals</div>
+      <div class="heat-bar"><div class="heat-fill" style="width:28%;background:var(--grn);"></div></div>
+    </div>
+    <div class="heat-card" style="background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.15);">
+      <div class="heat-name" style="color:var(--grn);">ENERGY</div>
+      <div class="heat-val" style="color:var(--grn);">+0.9%</div>
+      <div class="heat-index">NIFTY Energy · 34,120</div>
+      <div class="heat-stocks">RELIANCE, ONGC, BPCL — 1 BUY signal</div>
+      <div class="heat-bar"><div class="heat-fill" style="width:18%;background:var(--grn);"></div></div>
+    </div>
+    <div class="heat-card" style="background:rgba(255,184,0,0.08);border:1px solid rgba(255,184,0,0.2);">
+      <div class="heat-name" style="color:var(--ylw);">FMCG</div>
+      <div class="heat-val" style="color:var(--ylw);">+0.3%</div>
+      <div class="heat-index">NIFTY FMCG · 52,840</div>
+      <div class="heat-stocks">HINDUNILVR, NESTLEIND — 0 signals (HOLD)</div>
+      <div class="heat-bar"><div class="heat-fill" style="width:6%;background:var(--ylw);"></div></div>
+    </div>
+    <div class="heat-card" style="background:rgba(255,59,92,0.08);border:1px solid rgba(255,59,92,0.2);">
+      <div class="heat-name" style="color:var(--red);">BANKING</div>
+      <div class="heat-val" style="color:var(--red);">-0.8%</div>
+      <div class="heat-index">BANK NIFTY · 53,240</div>
+      <div class="heat-stocks">HDFCBANK, ICICIBANK — 1 SELL signal</div>
+      <div class="heat-bar"><div class="heat-fill" style="width:16%;background:var(--red);"></div></div>
+    </div>
+    <div class="heat-card" style="background:rgba(255,59,92,0.12);border:1px solid rgba(255,59,92,0.25);">
+      <div class="heat-name" style="color:var(--red);">METAL</div>
+      <div class="heat-val" style="color:var(--red);">-2.1%</div>
+      <div class="heat-index">NIFTY Metal · 8,240</div>
+      <div class="heat-stocks">TATASTEEL, JSWSTEEL — 2 SELL signals</div>
+      <div class="heat-bar"><div class="heat-fill" style="width:42%;background:var(--red);"></div></div>
+    </div>
+    <div class="heat-card" style="background:rgba(255,59,92,0.09);border:1px solid rgba(255,59,92,0.2);">
+      <div class="heat-name" style="color:var(--red);">REALTY</div>
+      <div class="heat-val" style="color:var(--red);">-1.4%</div>
+      <div class="heat-index">NIFTY Realty · 1,020</div>
+      <div class="heat-stocks">DLF, GODREJPROP — 1 SELL signal</div>
+      <div class="heat-bar"><div class="heat-fill" style="width:28%;background:var(--red);"></div></div>
+    </div>
+    <div class="heat-card" style="background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);">
+      <div class="heat-name" style="color:var(--pur);">CONSUMER</div>
+      <div class="heat-val" style="color:var(--red);">-0.5%</div>
+      <div class="heat-index">NIFTY India Consumption</div>
+      <div class="heat-stocks">TITAN, JUBLFOOD — Watch list</div>
+      <div class="heat-bar"><div class="heat-fill" style="width:10%;background:var(--red);"></div></div>
+    </div>
+  </div>
+
+  <!-- Signal density -->
+  <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:20px;">
+    <div style="font-size:14px;font-weight:700;margin-bottom:14px;">Signal Density by Sector · Today</div>
+    <div style="display:flex;flex-direction:column;gap:10px;">
+      <div style="display:flex;align-items:center;gap:12px;"><span style="font-size:12px;font-weight:600;width:80px;">IT</span><div style="flex:1;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;"><div style="height:100%;width:83%;background:var(--grn);border-radius:4px;"></div></div><span style="font-size:12px;font-weight:700;color:var(--grn);width:60px;text-align:right;">5 BUY</span></div>
+      <div style="display:flex;align-items:center;gap:12px;"><span style="font-size:12px;font-weight:600;width:80px;">Auto</span><div style="flex:1;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;"><div style="height:100%;width:50%;background:var(--grn);border-radius:4px;"></div></div><span style="font-size:12px;font-weight:700;color:var(--grn);width:60px;text-align:right;">3 BUY</span></div>
+      <div style="display:flex;align-items:center;gap:12px;"><span style="font-size:12px;font-weight:600;width:80px;">Pharma</span><div style="flex:1;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;"><div style="height:100%;width:33%;background:var(--grn);border-radius:4px;"></div></div><span style="font-size:12px;font-weight:700;color:var(--grn);width:60px;text-align:right;">2 BUY</span></div>
+      <div style="display:flex;align-items:center;gap:12px;"><span style="font-size:12px;font-weight:600;width:80px;">Metal</span><div style="flex:1;height:8px;background:rgba(255,255,255,0.07);border-radius:4px;overflow:hidden;"><div style="height:100%;width:33%;background:var(--red);border-radius:4px;"></div></div><span style="font-size:12px;font-weight:700;color:var(--red);width:60px;text-align:right;">2 SELL</span></div>
+    </div>
+    <div style="margin-top:16px;padding:12px;background:rgba(23,64,245,0.06);border:1px solid rgba(23,64,245,0.2);border-radius:10px;">
+      <div style="font-size:12px;color:var(--bluL);line-height:1.6;">📊 <strong>SIGNAL ML insight:</strong> IT sector showing strongest momentum — EMA crossovers + high delivery % + FII buying. Rotate into IT-heavy signals this week. Avoid Metal and Banking until macro headwinds ease.</div>
+    </div>
+  </div>
+</main>
+</div>
+<script>
+function setPeriod(btn, period) {
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+</script>
+</body>
+</html>

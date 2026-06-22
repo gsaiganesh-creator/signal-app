@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Backtest</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap');
+    :root{--bg:#070D1A;--surf:#0E1628;--surf2:#162038;--bdr:#1C2E4A;--txt:#FFFFFF;--dim:#7A8BAA;--dim2:#3A4E6A;--blu:#1740F5;--bluL:#4F6FFA;--org:#FF5C1A;--grn:#00D4A0;--red:#FF3B5C;--ylw:#FFB800;--pur:#8B5CF6;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;min-height:100vh;}
+    nav{display:flex;align-items:center;height:58px;padding:0 clamp(16px,3vw,32px);background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:0;}
+    .nav-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--txt);margin-right:28px;}
+    .nav-link{height:34px;padding:0 13px;border-radius:8px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+    .nav-link:hover{background:var(--surf2);color:var(--txt);}
+    .nav-link.active{background:rgba(139,92,246,0.12);color:var(--pur);font-weight:600;}
+    .plan-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(255,92,26,0.12);border:1px solid rgba(255,92,26,0.25);color:var(--org);}
+    .user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;}
+    .user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blu),var(--org));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
+    .page{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px);}
+    .sidebar{background:var(--surf);border-right:1px solid var(--bdr);padding:16px 10px;display:flex;flex-direction:column;gap:4px;}
+    .sb-section{font-size:10px;font-weight:700;color:var(--dim2);letter-spacing:1px;text-transform:uppercase;padding:12px 10px 6px;}
+    .sb-link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;transition:all 0.15s;}
+    .sb-link:hover{background:var(--surf2);color:var(--txt);}
+    .sb-link.active{background:rgba(139,92,246,0.1);color:var(--pur);font-weight:600;}
+    .sb-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--red);color:#fff;}
+    .main{padding:24px clamp(16px,3vw,32px);}
+    .config-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px;}
+    .field label{display:block;font-size:11px;font-weight:600;color:var(--dim);margin-bottom:6px;letter-spacing:0.3px;}
+    .field select,.field input{width:100%;height:42px;border-radius:10px;background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);font-size:13px;font-weight:600;padding:0 12px;font-family:inherit;outline:none;}
+    .field select:focus,.field input:focus{border-color:var(--pur);}
+    .results-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:16px;}
+    .rc{background:var(--surf);border:1px solid var(--bdr);border-radius:13px;padding:16px;text-align:center;}
+    .rc-val{font-size:26px;font-weight:900;letter-spacing:-0.5px;}
+    .rc-lbl{font-size:11px;color:var(--dim);margin-top:4px;}
+    table{width:100%;border-collapse:collapse;font-size:13px;}
+    thead th{font-size:10.5px;font-weight:700;color:var(--dim);padding:9px 12px;text-align:left;border-bottom:1px solid var(--bdr);background:var(--surf2);text-transform:uppercase;letter-spacing:0.4px;}
+    tbody td{padding:10px 12px;border-bottom:1px solid rgba(28,46,74,0.5);}
+    tbody tr:last-child td{border-bottom:none;}
+    @media(max-width:900px){.page{grid-template-columns:1fr;}.sidebar{display:none;}.results-grid{grid-template-columns:1fr 1fr;}.config-grid{grid-template-columns:1fr;}}
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div style="display:flex;align-items:center;gap:2px;flex:1;">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+    <a class="nav-link" href="SIGNAL Paper Trading.html">🧪 Paper Trade</a>
+    <a class="nav-link active" href="#">📋 Backtest</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">SG</div><span style="font-size:12px;font-weight:600;">Sai Ganesh</span></div>
+  </div>
+</nav>
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals <span class="sb-badge">3</span></a>
+  <a class="sb-link" href="SIGNAL Portfolio.html">💼 My Portfolio</a>
+  <a class="sb-link" href="SIGNAL ETF MF.html">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link active" href="#">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="SIGNAL Sector Heatmap.html">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="SIGNAL FII DII.html">🌍 FII / DII Flow</a>
+  <a class="sb-link" href="SIGNAL Twitter Feed.html">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="SIGNAL Earnings Calendar.html">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="SIGNAL Upgrade Plan.html">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="SIGNAL Connect Broker.html">🔗 Connect Broker</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+<main class="main">
+  <div style="margin-bottom:24px;"><div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;">Backtest Engine</div><div style="font-size:13px;color:var(--dim);margin-top:3px;">Run your strategy against historical NSE/BSE data · Up to 5Y · Pro feature</div></div>
+
+  <!-- Config -->
+  <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:22px;margin-bottom:20px;">
+    <div style="font-size:14px;font-weight:700;margin-bottom:16px;">Configure Backtest</div>
+    <div class="config-grid">
+      <div class="field"><label>Strategy</label><select><option>RSI + EMA Momentum</option><option>Momentum Breakout</option><option>Mean Reversion BB</option><option>Custom strategy...</option></select></div>
+      <div class="field"><label>Universe</label><select><option>NIFTY 50</option><option>NIFTY 500</option><option>NIFTY Midcap 150</option><option>My Portfolio</option></select></div>
+      <div class="field"><label>Period</label><select><option>1 Year</option><option>2 Years</option><option>3 Years</option><option>5 Years</option></select></div>
+      <div class="field"><label>Capital</label><input type="text" value="₹10,00,000"></div>
+      <div class="field"><label>Stop Loss</label><input type="text" value="2.5%"></div>
+      <div class="field"><label>Target</label><input type="text" value="6.0%"></div>
+    </div>
+    <button id="run-btn" onclick="runBacktest()" style="height:44px;padding:0 32px;border-radius:11px;background:linear-gradient(135deg,var(--pur),#6D3EC1);border:none;color:#fff;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;">▶ Run Backtest</button>
+  </div>
+
+  <!-- Results -->
+  <div id="results">
+    <div style="font-size:11px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:1px;margin-bottom:12px;">Results — RSI + EMA · NIFTY 50 · 1 Year</div>
+    <div class="results-grid">
+      <div class="rc"><div class="rc-val" style="color:var(--grn);">+24.3%</div><div class="rc-lbl">Total Returns</div></div>
+      <div class="rc"><div class="rc-val" style="color:var(--bluL);">1.84</div><div class="rc-lbl">Sharpe Ratio</div></div>
+      <div class="rc"><div class="rc-val" style="color:var(--grn);">64%</div><div class="rc-lbl">Win Rate</div></div>
+      <div class="rc"><div class="rc-val" style="color:var(--red);">-8.2%</div><div class="rc-lbl">Max Drawdown</div></div>
+      <div class="rc"><div class="rc-val">48</div><div class="rc-lbl">Total Trades</div></div>
+      <div class="rc"><div class="rc-val" style="color:var(--grn);">31</div><div class="rc-lbl">Winners</div></div>
+      <div class="rc"><div class="rc-val" style="color:var(--red);">17</div><div class="rc-lbl">Losers</div></div>
+      <div class="rc"><div class="rc-val">2.1:1</div><div class="rc-lbl">Avg R:R</div></div>
+    </div>
+
+    <!-- Equity curve -->
+    <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:18px;margin-bottom:16px;">
+      <div style="font-size:13px;font-weight:700;margin-bottom:12px;">Equity Curve · Starting ₹10L</div>
+      <svg width="100%" height="120" viewBox="0 0 800 120" preserveAspectRatio="none">
+        <defs><linearGradient id="btg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00D4A0" stop-opacity="0.2"/><stop offset="100%" stop-color="#00D4A0" stop-opacity="0"/></linearGradient></defs>
+        <path d="M0,100 L50,98 L80,105 L120,90 L160,82 L200,78 L240,85 L280,72 L320,65 L360,58 L400,52 L450,48 L500,44 L550,50 L600,42 L650,38 L700,35 L750,32 L800,28 L800,120 L0,120Z" fill="url(#btg)"/>
+        <path d="M0,100 L50,98 L80,105 L120,90 L160,82 L200,78 L240,85 L280,72 L320,65 L360,58 L400,52 L450,48 L500,44 L550,50 L600,42 L650,38 L700,35 L750,32 L800,28" fill="none" stroke="#00D4A0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--dim2);margin-top:6px;">
+        <span>Jun 2025</span><span>Sep 2025</span><span>Dec 2025</span><span>Mar 2026</span><span>Jun 2026</span>
+      </div>
+    </div>
+
+    <!-- Trade log -->
+    <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;overflow:hidden;">
+      <div style="padding:14px 18px;border-bottom:1px solid var(--bdr);font-size:14px;font-weight:700;">Top 10 Trades</div>
+      <table>
+        <thead><tr><th>Symbol</th><th>Entry</th><th>Exit</th><th>Return</th><th>Days</th><th>Result</th></tr></thead>
+        <tbody>
+          <tr><td style="font-weight:700;">TATAMOTORS</td><td>₹860</td><td>₹938</td><td style="color:var(--grn);font-weight:700;">+9.1%</td><td>4</td><td><span style="background:rgba(0,212,160,0.1);color:var(--grn);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:5px;">WIN</span></td></tr>
+          <tr><td style="font-weight:700;">RELIANCE</td><td>₹2,420</td><td>₹2,580</td><td style="color:var(--grn);font-weight:700;">+6.6%</td><td>6</td><td><span style="background:rgba(0,212,160,0.1);color:var(--grn);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:5px;">WIN</span></td></tr>
+          <tr><td style="font-weight:700;">TCS</td><td>₹3,640</td><td>₹3,860</td><td style="color:var(--grn);font-weight:700;">+6.0%</td><td>5</td><td><span style="background:rgba(0,212,160,0.1);color:var(--grn);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:5px;">WIN</span></td></tr>
+          <tr><td style="font-weight:700;">HDFCBANK</td><td>₹1,580</td><td>₹1,540</td><td style="color:var(--red);font-weight:700;">-2.5%</td><td>1</td><td><span style="background:rgba(255,59,92,0.1);color:var(--red);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:5px;">SL</span></td></tr>
+          <tr><td style="font-weight:700;">SBIN</td><td>₹720</td><td>₹764</td><td style="color:var(--grn);font-weight:700;">+6.1%</td><td>3</td><td><span style="background:rgba(0,212,160,0.1);color:var(--grn);font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:5px;">WIN</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</main>
+</div>
+<script>
+function runBacktest() {
+  const btn = document.getElementById('run-btn');
+  btn.textContent = '⏳ Running...';
+  btn.style.opacity = '0.7';
+  setTimeout(()=>{ btn.textContent='▶ Run Backtest'; btn.style.opacity='1'; }, 2000);
+}
+</script>
+</body>
+</html>

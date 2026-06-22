@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Refer &amp; Earn</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
+    :root {
+      --bg:#070D1A; --surf:#0E1628; --surf2:#162038; --bdr:#1C2E4A;
+      --txt:#FFFFFF; --dim:#7A8BAA; --dim2:#3A4E6A;
+      --blu:#1740F5; --bluL:#4F6FFA; --org:#FF5C1A;
+      --grn:#00D4A0; --red:#FF3B5C; --ylw:#FFB800; --pur:#8B5CF6;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; }
+    body { background:var(--bg); color:var(--txt); font-family:'Inter',system-ui,sans-serif; min-height:100vh; }
+    @keyframes blink{0%,100%{opacity:1;}50%{opacity:0.4;}}
+    @keyframes pulse{0%,100%{transform:scale(1);}50%{transform:scale(1.04);}}
+
+    nav { display:flex; align-items:center; height:58px; padding:0 clamp(16px,3vw,32px);
+          background:var(--surf); border-bottom:1px solid var(--bdr); position:sticky; top:0; z-index:100; }
+    .nav-logo { display:flex; align-items:center; gap:8px; font-size:18px; font-weight:900;
+                letter-spacing:-0.5px; text-decoration:none; color:var(--txt); margin-right:28px; }
+    .nav-link { height:34px; padding:0 13px; border-radius:8px; font-size:13px; font-weight:500;
+                color:var(--dim); text-decoration:none; display:flex; align-items:center; gap:6px; transition:all 0.15s; }
+    .nav-link:hover { background:var(--surf2); color:var(--txt); }
+    .nav-link.active { background:rgba(0,212,160,0.1); color:var(--grn); font-weight:600; }
+    .plan-badge { font-size:11px; font-weight:700; padding:3px 9px; border-radius:6px;
+                  background:rgba(255,92,26,0.12); border:1px solid rgba(255,92,26,0.25); color:var(--org); }
+    .user-chip { display:flex; align-items:center; gap:8px; padding:4px 12px 4px 4px;
+                 border-radius:20px; background:var(--surf2); border:1px solid var(--bdr); cursor:pointer; }
+    .user-av { width:26px; height:26px; border-radius:50%;
+               background:linear-gradient(135deg,var(--blu),var(--org));
+               display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:900; color:#fff; }
+
+    .page { display:grid; grid-template-columns:220px 1fr; min-height:calc(100vh - 58px); }
+    .sidebar { background:var(--surf); border-right:1px solid var(--bdr); padding:16px 10px; display:flex; flex-direction:column; gap:4px; }
+    .sb-section { font-size:10px; font-weight:700; color:var(--dim2); letter-spacing:1px; text-transform:uppercase; padding:12px 10px 6px; }
+    .sb-link { display:flex; align-items:center; gap:9px; padding:9px 10px; border-radius:9px; font-size:13px; font-weight:500;
+               color:var(--dim); text-decoration:none; cursor:pointer; transition:all 0.15s; }
+    .sb-link:hover { background:var(--surf2); color:var(--txt); }
+    .sb-link.active { background:rgba(0,212,160,0.1); color:var(--grn); font-weight:600; }
+    .sb-badge { margin-left:auto; font-size:10px; font-weight:700; padding:2px 7px; border-radius:10px; background:var(--red); color:#fff; }
+
+    .main { padding:24px clamp(16px,3vw,40px); }
+
+    /* Hero */
+    .ref-hero { background:linear-gradient(135deg,rgba(0,212,160,0.08),rgba(23,64,245,0.06));
+                border:1px solid rgba(0,212,160,0.2); border-radius:20px; padding:36px 40px;
+                display:grid; grid-template-columns:1fr auto; gap:32px; align-items:center; margin-bottom:24px; }
+    .ref-hero h1 { font-size:clamp(24px,3vw,38px); font-weight:900; letter-spacing:-1px; margin-bottom:10px; }
+    .ref-hero p  { font-size:14px; color:var(--dim); line-height:1.7; max-width:480px; }
+    .ref-big-num { font-size:72px; font-weight:900; letter-spacing:-3px; color:var(--grn);
+                   text-align:center; line-height:1; }
+    .ref-big-lbl { font-size:13px; color:var(--dim); text-align:center; margin-top:6px; }
+
+    /* Referral link box */
+    .ref-link-box { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:22px; margin-bottom:24px; }
+    .ref-link-row { display:flex; gap:10px; margin-top:10px; }
+    .ref-link-input { flex:1; height:48px; border-radius:11px; background:var(--surf2); border:1px solid var(--bdr);
+                      color:var(--grn); font-size:13px; font-weight:700; padding:0 16px;
+                      font-family:'JetBrains Mono',monospace; outline:none; letter-spacing:0.5px; }
+    .ref-link-input:focus { border-color:var(--grn); }
+    .btn-copy { height:48px; padding:0 22px; border-radius:11px; background:var(--grn); border:none;
+                color:#001A12; font-size:14px; font-weight:800; cursor:pointer; font-family:inherit;
+                transition:opacity 0.2s; white-space:nowrap; }
+    .btn-copy:hover { opacity:0.85; }
+    .share-row { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .share-btn { height:36px; padding:0 16px; border-radius:9px; font-size:12px; font-weight:700;
+                 cursor:pointer; font-family:inherit; display:flex; align-items:center; gap:6px; transition:opacity 0.2s; }
+    .share-btn:hover { opacity:0.8; }
+
+    /* Progress ladder */
+    .ladder-card { background:var(--surf); border:1px solid var(--bdr); border-radius:16px; padding:24px; margin-bottom:24px; }
+    .ladder-title { font-size:15px; font-weight:700; margin-bottom:6px; }
+    .ladder-sub   { font-size:13px; color:var(--dim); margin-bottom:24px; }
+    .ladder { display:flex; align-items:flex-end; gap:0; position:relative; }
+    .ladder::before { content:''; position:absolute; bottom:20px; left:0; right:0; height:2px;
+                      background:var(--bdr); z-index:0; }
+    .rung { flex:1; display:flex; flex-direction:column; align-items:center; position:relative; z-index:1; }
+    .rung-bar { border-radius:8px 8px 0 0; width:52px; transition:all 0.3s; position:relative; }
+    .rung-bar.achieved { animation:pulse 2s infinite; }
+    .rung-dot { width:16px; height:16px; border-radius:50%; background:var(--bdr); border:2px solid var(--bg);
+                position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); }
+    .rung-dot.achieved { background:var(--grn); }
+    .rung-dot.current  { background:var(--ylw); box-shadow:0 0 0 4px rgba(255,184,0,0.2); }
+    .rung-refs   { font-size:11px; font-weight:700; color:var(--dim); margin-top:16px; }
+    .rung-disc   { font-size:14px; font-weight:900; margin-top:3px; }
+    .rung-label  { font-size:10px; color:var(--dim2); margin-top:2px; }
+
+    /* Progress bar */
+    .progress-wrap { margin-top:28px; }
+    .progress-label { display:flex; justify-content:space-between; font-size:12px; margin-bottom:8px; }
+    .progress-track { height:8px; background:rgba(255,255,255,0.07); border-radius:4px; overflow:hidden; }
+    .progress-fill  { height:100%; border-radius:4px; background:linear-gradient(90deg,var(--grn),#00A87D); transition:width 0.6s ease; }
+
+    /* Stats row */
+    .stats-row { display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:24px; }
+    .stat-card { background:var(--surf); border:1px solid var(--bdr); border-radius:13px; padding:18px; text-align:center; }
+    .stat-val { font-size:28px; font-weight:900; letter-spacing:-0.8px; }
+    .stat-lbl { font-size:11px; color:var(--dim); margin-top:4px; }
+
+    /* Referral log */
+    .log-card { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; overflow:hidden; }
+    .log-head  { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border-bottom:1px solid var(--bdr); }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead th { font-size:10.5px; font-weight:700; color:var(--dim); padding:9px 14px; text-align:left;
+               border-bottom:1px solid var(--bdr); background:var(--surf2); text-transform:uppercase; letter-spacing:0.4px; }
+    tbody td { padding:11px 14px; border-bottom:1px solid rgba(28,46,74,0.5); }
+    tbody tr:last-child td { border-bottom:none; }
+    tbody tr:hover td { background:rgba(255,255,255,0.02); }
+    .status-pill { font-size:10.5px; font-weight:700; padding:3px 9px; border-radius:6px; white-space:nowrap; }
+
+    /* Discount earned banner */
+    .earned-banner { background:linear-gradient(135deg,rgba(0,212,160,0.1),rgba(23,64,245,0.07));
+                     border:1px solid rgba(0,212,160,0.3); border-radius:14px; padding:20px 24px;
+                     display:flex; align-items:center; gap:20px; flex-wrap:wrap; margin-bottom:24px; }
+    .eb-icon { font-size:36px; flex-shrink:0; }
+    .eb-main { flex:1; }
+    .eb-title { font-size:16px; font-weight:800; margin-bottom:4px; }
+    .eb-sub   { font-size:13px; color:var(--dim); line-height:1.6; }
+    .eb-val   { font-size:40px; font-weight:900; letter-spacing:-1.5px; color:var(--grn); text-align:right; flex-shrink:0; }
+
+    /* Rules */
+    .rules-card { background:var(--surf); border:1px solid var(--bdr); border-radius:14px; padding:22px; }
+    .rule-row { display:flex; gap:12px; padding:10px 0; border-bottom:1px solid var(--bdr); font-size:13px; color:#C4D0E8; line-height:1.6; }
+    .rule-row:last-child { border-bottom:none; }
+    .rule-num { width:24px; height:24px; border-radius:7px; background:var(--surf2); border:1px solid var(--bdr);
+                display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:800;
+                color:var(--dim); flex-shrink:0; margin-top:1px; }
+
+    @media(max-width:900px) { .page { grid-template-columns:1fr; } .sidebar { display:none; }
+      .ref-hero { grid-template-columns:1fr; } .stats-row { grid-template-columns:1fr 1fr; }
+      .ladder { gap:4px; } .rung-bar { width:38px; } }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div style="display:flex;align-items:center;gap:2px;flex:1;">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Signals.html">📈 Signals</a>
+    <a class="nav-link" href="SIGNAL Portfolio.html">💼 Portfolio</a>
+    <a class="nav-link" href="SIGNAL Upgrade Plan.html">⚡ Upgrade</a>
+    <a class="nav-link active" href="#">🎁 Refer &amp; Earn</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">SG</div><span style="font-size:12px;font-weight:600;">Sai Ganesh</span></div>
+  </div>
+</nav>
+
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals <span class="sb-badge">3</span></a>
+  <a class="sb-link" href="SIGNAL Portfolio.html">💼 My Portfolio</a>
+  <a class="sb-link" href="SIGNAL ETF MF.html">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link" href="SIGNAL Backtest.html">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="SIGNAL Sector Heatmap.html">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="SIGNAL FII DII.html">🌍 FII / DII Flow</a>
+  <a class="sb-link" href="SIGNAL Twitter Feed.html">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="SIGNAL Earnings Calendar.html">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="SIGNAL Upgrade Plan.html">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="SIGNAL Connect Broker.html">🔗 Connect Broker</a>
+  <a class="sb-link active" href="#">🎁 Refer &amp; Earn</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+
+<main class="main">
+
+  <!-- Hero -->
+  <div class="ref-hero">
+    <div>
+      <div style="font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--grn);margin-bottom:10px;">Referral Programme</div>
+      <h1>Refer friends.<br>Earn up to <span style="color:var(--grn);">80% off</span><br>your annual plan.</h1>
+      <p style="margin-top:12px;">Every friend you refer who buys any paid plan earns you a discount on your annual subscription — automatically applied at renewal. The more you refer, the bigger the discount. Cap: 5 referrals = 80% off.</p>
+    </div>
+    <div>
+      <div class="ref-big-num" id="hero-disc">10%</div>
+      <div class="ref-big-lbl">your current discount<br>earned (2 referrals)</div>
+    </div>
+  </div>
+
+  <!-- Current discount earned -->
+  <div class="earned-banner">
+    <div class="eb-icon">🏆</div>
+    <div class="eb-main">
+      <div class="eb-title">You've referred 2 friends who bought paid plans</div>
+      <div class="eb-sub">Your annual Pro plan renews at <strong style="color:var(--grn);">₹5,388 → ₹4,849</strong> (10% off). Refer 1 more friend to unlock 20% off (₹4,310/yr). Refer 5 total to unlock 80% off!</div>
+    </div>
+    <div class="eb-val">10%<br><span style="font-size:14px;color:var(--dim);font-weight:500;">off annual</span></div>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--grn);">2</div>
+      <div class="stat-lbl">Paid referrals</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--ylw);">1</div>
+      <div class="stat-lbl">Pending (signed up, not paid)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val" style="color:var(--grn);">10%</div>
+      <div class="stat-lbl">Discount unlocked</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-val">3</div>
+      <div class="stat-lbl">More referrals to max</div>
+    </div>
+  </div>
+
+  <!-- Discount ladder visual -->
+  <div class="ladder-card">
+    <div class="ladder-title">Discount Ladder</div>
+    <div class="ladder-sub">Each referral who buys a paid plan unlocks the next tier. Discounts are cumulative and non-expiring.</div>
+
+    <div class="ladder" id="ladder">
+      <!-- Rung 0 — baseline -->
+      <div class="rung">
+        <div class="rung-bar achieved" style="height:30px;background:rgba(0,212,160,0.3);"></div>
+        <div class="rung-dot achieved"></div>
+        <div class="rung-refs">0 refs</div>
+        <div class="rung-disc" style="color:var(--dim);">0%</div>
+        <div class="rung-label">Start</div>
+      </div>
+      <!-- Rung 1 -->
+      <div class="rung">
+        <div class="rung-bar achieved" style="height:52px;background:rgba(0,212,160,0.5);"></div>
+        <div class="rung-dot achieved"></div>
+        <div class="rung-refs">1 ref</div>
+        <div class="rung-disc" style="color:var(--grn);">5%</div>
+        <div class="rung-label">✓ Done</div>
+      </div>
+      <!-- Rung 2 — current -->
+      <div class="rung">
+        <div class="rung-bar current" style="height:80px;background:var(--grn);"></div>
+        <div class="rung-dot current"></div>
+        <div class="rung-refs">2 refs</div>
+        <div class="rung-disc" style="color:var(--grn);">10%</div>
+        <div class="rung-label" style="color:var(--ylw);font-weight:700;">← You are here</div>
+      </div>
+      <!-- Rung 3 -->
+      <div class="rung">
+        <div class="rung-bar" style="height:110px;background:rgba(255,184,0,0.2);border:1px dashed rgba(255,184,0,0.4);"></div>
+        <div class="rung-dot"></div>
+        <div class="rung-refs">3 refs</div>
+        <div class="rung-disc" style="color:var(--ylw);">20%</div>
+        <div class="rung-label">1 more →</div>
+      </div>
+      <!-- Rung 4 -->
+      <div class="rung">
+        <div class="rung-bar" style="height:150px;background:rgba(255,92,26,0.1);border:1px dashed rgba(255,92,26,0.3);"></div>
+        <div class="rung-dot"></div>
+        <div class="rung-refs">4 refs</div>
+        <div class="rung-disc" style="color:var(--org);">40%</div>
+        <div class="rung-label">2 more →</div>
+      </div>
+      <!-- Rung 5 — MAX -->
+      <div class="rung">
+        <div class="rung-bar" style="height:200px;background:rgba(139,92,246,0.1);border:1px dashed rgba(139,92,246,0.4);position:relative;">
+          <div style="position:absolute;top:8px;left:50%;transform:translateX(-50%);font-size:10px;font-weight:700;color:var(--pur);white-space:nowrap;">MAX</div>
+        </div>
+        <div class="rung-dot"></div>
+        <div class="rung-refs">5 refs</div>
+        <div class="rung-disc" style="color:var(--pur);">80%</div>
+        <div class="rung-label" style="color:var(--pur);font-weight:700;">🏆 Max!</div>
+      </div>
+    </div>
+
+    <!-- Progress bar -->
+    <div class="progress-wrap">
+      <div class="progress-label">
+        <span style="font-size:13px;font-weight:700;">Progress to next tier</span>
+        <span style="font-size:13px;font-weight:700;color:var(--ylw);">2 / 3 referrals → 20% off</span>
+      </div>
+      <div class="progress-track"><div class="progress-fill" style="width:66.6%;"></div></div>
+      <div style="font-size:12px;color:var(--dim);margin-top:8px;">1 more paid referral unlocks 20% off your annual plan</div>
+    </div>
+  </div>
+
+  <!-- Referral link -->
+  <div class="ref-link-box">
+    <div style="font-size:15px;font-weight:700;margin-bottom:4px;">Your unique referral link</div>
+    <div style="font-size:13px;color:var(--dim);margin-bottom:10px;">Share this link. When a friend signs up via it and buys any paid plan, your discount instantly updates.</div>
+    <div class="ref-link-row">
+      <input class="ref-link-input" type="text" id="ref-link" value="https://getsignal.in/ref/SG-K92XP" readonly>
+      <button class="btn-copy" onclick="copyLink()">⎘ Copy Link</button>
+    </div>
+    <div id="copy-msg" style="font-size:12px;color:var(--grn);margin-top:6px;min-height:16px;"></div>
+    <div class="share-row">
+      <button class="share-btn" style="background:#000;border:1px solid #333;color:#fff;" onclick="shareX()">
+        <span style="font-weight:900;font-size:15px;">𝕏</span> Share on Twitter
+      </button>
+      <button class="share-btn" style="background:rgba(37,211,102,0.12);border:1px solid rgba(37,211,102,0.3);color:#25D366;" onclick="shareWA()">
+        💬 Share on WhatsApp
+      </button>
+      <button class="share-btn" style="background:rgba(23,64,245,0.1);border:1px solid rgba(23,64,245,0.25);color:var(--bluL);" onclick="shareLinkedIn()">
+        in Share on LinkedIn
+      </button>
+      <button class="share-btn" style="background:var(--surf2);border:1px solid var(--bdr);color:var(--txt);" onclick="copyLink()">
+        📧 Copy &amp; Email
+      </button>
+    </div>
+  </div>
+
+  <!-- Content grid: log + rules -->
+  <div style="display:grid;grid-template-columns:1fr 340px;gap:16px;">
+
+    <!-- Referral log -->
+    <div class="log-card">
+      <div class="log-head">
+        <div style="font-size:14px;font-weight:700;">Referral Log</div>
+        <span style="font-size:12px;color:var(--dim);">3 total</span>
+      </div>
+      <table>
+        <thead><tr>
+          <th>Friend</th><th>Joined</th><th>Plan bought</th><th>Status</th><th>Discount unlocked</th>
+        </tr></thead>
+        <tbody>
+          <tr>
+            <td>
+              <div style="font-weight:700;">Abhay Vittal</div>
+              <div style="font-size:11px;color:var(--dim);">abhay@gmail.com</div>
+            </td>
+            <td style="font-size:12px;color:var(--dim);">Jun 10, 2026</td>
+            <td><span style="font-size:12px;font-weight:700;color:var(--org);">Pro · ₹599/mo</span></td>
+            <td><span class="status-pill" style="background:rgba(0,212,160,0.12);color:var(--grn);border:1px solid rgba(0,212,160,0.25);">✅ Paid</span></td>
+            <td style="font-weight:800;color:var(--grn);">+5% off</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:700;">Harshit</div>
+              <div style="font-size:11px;color:var(--dim);">harshit@outlook.com</div>
+            </td>
+            <td style="font-size:12px;color:var(--dim);">Jun 14, 2026</td>
+            <td><span style="font-size:12px;font-weight:700;color:var(--bluL);">Starter · ₹199/mo</span></td>
+            <td><span class="status-pill" style="background:rgba(0,212,160,0.12);color:var(--grn);border:1px solid rgba(0,212,160,0.25);">✅ Paid</span></td>
+            <td style="font-weight:800;color:var(--grn);">+5% off</td>
+          </tr>
+          <tr>
+            <td>
+              <div style="font-weight:700;">Jaitik</div>
+              <div style="font-size:11px;color:var(--dim);">jaitik@gmail.com</div>
+            </td>
+            <td style="font-size:12px;color:var(--dim);">Jun 20, 2026</td>
+            <td style="font-size:12px;color:var(--dim);">—</td>
+            <td><span class="status-pill" style="background:rgba(255,184,0,0.1);color:var(--ylw);border:1px solid rgba(255,184,0,0.2);">⏳ Signed up</span></td>
+            <td style="color:var(--dim);">Pending payment</td>
+          </tr>
+        </tbody>
+      </table>
+      <div style="padding:14px 20px;background:rgba(255,184,0,0.04);border-top:1px solid var(--bdr);">
+        <div style="font-size:12px;color:var(--ylw);">⏳ Jaitik has signed up but hasn't bought a plan yet. Once they subscribe, your discount jumps to 20%.</div>
+      </div>
+    </div>
+
+    <!-- Rules + tier table -->
+    <div>
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;overflow:hidden;margin-bottom:14px;">
+        <div style="padding:16px 20px;border-bottom:1px solid var(--bdr);font-size:14px;font-weight:700;">Discount Tiers</div>
+        <table>
+          <thead><tr><th>Referrals</th><th>Discount</th><th>Annual saving</th></tr></thead>
+          <tbody>
+            <tr style="background:rgba(0,212,160,0.03);">
+              <td style="font-weight:700;">1 friend</td>
+              <td style="color:var(--grn);font-weight:800;">5% off</td>
+              <td style="color:var(--dim);">Save ₹269/yr</td>
+            </tr>
+            <tr style="background:rgba(0,212,160,0.04);">
+              <td style="font-weight:700;">2 friends ✓ <span style="font-size:10px;color:var(--grn);">YOU</span></td>
+              <td style="color:var(--grn);font-weight:800;">10% off</td>
+              <td style="color:var(--grn);font-weight:700;">Save ₹539/yr</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700;">3 friends</td>
+              <td style="color:var(--ylw);font-weight:800;">20% off</td>
+              <td style="color:var(--dim);">Save ₹1,078/yr</td>
+            </tr>
+            <tr>
+              <td style="font-weight:700;">4 friends</td>
+              <td style="color:var(--org);font-weight:800;">40% off</td>
+              <td style="color:var(--dim);">Save ₹2,155/yr</td>
+            </tr>
+            <tr style="background:rgba(139,92,246,0.05);">
+              <td style="font-weight:700;">5 friends 🏆</td>
+              <td style="color:var(--pur);font-weight:800;">80% off</td>
+              <td style="color:var(--pur);font-weight:700;">Save ₹4,310/yr</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="rules-card">
+        <div style="font-size:14px;font-weight:700;margin-bottom:14px;">How it works</div>
+        <div class="rule-row"><div class="rule-num">1</div><div>Share your unique referral link. Friends sign up via your link.</div></div>
+        <div class="rule-row"><div class="rule-num">2</div><div>Discount is triggered <strong>only when your referred friend buys a paid plan</strong> (Starter, Pro, or Elite). Free signups don't count.</div></div>
+        <div class="rule-row"><div class="rule-num">3</div><div>Discounts apply to <strong>annual subscriptions only</strong> — monthly and quarterly plans are excluded.</div></div>
+        <div class="rule-row"><div class="rule-num">4</div><div>Discounts are <strong>incremental and non-expiring</strong> — they stack as long as your referred friends remain paying subscribers.</div></div>
+        <div class="rule-row"><div class="rule-num">5</div><div>Maximum discount: <strong style="color:var(--pur);">80% off annual</strong> (5 paid referrals). No further discount beyond 5.</div></div>
+        <div class="rule-row"><div class="rule-num">6</div><div>If a referred friend cancels their subscription, your discount tier adjusts accordingly at your next renewal.</div></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+</div>
+
+<script>
+// Simulate: user has 2 paid referrals
+const REFERRALS = 2;
+const TIERS = [
+  { refs:0, disc:0 },
+  { refs:1, disc:5 },
+  { refs:2, disc:10 },
+  { refs:3, disc:20 },
+  { refs:4, disc:40 },
+  { refs:5, disc:80 },
+];
+
+function copyLink() {
+  const link = document.getElementById('ref-link').value;
+  navigator.clipboard?.writeText(link).catch(()=>{});
+  const msg = document.getElementById('copy-msg');
+  msg.textContent = '✅ Link copied! Share it with your friends.';
+  setTimeout(()=>{ msg.textContent=''; }, 3000);
+}
+
+function shareX() {
+  const text = encodeURIComponent('I use SIGNAL for ML-powered stock signals — 71.4% accuracy, fully public track record. Sign up with my link and start free 👇');
+  const url  = encodeURIComponent(document.getElementById('ref-link').value);
+  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+}
+
+function shareWA() {
+  const msg = encodeURIComponent('Hey! I use SIGNAL for NSE/BSE stock signals — ML-powered, 71.4% accuracy. Sign up free with my link: ' + document.getElementById('ref-link').value);
+  window.open(`https://wa.me/?text=${msg}`, '_blank');
+}
+
+function shareLinkedIn() {
+  const url = encodeURIComponent(document.getElementById('ref-link').value);
+  window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${url}`, '_blank');
+}
+
+// Interactive: let user simulate referrals for fun
+function simRef(n) {
+  const tier = TIERS[Math.min(n, 5)];
+  document.getElementById('hero-disc').textContent = tier.disc + '%';
+}
+</script>
+
+</body>
+</html>

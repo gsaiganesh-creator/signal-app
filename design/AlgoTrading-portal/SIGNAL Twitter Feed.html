@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — Twitter Feed</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+    :root{--bg:#070D1A;--surf:#0E1628;--surf2:#162038;--bdr:#1C2E4A;--txt:#FFFFFF;--dim:#7A8BAA;--dim2:#3A4E6A;--blu:#1740F5;--bluL:#4F6FFA;--org:#FF5C1A;--grn:#00D4A0;--red:#FF3B5C;--ylw:#FFB800;--pur:#8B5CF6;}
+    *{box-sizing:border-box;margin:0;padding:0;}
+    body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;min-height:100vh;}
+    nav{display:flex;align-items:center;height:58px;padding:0 clamp(16px,3vw,32px);background:var(--surf);border-bottom:1px solid var(--bdr);position:sticky;top:0;z-index:100;gap:0;}
+    .nav-logo{display:flex;align-items:center;gap:8px;font-size:18px;font-weight:900;letter-spacing:-0.5px;text-decoration:none;color:var(--txt);margin-right:28px;}
+    .nav-link{height:34px;padding:0 13px;border-radius:8px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;display:flex;align-items:center;gap:6px;transition:all 0.15s;}
+    .nav-link:hover{background:var(--surf2);color:var(--txt);}
+    .nav-link.active{background:rgba(255,255,255,0.08);color:var(--txt);font-weight:600;}
+    .plan-badge{font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;background:rgba(255,92,26,0.12);border:1px solid rgba(255,92,26,0.25);color:var(--org);}
+    .user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;border-radius:20px;background:var(--surf2);border:1px solid var(--bdr);cursor:pointer;}
+    .user-av{width:26px;height:26px;border-radius:50%;background:linear-gradient(135deg,var(--blu),var(--org));display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:900;color:#fff;}
+    .page{display:grid;grid-template-columns:220px 1fr;min-height:calc(100vh - 58px);}
+    .sidebar{background:var(--surf);border-right:1px solid var(--bdr);padding:16px 10px;display:flex;flex-direction:column;gap:4px;}
+    .sb-section{font-size:10px;font-weight:700;color:var(--dim2);letter-spacing:1px;text-transform:uppercase;padding:12px 10px 6px;}
+    .sb-link{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:9px;font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;cursor:pointer;transition:all 0.15s;}
+    .sb-link:hover{background:var(--surf2);color:var(--txt);}
+    .sb-link.active{background:rgba(255,255,255,0.07);color:var(--txt);font-weight:600;}
+    .sb-badge{margin-left:auto;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--red);color:#fff;}
+    .main{padding:24px clamp(16px,3vw,32px);}
+    .tweet-list{display:flex;flex-direction:column;gap:12px;max-width:640px;}
+    .tweet{background:var(--surf);border:1px solid var(--bdr);border-radius:16px;padding:20px;transition:border-color 0.2s;}
+    .tweet:hover{border-color:var(--dim2);}
+    .tw-hdr{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
+    .tw-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,var(--blu),var(--org));display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#fff;flex-shrink:0;}
+    .tw-name{font-size:14px;font-weight:700;}
+    .tw-handle{font-size:12px;color:var(--dim);}
+    .tw-x{margin-left:auto;font-size:18px;font-weight:900;color:var(--dim);}
+    .tw-body{font-size:14px;color:#C4D0E8;line-height:1.7;margin-bottom:12px;}
+    .tw-inner{border-radius:12px;padding:13px 15px;margin-bottom:12px;}
+    .tw-foot{display:flex;justify-content:space-between;align-items:center;font-size:12px;color:var(--dim2);}
+    .outcome-badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:5px;}
+    @media(max-width:900px){.page{grid-template-columns:1fr;}.sidebar{display:none;}}
+  </style>
+</head>
+<body>
+<nav>
+  <a class="nav-logo" href="SIGNAL Dashboard.html">
+    <svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div style="display:flex;align-items:center;gap:2px;flex:1;">
+    <a class="nav-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+    <a class="nav-link" href="SIGNAL Signals.html">📈 Signals</a>
+    <a class="nav-link" href="SIGNAL Track Record.html">📋 Track Record</a>
+    <a class="nav-link active" href="#">𝕏 Twitter Feed</a>
+  </div>
+  <div style="display:flex;align-items:center;gap:10px;">
+    <a href="#" style="height:34px;padding:0 14px;border-radius:8px;background:#000;border:1px solid #333;color:#fff;font-size:12px;font-weight:700;text-decoration:none;display:flex;align-items:center;gap:6px;"><span style="font-size:16px;font-weight:900;">𝕏</span>Follow @signal_in</a>
+    <span class="plan-badge">Pro</span>
+    <div class="user-chip"><div class="user-av">SG</div><span style="font-size:12px;font-weight:600;">Sai Ganesh</span></div>
+  </div>
+</nav>
+<div class="page">
+<aside class="sidebar">
+  <div class="sb-section">Main</div>
+  <a class="sb-link" href="SIGNAL Dashboard.html">📊 Dashboard</a>
+  <a class="sb-link" href="SIGNAL Signals.html">📈 Live Signals <span class="sb-badge">3</span></a>
+  <a class="sb-link" href="SIGNAL Portfolio.html">💼 My Portfolio</a>
+  <a class="sb-link" href="SIGNAL ETF MF.html">🏦 ETF &amp; MF</a>
+  <div class="sb-section">Tools</div>
+  <a class="sb-link" href="SIGNAL Algo Builder.html">⚙️ Algo Builder</a>
+  <a class="sb-link" href="SIGNAL Paper Trading.html">🧪 Paper Trading</a>
+  <a class="sb-link" href="SIGNAL Backtest.html">📋 Backtest</a>
+  <div class="sb-section">Insights</div>
+  <a class="sb-link" href="SIGNAL Sector Heatmap.html">🔥 Sector Heatmap</a>
+  <a class="sb-link" href="SIGNAL FII DII.html">🌍 FII / DII Flow</a>
+  <a class="sb-link active" href="#">𝕏 Twitter Feed</a>
+  <a class="sb-link" href="SIGNAL Earnings Calendar.html">📅 Earnings Calendar</a>
+  <div class="sb-section">Account</div>
+  <a class="sb-link" href="SIGNAL Upgrade Plan.html">⚡ Upgrade Plan</a>
+  <a class="sb-link" href="SIGNAL Connect Broker.html">🔗 Connect Broker</a>
+  <a class="sb-link" href="SIGNAL Sign In.html">🚪 Sign Out</a>
+</aside>
+<main class="main">
+  <div style="display:flex;align-items:flex-start;gap:24px;flex-wrap:wrap;">
+    <div class="tweet-list">
+      <div style="font-size:22px;font-weight:800;letter-spacing:-0.5px;margin-bottom:4px;">𝕏 @signal_in</div>
+      <div style="font-size:13px;color:var(--dim);margin-bottom:20px;">Every signal posted live — with full entry/target/SL. No hiding, no editing after posting.</div>
+
+      <div class="tweet">
+        <div class="tw-hdr"><div class="tw-av">SG</div><div><div class="tw-name">Sai Ganesh Gella</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">🎯 RF PICK OF THE DAY<br><br>$TATAMOTORS — <strong>STRONG BUY</strong><br>Confidence: 81% · RSI=34 · EMA golden cross ✓ · Del%=68<br><br>Entry ₹960 · Target ₹1,040 · SL ₹930</div>
+        <div class="tw-inner" style="background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px;"><span style="font-weight:700;">TATAMOTORS</span><span class="outcome-badge" style="background:rgba(0,212,160,0.15);color:var(--grn);">✅ +8.1% — Target Hit</span></div>
+          <div style="font-size:11px;color:var(--dim);">Entry ₹960 → Exit ₹1,038 · 3 days</div>
+        </div>
+        <div class="tw-foot"><span>Jun 9, 2026 · 9:31 AM</span><span>247 ❤ · 89 🔁</span></div>
+      </div>
+
+      <div class="tweet">
+        <div class="tw-hdr"><div class="tw-av">SG</div><div><div class="tw-name">Sai Ganesh Gella</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">📊 WEEK 23 SCORECARD<br><br>Signals: 14 · ✅ Wins: 10 (71.4%) · ⛔ SL: 2 · ⏳ Open: 2<br><br>Full thread with every trade 🧵</div>
+        <div class="tw-inner" style="background:rgba(23,64,245,0.05);border:1px solid rgba(23,64,245,0.18);">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span style="font-size:12px;color:var(--dim);">Accuracy</span><span style="font-size:22px;font-weight:900;color:var(--grn);">71.4%</span></div>
+          <div style="height:5px;background:rgba(255,255,255,0.07);border-radius:3px;overflow:hidden;"><div style="height:100%;width:71.4%;background:var(--grn);border-radius:3px;"></div></div>
+        </div>
+        <div class="tw-foot"><span>Jun 16, 2026 · 8:00 AM</span><span>412 ❤ · 156 🔁</span></div>
+      </div>
+
+      <div class="tweet">
+        <div class="tw-hdr"><div class="tw-av">SG</div><div><div class="tw-name">Sai Ganesh Gella</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">🚀 MOMENTUM ALERT — $SBIN<br><br>Breaking 3-week consolidation · Volume 2.8× avg · Del%=64<br>Entry ₹808 · Target ₹860 · SL ₹785</div>
+        <div class="tw-inner" style="background:rgba(0,212,160,0.06);border:1px solid rgba(0,212,160,0.2);">
+          <div style="display:flex;justify-content:space-between;"><span style="font-weight:700;">SBIN</span><span class="outcome-badge" style="background:rgba(0,212,160,0.15);color:var(--grn);">✅ +5.9%</span></div>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px;">Hit ₹856 · 2 days</div>
+        </div>
+        <div class="tw-foot"><span>Jun 10, 2026 · 9:42 AM</span><span>183 ❤ · 61 🔁</span></div>
+      </div>
+
+      <div class="tweet">
+        <div class="tw-hdr"><div class="tw-av">SG</div><div><div class="tw-name">Sai Ganesh Gella</div><div class="tw-handle">@signal_in</div></div><div class="tw-x">𝕏</div></div>
+        <div class="tw-body">⚠️ TRANSPARENCY: Week 19 was rough. 54.5% accuracy. US inflation surprise caused global selloff. 5 stop losses hit.<br><br>Full log attached. We don't hide bad weeks.</div>
+        <div class="tw-inner" style="background:rgba(255,92,26,0.05);border:1px solid rgba(255,92,26,0.15);">
+          <div style="font-size:12px;font-weight:700;color:var(--org);">Week 19 · 54.5% · 6W 5L</div>
+          <div style="font-size:11px;color:var(--dim);margin-top:4px;">External macro event — US CPI surprise</div>
+        </div>
+        <div class="tw-foot"><span>May 19, 2026 · 8:00 AM</span><span>621 ❤ · 245 🔁</span></div>
+      </div>
+
+      <button style="height:44px;border-radius:12px;background:transparent;border:1px solid var(--bdr);color:var(--dim);font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;width:100%;">Load more tweets ↓</button>
+    </div>
+
+    <!-- Right stats -->
+    <div style="min-width:240px;flex:1;max-width:300px;">
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:20px;margin-bottom:14px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:14px;">Account Stats</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Tweets</span><span style="font-weight:700;">482</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Signals posted</span><span style="font-weight:700;">142</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Accuracy (public)</span><span style="font-weight:700;color:var(--grn);">71.4%</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:13px;"><span style="color:var(--dim);">Followers</span><span style="font-weight:700;">4,218</span></div>
+        </div>
+      </div>
+      <div style="background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:20px;">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px;">Tweet types</div>
+        <div style="display:flex;flex-direction:column;gap:7px;font-size:12px;">
+          <div style="display:flex;justify-content:space-between;"><span>🎯 RF Pick of the Day</span><span style="font-weight:700;">62</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>📊 Weekly Scorecard</span><span style="font-weight:700;">24</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>🚀 Momentum Alert</span><span style="font-weight:700;">38</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>🧪 Paper Trade Update</span><span style="font-weight:700;">18</span></div>
+          <div style="display:flex;justify-content:space-between;"><span>⚠️ Transparency Post</span><span style="font-weight:700;">12</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+</div>
+</body>
+</html>
