@@ -110,8 +110,10 @@ export default function PortfolioPage() {
     const name = newPortfolioName.trim();
     if (!name) return;
     setCreatingPortfolio(true);
-    await createPortfolio(name);
-    setNewPortfolioName(''); setShowNewPortfolio(false); setCreatingPortfolio(false);
+    const id = await createPortfolio(name);
+    setCreatingPortfolio(false);
+    if (!id) { setUploadMsg('❌ Could not create portfolio. Check browser console for error.'); return; }
+    setNewPortfolioName(''); setShowNewPortfolio(false);
   }
 
   const totalInvested = holdings.reduce((s, h) => s + h.avg_price * h.qty, 0);

@@ -97,11 +97,19 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
 
   async function createPortfolio(name: string): Promise<string | null> {
     if (!user) return null;
-    const { data } = await supabase
+    // Upsert profile first — handles users who signed up before the trigger was deployed
+    await supabase.from('profiles').upsert({
+      id: user.id,
+      email: user.email ?? null,
+      full_name: (user.user_metadata?.full_name ?? user.user_metadata?.name) || null,
+      avatar_url: user.user_metadata?.avatar_url ?? null,
+    }, { onConflict: 'id' });
+    const { data, error } = await supabase
       .from('portfolios')
       .insert({ user_id: user.id, name, broker: 'manual' })
       .select('id')
       .single();
+    if (error) { console.error('[createPortfolio]', error.message); return null; }
     const newId = data?.id ?? null;
     await refresh();
     if (newId) setActiveId(newId);
