@@ -28,7 +28,7 @@ interface PortfolioCtx {
   symbols: string[];
   loading: boolean;
   refresh: () => Promise<void>;
-  createPortfolio: (name: string) => Promise<string | null>;
+  createPortfolio: (name: string) => Promise<{ id: string | null; error: string | null }>;
 }
 
 const Ctx = createContext<PortfolioCtx | null>(null);
@@ -95,25 +95,29 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     }
   }, [activeId, prevActiveId, fetchHoldings]);
 
-  async function createPortfolio(name: string): Promise<string | null> {
-    if (!user) return null;
+  async function createPortfolio(name: string): Promise<{ id: string | null; error: string | null }> {
+    if (!user) return { id: null, error: 'Not logged in. Please sign in again.' };
     // Upsert profile first — handles users who signed up before the trigger was deployed
-    await supabase.from('profiles').upsert({
+    const { error: profileErr } = await supabase.from('profiles').upsert({
       id: user.id,
       email: user.email ?? null,
       full_name: (user.user_metadata?.full_name ?? user.user_metadata?.name) || null,
       avatar_url: user.user_metadata?.avatar_url ?? null,
     }, { onConflict: 'id' });
+    if (profileErr) console.error('[createPortfolio] profile upsert failed:', profileErr.message);
     const { data, error } = await supabase
       .from('portfolios')
       .insert({ user_id: user.id, name, broker: 'manual' })
       .select('id')
       .single();
-    if (error) { console.error('[createPortfolio]', error.message); return null; }
+    if (error) {
+      console.error('[createPortfolio] portfolio insert failed:', error.message, error.details, error.hint);
+      return { id: null, error: error.message };
+    }
     const newId = data?.id ?? null;
     await refresh();
     if (newId) setActiveId(newId);
-    return newId;
+    return { id: newId, error: null };
   }
 
   useEffect(() => { refresh(); }, [refresh]);

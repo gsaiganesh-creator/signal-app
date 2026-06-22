@@ -202,9 +202,9 @@ export default function PortfolioPage() {
     const name = newPortfolioName.trim();
     if (!name) return;
     setCreatingPortfolio(true);
-    const id = await createPortfolio(name);
+    const { id, error } = await createPortfolio(name);
     setCreatingPortfolio(false);
-    if (!id) { setUploadMsg('❌ Could not create portfolio. Check browser console for error.'); return; }
+    if (!id) { setUploadMsg(`❌ ${error ?? 'Could not create portfolio'}`); return; }
     setNewPortfolioName(''); setShowNewPortfolio(false);
   }
 
@@ -215,11 +215,11 @@ export default function PortfolioPage() {
     if (!file) return;
     setSyncing(true); setUploadMsg('Creating portfolio…');
     const name = newPortfolioName.trim() || 'My Portfolio';
-    const newId = await createPortfolio(name);
-    if (!newId) { setUploadMsg('❌ Could not create portfolio. Try again.'); setSyncing(false); return; }
+    const { id: newId, error: createErr } = await createPortfolio(name);
+    if (!newId) { setUploadMsg(`❌ ${createErr ?? 'Could not create portfolio'}`); setSyncing(false); return; }
     setUploadMsg('Parsing file…');
     const rows = await parseFile(file);
-    if (!rows.length) { setUploadMsg('❌ Could not parse file. Check format.'); setSyncing(false); return; }
+    if (!rows.length) { setUploadMsg('❌ Could not parse file. Check format below.'); setSyncing(false); return; }
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) { setUploadMsg('❌ Not logged in.'); setSyncing(false); return; }
     const inserts = rows.map(r => ({ portfolio_id: newId, user_id: user.id, symbol: r.symbol, exchange: r.exchange, qty: r.qty, avg_price: r.avg_price }));
