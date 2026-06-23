@@ -298,37 +298,67 @@ export default function DashboardPage() {
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
             <div>
               <div style={{ fontSize:13, fontWeight:700 }}>Portfolio Heatmap</div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>Daily change · size = position weight</div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
+                Daily change% · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => prices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
+              </div>
             </div>
-            {pricesLoading && <span style={{ fontSize:10, color:'var(--dim)' }}>⏳ loading…</span>}
+            <div style={{ display:'flex', gap:8 }}>
+              {[['#2A6A45','▰','+5%'],['rgba(255,255,255,0.12)','▰','flat'],['#7A2A35','▰','-5%']].map(([c,ico,lbl]) => (
+                <span key={lbl as string} style={{ display:'flex', alignItems:'center', gap:3 }}>
+                  <span style={{ color:c as string, fontSize:11 }}>{ico}</span>
+                  <span style={{ fontSize:9.5, color:'var(--dim)' }}>{lbl}</span>
+                </span>
+              ))}
+            </div>
           </div>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:4 }}>
-            {heatTiles.map(h => {
-              const price = prices[h.symbol];
-              const pct = price?.change_pct ?? null;
-              const posVal = h.avg_price * h.qty;
-              const weight = invested > 0 ? posVal / invested : 0;
-              const w = Math.min(110, Math.max(54, Math.round(54 + weight * holdings.length * 56)));
-              const bg = heatColor(pct);
-              const txtC = pct == null ? 'var(--dim)' : Math.abs(pct) > 1.5 ? '#fff' : 'var(--txt)';
-              const chgC = pct == null ? 'var(--dim2)' : pct >= 0 ? 'rgba(0,212,160,0.9)' : 'rgba(255,100,120,0.9)';
-              return (
-                <div key={h.id} style={{ width:w, height:46, borderRadius:7, background:bg, border:'1px solid rgba(255,255,255,0.05)', display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'0 4px', overflow:'hidden', flexShrink:0 }}
-                  title={`${h.symbol}: ${pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% today` : 'loading…'}`}>
-                  <div style={{ fontSize:10.5, fontWeight:800, color:txtC, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'100%', textAlign:'center' }}>{h.symbol}</div>
-                  <div style={{ fontSize:9.5, fontWeight:600, color:chgC, marginTop:1 }}>{pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '—'}</div>
-                </div>
-              );
-            })}
+
+          {/* Sorted grid: gainers left, losers right */}
+          <div style={{ display:'flex', flexWrap:'wrap', gap:3 }}>
+            {[...heatTiles]
+              .sort((a, b) => {
+                const pa = prices[a.symbol]?.change_pct ?? null;
+                const pb = prices[b.symbol]?.change_pct ?? null;
+                if (pa == null && pb == null) return 0;
+                if (pa == null) return 1;
+                if (pb == null) return -1;
+                return pb - pa;
+              })
+              .map(h => {
+                const pct = prices[h.symbol]?.change_pct ?? null;
+                const bg = heatColor(pct);
+                const hasData = pct != null;
+                const isStrong = hasData && Math.abs(pct!) > 1.5;
+                const txtC = isStrong ? '#fff' : hasData ? 'var(--txt)' : 'var(--dim2)';
+                const chgC = !hasData ? 'var(--dim2)' : pct! > 0 ? 'rgba(80,255,190,0.9)' : 'rgba(255,110,130,0.9)';
+                return (
+                  <div key={h.id}
+                    style={{ width:76, height:50, borderRadius:7, background:bg,
+                      border:`1px solid ${isStrong ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.05)'}`,
+                      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
+                      padding:'0 3px', overflow:'hidden', flexShrink:0, transition:'transform 0.1s' }}
+                    title={`${h.symbol}${pct != null ? `: ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% today` : ''}`}
+                    onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
+                    onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
+                    <div style={{ fontSize:10.5, fontWeight:800, color:txtC, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'100%', textAlign:'center', letterSpacing:0.3 }}>{h.symbol}</div>
+                    <div style={{ fontSize:9.5, fontWeight:700, color:chgC, marginTop:1 }}>{pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '—'}</div>
+                  </div>
+                );
+              })}
           </div>
-          <div style={{ display:'flex', gap:16, marginTop:10, paddingTop:10, borderTop:'1px solid var(--bdr)' }}>
-            {[['▰','var(--grn)','+5%'],['▰','var(--dim2)','flat'],['▰','var(--red)','-5%']].map(([ico,c,lbl]) => (
-              <span key={lbl as string} style={{ display:'flex', alignItems:'center', gap:4 }}>
-                <span style={{ color:c as string, fontSize:13 }}>{ico}</span>
-                <span style={{ fontSize:10, color:'var(--dim)' }}>{lbl}</span>
-              </span>
-            ))}
-          </div>
+
+          {/* Gainers / losers summary */}
+          {heatTiles.some(h => prices[h.symbol]?.change_pct != null) && (() => {
+            const live = heatTiles.filter(h => prices[h.symbol]?.change_pct != null);
+            const g = live.filter(h => (prices[h.symbol]?.change_pct ?? 0) > 0).length;
+            const l = live.filter(h => (prices[h.symbol]?.change_pct ?? 0) < 0).length;
+            return (
+              <div style={{ display:'flex', gap:16, marginTop:12, paddingTop:10, borderTop:'1px solid var(--bdr)', fontSize:11 }}>
+                <span style={{ color:'var(--grn)', fontWeight:700 }}>▲ {g} gaining</span>
+                <span style={{ color:'var(--dim)' }}>{live.length - g - l} flat</span>
+                <span style={{ color:'var(--red)', fontWeight:700 }}>▼ {l} falling</span>
+              </div>
+            );
+          })()}
         </div>
 
         {/* Market cap donut */}
