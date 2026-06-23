@@ -100,10 +100,10 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   ];
   const EXCH_NAMES  = ['exchange','market','exch','nse/bse'];
 
-  // Find header row — scan first 8 rows for any known symbol column name
+  // Find header row — scan first 30 rows (some brokers have title blocks at top)
   let headerIdx = -1;
   let headers: string[] = [];
-  for (let i = 0; i < Math.min(rows.length, 8); i++) {
+  for (let i = 0; i < Math.min(rows.length, 30); i++) {
     const r = rows[i].map(c => (c ?? '').toString().toLowerCase().replace(/ /g, ' ').trim());
     if (r.some(h => SYM_NAMES.includes(h))) { headerIdx = i; headers = r; break; }
   }
@@ -170,13 +170,28 @@ async function parseFile(file: File): Promise<{ result: ParsedRow[]; debug: stri
     if (isExcel) {
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type:'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const raw = XLSX.utils.sheet_to_json(ws, { header:1, defval:'' }) as string[][];
-      return parseRows(raw);
+      // Try all sheets, not just the first — Zerodha sometimes has a cover sheet
+      for (const sheetName of wb.SheetNames) {
+        const ws = wb.Sheets[sheetName];
+        // raw:false converts numbers/dates to strings automatically
+        const all = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false }) as string[][];
+        // Drop completely empty rows (merged-cell title areas at top of Zerodha XLSX)
+        const rows = all.filter(r => r.some(c => (c ?? '').toString().trim() !== ''));
+        if (rows.length < 2) continue;
+        const res = parseRows(rows);
+        if (res.result.length) return { result: res.result, debug: `sheet="${sheetName}" ${res.debug}` };
+        // keep last debug for context if no sheet succeeds
+        const lastDebug = `sheet="${sheetName}" rows=${rows.length} ${res.debug}`;
+        if (sheetName === wb.SheetNames[wb.SheetNames.length - 1]) return { result: [], debug: lastDebug };
+      }
+      return { result: [], debug: 'no usable sheet found' };
     }
+    // CSV — also strip empty lines
     const text = await file.text();
-    const raw = text.split('\n').map(l => l.split(',').map(c => c.replace(/^"|"$/g,'').trim()));
-    return parseRows(raw);
+    const rows = text.split('\n')
+      .map(l => l.split(',').map(c => c.replace(/^"|"$/g,'').trim()))
+      .filter(r => r.some(c => c !== ''));
+    return parseRows(rows);
   } catch (e) {
     return { result: [], debug: `parse error: ${e instanceof Error ? e.message : e}` };
   }
