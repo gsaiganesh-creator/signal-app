@@ -36,13 +36,13 @@ async function apiFetch<T>(path: string): Promise<T | null> {
 }
 
 export function fetchQuote(symbol: string): Promise<LiveQuote | null> {
-  return apiFetch<LiveQuote>(`/api/signals/${symbol.toUpperCase()}`);
+  return apiFetch<LiveQuote>(`/signals/${symbol.toUpperCase()}`);
 }
 
 export function fetchMarketIndices(): Promise<MarketIndices | null> {
-  return apiFetch<MarketIndices>('/api/market/indices');
+  return apiFetch<MarketIndices>('/market/indices');
 }
 
 export function fetchMarketRegime(): Promise<{ regime: string; sentiment: string } | null> {
-  return apiFetch('/api/market/regime');
+  return apiFetch('/market/regime');
 }

@@ -87,7 +87,7 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
 
   // Broker coverage: Zerodha Kite/Console, Upstox, Groww, HDFC Securities,
   // Angel One, 5paisa, ICICI Direct, Kotak, Motilal Oswal
-  const SYM_NAMES   = ['instrument','tradingsymbol','trading symbol','stock symbol','scrip name','scrip','symbol','ticker','security name','security'];
+  const SYM_NAMES   = ['instrument','tradingsymbol','trading symbol','stock symbol','scrip name','scrip code','script name','script','scrip','symbol','ticker','security name','security','stock name','isin name'];
   const QTY_NAMES   = ['net qty','net quantity','holdingqty','total qty','total quantity','free qty','qty','quantity','shares','units'];
   const PRICE_NAMES = [
     'avg. buy rate','avg buy rate',          // HDFC Securities
@@ -100,10 +100,10 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   ];
   const EXCH_NAMES  = ['exchange','market','exch','nse/bse'];
 
-  // Find header row — scan first 30 rows (some brokers have title blocks at top)
+  // Scan ALL rows — Mstocks/Mirae Asset has 30+ rows of registration text before headers
   let headerIdx = -1;
   let headers: string[] = [];
-  for (let i = 0; i < Math.min(rows.length, 30); i++) {
+  for (let i = 0; i < rows.length; i++) {
     const r = rows[i].map(c => (c ?? '').toString().toLowerCase().replace(/ /g, ' ').trim());
     if (r.some(h => SYM_NAMES.includes(h))) { headerIdx = i; headers = r; break; }
   }
