@@ -110,20 +110,35 @@ export default function DashboardPage() {
     'Trader'
   );
 
-  if (loading) {
+  // Show skeleton while auth resolves — prevents "Session expired" flicker
+  if (loading || !user) {
     return (
-      <div style={{ padding:'80px 0', textAlign:'center' }}>
-        <div style={{ fontSize:28, marginBottom:12 }}>⏳</div>
-        <div style={{ fontSize:14, color:'var(--dim)' }}>Loading your dashboard…</div>
-      </div>
-    );
-  }
-
-  if (!user) {
-    return (
-      <div style={{ padding:'48px 0', textAlign:'center' }}>
-        <div style={{ fontSize:20, fontWeight:700, marginBottom:8 }}>Session expired</div>
-        <a href="/sign-in" style={{ padding:'10px 24px', borderRadius:10, background:'var(--blu)', color:'#fff', fontWeight:700, fontSize:14 }}>Sign In</a>
+      <div style={{ padding:'0' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+          <div>
+            <div style={{ width:200, height:22, background:'var(--surf2)', borderRadius:6, marginBottom:8 }}/>
+            <div style={{ width:140, height:14, background:'var(--surf2)', borderRadius:6 }}/>
+          </div>
+        </div>
+        <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>
+          {[0,1,2].map(i => (
+            <div key={i} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' }}>
+              <div style={{ width:80, height:11, background:'var(--surf2)', borderRadius:4, marginBottom:12 }}/>
+              <div style={{ width:120, height:28, background:'var(--surf2)', borderRadius:6 }}/>
+            </div>
+          ))}
+        </div>
+        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' }}>
+          <div style={{ width:160, height:14, background:'var(--surf2)', borderRadius:6, marginBottom:20 }}/>
+          {[0,1,2,3,4].map(i => (
+            <div key={i} style={{ display:'flex', gap:12, marginBottom:16 }}>
+              <div style={{ width:100, height:13, background:'var(--surf2)', borderRadius:4 }}/>
+              <div style={{ width:80, height:13, background:'var(--surf2)', borderRadius:4 }}/>
+              <div style={{ width:60, height:13, background:'var(--surf2)', borderRadius:4 }}/>
+            </div>
+          ))}
+          <div style={{ fontSize:12, color:'var(--dim)', marginTop:8 }}>⏳ Loading your portfolio data…</div>
+        </div>
       </div>
     );
   }

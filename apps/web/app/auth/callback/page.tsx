@@ -24,10 +24,20 @@ function Handler() {
     if (error) { router.replace(`/sign-in?error=${encodeURIComponent(error)}`); return; }
     if (!code) { router.replace('/sign-in?error=no_code'); return; }
 
-    supabase.auth.exchangeCodeForSession(code).then(({ error: err }) => {
-      if (err) router.replace('/sign-in?error=auth_callback_failed');
-      else     router.replace(next);
-    });
+    supabase.auth.exchangeCodeForSession(code)
+      .then(({ error: err }) => {
+        if (err) {
+          router.replace(`/sign-in?error=${encodeURIComponent(err.message)}`);
+        } else {
+          // Hard reload — not router.replace — so the server sees fresh cookies
+          // and middleware grants access on first try (eliminates double-login)
+          window.location.href = next;
+        }
+      })
+      .catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : 'exchange_failed';
+        router.replace(`/sign-in?error=${encodeURIComponent(msg)}`);
+      });
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

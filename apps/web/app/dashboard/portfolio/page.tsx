@@ -202,11 +202,13 @@ async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: strin
       const shortName = rawName.includes('#') ? rawName.split('#')[1].trim() : rawName;
 
       const symbol = ISIN_NSE[isin] ?? deriveEtfSymbol(shortName);
-      results.push({ symbol, qty: Math.round(qty), avg_price: 0, exchange: 'NSE', is_etf: true, isin });
+      // Use 0.001 sentinel (not 0) — DB has CHECK avg_price > 0.
+      // "Enter cost" button detects avg_price < 1 and prompts user.
+      results.push({ symbol, qty: Math.round(qty), avg_price: 0.001, exchange: 'NSE', is_etf: true, isin });
     }
 
     if (!results.length) return { result: [], debug: 'PDF: MStock DP detected but no holdings with quantity found.' };
-    return { result: results, debug: `PDF MStock DP: ${results.length} ETF holdings. avg_price=0 — enter cost price manually in the table.` };
+    return { result: results, debug: `PDF MStock DP: ${results.length} ETF holdings imported. Enter avg cost manually in each row.` };
   } catch (e) {
     return { result: [], debug: `PDF error: ${e instanceof Error ? e.message : String(e)}` };
   }
@@ -282,7 +284,15 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
         })
         .filter(Boolean) as ParsedRow[];
       const hdr = `hdr@${headerIdx}:[${headers.slice(0,8).join('|')}] sym=${symIdx} qty=${qtyIdx} price=${priceIdx}`;
-      if (parsed.length) return { result: parsed, debug: hdr };
+      if (parsed.length) {
+        // Detect mis-parsed HDFC/CDSL formats where scrip code column contains series codes
+        const SERIES_CODES = new Set(['EQ','MF','BE','BL','N','SM','IL','BT','ST','SN']);
+        const seriesCount = parsed.filter(r => SERIES_CODES.has(r.symbol)).length;
+        if (seriesCount > parsed.length * 0.5) {
+          return { result: [], debug: `HDFC_FORMAT: Detected "${parsed[0]?.symbol}" in symbol column — this is a Series/Type code, not the stock ticker. For HDFC Securities: use the "Portfolio" export from HDFC SKY app (has Symbol column), or Zerodha/Upstox export. The Demat Holding Statement PDF does not contain NSE tickers.` };
+        }
+        return { result: parsed, debug: hdr };
+      }
       return { result: [], debug: `${hdr} — 0 valid data rows` };
     }
     const hdr = `hdr@${headerIdx}:[${headers.slice(0,8).join('|')}] sym=${symIdx} qty=${qtyIdx} price=${priceIdx}`;
@@ -362,6 +372,8 @@ export default function PortfolioPage() {
   const [sortCol, setSortCol] = useState<'symbol'|'avg_price'|'current_price'|'pl'|'pl_pct'>('symbol');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
   const [menuId, setMenuId] = useState<string | null>(null);
+  // Cache totals per portfolio-id as user switches, for cross-portfolio summary
+  const [portfolioTotals, setPortfolioTotals] = useState<Record<string, { holdings: number; invested: number }>>({});
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameVal, setRenameVal] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
@@ -394,8 +406,8 @@ export default function PortfolioPage() {
       const ySym = yahooSyms[i];
       const p = priceMap[ySym];
       const cur = p?.price ?? null;
-      const pl = (cur != null && h.avg_price > 0) ? (cur - h.avg_price) * h.qty : undefined;
-      const pl_pct = (cur != null && h.avg_price > 0) ? ((cur - h.avg_price) / h.avg_price) * 100 : 0;
+      const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : undefined;
+      const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : 0;
       return { ...h, current_price: cur, change_pct: p?.change_pct ?? null,
         signal: 'HOLD', rsi: null, pl, pl_pct, exchange: h.exchange as Exchange,
         ml_class: 'Watch', is_etf: detectEtf(h.symbol) } as Holding;
@@ -422,8 +434,8 @@ export default function PortfolioPage() {
           if (!res.ok) return;
           const q = await res.json() as { signal?: string; rsi?: number | null; current_price?: number | null; change_pct?: number | null };
           const cur = q.current_price ?? enriched[idx].current_price;
-          const pl = (cur != null && h.avg_price > 0) ? (cur - h.avg_price) * h.qty : enriched[idx].pl;
-          const pl_pct = (cur != null && h.avg_price > 0) ? ((cur - h.avg_price) / h.avg_price) * 100 : enriched[idx].pl_pct ?? 0;
+          const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : enriched[idx].pl;
+          const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : enriched[idx].pl_pct ?? 0;
           const signal = q.signal ?? 'HOLD';
           enriched[idx] = { ...enriched[idx], current_price: cur, change_pct: q.change_pct ?? enriched[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
         } catch { /* timeout or offline — keep Yahoo price, keep HOLD */ }
@@ -434,6 +446,13 @@ export default function PortfolioPage() {
   }
 
   useEffect(() => { enrichHoldings(rawHoldings); }, [rawHoldings]);
+
+  // Cache summary for active portfolio once prices load (for the cross-portfolio summary row)
+  useEffect(() => {
+    if (!activeId || holdings.length === 0) return;
+    const invested = holdings.reduce((s, h) => s + (h.avg_price >= 1 ? h.avg_price * h.qty : 0), 0);
+    setPortfolioTotals(prev => ({ ...prev, [activeId]: { holdings: holdings.length, invested } }));
+  }, [holdings, activeId]);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -530,8 +549,8 @@ export default function PortfolioPage() {
     return sortDir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
   });
 
-  const totalInvested = holdings.reduce((s, h) => s + h.avg_price * h.qty, 0);
-  const totalCurrent  = holdings.reduce((s, h) => s + (h.current_price ?? h.avg_price) * h.qty, 0);
+  const totalInvested = holdings.reduce((s, h) => s + (h.avg_price >= 1 ? h.avg_price * h.qty : 0), 0);
+  const totalCurrent  = holdings.reduce((s, h) => s + (h.avg_price >= 1 ? (h.current_price ?? h.avg_price) * h.qty : 0), 0);
   const totalPL       = totalCurrent - totalInvested;
   const totalPLPct    = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0;
   const fmt    = (n: number) => n >= 0 ? `+₹${n.toLocaleString('en-IN', { maximumFractionDigits:0 })}` : `-₹${Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits:0 })}`;
@@ -799,7 +818,9 @@ export default function PortfolioPage() {
       {uploadMsg && (
         <div style={{ marginBottom:14, fontSize:13, color: uploadMsg.startsWith('✅') ? 'var(--grn)' : 'var(--red)', background: uploadMsg.startsWith('✅') ? 'rgba(0,212,160,0.07)' : 'rgba(255,59,92,0.07)', border:`1px solid ${uploadMsg.startsWith('✅') ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`, borderRadius:10, padding:'10px 14px' }}>
           {uploadMsg}
-          {uploadMsg.startsWith('❌') && <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>Expected: <code>SYMBOL,QUANTITY,AVG_PRICE,EXCHANGE</code> — e.g. <code>RELIANCE,50,2800,NSE</code></div>}
+          {uploadMsg.startsWith('❌') && !uploadMsg.includes('HDFC_FORMAT') && !uploadMsg.includes('TRADE_HISTORY') && (
+            <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>Expected: <code>SYMBOL,QUANTITY,AVG_PRICE,EXCHANGE</code> — e.g. <code>RELIANCE,50,2800,NSE</code></div>
+          )}
         </div>
       )}
 
@@ -827,6 +848,60 @@ export default function PortfolioPage() {
           </div>
           <button onClick={handleAdd}
             style={{ height:40, padding:'0 20px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>Add →</button>
+        </div>
+      )}
+
+      {/* Cross-portfolio summary — shown once we have data for 2+ portfolios */}
+      {portfolios.length > 1 && Object.keys(portfolioTotals).length >= 1 && (
+        <div style={{ ...card, marginBottom:16 }}>
+          <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>All Portfolios Summary</div>
+          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+            <thead>
+              <tr>
+                {['Portfolio','Holdings','Invested'].map(h => (
+                  <th key={h} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'5px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4 }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {portfolios.map(p => {
+                const tot = portfolioTotals[p.id];
+                const isActive = p.id === activeId;
+                return (
+                  <tr key={p.id} onClick={() => setActiveId(p.id)} style={{ cursor:'pointer', opacity: isActive ? 1 : 0.7 }}>
+                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)' }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:7 }}>
+                        {isActive && <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--blu)', display:'inline-block', flexShrink:0 }}/>}
+                        <span style={{ fontSize:13, fontWeight: isActive ? 700 : 500 }}>{p.name}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:13, color: tot ? 'var(--txt)' : 'var(--dim)' }}>
+                      {tot ? tot.holdings : '—'}
+                    </td>
+                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:13, fontWeight:600, color: tot ? 'var(--txt)' : 'var(--dim)' }}>
+                      {tot && tot.invested >= 1 ? (tot.invested >= 1e7 ? `₹${(tot.invested/1e7).toFixed(2)}Cr` : tot.invested >= 1e5 ? `₹${(tot.invested/1e5).toFixed(2)}L` : `₹${tot.invested.toLocaleString('en-IN',{maximumFractionDigits:0})}`) : '—'}
+                    </td>
+                  </tr>
+                );
+              })}
+              {(() => {
+                const allTots = Object.values(portfolioTotals);
+                if (allTots.length < 2) return null;
+                const totalH = allTots.reduce((s,t)=>s+t.holdings,0);
+                const totalI = allTots.reduce((s,t)=>s+t.invested,0);
+                return (
+                  <tr style={{ background:'rgba(23,64,245,0.04)' }}>
+                    <td style={{ padding:'9px 10px', fontSize:12, fontWeight:700, color:'var(--dim)' }}>Total across {allTots.length} portfolios</td>
+                    <td style={{ padding:'9px 10px', fontSize:13, fontWeight:700 }}>{totalH}</td>
+                    <td style={{ padding:'9px 10px', fontSize:13, fontWeight:800, color:'var(--blu)' }}>
+                      {totalI >= 1e7 ? `₹${(totalI/1e7).toFixed(2)}Cr` : totalI >= 1e5 ? `₹${(totalI/1e5).toFixed(2)}L` : `₹${totalI.toLocaleString('en-IN',{maximumFractionDigits:0})}`}
+                    </td>
+                  </tr>
+                );
+              })()}
+            </tbody>
+          </table>
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:10 }}>Click a row to switch portfolio · Invested values load as you visit each portfolio</div>
         </div>
       )}
 
@@ -943,7 +1018,7 @@ export default function PortfolioPage() {
                       <button onClick={() => handleUpdateCost(h.id)} style={{ background:'none', border:'none', color:'var(--grn)', cursor:'pointer', fontSize:13 }}>✓</button>
                       <button onClick={() => setEditingCostId(null)} style={{ background:'none', border:'none', color:'var(--dim)', cursor:'pointer', fontSize:13 }}>✕</button>
                     </div>
-                  ) : h.avg_price === 0 ? (
+                  ) : h.avg_price < 1 ? (
                     <button onClick={() => { setEditingCostId(h.id); setEditCostVal(''); }}
                       style={{ fontSize:11, fontWeight:600, color:'var(--ylw)', background:'rgba(255,184,0,0.1)', border:'1px solid rgba(255,184,0,0.3)', borderRadius:5, padding:'2px 8px', cursor:'pointer', fontFamily:'inherit' }}>
                       Enter cost
@@ -964,7 +1039,7 @@ export default function PortfolioPage() {
                   ) : <span style={{ color:'var(--dim2)', fontSize:12 }}>—</span>}
                 </td>
                 <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
-                  {h.pl != null && h.avg_price > 0 ? (
+                  {h.pl != null && h.avg_price >= 1 ? (
                     <>
                       <div style={{ fontSize:13, fontWeight:700, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{fmt(h.pl)}</div>
                       <div style={{ fontSize:11, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{fmtPct(h.pl_pct ?? 0)}</div>
