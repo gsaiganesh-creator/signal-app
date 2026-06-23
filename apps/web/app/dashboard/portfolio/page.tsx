@@ -169,14 +169,18 @@ async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: strin
         .join(' ') + '\n';
     }
 
-    // Detect MStock/CDSL DP statement
-    const isDp = fullText.includes('MIRAE ASSET CAPITAL MARKETS') ||
-                 fullText.includes('CDSL') || fullText.includes('TOTAL HOLDING');
-    if (!isDp) return { result: [], debug: 'PDF: unknown format. Supported: MStock DP Holding Statement.' };
-
-    const results: ParsedRow[] = [];
+    // Find all ISINs first — both equity (INE) and ETF/MF (INF)
     const isinRe = /\b(IN[A-Z0-9]{10})\b/g;
     const allIsins = [...fullText.matchAll(isinRe)];
+
+    // Accept as DP statement if: known broker string found OR multiple ISINs present
+    const isDp = /MIRAE ASSET|CDSL|NSDL|TOTAL HOLDING|DEPOSITORY PARTICIPANT|DP STATEMENT/i.test(fullText)
+              || allIsins.length >= 2;
+    if (!isDp) {
+      return { result: [], debug: `PDF: no DP keywords or ISINs found. Got ${allIsins.length} ISIN(s). Supported: MStock DP Holding Statement.` };
+    }
+
+    const results: ParsedRow[] = [];
 
     for (let i = 0; i < allIsins.length; i++) {
       const isin  = allIsins[i][1];
@@ -184,34 +188,120 @@ async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: strin
       const end   = i + 1 < allIsins.length ? (allIsins[i + 1].index ?? fullText.length) : fullText.length;
       const chunk = fullText.slice(start, end);
 
-      // Extract all decimal numbers from the chunk
       const nums = [...chunk.matchAll(/(\d[\d,]*\.?\d*)/g)]
         .map(m => parseFloat(m[1].replace(/,/g, '')))
         .filter(n => !isNaN(n));
 
       if (!nums.length) continue;
 
-      // DP format: FREE_BAL PLEDGE LOCKEDIN PENDING TOTAL_HOLDING RATE VALUE
-      // TOTAL_HOLDING is index 4 (5th number)
-      const qty = nums.length >= 5 ? nums[4] : nums.find(n => n > 0) ?? 0;
-      if (qty <= 0) continue;
+      // DP format cols: FREE_BAL PLEDGE LOCKEDIN PENDING TOTAL_HOLDING RATE VALUE
+      // TOTAL_HOLDING = index 4. Fallback: first positive integer in chunk.
+      const qty = nums.length >= 5
+        ? nums[4]
+        : (nums.find(n => n > 0 && Number.isInteger(n)) ?? nums.find(n => n > 0) ?? 0);
+      if (qty <= 0 || qty > 1e8) continue;
 
-      // Extract security name (text before first number in chunk)
       const nameMatch = chunk.match(/^([^0-9\n]+?)(?=\s*\d)/);
       const rawName   = (nameMatch?.[1] ?? '').trim();
       const shortName = rawName.includes('#') ? rawName.split('#')[1].trim() : rawName;
 
-      const symbol = ISIN_NSE[isin] ?? deriveEtfSymbol(shortName);
-      // Use 0.001 sentinel (not 0) — DB has CHECK avg_price > 0.
-      // "Enter cost" button detects avg_price < 1 and prompts user.
-      results.push({ symbol, qty: Math.round(qty), avg_price: 0.001, exchange: 'NSE', is_etf: true, isin });
+      // INF prefix = ETF/MF, INE prefix = equity stock
+      const isEtf = isin.startsWith('INF');
+      const symbol = ISIN_NSE[isin]
+        ?? (isEtf ? deriveEtfSymbol(shortName) : (ISIN_NSE_EQUITY[isin] ?? deriveEtfSymbol(shortName)));
+
+      results.push({ symbol, qty: Math.round(qty), avg_price: 0.001, exchange: 'NSE', is_etf: isEtf, isin });
     }
 
-    if (!results.length) return { result: [], debug: 'PDF: MStock DP detected but no holdings with quantity found.' };
-    return { result: results, debug: `PDF MStock DP: ${results.length} ETF holdings imported. Enter avg cost manually in each row.` };
+    if (!results.length) {
+      return { result: [], debug: `PDF DP: ${allIsins.length} ISINs found but no valid qty rows. PDF may use image-based text or non-standard layout.` };
+    }
+    const etfCount = results.filter(r => r.is_etf).length;
+    const eqCount  = results.length - etfCount;
+    return {
+      result: results,
+      debug: `PDF MStock DP: ${results.length} holdings (${eqCount} equity + ${etfCount} ETF/MF). Enter avg cost in each row.`,
+    };
   } catch (e) {
     return { result: [], debug: `PDF error: ${e instanceof Error ? e.message : String(e)}` };
   }
+}
+
+// ISIN → NSE ticker lookup used by the HDFC Securities CSV parser
+// (HDFC format has no ticker column — Company_Name is full legal name, not NSE symbol)
+const ISIN_NSE_EQUITY: Record<string, string> = {
+  // ── Confirmed from user HDFC sample ─────────────────────────────────────────
+  'INE117A01022':'ABB',        'INE793A01012':'ACCELYA',    'INE837H01020':'ADVENZYMES',
+  'INE715B01021':'ANDHRSUGAR', 'INE208A01029':'ASHOKLEY',   'INE296A01032':'BAJFINANCE',
+  'INE258A01024':'BEML',       'INE171Z01026':'BDL',        'INE263A01024':'BEL',
+  'INE029A01011':'BPCL',
+  // ── Nifty 50 ────────────────────────────────────────────────────────────────
+  'INE002A01018':'RELIANCE',   'INE009A01021':'INFY',       'INE467B01029':'TCS',
+  'INE040A01034':'HDFCBANK',   'INE090A01021':'ICICIBANK',  'INE062A01020':'SBIN',
+  'INE238A01034':'AXISBANK',   'INE585B01010':'SUNPHARMA',  'INE018A01030':'ITC',
+  'INE154A01025':'HINDUNILVR', 'INE883A01011':'WIPRO',      'INE113A01013':'HINDALCO',
+  'INE476A01014':'HCLTECH',    'INE860A01027':'KOTAKBANK',  'INE397D01024':'BAJAJFINSV',
+  'INE361B01024':'BAJAJ-AUTO', 'INE695A01022':'MARUTI',     'INE158A01026':'TATAMOTORS',
+  'INE155A01022':'TATASTEEL',  'INE216A01030':'ONGC',       'INE101A01026':'COALINDIA',
+  'INE245A01021':'DIVISLAB',   'INE214T01019':'APOLLOHOSP', 'INE752E01010':'NTPC',
+  'INE066A01021':'POWERGRID',  'INE160A01022':'ULTRACEMCO', 'INE070A01015':'BHARTIARTL',
+  'INE129A01019':'GAIL',       'INE092T01019':'DMART',      'INE647O01011':'ZOMATO',
+  'INE669C01036':'TECHM',      'INE200A01026':'LT',         'INE484J01027':'JSWSTEEL',
+  'INE274J01014':'ADANIGREEN', 'INE424L01027':'ADANIPORTS', 'INE999J01020':'ADANIENT',
+  // ── Banks ───────────────────────────────────────────────────────────────────
+  'INE084A01016':'INDUSINDBK', 'INE562A01011':'PNB',        'INE667A01018':'CANBK',
+  'INE565A01014':'BANKINDIA',  'INE476L01027':'UNIONBANK',  'INE077A01010':'BANKBARODA',
+  'INE019A01038':'FEDERALBNK', 'INE761H01022':'BANDHANBNK', 'INE414G01012':'IDFCFIRSTB',
+  'INE092A01019':'YESBANK',    'INE491A01021':'RBLBANK',
+  // ── IT ──────────────────────────────────────────────────────────────────────
+  'INE124A01023':'MPHASIS',    'INE849A01020':'LTTS',       'INE591G01017':'COFORGE',
+  'INE121J01017':'PERSISTENT', 'INE001A01036':'LTIM',       'INE266F01018':'KPITTECH',
+  // ── Pharma ──────────────────────────────────────────────────────────────────
+  'INE406A01037':'CIPLA',      'INE317A01021':'DRREDDY',    'INE471A01022':'LUPIN',
+  'INE960A01022':'ALKEM',      'INE149A01033':'GLENMARK',   'INE372A01015':'TORNTPHARM',
+  'INE044A01036':'AUROPHARMA', 'INE058F01010':'IPCALAB',
+  // ── Auto ────────────────────────────────────────────────────────────────────
+  'INE917I01010':'M&M',        'INE153A01047':'HEROMOTOCO', 'INE031A01017':'EICHERMOT',
+  'INE213A01029':'MRF',        'INE854D01024':'HAVELLS',
+  // ── FMCG ────────────────────────────────────────────────────────────────────
+  'INE058A01010':'NESTLEIND',  'INE051A01026':'DABUR',      'INE192A01025':'GODREJCP',
+  'INE749A01029':'BRITANNIA',  'INE684F01012':'PIDILITIND', 'INE768C01010':'ASIANPAINT',
+  'INE303A01023':'BERGEPAINT', 'INE345A01011':'MARICO',     'INE274A01040':'COLPAL',
+  'INE003A01024':'TATACONSUM',
+  // ── Energy / Oil ────────────────────────────────────────────────────────────
+  'INE050A01025':'IOC',        'INE154B01012':'HINDPETRO',  'INE242A01010':'TATAPOWER',
+  'INE364U01010':'TORNTPOWER', 'INE522F01014':'ADANIPOWER',
+  // ── Metals ──────────────────────────────────────────────────────────────────
+  'INE361A01010':'SAIL',       'INE081A01020':'NATIONALUM', 'INE049A01027':'HINDZINC',
+  'INE038A01020':'VEDL',       'INE376G01013':'NMDC',
+  // ── Cement ──────────────────────────────────────────────────────────────────
+  'INE256A01028':'AMBUJACEM',  'INE012A01025':'ACC',        'INE366A01041':'SHREECEM',
+  // ── Capital Goods ───────────────────────────────────────────────────────────
+  'INE522A01014':'SIEMENS',    'INE101D01020':'BHEL',       'INE385A01022':'HAL',
+  'INE603J01030':'POLYCAB',    'INE543H01014':'CUMMINSIND',
+  // ── Finance / NBFC ──────────────────────────────────────────────────────────
+  'INE410P01011':'HDFCLIFE',   'INE269A01021':'SBILIFE',    'INE721I01026':'MUTHOOTFIN',
+  'INE918I01026':'CHOLAFIN',   'INE340A01012':'LICHSGFIN',  'INE388A01029':'MANAPPURAM',
+  'INE880J01024':'PFC',        'INE975G01012':'RECLTD',     'INE053A01029':'BAJAJHLDNG',
+  'INE155P01022':'IRFC',       'INE481G01011':'ICICIGI',
+  // ── Real Estate ─────────────────────────────────────────────────────────────
+  'INE191H01014':'DLF',        'INE741K01010':'GODREJPROP',
+  // ── Consumer / Others ───────────────────────────────────────────────────────
+  'INE758T01015':'IRCTC',      'INE152A01029':'TITAN',      'INE301A01014':'VOLTAS',
+  'INE070E01018':'APOLLOTYRE', 'INE133A01011':'PAGEIND',    'INE188A01016':'EXIDEIND',
+  'INE463A01038':'AMARAJABAT', 'INE174A01027':'MCDOWELL-N', 'INE260B01010':'UBL',
+};
+
+// Best-effort NSE ticker from full company name (fallback when ISIN not in table)
+function companyNameToTicker(name: string): string {
+  let s = name.trim().toUpperCase();
+  const drop = (p: RegExp) => { s = s.replace(p, '').replace(/\s+/g, ' ').trim(); };
+  drop(/\bLIMITED\b|\bLTD\.?\b|\bCORPORATION\b|\bCORP\.?\b|\s+\bLT\b$/g);
+  drop(/\bPRIVATE\b|\bPVT\.?\b|\bINC\.?\b/g);
+  drop(/\bINDIAN\b|\bINDIA\b|\bIND\.?\b/g);
+  drop(/\bINDUSTRIES\b|\bINDUSTRY\b|\bENTERPRISES?\b|\bSOLUTIONS?\b/g);
+  drop(/\bSERVICES?\b|\bHOLDINGS?\b|\bGROUP\b|\bCOMPANY\b|\bCO\.?\b/g);
+  return s.replace(/\s+/g, '').slice(0, 12) || name.replace(/\s+/g, '').toUpperCase().slice(0, 10);
 }
 
 function cleanSymbol(raw: string): string {
@@ -251,6 +341,11 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
     const r = rows[i].map(c => (c ?? '').toString().toLowerCase().replace(/[\s\u00a0]+/g, ' ').trim());
     if (r.some(h => TRADE_SIGNALS.includes(h))) tradeHistoryDetected = true;
     if (r.some(h => SYM_NAMES.includes(h))) { headerIdx = i; headers = r; break; }
+    // HDFC Securities CSV: column names use underscores (avg_cost_price, company_name)
+    // so they never match SYM_NAMES — detect via HDFC-specific signal words
+    if (r.some(h => h === 'avg_cost_price' || h === 'investment_value' || h === 'portfolio_value' || h === 'company_name')) {
+      headerIdx = i; headers = r; break;
+    }
   }
   if (tradeHistoryDetected && headerIdx < 0) {
     return { result: [], debug: 'TRADE_HISTORY: This is a Trade History file, not Holdings. Download the Holdings/Portfolio export from Mstocks/Mirae Asset app instead.' };
@@ -264,6 +359,35 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   };
 
   if (headerIdx >= 0 && headers.length) {
+    // ── HDFC Securities CSV: column names use underscores, won't match col() patterns ──
+    // Format: Asset,Isin,Company_Name,Qty,Avg_Cost_Price,Investment_Value,Closing_Price,Portfolio_Value
+    // Columns after lowercasing: asset|isin|company_name|qty|avg_cost_price|investment_value|...
+    // BUG we fix: fallback parser was picking Investment_Value (col 5, total position value)
+    // as avg_price instead of Avg_Cost_Price (col 4, per-unit cost) → total invested ~500x inflated
+    if (headers.includes('avg_cost_price') && headers.includes('isin') && headers.includes('qty')) {
+      const isinI  = headers.indexOf('isin');
+      const nameI  = headers.indexOf('company_name');
+      const qtyI   = headers.indexOf('qty');
+      const priceI = headers.indexOf('avg_cost_price');  // per-unit cost ← must use this, NOT investment_value
+      const parsed = rows.slice(headerIdx + 1)
+        .filter(r => r.length > Math.max(isinI, qtyI, priceI))
+        .map(r => {
+          const isin = String(r[isinI] ?? '').trim().toUpperCase();
+          const name = nameI >= 0 ? String(r[nameI] ?? '').trim() : '';
+          const qty  = parseInt(String(r[qtyI]   ?? '0').replace(/,/g, ''), 10);
+          const avg  = parseFloat(String(r[priceI] ?? '0').replace(/,/g, ''));
+          if (!isin || isNaN(qty) || isNaN(avg) || qty <= 0 || avg <= 0) return null;
+          const sym = ISIN_NSE_EQUITY[isin] ?? companyNameToTicker(name);
+          return { symbol: sym, qty, avg_price: avg, exchange: 'NSE' as Exchange, isin };
+        })
+        .filter(Boolean) as ParsedRow[];
+      if (!parsed.length) return { result: [], debug: 'HDFC_FORMAT: detected but 0 valid data rows' };
+      const matched = parsed.filter(r => r.isin && ISIN_NSE_EQUITY[r.isin]).length;
+      const unmatched = parsed.length - matched;
+      const note = unmatched > 0 ? `. ${unmatched} used company-name ticker (CMP may not load — fix symbol manually)` : '';
+      return { result: parsed, debug: `HDFC_OK: ${parsed.length} rows, ${matched} ISIN-matched${note}` };
+    }
+
     const symIdx   = col(SYM_NAMES);
     const qtyIdx   = col(QTY_NAMES);
     const priceIdx = col(PRICE_NAMES);
@@ -454,9 +578,36 @@ export default function PortfolioPage() {
     setPortfolioTotals(prev => ({ ...prev, [activeId]: { holdings: holdings.length, invested } }));
   }, [holdings, activeId]);
 
+  // Pre-fetch lightweight totals for ALL portfolios so summary shows immediately on load
+  useEffect(() => {
+    if (!session || portfolios.length === 0) return;
+    const unloaded = portfolios.filter(p => !(p.id in portfolioTotals));
+    if (!unloaded.length) return;
+    const ids = unloaded.map(p => p.id).join(',');
+    fetch(
+      `${SUPA_URL}/rest/v1/holdings?select=portfolio_id,avg_price,qty&portfolio_id=in.(${ids})`,
+      { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` } }
+    )
+      .then(r => r.json())
+      .then((data: Array<{ portfolio_id: string; avg_price: number; qty: number }>) => {
+        const tots: Record<string, { holdings: number; invested: number }> = {};
+        // Seed with 0 so empty portfolios show 0 instead of "—"
+        for (const p of unloaded) tots[p.id] = { holdings: 0, invested: 0 };
+        for (const h of data) {
+          tots[h.portfolio_id].holdings++;
+          if (h.avg_price >= 1) tots[h.portfolio_id].invested += h.avg_price * h.qty;
+        }
+        setPortfolioTotals(prev => ({ ...prev, ...tots }));
+      })
+      .catch(() => {});
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [portfolios, session]);
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !activeId || !session) return;
+    if (!file) return;
+    if (!activeId) { setUploadMsg('❌ No portfolio selected. Create a portfolio first.'); return; }
+    if (!session)  { setUploadMsg('❌ Session expired — refresh the page and sign in again.'); return; }
     setSyncing(true); setUploadMsg('Parsing file…');
     const { result, debug } = await parseFile(file);
     if (!result.length) {
@@ -851,8 +1002,8 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {/* Cross-portfolio summary — shown once we have data for 2+ portfolios */}
-      {portfolios.length > 1 && Object.keys(portfolioTotals).length >= 1 && (
+      {/* Cross-portfolio summary */}
+      {portfolios.length > 1 && (
         <div style={{ ...card, marginBottom:16 }}>
           <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>All Portfolios Summary</div>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
