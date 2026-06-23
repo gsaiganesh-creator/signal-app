@@ -22,6 +22,8 @@ interface PortfolioCtx {
   loading: boolean;
   refresh: () => Promise<void>;
   createPortfolio: (name: string) => Promise<{ id: string | null; error: string | null }>;
+  renamePortfolio: (id: string, name: string) => Promise<{ error: string | null }>;
+  deletePortfolio: (id: string) => Promise<{ error: string | null }>;
 }
 
 const Ctx = createContext<PortfolioCtx | null>(null);
@@ -29,8 +31,6 @@ const Ctx = createContext<PortfolioCtx | null>(null);
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// Direct REST fetch — bypasses createBrowserClient cookie corruption entirely.
-// The access_token comes from onAuthStateChange (in-memory, always valid).
 async function restFetch(
   path: string,
   token: string,
@@ -61,10 +61,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   const supabaseRef = useRef(createClient());
   const supabase = supabaseRef.current;
 
-  function setActiveId(id: string) {
-    setActiveIdState(id);
-    if (typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', id);
-  }
+  // Ref so setActiveId can call fetchHoldings without stale-closure issues
+  const sessionRef = useRef<Session | null>(null);
 
   const fetchHoldings = useCallback(async (portfolioId: string, token: string) => {
     try {
@@ -100,17 +98,18 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
   }, [fetchHoldings]);
 
   const refresh = useCallback(async () => {
-    if (!session) return;
+    if (!sessionRef.current) return;
     setLoading(true);
-    try { await fetchPortfolios(session.access_token, session.user.id); }
+    try { await fetchPortfolios(sessionRef.current.access_token, sessionRef.current.user.id); }
     catch (err) { console.error('[refresh]', err); }
     finally { setLoading(false); }
-  }, [session, fetchPortfolios]);
+  }, [fetchPortfolios]);
 
   useEffect(() => {
     setLoading(true);
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, sess) => {
+        sessionRef.current = sess;
         setSession(sess);
         const u = sess?.user ?? null;
         setUser(u);
@@ -125,30 +124,30 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, [supabase, fetchPortfolios]);
 
-  const [prevActiveId, setPrevActiveId] = useState<string | null>(null);
-  useEffect(() => {
-    if (activeId && activeId !== prevActiveId && session) {
-      setPrevActiveId(activeId);
-      fetchHoldings(activeId, session.access_token);
+  // Switch active portfolio — fetches holdings via sessionRef (no stale closure)
+  function setActiveId(id: string) {
+    setActiveIdState(id);
+    if (typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', id);
+    if (sessionRef.current) {
+      fetchHoldings(id, sessionRef.current.access_token);
     }
-  }, [activeId, prevActiveId, fetchHoldings, session]);
+  }
 
   async function createPortfolio(name: string): Promise<{ id: string | null; error: string | null }> {
     if (!name.trim()) return { id: null, error: 'Portfolio name is required.' };
-    if (!session) return { id: null, error: 'Not logged in. Please sign in again.' };
-    const token = session.access_token;
-    const uid   = session.user.id;
+    if (!sessionRef.current) return { id: null, error: 'Not logged in. Please sign in again.' };
+    const token = sessionRef.current.access_token;
+    const uid   = sessionRef.current.user.id;
 
     try {
-      // Ensure profile row exists
       await restFetch('profiles', token, {
         method: 'POST',
         prefer: 'resolution=merge-duplicates,return=minimal',
         body: JSON.stringify({
           id: uid,
-          email: session.user.email ?? null,
-          full_name: (session.user.user_metadata?.full_name ?? session.user.user_metadata?.name) || null,
-          avatar_url: session.user.user_metadata?.avatar_url ?? null,
+          email: sessionRef.current.user.email ?? null,
+          full_name: (sessionRef.current.user.user_metadata?.full_name ?? sessionRef.current.user.user_metadata?.name) || null,
+          avatar_url: sessionRef.current.user.user_metadata?.avatar_url ?? null,
         }),
       });
     } catch (err) {
@@ -172,11 +171,64 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     }
   }
 
+  async function renamePortfolio(id: string, name: string): Promise<{ error: string | null }> {
+    if (!name.trim()) return { error: 'Name cannot be empty.' };
+    if (!sessionRef.current) return { error: 'Not logged in.' };
+    const token = sessionRef.current.access_token;
+    try {
+      await restFetch(`portfolios?id=eq.${id}`, token, {
+        method: 'PATCH',
+        prefer: 'return=minimal',
+        body: JSON.stringify({ name: name.trim() }),
+      });
+      setPortfolios(prev => prev.map(p => p.id === id ? { ...p, name: name.trim() } : p));
+      return { error: null };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[renamePortfolio]', msg);
+      return { error: msg };
+    }
+  }
+
+  async function deletePortfolio(id: string): Promise<{ error: string | null }> {
+    if (!sessionRef.current) return { error: 'Not logged in.' };
+    const token = sessionRef.current.access_token;
+    try {
+      // Delete holdings first (cascade via RLS)
+      await fetch(`${SUPA_URL}/rest/v1/holdings?portfolio_id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${token}` },
+      });
+      await fetch(`${SUPA_URL}/rest/v1/portfolios?id=eq.${id}`, {
+        method: 'DELETE',
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${token}` },
+      });
+      const remaining = portfolios.filter(p => p.id !== id);
+      setPortfolios(remaining);
+      if (activeId === id) {
+        const next = remaining[0]?.id ?? null;
+        setActiveIdState(next);
+        if (next && typeof window !== 'undefined') localStorage.setItem('signal_active_portfolio', next);
+        else if (typeof window !== 'undefined') localStorage.removeItem('signal_active_portfolio');
+        if (next && sessionRef.current) {
+          await fetchHoldings(next, sessionRef.current.access_token);
+        } else {
+          setHoldings([]);
+        }
+      }
+      return { error: null };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Unknown error';
+      console.error('[deletePortfolio]', msg);
+      return { error: msg };
+    }
+  }
+
   const activePortfolio = portfolios.find(p => p.id === activeId) ?? null;
   const symbols = holdings.map(h => h.symbol);
 
   return (
-    <Ctx.Provider value={{ user, session, portfolios, activeId, activePortfolio, setActiveId, holdings, symbols, loading, refresh, createPortfolio }}>
+    <Ctx.Provider value={{ user, session, portfolios, activeId, activePortfolio, setActiveId, holdings, symbols, loading, refresh, createPortfolio, renamePortfolio, deletePortfolio }}>
       {children}
     </Ctx.Provider>
   );

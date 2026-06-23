@@ -215,7 +215,7 @@ const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid 
 const inp: React.CSSProperties = { height:40, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:'100%' };
 
 export default function PortfolioPage() {
-  const { portfolios, activeId, activePortfolio, holdings: rawHoldings, setActiveId, createPortfolio, refresh: refreshContext, session } = usePortfolio();
+  const { portfolios, activeId, activePortfolio, holdings: rawHoldings, setActiveId, createPortfolio, renamePortfolio, deletePortfolio, refresh: refreshContext, session } = usePortfolio();
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
@@ -228,6 +228,11 @@ export default function PortfolioPage() {
   const [showNewPortfolio, setShowNewPortfolio] = useState(false);
   const [sortCol, setSortCol] = useState<'symbol'|'avg_price'|'current_price'|'pl'|'pl_pct'>('symbol');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
+  const [menuId, setMenuId] = useState<string | null>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameVal, setRenameVal] = useState('');
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [deletingPortfolio, setDeletingPortfolio] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function toggleSort(col: typeof sortCol) {
@@ -299,6 +304,21 @@ export default function PortfolioPage() {
     if (!id) { setUploadMsg(`❌ ${error ?? 'Could not create portfolio'}`); return; }
     setPortfolioJustCreated(true);
     setUploadMsg('✅ Portfolio created! Now upload your holdings file.');
+  }
+
+  async function handleRename() {
+    if (!renamingId || !renameVal.trim()) return;
+    const { error } = await renamePortfolio(renamingId, renameVal.trim());
+    if (error) setUploadMsg(`❌ Rename failed: ${error}`);
+    setRenamingId(null);
+  }
+
+  async function handleDeletePortfolio(id: string) {
+    setDeletingPortfolio(true);
+    const { error } = await deletePortfolio(id);
+    if (error) setUploadMsg(`❌ Delete failed: ${error}`);
+    setConfirmDeleteId(null);
+    setDeletingPortfolio(false);
   }
 
   const firstUploadRef = useRef<HTMLInputElement>(null);
@@ -487,14 +507,54 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* Portfolio tabs */}
+      {/* Portfolio tabs + management */}
       <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
-        {portfolios.map(p => (
-          <button key={p.id} onClick={() => setActiveId(p.id)}
-            style={{ height:34, padding:'0 16px', borderRadius:8, fontSize:13, fontWeight: p.id === activeId ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: p.id === activeId ? '1px solid var(--blu)' : '1px solid var(--bdr)', background: p.id === activeId ? 'rgba(23,64,245,0.1)' : 'transparent', color: p.id === activeId ? 'var(--bluL)' : 'var(--dim)' }}>
-            📂 {p.name}
-          </button>
-        ))}
+        {portfolios.map(p => {
+          const isActive = p.id === activeId;
+          const isRenaming = renamingId === p.id;
+          return (
+            <div key={p.id} style={{ position:'relative', display:'inline-flex', alignItems:'center', gap:0 }}>
+              {isRenaming ? (
+                <>
+                  <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setRenamingId(null); }}
+                    style={{ height:34, borderRadius:'8px 0 0 8px', background:'var(--surf2)', border:'1px solid var(--blu)', borderRight:'none', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:140 }}/>
+                  <button onClick={handleRename}
+                    style={{ height:34, padding:'0 10px', borderRadius:'0 8px 8px 0', background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>✓</button>
+                  <button onClick={() => setRenamingId(null)}
+                    style={{ height:34, padding:'0 8px', marginLeft:4, borderRadius:8, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => { setActiveId(p.id); setMenuId(null); }}
+                    style={{ height:34, padding:'0 12px 0 16px', borderRadius: isActive ? '8px 0 0 8px' : '8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: isActive ? '1px solid var(--blu)' : '1px solid var(--bdr)', borderRight: isActive ? 'none' : undefined, background: isActive ? 'rgba(23,64,245,0.1)' : 'transparent', color: isActive ? 'var(--bluL)' : 'var(--dim)' }}>
+                    📂 {p.name}
+                  </button>
+                  {isActive && (
+                    <button onClick={() => setMenuId(m => m === p.id ? null : p.id)}
+                      style={{ height:34, padding:'0 8px', borderRadius:'0 8px 8px 0', border:'1px solid var(--blu)', borderLeft:'1px solid rgba(23,64,245,0.3)', background:'rgba(23,64,245,0.08)', color:'var(--bluL)', cursor:'pointer', fontFamily:'inherit', fontSize:16, lineHeight:1 }}>
+                      ⋯
+                    </button>
+                  )}
+                </>
+              )}
+              {/* Dropdown menu */}
+              {menuId === p.id && (
+                <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, zIndex:50, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.3)', minWidth:150, padding:'4px 0' }}>
+                  <button onClick={() => { setRenamingId(p.id); setRenameVal(p.name); setMenuId(null); }}
+                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
+                    ✏️ Rename
+                  </button>
+                  <div style={{ height:1, background:'var(--bdr)', margin:'2px 0' }}/>
+                  <button onClick={() => { setConfirmDeleteId(p.id); setMenuId(null); }}
+                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--red)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
+                    🗑️ Delete portfolio
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
         {showNewPortfolio ? (
           <div style={{ display:'flex', gap:6, alignItems:'center' }}>
             <input autoFocus placeholder="Portfolio name…" value={newPortfolioName} onChange={e => setNewPortfolioName(e.target.value)}
@@ -508,12 +568,37 @@ export default function PortfolioPage() {
               style={{ height:34, padding:'0 10px', borderRadius:8, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
           </div>
         ) : (
-          <button onClick={() => setShowNewPortfolio(true)}
+          <button onClick={() => { setShowNewPortfolio(true); setMenuId(null); }}
             style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', border:'1px dashed var(--bdr)', background:'transparent', color:'var(--dim)' }}>
             + New Portfolio
           </button>
         )}
       </div>
+
+      {/* Delete confirmation modal */}
+      {confirmDeleteId && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:100, display:'flex', alignItems:'center', justifyContent:'center' }}
+          onClick={e => { if (e.target === e.currentTarget) setConfirmDeleteId(null); }}>
+          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:'28px 32px', maxWidth:400, width:'90%', boxShadow:'0 16px 48px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>Delete portfolio?</div>
+            <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6, marginBottom:24 }}>
+              This will permanently delete <strong style={{ color:'var(--txt)' }}>
+                {portfolios.find(p => p.id === confirmDeleteId)?.name}
+              </strong> and all its holdings. This cannot be undone.
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setConfirmDeleteId(null)} disabled={deletingPortfolio}
+                style={{ flex:1, height:42, borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                Cancel
+              </button>
+              <button onClick={() => handleDeletePortfolio(confirmDeleteId)} disabled={deletingPortfolio}
+                style={{ flex:1, height:42, borderRadius:10, background:'var(--red)', border:'none', color:'#fff', fontSize:14, fontWeight:700, cursor: deletingPortfolio ? 'not-allowed' : 'pointer', fontFamily:'inherit', opacity: deletingPortfolio ? 0.7 : 1 }}>
+                {deletingPortfolio ? '⏳ Deleting…' : '🗑️ Yes, Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {uploadMsg && (
         <div style={{ marginBottom:14, fontSize:13, color: uploadMsg.startsWith('✅') ? 'var(--grn)' : 'var(--red)', background: uploadMsg.startsWith('✅') ? 'rgba(0,212,160,0.07)' : 'rgba(255,59,92,0.07)', border:`1px solid ${uploadMsg.startsWith('✅') ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`, borderRadius:10, padding:'10px 14px' }}>
