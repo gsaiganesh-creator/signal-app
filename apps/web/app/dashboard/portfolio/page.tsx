@@ -243,18 +243,58 @@ export default function PortfolioPage() {
   async function enrichHoldings(raw: RawHolding[]) {
     if (!raw.length) { setHoldings([]); setLoading(false); return; }
     setLoading(true);
-    const enriched = await Promise.all(raw.map(async h => {
-      const suffix = (h.exchange === 'NSE' || h.exchange === 'BSE') ? '.NS' : '';
-      const q = await fetchQuote(h.symbol + suffix);
-      const cur = q?.current_price ?? null;
-      const pl = cur != null ? (cur - h.avg_price) * h.qty : undefined;
-      const pl_pct = cur != null ? ((cur - h.avg_price) / h.avg_price) * 100 : 0;
-      const signal = q?.signal ?? 'HOLD';
-      const ml_class = classify(signal, q?.rsi ?? null, pl_pct);
-      return { ...h, current_price: cur, change_pct: q?.change_pct ?? null, signal, rsi: q?.rsi ?? null, pl, pl_pct, exchange: h.exchange as Exchange, ml_class } as Holding;
-    }));
-    setHoldings(enriched);
+
+    // Step 1: batch-fetch prices from Yahoo Finance (fast, always available)
+    const yahooSyms = raw.map(h =>
+      h.symbol + (h.exchange === 'NSE' ? '.NS' : h.exchange === 'BSE' ? '.BO' : '')
+    );
+    let priceMap: Record<string, { price: number | null; change_pct: number | null }> = {};
+    try {
+      const res = await fetch(`/api/prices?symbols=${yahooSyms.join(',')}`, { signal: AbortSignal.timeout(10000) });
+      if (res.ok) priceMap = await res.json();
+    } catch { /* ignore — will show — for prices */ }
+
+    // Show prices immediately so user sees data right away
+    const withPrices: Holding[] = raw.map((h, i) => {
+      const ySym = yahooSyms[i];
+      const p = priceMap[ySym];
+      const cur = p?.price ?? null;
+      const pl = (cur != null && h.avg_price > 0) ? (cur - h.avg_price) * h.qty : undefined;
+      const pl_pct = (cur != null && h.avg_price > 0) ? ((cur - h.avg_price) / h.avg_price) * 100 : 0;
+      return { ...h, current_price: cur, change_pct: p?.change_pct ?? null,
+        signal: 'HOLD', rsi: null, pl, pl_pct, exchange: h.exchange as Exchange, ml_class: 'Watch' } as Holding;
+    });
+    setHoldings(withPrices);
     setLoading(false);
+
+    // Step 2: try ML signals in background (3s timeout per stock, batched 10 at a time)
+    const BATCH = 10;
+    const enriched = [...withPrices];
+    for (let i = 0; i < raw.length; i += BATCH) {
+      const batch = raw.slice(i, i + BATCH);
+      await Promise.allSettled(batch.map(async (h, bi) => {
+        const idx = i + bi;
+        try {
+          const suffix = h.exchange === 'NSE' ? '.NS' : h.exchange === 'BSE' ? '.BO' : '';
+          const controller = new AbortController();
+          const timer = setTimeout(() => controller.abort(), 3000);
+          const res = await fetch(`/api/ml/signals/${h.symbol}${suffix}`, {
+            signal: controller.signal,
+            next: { revalidate: 300 },
+          } as RequestInit);
+          clearTimeout(timer);
+          if (!res.ok) return;
+          const q = await res.json() as { signal?: string; rsi?: number | null; current_price?: number | null; change_pct?: number | null };
+          const cur = q.current_price ?? enriched[idx].current_price;
+          const pl = (cur != null && h.avg_price > 0) ? (cur - h.avg_price) * h.qty : enriched[idx].pl;
+          const pl_pct = (cur != null && h.avg_price > 0) ? ((cur - h.avg_price) / h.avg_price) * 100 : enriched[idx].pl_pct ?? 0;
+          const signal = q.signal ?? 'HOLD';
+          enriched[idx] = { ...enriched[idx], current_price: cur, change_pct: q.change_pct ?? enriched[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
+        } catch { /* timeout or offline — keep Yahoo price, keep HOLD */ }
+      }));
+      // Update UI after each batch
+      setHoldings([...enriched]);
+    }
   }
 
   useEffect(() => { enrichHoldings(rawHoldings); }, [rawHoldings]);
