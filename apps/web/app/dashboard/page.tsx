@@ -292,7 +292,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Analytics: heatmap + cap donut */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr minmax(210px,270px)', gap:16, marginBottom:16, alignItems:'start' }}>
+      <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
         {/* Heatmap */}
         <div style={{ ...card, padding:'16px' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>

@@ -1151,11 +1151,11 @@ export default function PortfolioPage() {
           const equities = filtered.filter(h => !h.is_etf);
           const etfs     = filtered.filter(h =>  h.is_etf);
 
-          const TH = ({ label, col }: { label: string; col: typeof sortCol | null }) => {
+          const TH = ({ label, col, className }: { label: string; col: typeof sortCol | null; className?: string }) => {
             const active = col && col === sortCol;
             const arrow  = active ? (sortDir === 'asc' ? ' ↑' : ' ↓') : col ? ' ⇅' : '';
             return (
-              <th onClick={col ? () => toggleSort(col) : undefined}
+              <th className={className} onClick={col ? () => toggleSort(col) : undefined}
                 style={{ fontSize:10.5, fontWeight:700, color: active ? 'var(--txt)' : 'var(--dim)', padding:'6px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap', cursor: col ? 'pointer' : 'default', userSelect:'none' }}>
                 {label}{arrow}
               </th>
@@ -1176,10 +1176,10 @@ export default function PortfolioPage() {
                   <div style={{ fontSize:13, fontWeight:700 }}>{h.symbol}</div>
                   <div style={{ fontSize:11, color:'var(--dim)' }}>{h.exchange} · {h.qty}u</div>
                 </td>
-                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
+                <td className="mob-hide" style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
                   {!h.is_etf && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:5, background:cls.bg, color:cls.color, whiteSpace:'nowrap' }}>{cls.label}</span>}
                 </td>
-                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
+                <td className="mob-hide" style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
                   {isEditingCost ? (
                     <div style={{ display:'flex', gap:4, alignItems:'center' }}>
                       <input autoFocus type="number" value={editCostVal} onChange={e => setEditCostVal(e.target.value)}
@@ -1234,9 +1234,9 @@ export default function PortfolioPage() {
 
           const colHeaders = (
             <tr>
-              <TH label="Stock"     col="symbol"        />
-              <TH label="ML Class"  col={null}          />
-              <TH label="Avg Price" col="avg_price"     />
+              <TH label="Stock"     col="symbol"                  />
+              <TH label="ML Class"  col={null}    className="mob-hide" />
+              <TH label="Avg Price" col="avg_price" className="mob-hide" />
               <TH label="CMP"       col="current_price" />
               <TH label="P&L ₹"     col="pl"            />
               <TH label="P&L %"     col="pl_pct"        />

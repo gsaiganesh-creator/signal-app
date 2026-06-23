@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="112" fill="#0E1628"/>
+  <rect width="512" height="512" rx="112" fill="url(#g)" opacity="0.6"/>
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#1740F5" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#070D1A" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <!-- Chart polyline -->
+  <polyline points="64,380 166,250 230,310 332,134 398,210 460,96"
+    stroke="#4F6FFA" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Alert dot -->
+  <circle cx="398" cy="210" r="28" fill="#FF5C1A"/>
+  <!-- Bottom accent bar -->
+  <rect x="64" y="430" width="150" height="8" rx="4" fill="#4F6FFA" opacity="0.5"/>
+  <rect x="230" y="430" width="220" height="8" rx="4" fill="#00D4A0" opacity="0.4"/>
+</svg>

@@ -3,11 +3,11 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 const TABS = [
-  { href:'/dashboard',           icon:'📊', label:'Home'     },
-  { href:'/dashboard/signals',   icon:'📈', label:'Signals'  },
-  { href:'/dashboard/portfolio', icon:'💼', label:'Portfolio'},
-  { href:'/dashboard/sectors',   icon:'🔥', label:'Sectors'  },
-  { href:'/dashboard/refer',     icon:'🎁', label:'Refer'    },
+  { href:'/dashboard',               icon:'📊', label:'Home'     },
+  { href:'/dashboard/signals',       icon:'📈', label:'Signals'  },
+  { href:'/dashboard/portfolio',     icon:'💼', label:'Portfolio'},
+  { href:'/dashboard/paper-trading', icon:'🧪', label:'Paper'    },
+  { href:'/dashboard/sectors',       icon:'🔥', label:'Sectors'  },
 ];
 
 export function MobileBottomNav() {

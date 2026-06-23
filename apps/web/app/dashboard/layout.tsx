@@ -28,13 +28,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <div style={{ flex: 1 }} />
 
           <div className="dash-right" style={{ marginLeft: 0 }}>
-            <PortfolioSwitcher />
+            <div className="dash-port-switcher"><PortfolioSwitcher /></div>
             <ThemeToggle />
-            <div style={{ width:34, height:34, borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', flexShrink:0 }}>
+            <div className="dash-bell" style={{ width:34, height:34, borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', flexShrink:0 }}>
               <span style={{ fontSize:14 }}>🔔</span>
               <div style={{ position:'absolute', top:6, right:6, width:7, height:7, borderRadius:'50%', background:'var(--red)', border:'1.5px solid var(--surf)' }}/>
             </div>
-            <span style={{ fontSize:11, fontWeight:700, padding:'3px 9px', borderRadius:6, background:'rgba(255,92,26,0.12)', border:'1px solid rgba(255,92,26,0.25)', color:'var(--org)', flexShrink:0 }}>Pro</span>
+            <span className="dash-pro-badge" style={{ fontSize:11, fontWeight:700, padding:'3px 9px', borderRadius:6, background:'rgba(255,92,26,0.12)', border:'1px solid rgba(255,92,26,0.25)', color:'var(--org)', flexShrink:0 }}>Pro</span>
             <NavUserChip />
           </div>
         </nav>
