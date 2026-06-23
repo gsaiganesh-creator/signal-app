@@ -504,6 +504,7 @@ export default function PortfolioPage() {
   const [deletingPortfolio, setDeletingPortfolio] = useState(false);
   const [editingCostId, setEditingCostId] = useState<string | null>(null);
   const [editCostVal, setEditCostVal] = useState('');
+  const [activeFilter, setActiveFilter] = useState<MlClass | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function toggleSort(col: typeof sortCol) {
@@ -529,7 +530,14 @@ export default function PortfolioPage() {
     const withPrices: Holding[] = raw.map((h, i) => {
       const ySym = yahooSyms[i];
       const p = priceMap[ySym];
-      const cur = p?.price ?? null;
+      // Sanity check: if CMP is 50× avg_price or 1/50th, likely wrong ISIN→ticker mapping
+      // (e.g. ISIN maps to MRF ₹1.4L when actual stock is ₹300 — ratio 467×).
+      // Legitimate 50× gains (e.g. Bajaj Finance from 2008) are possible but the wrong
+      // signal (price appears valid, just inflated by wrong ticker) is worse than showing —.
+      const rawPrice = p?.price ?? null;
+      const cur = (rawPrice != null && h.avg_price >= 1)
+        ? (rawPrice / h.avg_price > 50 || h.avg_price / rawPrice > 50 ? null : rawPrice)
+        : rawPrice;
       const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : undefined;
       const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : 0;
       return { ...h, current_price: cur, change_pct: p?.change_pct ?? null,
@@ -557,7 +565,10 @@ export default function PortfolioPage() {
           clearTimeout(timer);
           if (!res.ok) return;
           const q = await res.json() as { signal?: string; rsi?: number | null; current_price?: number | null; change_pct?: number | null };
-          const cur = q.current_price ?? enriched[idx].current_price;
+          const rawMlPrice = q.current_price ?? enriched[idx].current_price;
+          const cur = (rawMlPrice != null && h.avg_price >= 1)
+            ? (rawMlPrice / h.avg_price > 50 || h.avg_price / rawMlPrice > 50 ? null : rawMlPrice)
+            : rawMlPrice;
           const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : enriched[idx].pl;
           const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : enriched[idx].pl_pct ?? 0;
           const signal = q.signal ?? 'HOLD';
@@ -569,7 +580,7 @@ export default function PortfolioPage() {
     }
   }
 
-  useEffect(() => { enrichHoldings(rawHoldings); }, [rawHoldings]);
+  useEffect(() => { enrichHoldings(rawHoldings); setActiveFilter(null); }, [rawHoldings]);
 
   // Cache summary for active portfolio once prices load (for the cross-portfolio summary row)
   useEffect(() => {
@@ -1018,18 +1029,21 @@ export default function PortfolioPage() {
               {portfolios.map(p => {
                 const tot = portfolioTotals[p.id];
                 const isActive = p.id === activeId;
+                // > ₹10Cr invested = almost certainly corrupt data (Investment_Value used as avg_price)
+                const isCorrupt = tot && tot.invested > 1e9;
                 return (
                   <tr key={p.id} onClick={() => setActiveId(p.id)} style={{ cursor:'pointer', opacity: isActive ? 1 : 0.7 }}>
                     <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)' }}>
                       <div style={{ display:'flex', alignItems:'center', gap:7 }}>
                         {isActive && <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--blu)', display:'inline-block', flexShrink:0 }}/>}
                         <span style={{ fontSize:13, fontWeight: isActive ? 700 : 500 }}>{p.name}</span>
+                        {isCorrupt && <span style={{ fontSize:10, fontWeight:700, color:'var(--red)', background:'rgba(255,59,92,0.1)', border:'1px solid rgba(255,59,92,0.3)', borderRadius:4, padding:'1px 6px' }}>⚠️ corrupt — delete &amp; re-upload</span>}
                       </div>
                     </td>
                     <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:13, color: tot ? 'var(--txt)' : 'var(--dim)' }}>
                       {tot ? tot.holdings : '—'}
                     </td>
-                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:13, fontWeight:600, color: tot ? 'var(--txt)' : 'var(--dim)' }}>
+                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:13, fontWeight:600, color: isCorrupt ? 'var(--red)' : tot ? 'var(--txt)' : 'var(--dim)' }}>
                       {tot && tot.invested >= 1 ? (tot.invested >= 1e7 ? `₹${(tot.invested/1e7).toFixed(2)}Cr` : tot.invested >= 1e5 ? `₹${(tot.invested/1e5).toFixed(2)}L` : `₹${tot.invested.toLocaleString('en-IN',{maximumFractionDigits:0})}`) : '—'}
                     </td>
                   </tr>
@@ -1052,7 +1066,7 @@ export default function PortfolioPage() {
               })()}
             </tbody>
           </table>
-          <div style={{ fontSize:11, color:'var(--dim)', marginTop:10 }}>Click a row to switch portfolio · Invested values load as you visit each portfolio</div>
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:10 }}>Click a row to switch portfolio</div>
         </div>
       )}
 
@@ -1072,23 +1086,43 @@ export default function PortfolioPage() {
             ))}
           </div>
 
-          {/* ML Bucket breakdown */}
+          {/* ML Bucket breakdown — clickable filters */}
           <div style={{ marginBottom:20 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>ML Classification Breakdown</div>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:10 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1 }}>ML Classification</div>
+              {activeFilter && (
+                <button onClick={() => setActiveFilter(null)}
+                  style={{ fontSize:11, fontWeight:700, color:'var(--blu)', background:'rgba(23,64,245,0.08)', border:'1px solid rgba(23,64,245,0.25)', borderRadius:20, padding:'2px 10px', cursor:'pointer', fontFamily:'inherit' }}>
+                  ✕ Clear filter
+                </button>
+              )}
+            </div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
               {(Object.keys(BUCKET_META) as MlClass[]).map(key => {
                 const count = holdings.filter(h => (h.ml_class ?? classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0)) === key).length;
                 if (count === 0) return null;
                 const meta = BUCKET_META[key];
+                const isActive = activeFilter === key;
                 return (
-                  <div key={key} style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:30, background:meta.bg, border:`1px solid ${meta.border}` }}>
+                  <div key={key} onClick={() => setActiveFilter(isActive ? null : key)}
+                    style={{ display:'flex', alignItems:'center', gap:7, padding:'6px 14px', borderRadius:30,
+                      background: isActive ? meta.bg : 'transparent',
+                      border:`1px solid ${isActive ? meta.color : meta.border}`,
+                      cursor:'pointer', userSelect:'none',
+                      boxShadow: isActive ? `0 0 0 2px ${meta.border}` : 'none',
+                      transition:'all 0.12s' }}>
                     <span style={{ fontSize:13, fontWeight:800, color:meta.color }}>{meta.label}</span>
                     <span style={{ fontSize:15, fontWeight:900, color:meta.color }}>{count}</span>
-                    <span style={{ fontSize:10, color:'var(--dim)', maxWidth:120 }}>{meta.desc}</span>
+                    <span style={{ fontSize:10, color: isActive ? 'var(--txt)' : 'var(--dim)', maxWidth:120 }}>{meta.desc}</span>
                   </div>
                 );
               })}
             </div>
+            {activeFilter && (
+              <div style={{ fontSize:12, color:'var(--dim)', marginTop:8 }}>
+                Showing <strong style={{ color: BUCKET_META[activeFilter].color }}>{activeFilter}</strong> stocks only · click again or ✕ to show all
+              </div>
+            )}
           </div>
         </>
       )}
@@ -1132,8 +1166,11 @@ export default function PortfolioPage() {
             </div>
           </div>
         ) : (() => {
-          const equities = sortedHoldings.filter(h => !h.is_etf);
-          const etfs     = sortedHoldings.filter(h =>  h.is_etf);
+          const filtered = activeFilter
+            ? sortedHoldings.filter(h => (h.ml_class ?? classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0)) === activeFilter)
+            : sortedHoldings;
+          const equities = filtered.filter(h => !h.is_etf);
+          const etfs     = filtered.filter(h =>  h.is_etf);
 
           const TH = ({ label, col }: { label: string; col: typeof sortCol | null }) => {
             const active = col && col === sortCol;
