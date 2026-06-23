@@ -505,6 +505,7 @@ export default function PortfolioPage() {
   const [editingCostId, setEditingCostId] = useState<string | null>(null);
   const [editCostVal, setEditCostVal] = useState('');
   const [activeFilter, setActiveFilter] = useState<MlClass | null>(null);
+  const [selectedStock, setSelectedStock] = useState<Holding | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function toggleSort(col: typeof sortCol) {
@@ -814,60 +815,24 @@ export default function PortfolioPage() {
 
   return (
     <>
-      {/* Hero — referral card style */}
-      <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.07),rgba(0,212,160,0.04))', border:'1px solid rgba(23,64,245,0.18)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
+      {/* Portfolio header */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:16 }}>
         <div>
-          <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--bluL)', textTransform:'uppercase', marginBottom:8 }}>My Portfolio</div>
-          <div style={{ fontSize:26, fontWeight:900, letterSpacing:-0.6, lineHeight:1.2, marginBottom:8 }}>
-            Upload once.<br/><span style={{ color:'var(--grn)' }}>Track everything.</span>
-          </div>
-          <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.7, maxWidth:440 }}>
-            SIGNAL tracks live P&L, runs ML classification on every holding (Momentum / Swing / Long-Term / Exit Now) and fires BUY/SELL signals for stocks you already own.
-          </div>
+          <div style={{ fontSize:20, fontWeight:800, letterSpacing:-0.4 }}>My Portfolio</div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginTop:3 }}>{activePortfolio?.name} · {holdings.length} holdings · click any row for details</div>
         </div>
-        <div style={{ textAlign:'center', flexShrink:0 }}>
-          <div style={{ fontSize:48, fontWeight:900, color: totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)', lineHeight:1 }}>{totalPLPct >= 0 ? '+' : ''}{totalPLPct.toFixed(1)}%</div>
-          <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>portfolio return</div>
-          <div style={{ marginTop:8, fontSize:11, color:'var(--dim)' }}>{holdings.length} holdings · {fmt(totalPL)}</div>
-        </div>
-      </div>
-
-      {/* Multiple portfolio benefits card */}
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:12, marginBottom:20 }}>
-        {[
-          { icon:'📂', color:'var(--bluL)', bg:'rgba(23,64,245,0.08)', border:'rgba(23,64,245,0.2)',
-            title:'Multiple Portfolios',
-            desc:'Separate "Swing Trades", "Long Term", "ELSS" — each tracked independently with its own P&L and signals.' },
-          { icon:'🤖', color:'var(--grn)', bg:'rgba(0,212,160,0.07)', border:'rgba(0,212,160,0.2)',
-            title:'ML Classification',
-            desc:'Every holding auto-bucketed: Momentum · Swing · Long-Term · Exit Now. Updated daily from RSI + EMA signals.' },
-          { icon:'📊', color:'var(--pur)', bg:'rgba(139,92,246,0.08)', border:'rgba(139,92,246,0.2)',
-            title:'Live P&L Tracking',
-            desc:'Real-time unrealised gains, invested value, and sector concentration — all from a single CSV upload.' },
-          { icon:'🔔', color:'var(--ylw)', bg:'rgba(255,184,0,0.07)', border:'rgba(255,184,0,0.2)',
-            title:'Signals on Your Stocks',
-            desc:'Live Signals page filters to only your holdings. Earnings alerts, FII/DII impact — personalised to your portfolio.' },
-        ].map(c => (
-          <div key={c.title} style={{ background:c.bg, border:`1px solid ${c.border}`, borderRadius:14, padding:'16px 18px' }}>
-            <div style={{ fontSize:22, marginBottom:10 }}>{c.icon}</div>
-            <div style={{ fontSize:13, fontWeight:700, color:c.color, marginBottom:5 }}>{c.title}</div>
-            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>{c.desc}</div>
+        {holdings.length > 0 && (
+          <div style={{ textAlign:'right' }}>
+            <div style={{ fontSize:32, fontWeight:900, color: totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)', lineHeight:1, letterSpacing:-1 }}>{totalPLPct >= 0 ? '+' : ''}{totalPLPct.toFixed(1)}%</div>
+            <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>return · {fmt(totalPL)}</div>
           </div>
-        ))}
-      </div>
-
-      {/* Upload tip */}
-      <div style={{ background:'rgba(0,212,160,0.05)', border:'1px solid rgba(0,212,160,0.15)', borderRadius:12, padding:'12px 16px', marginBottom:20, display:'flex', alignItems:'center', gap:12 }}>
-        <span style={{ fontSize:18, flexShrink:0 }}>💡</span>
-        <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>
-          <strong style={{ color:'var(--grn)' }}>Tip:</strong> Create separate portfolios for different strategies — e.g. <em>Swing Picks</em>, <em>Core Holdings</em>, <em>F&O Hedges</em>. Switch between them from the top nav. CSV format: <code style={{ background:'var(--surf2)', padding:'1px 5px', borderRadius:4, fontSize:11 }}>SYMBOL, QUANTITY, AVG_PRICE, EXCHANGE</code>
-        </div>
+        )}
       </div>
 
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div>
           <div style={{ fontSize:15, fontWeight:700 }}>Holdings</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:2 }}>ML-classified · Live prices via SIGNAL API</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginTop:2 }}>ML-classified · prices via Yahoo Finance · click row for detail</div>
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={() => fileRef.current?.click()} disabled={syncing || !activeId}
@@ -1184,12 +1149,15 @@ export default function PortfolioPage() {
           };
 
           const HoldingRow = ({ h }: { h: Holding }) => {
-            const clsKey = classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
+            const clsKey = h.ml_class ?? classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
             const cls    = BUCKET_META[clsKey];
             const plPos  = (h.pl ?? 0) >= 0;
             const isEditingCost = editingCostId === h.id;
             return (
-              <tr key={h.id}>
+              <tr key={h.id} onClick={() => !isEditingCost && setSelectedStock(h)}
+                style={{ cursor:'pointer', transition:'background 0.1s' }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                 <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
                   <div style={{ fontSize:13, fontWeight:700 }}>{h.symbol}</div>
                   <div style={{ fontSize:11, color:'var(--dim)' }}>{h.exchange} · {h.qty}u</div>
@@ -1244,7 +1212,7 @@ export default function PortfolioPage() {
                   )}
                 </td>
                 <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                  <button onClick={() => handleDelete(h.id)} style={{ background:'none', border:'none', color:'var(--dim2)', cursor:'pointer', fontSize:14, padding:'2px 4px' }} title="Remove">✕</button>
+                  <button onClick={e => { e.stopPropagation(); handleDelete(h.id); }} style={{ background:'none', border:'none', color:'var(--dim2)', cursor:'pointer', fontSize:14, padding:'2px 4px' }} title="Remove">✕</button>
                 </td>
               </tr>
             );
@@ -1295,6 +1263,109 @@ export default function PortfolioPage() {
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:14, lineHeight:1.6 }}>
         ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · ML classifications for informational purposes only · Not financial advice · DYOR
       </div>
+
+      {/* Stock detail modal */}
+      {selectedStock && (() => {
+        const h = selectedStock;
+        const clsKey = h.ml_class ?? classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
+        const cls = BUCKET_META[clsKey];
+        const plPos = (h.pl ?? 0) >= 0;
+        const invested = h.avg_price * h.qty;
+        const current = h.current_price != null ? h.current_price * h.qty : null;
+        return (
+          <div onClick={() => setSelectedStock(null)}
+            style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.55)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:24, width:'min(520px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.45)', maxHeight:'90vh', overflowY:'auto' }}>
+
+              {/* Header */}
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:18 }}>
+                <div>
+                  <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5 }}>{h.symbol}</div>
+                  <div style={{ fontSize:12, color:'var(--dim)', marginTop:3 }}>{h.exchange} · {h.qty.toLocaleString('en-IN')} units{h.isin ? ` · ${h.isin}` : ''}</div>
+                </div>
+                <button onClick={() => setSelectedStock(null)}
+                  style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--dim)', fontSize:16, flexShrink:0 }}>✕</button>
+              </div>
+
+              {/* ML class */}
+              {!h.is_etf && (
+                <div style={{ background:cls.bg, border:`1px solid ${cls.border}`, borderRadius:10, padding:'10px 14px', marginBottom:16, display:'flex', alignItems:'center', gap:10 }}>
+                  <div>
+                    <div style={{ fontSize:13, fontWeight:800, color:cls.color }}>{cls.label}</div>
+                    <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{cls.desc}</div>
+                  </div>
+                </div>
+              )}
+
+              {/* Price grid */}
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:10, marginBottom:16 }}>
+                {[
+                  { label:'Avg Cost', val:`₹${h.avg_price.toLocaleString('en-IN')}`, sub:'per unit', subC:'var(--dim)' },
+                  { label:'Current Price', val: h.current_price != null ? `₹${h.current_price.toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—',
+                    sub: h.change_pct != null ? `${h.change_pct >= 0 ? '+' : ''}${h.change_pct.toFixed(2)}% today` : 'price unavailable',
+                    subC: h.change_pct != null ? (h.change_pct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--dim)' },
+                  { label:'Invested', val:`₹${invested.toLocaleString('en-IN',{maximumFractionDigits:0})}`, sub:`${h.qty} × ₹${h.avg_price}`, subC:'var(--dim)' },
+                  { label:'Current Value', val: current != null ? `₹${current.toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', sub:'', subC:'var(--dim)' },
+                ].map(m => (
+                  <div key={m.label} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:10, padding:'11px 14px' }}>
+                    <div style={{ fontSize:10, color:'var(--dim)', fontWeight:600, letterSpacing:0.3, marginBottom:4 }}>{m.label.toUpperCase()}</div>
+                    <div style={{ fontSize:16, fontWeight:800, letterSpacing:-0.3 }}>{m.val}</div>
+                    {m.sub && <div style={{ fontSize:11, color:m.subC, marginTop:2 }}>{m.sub}</div>}
+                  </div>
+                ))}
+              </div>
+
+              {/* P&L banner */}
+              {h.pl != null && h.avg_price >= 1 && (
+                <div style={{ background: plPos ? 'rgba(0,212,160,0.08)' : 'rgba(255,59,92,0.08)', border:`1px solid ${plPos ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`, borderRadius:10, padding:'14px 16px', marginBottom:16, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <div>
+                    <div style={{ fontSize:10, color:'var(--dim)', fontWeight:600, letterSpacing:0.5 }}>UNREALISED P&L</div>
+                    <div style={{ fontSize:22, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)', marginTop:2, letterSpacing:-0.5 }}>
+                      {plPos ? '+' : '-'}₹{Math.abs(h.pl).toLocaleString('en-IN',{maximumFractionDigits:0})}
+                    </div>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontSize:10, color:'var(--dim)', fontWeight:600, letterSpacing:0.5 }}>RETURN</div>
+                    <div style={{ fontSize:22, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)', marginTop:2, letterSpacing:-0.5 }}>
+                      {(h.pl_pct ?? 0) >= 0 ? '+' : ''}{(h.pl_pct ?? 0).toFixed(2)}%
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Signal + RSI */}
+              {h.signal && !h.is_etf && (
+                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:16 }}>
+                  <span style={{ fontSize:11, color:'var(--dim)', fontWeight:600 }}>SIGNAL</span>
+                  <span style={{ fontSize:12, fontWeight:700, padding:'3px 10px', borderRadius:6,
+                    background: h.signal.includes('BUY') ? 'rgba(0,212,160,0.12)' : h.signal.includes('SELL') ? 'rgba(255,59,92,0.12)' : 'rgba(255,184,0,0.12)',
+                    color: h.signal.includes('BUY') ? 'var(--grn)' : h.signal.includes('SELL') ? 'var(--red)' : 'var(--ylw)' }}>
+                    {h.signal}
+                  </span>
+                  {h.rsi != null && <span style={{ fontSize:11, color:'var(--dim)' }}>RSI {h.rsi.toFixed(0)}</span>}
+                </div>
+              )}
+
+              {/* Actions */}
+              <div style={{ display:'flex', gap:8, paddingTop:14, borderTop:'1px solid var(--bdr)' }}>
+                <button onClick={e => { e.stopPropagation(); setEditingCostId(h.id); setEditCostVal(String(h.avg_price)); setSelectedStock(null); }}
+                  style={{ flex:1, height:36, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                  ✏️ Edit Cost
+                </button>
+                <button onClick={e => { e.stopPropagation(); handleDelete(h.id); setSelectedStock(null); }}
+                  style={{ flex:1, height:36, borderRadius:9, background:'rgba(255,59,92,0.08)', border:'1px solid rgba(255,59,92,0.25)', color:'var(--red)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                  🗑️ Remove
+                </button>
+                <button onClick={() => setSelectedStock(null)}
+                  style={{ height:36, padding:'0 14px', borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                  Close
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </>
   );
 }

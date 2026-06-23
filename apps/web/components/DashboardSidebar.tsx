@@ -10,6 +10,7 @@ const SIDEBAR: NavSection[] = [
     { href:'/dashboard',                  icon:'📊', label:'Dashboard'        },
     { href:'/dashboard/signals',          icon:'📈', label:'Live Signals' },
     { href:'/dashboard/portfolio',        icon:'💼', label:'My Portfolio'     },
+    { href:'/dashboard/us-portfolio',     icon:'🇺🇸', label:'US Portfolio'     },
     { href:'/dashboard/etf-mf',           icon:'🏦', label:'ETF & MF'        },
   ]},
   { section:'Tools', links:[
