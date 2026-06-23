@@ -1,7 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { fetchQuote } from '@/lib/api';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
 import type { MlClass } from '@/lib/supabase/types';
@@ -51,6 +50,8 @@ interface Holding extends RawHolding {
   pl_pct?: number;
   exchange: Exchange;
   ml_class?: MlClass;
+  is_etf?: boolean;
+  isin?: string;
 }
 
 type MLBucket = { label: string; key: MlClass; color: string; bg: string; border: string; desc: string };
@@ -78,7 +79,138 @@ function classify(signal: string, rsi: number | null, plPct: number): MlClass {
   return 'Watch';
 }
 
-type ParsedRow = { symbol: string; qty: number; avg_price: number; exchange: Exchange };
+type ParsedRow = { symbol: string; qty: number; avg_price: number; exchange: Exchange; is_etf?: boolean; isin?: string };
+
+// ISIN → NSE ticker for common Indian ETFs/MFs in demat form
+const ISIN_NSE: Record<string, string> = {
+  // Nippon India
+  'INF204KC1089': 'PHARMABEES',    // Nippon India Nifty Pharma ETF
+  'INF204KC1402': 'SILVERBEES',    // Nippon India Silver ETF
+  'INF204K01EY4': 'GOLDBEES',      // Nippon India Gold ETF
+  'INF204KB13I2': 'LIQUIDBEES',    // Nippon India Liquid BeES
+  'INF457M01133': 'CPSEETF',       // Nippon India CPSE ETF
+  'INF457M01174': 'PSUBNKBEES',    // Nippon India PSU Bank BeES
+  'INF204K01FH2': 'JUNIORBEES',    // Nippon India Junior BeES (Nifty Next 50)
+  'INF204K01158': 'NIFTYBEES',     // Nippon India Nifty BeES
+  'INF204K01735': 'BANKBEES',      // Nippon India Bank BeES
+  // ICICI Prudential
+  'INF109KC1Q72': 'ICICIHEALTHETF', // ICICI Prudential Nifty Healthcare ETF
+  'INF109K01VN7': 'ICICIB22',
+  'INF109KC1FQ4': 'ICICIMIDCAP',
+  'INF109KA1Z96': 'ICICISENSX',    // ICICI Prudential S&P BSE Sensex ETF
+  // Mirae Asset
+  'INF769K01LY7': 'METALETF',      // Mirae Asset Nifty Metal ETF
+  'INF769K01DI4': 'MAFANG',        // Mirae Asset NYSE FANG+ ETF
+  'INF769K01EW0': 'MAHANOI',
+  // SBI
+  'INF200KA1787': 'SETFNIF50',     // SBI Nifty 50 ETF
+  'INF200K01VS2': 'SETFNIFBK',     // SBI Nifty Bank ETF
+  // HDFC
+  'INF179K01WW6': 'HDFCNIFTY',     // HDFC Nifty 50 ETF
+  'INF179KA1SG0': 'HDFCSILVER',    // HDFC Silver ETF
+  // Kotak
+  'INF174KA1AL1': 'KOTAKNIFTY',
+  'INF174K01LS2': 'KOTAK SENSEX',
+  // DSP
+  'INF740K01PS3': 'DSPNIFTY',
+  // Motilal Oswal
+  'INF247L01FE5': 'MOM50',         // Motilal Oswal Nifty 50 ETF
+  'INF247L01FB1': 'MOM100',        // Motilal Oswal Nifty 100 ETF
+  'INF247L01EZ1': 'MOGSEC',        // Motilal Oswal G-Sec ETF
+  // Aditya Birla
+  'INF209KA12Y2': 'ABSLNIFTY',
+  // Quantum
+  'INF082J01096': 'QGOLDHALF',     // Quantum Gold Fund
+  // BHARAT
+  'INF204KB1ZJ5': 'NV20BEES',      // Nippon Nifty50 Value 20 ETF
+  // UTI
+  'INF789FK1JQ0': 'UTINIFTETF',
+  'INF789FC1GD8': 'UTISENSETF',
+};
+
+function deriveEtfSymbol(securityName: string): string {
+  const n = securityName.toUpperCase();
+  if (n.includes('SILVER'))                                   return 'SILVERBEES';
+  if (n.includes('GOLD'))                                     return 'GOLDBEES';
+  if (n.includes('CPSE'))                                     return 'CPSEETF';
+  if (n.includes('METAL'))                                    return 'METALETF';
+  if (n.includes('PHARMA') || n.includes('PHARMABEES'))      return 'PHARMABEES';
+  if (n.includes('HEALTHCARE'))                               return 'ICICIHEALTHETF';
+  if (n.includes('PSU BANK') || n.includes('PSUBANK'))       return 'PSUBNKBEES';
+  if (n.includes('LIQUID'))                                   return 'LIQUIDBEES';
+  if (n.includes('NEXT 50') || n.includes('NEXT50'))         return 'JUNIORBEES';
+  if (n.includes('SENSEX') || n.includes('BSE 30'))          return 'SETFSENSX';
+  if (n.includes('BANK NIFTY') || n.includes('BANKNIFTY'))   return 'BANKBEES';
+  if (n.includes('NIFTY 50') || n.includes('NIFTY50'))       return 'NIFTYBEES';
+  if (n.includes('NASDAQ') || n.includes('FANG'))            return 'MAFANG';
+  // Generic: strip fund house prefix, clean to alphanumeric
+  const afterHash = n.includes('#') ? n.split('#')[1].trim() : n;
+  const cleaned = afterHash
+    .replace(/MIRAE ASSET ?/g,'MA').replace(/NIPPON INDIA ?/g,'NI').replace(/ICICI PRUDENTIAL ?/g,'')
+    .replace(/SBI ?/g,'').replace(/HDFC ?/g,'').replace(/KOTAK ?/g,'')
+    .replace(/NIFTY ?/g,'').replace(/ ETF.*/g,'ETF').replace(/[^A-Z0-9]/g,'');
+  return cleaned.slice(0, 15) || 'ETF';
+}
+
+async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: string }> {
+  try {
+    const pdfjsLib = await import('pdfjs-dist');
+    pdfjsLib.GlobalWorkerOptions.workerSrc = '/pdf.worker.min.mjs';
+
+    const buf = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+
+    let fullText = '';
+    for (let p = 1; p <= pdf.numPages; p++) {
+      const page = await pdf.getPage(p);
+      const content = await page.getTextContent();
+      fullText += content.items
+        .map((it: unknown) => (it && typeof it === 'object' && 'str' in it ? (it as { str: string }).str : ''))
+        .join(' ') + '\n';
+    }
+
+    // Detect MStock/CDSL DP statement
+    const isDp = fullText.includes('MIRAE ASSET CAPITAL MARKETS') ||
+                 fullText.includes('CDSL') || fullText.includes('TOTAL HOLDING');
+    if (!isDp) return { result: [], debug: 'PDF: unknown format. Supported: MStock DP Holding Statement.' };
+
+    const results: ParsedRow[] = [];
+    const isinRe = /\b(IN[A-Z0-9]{10})\b/g;
+    const allIsins = [...fullText.matchAll(isinRe)];
+
+    for (let i = 0; i < allIsins.length; i++) {
+      const isin  = allIsins[i][1];
+      const start = (allIsins[i].index ?? 0) + 12;
+      const end   = i + 1 < allIsins.length ? (allIsins[i + 1].index ?? fullText.length) : fullText.length;
+      const chunk = fullText.slice(start, end);
+
+      // Extract all decimal numbers from the chunk
+      const nums = [...chunk.matchAll(/(\d[\d,]*\.?\d*)/g)]
+        .map(m => parseFloat(m[1].replace(/,/g, '')))
+        .filter(n => !isNaN(n));
+
+      if (!nums.length) continue;
+
+      // DP format: FREE_BAL PLEDGE LOCKEDIN PENDING TOTAL_HOLDING RATE VALUE
+      // TOTAL_HOLDING is index 4 (5th number)
+      const qty = nums.length >= 5 ? nums[4] : nums.find(n => n > 0) ?? 0;
+      if (qty <= 0) continue;
+
+      // Extract security name (text before first number in chunk)
+      const nameMatch = chunk.match(/^([^0-9\n]+?)(?=\s*\d)/);
+      const rawName   = (nameMatch?.[1] ?? '').trim();
+      const shortName = rawName.includes('#') ? rawName.split('#')[1].trim() : rawName;
+
+      const symbol = ISIN_NSE[isin] ?? deriveEtfSymbol(shortName);
+      results.push({ symbol, qty: Math.round(qty), avg_price: 0, exchange: 'NSE', is_etf: true, isin });
+    }
+
+    if (!results.length) return { result: [], debug: 'PDF: MStock DP detected but no holdings with quantity found.' };
+    return { result: results, debug: `PDF MStock DP: ${results.length} ETF holdings. avg_price=0 — enter cost price manually in the table.` };
+  } catch (e) {
+    return { result: [], debug: `PDF error: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
 
 function cleanSymbol(raw: string): string {
   return raw.trim().toUpperCase()
@@ -180,6 +312,7 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
 
 async function parseFile(file: File): Promise<{ result: ParsedRow[]; debug: string }> {
   try {
+    if (file.name.match(/\.pdf$/i)) return parsePdf(file);
     const isExcel = file.name.match(/\.xlsx?$/i);
     if (isExcel) {
       const buf = await file.arrayBuffer();
@@ -233,6 +366,8 @@ export default function PortfolioPage() {
   const [renameVal, setRenameVal] = useState('');
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingPortfolio, setDeletingPortfolio] = useState(false);
+  const [editingCostId, setEditingCostId] = useState<string | null>(null);
+  const [editCostVal, setEditCostVal] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
 
   function toggleSort(col: typeof sortCol) {
@@ -262,7 +397,8 @@ export default function PortfolioPage() {
       const pl = (cur != null && h.avg_price > 0) ? (cur - h.avg_price) * h.qty : undefined;
       const pl_pct = (cur != null && h.avg_price > 0) ? ((cur - h.avg_price) / h.avg_price) * 100 : 0;
       return { ...h, current_price: cur, change_pct: p?.change_pct ?? null,
-        signal: 'HOLD', rsi: null, pl, pl_pct, exchange: h.exchange as Exchange, ml_class: 'Watch' } as Holding;
+        signal: 'HOLD', rsi: null, pl, pl_pct, exchange: h.exchange as Exchange,
+        ml_class: 'Watch', is_etf: detectEtf(h.symbol) } as Holding;
     });
     setHoldings(withPrices);
     setLoading(false);
@@ -333,6 +469,26 @@ export default function PortfolioPage() {
       headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
     });
     await refreshContext();
+  }
+
+  async function handleUpdateCost(id: string) {
+    const cost = parseFloat(editCostVal);
+    if (!session || isNaN(cost) || cost <= 0) { setEditingCostId(null); return; }
+    await fetch(`${SUPA_URL}/rest/v1/holdings?id=eq.${id}`, {
+      method: 'PATCH',
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ avg_price: cost }),
+    });
+    setEditingCostId(null);
+    await refreshContext();
+  }
+
+  function detectEtf(symbol: string): boolean {
+    const s = symbol.toUpperCase();
+    return s.endsWith('ETF') || s.endsWith('BEES') || s.includes('GOLDBEES') ||
+      ['SILVERBEES','GOLDBEES','LIQUIDBEES','PHARMABEES','BANKBEES','JUNIORBEES',
+       'NIFTYBEES','PSUBNKBEES','CPSEETF','METALETF','ICICIHEALTHETF','MAFANG',
+       'SETFNIF50','HDFCNIFTY','MOM50','MOM100','NV20BEES','UTINIFTETF'].includes(s);
   }
 
   async function handleCreatePortfolio() {
@@ -439,9 +595,9 @@ export default function PortfolioPage() {
               onClick={() => portfolioCreated && firstUploadRef.current?.click()}
               disabled={!portfolioCreated || syncing}
               style={{ width:'100%', height:42, borderRadius:10, background: portfolioCreated ? 'linear-gradient(135deg,var(--grn),#00b87a)' : 'var(--surf2)', border: portfolioCreated ? 'none' : '1px solid var(--bdr)', color: portfolioCreated ? '#000' : 'var(--dim2)', fontSize:14, fontWeight:700, cursor: !portfolioCreated || syncing ? 'not-allowed' : 'pointer', fontFamily:'inherit' }}>
-              {syncing ? '⏳ Uploading…' : '📤 Upload Holdings File'}
+              {syncing ? '⏳ Uploading…' : '📤 Upload Holdings (CSV / Excel / PDF)'}
             </button>
-            <input ref={firstUploadRef} type="file" accept=".csv,.xlsx,.xls,.txt" style={{ display:'none' }} onChange={handleFile}/>
+            <input ref={firstUploadRef} type="file" accept=".csv,.xlsx,.xls,.txt,.pdf" style={{ display:'none' }} onChange={handleFile}/>
           </div>
         </div>
 
@@ -537,7 +693,7 @@ export default function PortfolioPage() {
             style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: syncing ? 0.6 : 1 }}>
             {syncing ? '⏳ Importing…' : '📤 Upload (CSV / Excel)'}
           </button>
-          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.txt" style={{ display:'none' }} onChange={handleFile}/>
+          <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.txt,.pdf" style={{ display:'none' }} onChange={handleFile}/>
           <button onClick={() => setAddOpen(o => !o)} disabled={!activeId}
             style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
             + Add Stock
@@ -718,23 +874,21 @@ export default function PortfolioPage() {
         </div>
 
         {loading ? (
-          <div style={{ textAlign:'center', padding:'40px 0', color:'var(--dim)', fontSize:14 }}>⏳ Running ML analysis on your holdings…</div>
+          <div style={{ textAlign:'center', padding:'40px 0', color:'var(--dim)', fontSize:14 }}>⏳ Fetching prices…</div>
         ) : holdings.length === 0 ? (
           <div style={{ textAlign:'center', padding:'40px 0' }}>
             <div style={{ fontSize:40, marginBottom:16 }}>📂</div>
             <div style={{ fontSize:17, fontWeight:800, marginBottom:6 }}>No holdings in {activePortfolio?.name}</div>
-            <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Upload your broker export — Zerodha, Upstox, Groww, or any CSV/Excel.</div>
-
-            {/* Big upload button inside the empty state */}
+            <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Upload your broker export — CSV, Excel, or MStock DP PDF.</div>
             <button onClick={() => fileRef.current?.click()} disabled={syncing}
               style={{ height:48, padding:'0 32px', borderRadius:12, background:'var(--blu)', border:'none', color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:16, display:'inline-flex', alignItems:'center', gap:10 }}>
-              {syncing ? '⏳ Importing…' : '📤 Upload Holdings (CSV / Excel)'}
+              {syncing ? '⏳ Importing…' : '📤 Upload Holdings (CSV / Excel / PDF)'}
             </button>
             <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>or use <strong style={{ color:'var(--txt)' }}>+ Add Stock</strong> above to add manually</div>
-
-            <div style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:12, padding:'16px 20px', display:'inline-block', textAlign:'left', maxWidth:420 }}>
+            <div style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:12, padding:'16px 20px', display:'inline-block', textAlign:'left', maxWidth:440 }}>
               <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:10 }}>Supported formats</div>
               {[
+                ['MStock DP PDF', 'Download Holdings → DP Holding Statement (PDF)'],
                 ['Zerodha Kite', 'Download Holdings → Export CSV'],
                 ['Zerodha Console', 'Reports → Holdings → Download'],
                 ['Upstox', 'Portfolio → Holdings → Download CSV'],
@@ -742,86 +896,137 @@ export default function PortfolioPage() {
                 ['SIGNAL CSV', 'SYMBOL, QTY, AVG_PRICE, EXCHANGE'],
               ].map(([broker, hint]) => (
                 <div key={broker} style={{ display:'flex', gap:8, marginBottom:7, fontSize:12 }}>
-                  <span style={{ color:'var(--grn)', fontWeight:700, minWidth:90 }}>{broker}</span>
+                  <span style={{ color:'var(--grn)', fontWeight:700, minWidth:110 }}>{broker}</span>
                   <span style={{ color:'var(--dim)' }}>{hint}</span>
                 </div>
               ))}
+              <div style={{ fontSize:11, color:'var(--ylw)', marginTop:10, borderTop:'1px solid var(--bdr)', paddingTop:10 }}>
+                ℹ️ MStock DP PDF imports ETF/MF demat holdings. Avg cost not in DP statement — enter manually after import.
+              </div>
             </div>
           </div>
-        ) : (
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse' }}>
-              <thead>
-                <tr>
-                  {([
-                    { label:'Stock',     col:'symbol'        },
-                    { label:'ML Class',  col:null            },
-                    { label:'Avg Price', col:'avg_price'     },
-                    { label:'CMP',       col:'current_price' },
-                    { label:'P&L ₹',     col:'pl'            },
-                    { label:'P&L %',     col:'pl_pct'        },
-                    { label:'Signal',    col:null            },
-                    { label:'',          col:null            },
-                  ] as { label:string; col:typeof sortCol|null }[]).map(({ label, col }) => {
-                    const active = col && col === sortCol;
-                    const arrow  = active ? (sortDir === 'asc' ? ' ↑' : ' ↓') : col ? ' ⇅' : '';
-                    return (
-                      <th key={label} onClick={col ? () => toggleSort(col) : undefined}
-                        style={{ fontSize:10.5, fontWeight:700, color: active ? 'var(--txt)' : 'var(--dim)', padding:'6px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap', cursor: col ? 'pointer' : 'default', userSelect:'none' }}>
-                        {label}{arrow}
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {sortedHoldings.map(h => {
-                  const clsKey = classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
-                  const cls = BUCKET_META[clsKey];
-                  const plPos = (h.pl ?? 0) >= 0;
-                  return (
-                    <tr key={h.id}>
-                      <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                        <div style={{ fontSize:13, fontWeight:700 }}>{h.symbol}</div>
-                        <div style={{ fontSize:11, color:'var(--dim)' }}>{h.exchange} · {h.qty}u</div>
-                      </td>
-                      <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                        <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:5, background:cls.bg, color:cls.color, whiteSpace:'nowrap' }}>{cls.label}</span>
-                      </td>
-                      <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', fontSize:13, fontWeight:600, whiteSpace:'nowrap' }}>₹{h.avg_price.toLocaleString('en-IN')}</td>
-                      <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
-                        {h.current_price != null ? (
-                          <>
-                            <div style={{ fontSize:13, fontWeight:700 }}>₹{h.current_price.toLocaleString('en-IN', { maximumFractionDigits:0 })}</div>
-                            {h.change_pct != null && <div style={{ fontSize:11, color: h.change_pct >= 0 ? 'var(--grn)' : 'var(--red)' }}>{h.change_pct >= 0 ? '+' : ''}{h.change_pct.toFixed(2)}%</div>}
-                          </>
-                        ) : <span style={{ color:'var(--dim2)', fontSize:12 }}>API offline</span>}
-                      </td>
-                      <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
-                        {h.pl != null ? (
-                          <>
-                            <div style={{ fontSize:13, fontWeight:700, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{fmt(h.pl)}</div>
-                            <div style={{ fontSize:11, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{fmtPct(h.pl_pct ?? 0)}</div>
-                          </>
-                        ) : <span style={{ color:'var(--dim2)', fontSize:12 }}>—</span>}
-                      </td>
-                      <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                        <span style={{ fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:5, whiteSpace:'nowrap',
-                          background: h.signal?.includes('BUY') ? 'rgba(0,212,160,0.12)' : h.signal?.includes('SELL') ? 'rgba(255,59,92,0.12)' : 'rgba(255,184,0,0.12)',
-                          color: h.signal?.includes('BUY') ? 'var(--grn)' : h.signal?.includes('SELL') ? 'var(--red)' : 'var(--ylw)' }}>
-                          {h.signal ?? 'HOLD'}
-                        </span>
-                      </td>
-                      <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                        <button onClick={() => handleDelete(h.id)} style={{ background:'none', border:'none', color:'var(--dim2)', cursor:'pointer', fontSize:14, padding:'2px 4px' }} title="Remove">✕</button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
+        ) : (() => {
+          const equities = sortedHoldings.filter(h => !h.is_etf);
+          const etfs     = sortedHoldings.filter(h =>  h.is_etf);
+
+          const TH = ({ label, col }: { label: string; col: typeof sortCol | null }) => {
+            const active = col && col === sortCol;
+            const arrow  = active ? (sortDir === 'asc' ? ' ↑' : ' ↓') : col ? ' ⇅' : '';
+            return (
+              <th onClick={col ? () => toggleSort(col) : undefined}
+                style={{ fontSize:10.5, fontWeight:700, color: active ? 'var(--txt)' : 'var(--dim)', padding:'6px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap', cursor: col ? 'pointer' : 'default', userSelect:'none' }}>
+                {label}{arrow}
+              </th>
+            );
+          };
+
+          const HoldingRow = ({ h }: { h: Holding }) => {
+            const clsKey = classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
+            const cls    = BUCKET_META[clsKey];
+            const plPos  = (h.pl ?? 0) >= 0;
+            const isEditingCost = editingCostId === h.id;
+            return (
+              <tr key={h.id}>
+                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
+                  <div style={{ fontSize:13, fontWeight:700 }}>{h.symbol}</div>
+                  <div style={{ fontSize:11, color:'var(--dim)' }}>{h.exchange} · {h.qty}u</div>
+                </td>
+                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
+                  {!h.is_etf && <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:5, background:cls.bg, color:cls.color, whiteSpace:'nowrap' }}>{cls.label}</span>}
+                </td>
+                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
+                  {isEditingCost ? (
+                    <div style={{ display:'flex', gap:4, alignItems:'center' }}>
+                      <input autoFocus type="number" value={editCostVal} onChange={e => setEditCostVal(e.target.value)}
+                        onKeyDown={e => { if (e.key === 'Enter') handleUpdateCost(h.id); if (e.key === 'Escape') setEditingCostId(null); }}
+                        style={{ width:80, height:28, borderRadius:6, background:'var(--surf2)', border:'1px solid var(--blu)', color:'var(--txt)', fontSize:12, padding:'0 6px', fontFamily:'inherit', outline:'none' }}/>
+                      <button onClick={() => handleUpdateCost(h.id)} style={{ background:'none', border:'none', color:'var(--grn)', cursor:'pointer', fontSize:13 }}>✓</button>
+                      <button onClick={() => setEditingCostId(null)} style={{ background:'none', border:'none', color:'var(--dim)', cursor:'pointer', fontSize:13 }}>✕</button>
+                    </div>
+                  ) : h.avg_price === 0 ? (
+                    <button onClick={() => { setEditingCostId(h.id); setEditCostVal(''); }}
+                      style={{ fontSize:11, fontWeight:600, color:'var(--ylw)', background:'rgba(255,184,0,0.1)', border:'1px solid rgba(255,184,0,0.3)', borderRadius:5, padding:'2px 8px', cursor:'pointer', fontFamily:'inherit' }}>
+                      Enter cost
+                    </button>
+                  ) : (
+                    <span style={{ fontSize:13, fontWeight:600, cursor:'pointer' }} title="Click to edit"
+                      onClick={() => { setEditingCostId(h.id); setEditCostVal(String(h.avg_price)); }}>
+                      ₹{h.avg_price.toLocaleString('en-IN')}
+                    </span>
+                  )}
+                </td>
+                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
+                  {h.current_price != null ? (
+                    <>
+                      <div style={{ fontSize:13, fontWeight:700 }}>₹{h.current_price.toLocaleString('en-IN', { maximumFractionDigits:0 })}</div>
+                      {h.change_pct != null && <div style={{ fontSize:11, color: h.change_pct >= 0 ? 'var(--grn)' : 'var(--red)' }}>{h.change_pct >= 0 ? '+' : ''}{h.change_pct.toFixed(2)}%</div>}
+                    </>
+                  ) : <span style={{ color:'var(--dim2)', fontSize:12 }}>—</span>}
+                </td>
+                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
+                  {h.pl != null && h.avg_price > 0 ? (
+                    <>
+                      <div style={{ fontSize:13, fontWeight:700, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{fmt(h.pl)}</div>
+                      <div style={{ fontSize:11, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{fmtPct(h.pl_pct ?? 0)}</div>
+                    </>
+                  ) : <span style={{ color:'var(--dim2)', fontSize:12 }}>—</span>}
+                </td>
+                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
+                  {!h.is_etf && (
+                    <span style={{ fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:5, whiteSpace:'nowrap',
+                      background: h.signal?.includes('BUY') ? 'rgba(0,212,160,0.12)' : h.signal?.includes('SELL') ? 'rgba(255,59,92,0.12)' : 'rgba(255,184,0,0.12)',
+                      color: h.signal?.includes('BUY') ? 'var(--grn)' : h.signal?.includes('SELL') ? 'var(--red)' : 'var(--ylw)' }}>
+                      {h.signal ?? 'HOLD'}
+                    </span>
+                  )}
+                </td>
+                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
+                  <button onClick={() => handleDelete(h.id)} style={{ background:'none', border:'none', color:'var(--dim2)', cursor:'pointer', fontSize:14, padding:'2px 4px' }} title="Remove">✕</button>
+                </td>
+              </tr>
+            );
+          };
+
+          const colHeaders = (
+            <tr>
+              <TH label="Stock"     col="symbol"        />
+              <TH label="ML Class"  col={null}          />
+              <TH label="Avg Price" col="avg_price"     />
+              <TH label="CMP"       col="current_price" />
+              <TH label="P&L ₹"     col="pl"            />
+              <TH label="P&L %"     col="pl_pct"        />
+              <TH label="Signal"    col={null}          />
+              <TH label=""          col={null}          />
+            </tr>
+          );
+
+          return (
+            <div style={{ overflowX:'auto' }}>
+              {equities.length > 0 && (
+                <>
+                  <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, padding:'4px 10px 8px' }}>
+                    Equity Holdings · {equities.length}
+                  </div>
+                  <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                    <thead>{colHeaders}</thead>
+                    <tbody>{equities.map(h => <HoldingRow key={h.id} h={h} />)}</tbody>
+                  </table>
+                </>
+              )}
+              {etfs.length > 0 && (
+                <>
+                  <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, padding:'16px 10px 8px', marginTop: equities.length > 0 ? 8 : 4, borderTop: equities.length > 0 ? '1px solid var(--bdr)' : 'none' }}>
+                    ETF / MF Holdings · {etfs.length}
+                  </div>
+                  <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                    <thead>{colHeaders}</thead>
+                    <tbody>{etfs.map(h => <HoldingRow key={h.id} h={h} />)}</tbody>
+                  </table>
+                </>
+              )}
+            </div>
+          );
+        })()}
       </div>
 
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:14, lineHeight:1.6 }}>
