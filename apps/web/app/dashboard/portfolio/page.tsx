@@ -15,6 +15,13 @@ async function restInsertHoldings(
   token: string,
   rows: Array<{ symbol: string; exchange: string; qty: number; avg_price: number }>
 ): Promise<string | null> {
+  // Delete existing holdings first to prevent stale/duplicate rows on re-upload
+  const del = await fetch(`${SUPA_URL}/rest/v1/holdings?portfolio_id=eq.${portfolioId}`, {
+    method: 'DELETE',
+    headers: { apikey: SUPA_KEY, Authorization: `Bearer ${token}` },
+  });
+  if (!del.ok) return await del.text() || `Delete failed: HTTP ${del.status}`;
+
   const body = rows.map(r => ({
     portfolio_id: portfolioId, user_id: userId,
     symbol: r.symbol, exchange: r.exchange, qty: r.qty, avg_price: r.avg_price,
@@ -25,7 +32,7 @@ async function restInsertHoldings(
       apikey: SUPA_KEY,
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
-      Prefer: 'resolution=merge-duplicates,return=minimal',
+      Prefer: 'return=minimal',
     },
     body: JSON.stringify(body),
   });
@@ -103,9 +110,16 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   // Scan ALL rows — Mstocks/Mirae Asset has 30+ rows of registration text before headers
   let headerIdx = -1;
   let headers: string[] = [];
+  let tradeHistoryDetected = false;
+  const TRADE_SIGNALS = ['buy/sell', 'b/s', 'transaction type', 'trade type', 'order side', 'buy / sell'];
   for (let i = 0; i < rows.length; i++) {
-    const r = rows[i].map(c => (c ?? '').toString().toLowerCase().replace(/ /g, ' ').trim());
+    // Normalize all whitespace variants (\xa0 non-breaking, tabs, multiple spaces)
+    const r = rows[i].map(c => (c ?? '').toString().toLowerCase().replace(/[\s\u00a0]+/g, ' ').trim());
+    if (r.some(h => TRADE_SIGNALS.includes(h))) tradeHistoryDetected = true;
     if (r.some(h => SYM_NAMES.includes(h))) { headerIdx = i; headers = r; break; }
+  }
+  if (tradeHistoryDetected && headerIdx < 0) {
+    return { result: [], debug: 'TRADE_HISTORY: This is a Trade History file, not Holdings. Download the Holdings/Portfolio export from Mstocks/Mirae Asset app instead.' };
   }
 
   // Column finder: exact match then partial contains
@@ -212,7 +226,14 @@ export default function PortfolioPage() {
   const [creatingPortfolio, setCreatingPortfolio] = useState(false);
   const [portfolioJustCreated, setPortfolioJustCreated] = useState(false);
   const [showNewPortfolio, setShowNewPortfolio] = useState(false);
+  const [sortCol, setSortCol] = useState<'symbol'|'avg_price'|'current_price'|'pl'|'pl_pct'>('symbol');
+  const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  function toggleSort(col: typeof sortCol) {
+    if (sortCol === col) setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    else { setSortCol(col); setSortDir('asc'); }
+  }
 
   async function enrichHoldings(raw: RawHolding[]) {
     if (!raw.length) { setHoldings([]); setLoading(false); return; }
@@ -281,6 +302,17 @@ export default function PortfolioPage() {
   }
 
   const firstUploadRef = useRef<HTMLInputElement>(null);
+
+  const sortedHoldings = [...holdings].sort((a, b) => {
+    let av: number | string, bv: number | string;
+    if (sortCol === 'symbol')        { av = a.symbol;            bv = b.symbol; }
+    else if (sortCol === 'avg_price'){ av = a.avg_price;         bv = b.avg_price; }
+    else if (sortCol === 'current_price') { av = a.current_price ?? -Infinity; bv = b.current_price ?? -Infinity; }
+    else if (sortCol === 'pl')       { av = a.pl ?? -Infinity;   bv = b.pl ?? -Infinity; }
+    else                             { av = a.pl_pct ?? -Infinity; bv = b.pl_pct ?? -Infinity; }
+    if (typeof av === 'string' && typeof bv === 'string') return sortDir === 'asc' ? av.localeCompare(bv) : bv.localeCompare(av);
+    return sortDir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
+  });
 
   const totalInvested = holdings.reduce((s, h) => s + h.avg_price * h.qty, 0);
   const totalCurrent  = holdings.reduce((s, h) => s + (h.current_price ?? h.avg_price) * h.qty, 0);
@@ -596,13 +628,29 @@ export default function PortfolioPage() {
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead>
                 <tr>
-                  {['Stock','ML Class','Avg Price','CMP','P&L','Signal',''].map(h => (
-                    <th key={h} style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', padding:'6px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap' }}>{h}</th>
-                  ))}
+                  {([
+                    { label:'Stock',     col:'symbol'        },
+                    { label:'ML Class',  col:null            },
+                    { label:'Avg Price', col:'avg_price'     },
+                    { label:'CMP',       col:'current_price' },
+                    { label:'P&L ₹',     col:'pl'            },
+                    { label:'P&L %',     col:'pl_pct'        },
+                    { label:'Signal',    col:null            },
+                    { label:'',          col:null            },
+                  ] as { label:string; col:typeof sortCol|null }[]).map(({ label, col }) => {
+                    const active = col && col === sortCol;
+                    const arrow  = active ? (sortDir === 'asc' ? ' ↑' : ' ↓') : col ? ' ⇅' : '';
+                    return (
+                      <th key={label} onClick={col ? () => toggleSort(col) : undefined}
+                        style={{ fontSize:10.5, fontWeight:700, color: active ? 'var(--txt)' : 'var(--dim)', padding:'6px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap', cursor: col ? 'pointer' : 'default', userSelect:'none' }}>
+                        {label}{arrow}
+                      </th>
+                    );
+                  })}
                 </tr>
               </thead>
               <tbody>
-                {holdings.map(h => {
+                {sortedHoldings.map(h => {
                   const clsKey = classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
                   const cls = BUCKET_META[clsKey];
                   const plPos = (h.pl ?? 0) >= 0;
