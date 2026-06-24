@@ -254,18 +254,40 @@ export default function SignalsPage() {
   const hasPortfolio = portfolioSymbols.length > 0;
   const portfolioCnt = mlSignals.filter(s => portfolioSymbols.includes(s.symbol.replace('.NS',''))).length;
 
+  // Derive signal category from confidence + RSI
+  function sigCategory(s: MLSignal): 'buy' | 'accumulate' | 'hold' | 'sell' {
+    const sig = (s.signal ?? '').toUpperCase();
+    if (sig.includes('SELL') || sig.includes('BEARISH')) return 'sell';
+    if (s.rsi > 72 && s.chg < 0) return 'sell';
+    if (s.confidence >= 72) return 'buy';
+    if (s.confidence >= 58) return 'accumulate';
+    if (s.rsi > 65) return 'hold';
+    return 'accumulate';
+  }
+
+  const buyCnt        = mlSignals.filter(s => sigCategory(s) === 'buy').length;
+  const accumulateCnt = mlSignals.filter(s => sigCategory(s) === 'accumulate').length;
+  const holdCnt       = mlSignals.filter(s => sigCategory(s) === 'hold').length;
+  const sellCnt       = mlSignals.filter(s => sigCategory(s) === 'sell').length;
+
   const FILTERS = [
-    { key:'all',       label:`All (${mlSignals.length})` },
-    ...(hasPortfolio ? [{ key:'portfolio', label:`💼 My Portfolio (${portfolioCnt})` }] : []),
-    { key:'high',      label:'🔥 High Conf (80%+)' },
-    { key:'moderate',  label:'✅ Moderate (65–79%)' },
+    { key:'all',        label:`All (${mlSignals.length})` },
+    ...(hasPortfolio ? [{ key:'portfolio',  label:`💼 My Portfolio (${portfolioCnt})` }] : []),
+    { key:'buy',        label:`🟢 Buy (${buyCnt})` },
+    { key:'accumulate', label:`📈 Accumulate (${accumulateCnt})` },
+    { key:'hold',       label:`⏸ Hold (${holdCnt})` },
+    { key:'sell',       label:`🔴 Sell (${sellCnt})` },
+    { key:'high',       label:'🔥 High Conf (80%+)' },
   ];
 
   const shown = mlSignals
     .filter(s => {
-      if (filter === 'portfolio') return portfolioSymbols.includes(s.symbol.replace('.NS',''));
-      if (filter === 'high')      return s.confidence >= 80;
-      if (filter === 'moderate')  return s.confidence >= 65 && s.confidence < 80;
+      if (filter === 'portfolio')  return portfolioSymbols.includes(s.symbol.replace('.NS',''));
+      if (filter === 'buy')        return sigCategory(s) === 'buy';
+      if (filter === 'accumulate') return sigCategory(s) === 'accumulate';
+      if (filter === 'hold')       return sigCategory(s) === 'hold';
+      if (filter === 'sell')       return sigCategory(s) === 'sell';
+      if (filter === 'high')       return s.confidence >= 80;
       return true;
     })
     .filter(s => !search || s.symbol.toLowerCase().includes(search.toLowerCase()) || s.name.toLowerCase().includes(search.toLowerCase()) || s.sector.toLowerCase().includes(search.toLowerCase()));
@@ -357,7 +379,16 @@ export default function SignalsPage() {
                   <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
                     <span style={{ fontSize:15, fontWeight:800 }}>{sig.symbol.replace('.NS','')}</span>
                     {inPortfolio && <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)' }}>IN PORTFOLIO</span>}
-                    <span style={{ fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:4, background:'rgba(0,212,160,0.12)', color:'var(--grn)', border:'1px solid rgba(0,212,160,0.25)' }}>BUY</span>
+                    {(() => {
+                      const cat = sigCategory(sig);
+                      const cfg = {
+                        buy:        { label:'BUY',        bg:'rgba(0,212,160,0.12)',  color:'var(--grn)',  border:'rgba(0,212,160,0.25)'  },
+                        accumulate: { label:'ACCUMULATE', bg:'rgba(79,111,250,0.12)', color:'var(--bluL)', border:'rgba(79,111,250,0.25)' },
+                        hold:       { label:'HOLD',       bg:'rgba(255,184,0,0.12)',  color:'var(--ylw)',  border:'rgba(255,184,0,0.25)'  },
+                        sell:       { label:'SELL',       bg:'rgba(255,59,92,0.12)',  color:'var(--red)',  border:'rgba(255,59,92,0.25)'  },
+                      }[cat];
+                      return <span style={{ fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:4, background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}` }}>{cfg.label}</span>;
+                    })()}
                     <span style={{ marginLeft:'auto', fontSize:11, color:'var(--dim)' }}>{sig.sector.replace(/_/g,' ')}</span>
                   </div>
                   <div style={{ fontSize:12, color:'var(--dim)', marginBottom:6 }}>{sig.name}</div>

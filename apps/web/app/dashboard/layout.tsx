@@ -13,9 +13,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     <PortfolioProvider><DashboardNavProvider>
       <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh' }}>
 
-        {/* Top Nav */}
-        <nav style={{ display:'flex', alignItems:'center', flexWrap:'nowrap', height:58, padding:'0 clamp(12px,3vw,32px)', background:'var(--surf)', borderBottom:'1px solid var(--bdr)', position:'sticky', top:0, zIndex:100, overflow:'visible' }}>
-          <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, fontSize:18, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)', marginRight:28, flexShrink:0 }}>
+        {/* Top Nav — 3-col grid: logo | tabs (centered) | controls */}
+        <nav style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:58, padding:'0 clamp(12px,3vw,32px)', background:'var(--surf)', borderBottom:'1px solid var(--bdr)', position:'sticky', top:0, zIndex:100, overflow:'visible' }}>
+          <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, fontSize:18, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)', flexShrink:0, justifySelf:'start' }}>
             <svg width="22" height="22" viewBox="0 0 26 26" fill="none">
               <rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/>
               <polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -24,11 +24,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             SIGNAL
           </Link>
 
+          {/* Center column — tabs */}
           <DashboardTopNav />
-          {/* flex spacer — pushes right section to far end */}
-          <div style={{ flex: 1 }} />
 
-          <div className="dash-right" style={{ marginLeft: 0 }}>
+          <div className="dash-right" style={{ marginLeft: 0, justifySelf:'end' }}>
             <div className="dash-port-switcher"><PortfolioSwitcher /></div>
             <ThemeToggle />
             <div className="dash-bell" style={{ width:34, height:34, borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', flexShrink:0 }}>
