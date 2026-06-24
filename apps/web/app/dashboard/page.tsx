@@ -9,6 +9,15 @@ import { TreemapHeatmap } from '@/components/TreemapHeatmap';
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
+// NSE ticker alias → canonical symbol (handles user typos + renamed tickers)
+const SYM_ALIAS: Record<string, string> = {
+  RECLIMITED: 'RECLTD', RECLMITED: 'RECLTD', RECLIMTED: 'RECLTD',
+  BAJAJFINANCE: 'BAJFINANCE',
+  MOTHERSUMI: 'MOTHERSON',
+  INFRATEL: 'BHARTIARTL',
+};
+function normSym(s: string): string { const u = s.toUpperCase().trim(); return SYM_ALIAS[u] ?? u; }
+
 function greet() {
   const h = new Date().getHours();
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
@@ -221,7 +230,7 @@ export default function DashboardPage() {
   // India prices — all merged symbols from all portfolios
   useEffect(() => {
     if (!allIndiaRaw.length) { setPrices({}); return; }
-    const symSet = new Set(allIndiaRaw.map(h => h.symbol + (h.exchange === 'NSE' ? '.NS' : '.BO')));
+    const symSet = new Set(allIndiaRaw.map(h => normSym(h.symbol) + (h.exchange === 'NSE' ? '.NS' : '.BO')));
     const syms = Array.from(symSet).join(',');
     setPricesLoading(true);
     fetch(`/api/prices?symbols=${encodeURIComponent(syms)}`)
@@ -323,11 +332,12 @@ export default function DashboardPage() {
   // Merge all India holdings by symbol (weighted avg across portfolios)
   const mergedMap = new Map<string, RawHolding>();
   for (const h of allIndiaRaw.filter(h => h.avg_price >= 1)) {
-    const ex = mergedMap.get(h.symbol);
+    const sym = normSym(h.symbol);
+    const ex = mergedMap.get(sym);
     if (ex) {
       const tq = ex.qty + h.qty;
-      mergedMap.set(h.symbol, { ...ex, qty: tq, avg_price: (ex.avg_price * ex.qty + h.avg_price * h.qty) / tq });
-    } else { mergedMap.set(h.symbol, { ...h }); }
+      mergedMap.set(sym, { ...ex, symbol: sym, qty: tq, avg_price: (ex.avg_price * ex.qty + h.avg_price * h.qty) / tq });
+    } else { mergedMap.set(sym, { ...h, symbol: sym }); }
   }
   const mergedIndia = Array.from(mergedMap.values());
   const equityH = mergedIndia.filter(h => capCat(h.symbol) !== 'etf');

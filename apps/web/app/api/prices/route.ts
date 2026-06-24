@@ -24,11 +24,16 @@ export async function GET(request: Request) {
         chart?: { result?: Array<{ meta?: { regularMarketPrice?: number; regularMarketChangePercent?: number; chartPreviousClose?: number } }> }
       };
       const meta = data?.chart?.result?.[0]?.meta;
-      results[sym] = {
-        price:       meta?.regularMarketPrice        ?? null,
-        change_pct:  meta?.regularMarketChangePercent ?? null,
-        prev_close:  meta?.chartPreviousClose         ?? null,
-      };
+      const price      = meta?.regularMarketPrice        ?? null;
+      const prev_close = meta?.chartPreviousClose         ?? null;
+      // Yahoo sometimes returns null change% even when price + prevClose are present — compute fallback
+      const raw_chg    = meta?.regularMarketChangePercent ?? null;
+      const change_pct = raw_chg != null
+        ? raw_chg
+        : (price != null && prev_close != null && prev_close > 0)
+          ? ((price - prev_close) / prev_close) * 100
+          : null;
+      results[sym] = { price, change_pct, prev_close };
     } catch {
       results[sym] = { price: null, change_pct: null, prev_close: null };
     }
