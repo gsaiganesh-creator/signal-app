@@ -261,11 +261,12 @@ const CATEGORIES = ['All', ...Array.from(new Set(ALGOS.map(a => a.category)))];
 const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'20px' };
 
 export default function AlgorithmsPage() {
+  const [tab,      setTab    ] = useState<'library'|'deploy'>('library');
   const [cat,      setCat    ] = useState('All');
   const [expanded, setExpanded] = useState<string | null>(null);
   const [copied,   setCopied ] = useState<string | null>(null);
+  const [codeCopied, setCodeCopied] = useState<string | null>(null);
 
-  // Simulate non-pro user — wire to actual auth/plan later
   const isPro = false;
 
   const filtered = ALGOS.filter(a => cat === 'All' || a.category === cat);
@@ -281,7 +282,7 @@ export default function AlgorithmsPage() {
   return (
     <>
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:24, gap:16, flexWrap:'wrap' }}>
+      <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:16, gap:16, flexWrap:'wrap' }}>
         <div>
           <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>Algorithm Library</div>
           <div style={{ fontSize:13, color:'var(--dim)', marginTop:4 }}>
@@ -296,19 +297,34 @@ export default function AlgorithmsPage() {
         )}
       </div>
 
-      {/* Pro banner */}
-      {!isPro && (
+      {/* Main tab switcher: Library | Deploy */}
+      <div style={{ display:'flex', gap:4, marginBottom:20, background:'var(--surf2)', borderRadius:10, padding:4, width:'fit-content', border:'1px solid var(--bdr)' }}>
+        {(['library','deploy'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)}
+            style={{ height:34, padding:'0 18px', borderRadius:7, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:700, transition:'all 0.15s',
+              background: tab === t ? 'var(--surf)' : 'transparent',
+              color: tab === t ? 'var(--txt)' : 'var(--dim)',
+              boxShadow: tab === t ? '0 1px 4px rgba(0,0,0,0.3)' : 'none',
+            }}>
+            {t === 'library' ? '📚 Library' : '🚀 Deploy'}
+          </button>
+        ))}
+      </div>
+
+      {/* Pro banner — library tab only */}
+      {tab === 'library' && !isPro && (
         <div style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.08),rgba(255,92,26,0.05))', border:'1px solid rgba(255,184,0,0.25)', borderRadius:12, padding:'14px 18px', marginBottom:20, display:'flex', alignItems:'center', gap:12 }}>
           <span style={{ fontSize:24 }}>🔒</span>
           <div>
-            <div style={{ fontSize:13, fontWeight:700 }}>3 algorithms locked (Pro only)</div>
+            <div style={{ fontSize:13, fontWeight:700 }}>All algorithms locked (Pro only)</div>
             <div style={{ fontSize:12, color:'var(--dim)', marginTop:2 }}>
-              Intraday ORB, Sector Rotation, and Volatility Breakout require Pro. Upgrade to copy logic into Algo Builder and run backtests.
+              Upgrade to view logic, parameters, and copy into Algo Builder. Deploy tab also requires Pro.
             </div>
           </div>
         </div>
       )}
 
+      {tab === 'library' && <>
       {/* Stats bar */}
       <div className="g4" style={{ display:'grid', gap:10, marginBottom:20 }}>
         {[
@@ -499,6 +515,85 @@ export default function AlgorithmsPage() {
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:20 }}>
         ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · Algorithms are for educational purposes · Backtests do not guarantee future results · DYOR
       </div>
+      </>}
+
+      {/* ── Deploy tab ── */}
+      {tab === 'deploy' && (
+        <div style={{ position:'relative' }}>
+          {!isPro && (
+            <div style={{ position:'absolute', inset:0, backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', background:'rgba(7,13,26,0.65)', borderRadius:16, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, zIndex:10, border:'1px solid rgba(255,255,255,0.06)', minHeight:400 }}>
+              <div style={{ fontSize:32 }}>🔒</div>
+              <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.95)' }}>Pro Feature</div>
+              <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', maxWidth:280, lineHeight:1.6 }}>Download deployable Python packages for each algorithm. Run them locally with your broker API key. Pro only.</div>
+              <Link href="/dashboard/upgrade" style={{ marginTop:6, height:38, padding:'0 20px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:13, fontWeight:800, display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}>⚡ Upgrade to Pro</Link>
+            </div>
+          )}
+
+          {/* Ghost content behind blur */}
+          <div style={{ opacity: isPro ? 1 : 0.3, filter: isPro ? 'none' : 'blur(2px)', pointerEvents: isPro ? 'auto' : 'none' }}>
+            {/* How-to banner */}
+            <div style={{ ...card, marginBottom:20, background:'linear-gradient(135deg,rgba(0,212,160,0.06),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.2)' }}>
+              <div style={{ fontSize:14, fontWeight:800, marginBottom:10 }}>🚀 Deploy on Your Machine</div>
+              <div className="g3" style={{ display:'grid', gap:12 }}>
+                {[
+                  { n:'1', t:'Install dependencies', d:'pip install pandas numpy yfinance ta-lib' },
+                  { n:'2', t:'Add your broker key', d:'Set BROKER_API_KEY in .env — Zerodha/Upstox/Angel One' },
+                  { n:'3', t:'Run the algo', d:'python algo_name.py  —  signals print to console + log file' },
+                ].map(s => (
+                  <div key={s.n} style={{ display:'flex', gap:10 }}>
+                    <div style={{ width:24, height:24, borderRadius:'50%', background:'var(--grn)', color:'#000', fontSize:11, fontWeight:900, display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>{s.n}</div>
+                    <div>
+                      <div style={{ fontSize:12, fontWeight:700 }}>{s.t}</div>
+                      <div style={{ fontSize:11, color:'var(--dim)', fontFamily:'JetBrains Mono, monospace', marginTop:2 }}>{s.d}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Algo deploy cards */}
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              {ALGOS.map(a => {
+                const pkg = `# ${a.name} — ${a.timeframe}
+# pip install pandas numpy yfinance
+
+${a.logic}
+
+if __name__ == "__main__":
+    # Set your universe and broker key in .env
+    print("Running ${a.name}...")
+    run_backtest(universe="NIFTY200", from_date="2020-01-01")`;
+                return (
+                  <div key={a.id} style={{ ...card }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+                      <span style={{ fontSize:22 }}>{a.icon}</span>
+                      <div>
+                        <div style={{ fontSize:14, fontWeight:800 }}>{a.name}</div>
+                        <div style={{ fontSize:11, color:'var(--dim)' }}>{a.category} · {a.timeframe}</div>
+                      </div>
+                      <button
+                        onClick={() => { navigator.clipboard.writeText(pkg); setCodeCopied(a.id); setTimeout(() => setCodeCopied(null), 2000); }}
+                        style={{ marginLeft:'auto', height:32, padding:'0 14px', borderRadius:8, cursor:'pointer', fontFamily:'inherit', fontSize:12, fontWeight:700, background: codeCopied === a.id ? 'rgba(0,212,160,0.12)' : 'rgba(23,64,245,0.12)', border:`1px solid ${codeCopied === a.id ? 'rgba(0,212,160,0.3)' : 'rgba(23,64,245,0.25)'}`, color: codeCopied === a.id ? 'var(--grn)' : 'var(--bluL)' }}>
+                        {codeCopied === a.id ? '✓ Copied' : '📋 Copy Package'}
+                      </button>
+                    </div>
+                    <pre style={{ background:'#080f1e', borderRadius:10, padding:14, fontSize:11, fontFamily:'JetBrains Mono, monospace', lineHeight:1.7, color:'#a8d8a8', whiteSpace:'pre-wrap', wordBreak:'break-word', maxHeight:200, overflowY:'auto', border:'1px solid var(--bdr)', margin:0 }}>
+                      {pkg}
+                    </pre>
+                    <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:10 }}>
+                      {a.tags.map(t => <span key={t} style={{ fontSize:10, color:'var(--dim)', background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:20, padding:'2px 8px', fontWeight:600 }}>{t}</span>)}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div style={{ fontSize:11, color:'var(--dim2)', marginTop:20 }}>
+              ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · For educational use only · DYOR · Past performance ≠ future results
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 }

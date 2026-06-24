@@ -198,11 +198,21 @@ button:active:not(:disabled) { transform: scale(0.97); }
 /* ---- Phone (≤ 600px) ---- */
 @media (max-width: 600px) {
   /* Hide ML Class + Avg Price columns in portfolio table */
-  .mob-hide { display: none; }
+  .mob-hide { display: none !important; }
   /* Hide bell icon — less critical on phone */
   .dash-bell { display: none; }
   /* Tighten top nav gap */
   .dash-right { gap: 8px !important; }
+  /* Portfolio table: tighter cells */
+  .port-table td, .port-table th { padding: 8px 6px !important; font-size: 11px !important; }
+  .port-table .sym-cell { font-size: 12px !important; font-weight: 700 !important; }
+  .port-table .price-cell { font-size: 11px !important; }
+  /* Compact metric cards */
+  .port-metric { padding: 12px 14px !important; }
+  .port-metric .metric-val { font-size: 18px !important; }
+  /* Signals filter row: scroll horizontally */
+  .signals-filters { flex-wrap: nowrap !important; overflow-x: auto; padding-bottom: 4px; }
+  .signals-filters::-webkit-scrollbar { display: none; }
 }
 
 /* ---- Phone (≤ 480px) ---- */

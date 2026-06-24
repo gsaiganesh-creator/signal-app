@@ -271,7 +271,17 @@ function CloseTradeModal({ trade, token, onDone, onClose }: { trade: Trade; toke
 }
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
+const ProGate = () => (
+  <div style={{ position:'absolute', inset:0, backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', background:'rgba(7,13,26,0.65)', borderRadius:16, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, zIndex:10, border:'1px solid rgba(255,255,255,0.06)' }}>
+    <div style={{ fontSize:32 }}>🔒</div>
+    <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.95)' }}>Pro Feature</div>
+    <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', maxWidth:260, lineHeight:1.6 }}>Paper trade with virtual capital, track your strategies risk-free. Unlock with Pro.</div>
+    <Link href="/dashboard/upgrade" style={{ marginTop:6, height:38, padding:'0 20px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:13, fontWeight:800, display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}>⚡ Upgrade to Pro</Link>
+  </div>
+);
+
 export default function PaperTradingPage() {
+  const isPro = false;
   useEffect(() => { localStorage.setItem('signal_visited_paper', '1'); }, []);
 
   const { session, user } = usePortfolio();
@@ -373,7 +383,8 @@ export default function PaperTradingPage() {
   // Empty state — no strategies yet
   if (!loading && strategies.length === 0) {
     return (
-      <>
+      <div style={{ position:'relative' }}>
+        {!isPro && <ProGate />}
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
           <div>
             <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>Paper Trading</div>
@@ -391,12 +402,13 @@ export default function PaperTradingPage() {
           </button>
         </div>
         {showNew && <NewStrategyModal token={token} userId={user.id} onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
-      </>
+      </div>
     );
   }
 
   return (
-    <>
+    <div style={{ position:'relative' }}>
+      {!isPro && <ProGate />}
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
@@ -608,6 +620,6 @@ export default function PaperTradingPage() {
       {showNew     && <NewStrategyModal token={token} userId={user.id}  onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
       {showTrade   && st && <NewTradeModal strategy={st} token={token} userId={user.id} onDone={async () => { setShowTrade(false); await loadTrades(); }} onClose={() => setShowTrade(false)} />}
       {closingTrade && <CloseTradeModal trade={closingTrade} token={token} onDone={async () => { setClosing(null); await loadTrades(); }} onClose={() => setClosing(null)} />}
-    </>
+    </div>
   );
 }

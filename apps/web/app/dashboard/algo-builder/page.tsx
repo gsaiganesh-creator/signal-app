@@ -59,7 +59,18 @@ const BT = [
   { val:'−8.2%',  lbl:'Max Drawdown', c:'var(--red)' },
 ];
 
+const ProGate = ({ feature }: { feature: string }) => (
+  <div style={{ position:'absolute', inset:0, backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', background:'rgba(7,13,26,0.65)', borderRadius:16, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, zIndex:10, border:'1px solid rgba(255,255,255,0.06)' }}>
+    <div style={{ fontSize:32 }}>🔒</div>
+    <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.95)' }}>Pro Feature</div>
+    <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', maxWidth:260, lineHeight:1.6 }}>{feature}</div>
+    <a href="/dashboard/upgrade" style={{ marginTop:6, height:38, padding:'0 20px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:13, fontWeight:800, display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}>⚡ Upgrade to Pro</a>
+  </div>
+);
+
 export default function AlgoBuilderPage() {
+  const isPro = false;
+
   const [stratIdx, setStratIdx] = useState(0);
   const [universe, setUniverse] = useState<string[]>(['NIFTY 50']);
   const [checked,  setChecked ] = useState<string[]>(INDS.filter(i=>i.def).map(i=>i.name));
@@ -74,6 +85,8 @@ export default function AlgoBuilderPage() {
   const STEPS = ['Strategy Type','Indicators','Conditions','Backtest & Deploy'];
 
   return (
+    <div style={{ position:'relative' }}>
+    {!isPro && <ProGate feature="Build, customise and deploy trading algorithms. Upgrade to Pro to unlock the full Algo Builder." />}
     <>
       {/* Hero card — referral style */}
       <div style={{ background:'linear-gradient(135deg,rgba(139,92,246,0.08),rgba(23,64,245,0.04))', border:'1px solid rgba(139,92,246,0.2)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
@@ -282,5 +295,6 @@ export default function AlgoBuilderPage() {
         </div>
       </div>
     </>
+    </div>
   );
 }

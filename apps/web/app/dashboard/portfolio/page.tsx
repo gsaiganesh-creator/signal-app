@@ -1096,7 +1096,7 @@ export default function PortfolioPage() {
       {viewMode === 'all' && portfolios.length > 1 && (
         <div style={{ ...card, marginBottom:16 }}>
           <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>All Portfolios Summary</div>
-          <table style={{ width:'100%', borderCollapse:'collapse' }}>
+          <table className="port-table" style={{ width:'100%', borderCollapse:'collapse' }}>
             <thead>
               <tr>
                 {['Portfolio','Holdings','Invested'].map(h => (
@@ -1308,7 +1308,7 @@ export default function PortfolioPage() {
                     </>
                   ) : <span style={{ color:'var(--dim2)', fontSize:12 }}>—</span>}
                 </td>
-                <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
+                <td className="mob-hide" style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)', whiteSpace:'nowrap' }}>
                   {h.pl != null && h.avg_price >= 1 ? (
                     <>
                       <div style={{ fontSize:13, fontWeight:700, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{fmt(h.pl)}</div>
@@ -1352,7 +1352,7 @@ export default function PortfolioPage() {
                   <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, padding:'4px 10px 8px' }}>
                     Equity Holdings · {equities.length}
                   </div>
-                  <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                  <table className="port-table" style={{ width:'100%', borderCollapse:'collapse' }}>
                     <thead>{colHeaders}</thead>
                     <tbody>{equities.map(h => <HoldingRow key={h.id} h={h} />)}</tbody>
                   </table>
@@ -1363,7 +1363,7 @@ export default function PortfolioPage() {
                   <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, padding:'16px 10px 8px', marginTop: equities.length > 0 ? 8 : 4, borderTop: equities.length > 0 ? '1px solid var(--bdr)' : 'none' }}>
                     ETF / MF Holdings · {etfs.length}
                   </div>
-                  <table style={{ width:'100%', borderCollapse:'collapse' }}>
+                  <table className="port-table" style={{ width:'100%', borderCollapse:'collapse' }}>
                     <thead>{colHeaders}</thead>
                     <tbody>{etfs.map(h => <HoldingRow key={h.id} h={h} />)}</tbody>
                   </table>
