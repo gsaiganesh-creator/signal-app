@@ -508,6 +508,10 @@ export default function PortfolioPage() {
   const [selectedStock, setSelectedStock] = useState<Holding | null>(null);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  // 'all' = merged view across all portfolios; any portfolio id = individual view
+  const [viewMode, setViewMode] = useState<'all' | string>('all');
+  const [allViewHoldings, setAllViewHoldings] = useState<Holding[]>([]);
+  const [allLoading, setAllLoading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
   function toggleSort(col: typeof sortCol) {
@@ -629,6 +633,91 @@ export default function PortfolioPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [portfolios, session]);
 
+  // ── All-portfolios merged view ──────────────────────────────────────────────
+  function mergeBySymbol(raw: RawHolding[]): RawHolding[] {
+    const map = new Map<string, RawHolding>();
+    for (const h of raw) {
+      const key = `${h.symbol}::${h.exchange}`;
+      const ex  = map.get(key);
+      if (ex) {
+        const totalQty = ex.qty + h.qty;
+        map.set(key, { ...ex, qty: totalQty, avg_price: (ex.avg_price * ex.qty + h.avg_price * h.qty) / totalQty });
+      } else {
+        map.set(key, { ...h });
+      }
+    }
+    return Array.from(map.values());
+  }
+
+  async function fetchAndEnrichAll() {
+    if (!session || portfolios.length === 0) return;
+    setAllLoading(true);
+    try {
+      const ids = portfolios.map(p => p.id).join(',');
+      const res = await fetch(
+        `${SUPA_URL}/rest/v1/holdings?select=*&portfolio_id=in.(${ids})`,
+        { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` } }
+      );
+      if (!res.ok) { setAllLoading(false); return; }
+      const raw = (await res.json() as RawHolding[]).filter(h => h.exchange === 'NSE' || h.exchange === 'BSE');
+      const merged = mergeBySymbol(raw);
+      if (!merged.length) { setAllViewHoldings([]); setAllLoading(false); return; }
+
+      const yahooSyms = merged.map(h => h.symbol + (h.exchange === 'NSE' ? '.NS' : '.BO'));
+      let priceMap: Record<string, { price: number | null; change_pct: number | null }> = {};
+      try {
+        const pr = await fetch(`/api/prices?symbols=${yahooSyms.join(',')}`, { signal: AbortSignal.timeout(10000) });
+        if (pr.ok) priceMap = await pr.json();
+      } catch { /* ignore */ }
+
+      const enriched: Holding[] = merged.map((h, i) => {
+        const p = priceMap[yahooSyms[i]];
+        const rawPrice = p?.price ?? null;
+        const cur = (rawPrice != null && h.avg_price >= 1)
+          ? (rawPrice / h.avg_price > 50 || h.avg_price / rawPrice > 50 ? null : rawPrice)
+          : rawPrice;
+        const pl     = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : undefined;
+        const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : 0;
+        return { ...h, current_price: cur, change_pct: p?.change_pct ?? null,
+          signal: 'HOLD', rsi: null, pl, pl_pct, exchange: h.exchange as Exchange,
+          ml_class: 'Watch' as MlClass, is_etf: detectEtf(h.symbol) } as Holding;
+      });
+      setAllViewHoldings(enriched);
+      setAllLoading(false);
+
+      // Background ML pass
+      const BATCH = 10;
+      const ec = [...enriched];
+      for (let i = 0; i < merged.length; i += BATCH) {
+        await Promise.allSettled(merged.slice(i, i + BATCH).map(async (h, bi) => {
+          const idx = i + bi;
+          try {
+            const suffix = h.exchange === 'NSE' ? '.NS' : '.BO';
+            const ctrl = new AbortController();
+            const t = setTimeout(() => ctrl.abort(), 3000);
+            const r = await fetch(`/api/ml/signals/${h.symbol}${suffix}`, { signal: ctrl.signal } as RequestInit);
+            clearTimeout(t);
+            if (!r.ok) return;
+            const q = await r.json() as { signal?: string; rsi?: number | null; current_price?: number | null; change_pct?: number | null };
+            const rawMlP = q.current_price ?? ec[idx].current_price;
+            const cur = (rawMlP != null && h.avg_price >= 1)
+              ? (rawMlP / h.avg_price > 50 || h.avg_price / rawMlP > 50 ? null : rawMlP) : rawMlP;
+            const pl     = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : ec[idx].pl;
+            const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (ec[idx].pl_pct ?? 0);
+            const signal = q.signal ?? 'HOLD';
+            ec[idx] = { ...ec[idx], current_price: cur, change_pct: q.change_pct ?? ec[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
+          } catch { /* timeout — keep Yahoo price */ }
+        }));
+        setAllViewHoldings([...ec]);
+      }
+    } catch { setAllLoading(false); }
+  }
+
+  useEffect(() => {
+    if (viewMode === 'all') fetchAndEnrichAll();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode, portfolios.length, session?.access_token]);
+
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -715,7 +804,10 @@ export default function PortfolioPage() {
 
   const firstUploadRef = useRef<HTMLInputElement>(null);
 
-  const sortedHoldings = [...holdings].sort((a, b) => {
+  const displayedHoldings = viewMode === 'all' ? allViewHoldings : holdings;
+  const displayedLoading   = viewMode === 'all' ? allLoading : loading;
+
+  const sortedHoldings = [...displayedHoldings].sort((a, b) => {
     let av: number | string, bv: number | string;
     if (sortCol === 'symbol')        { av = a.symbol;            bv = b.symbol; }
     else if (sortCol === 'avg_price'){ av = a.avg_price;         bv = b.avg_price; }
@@ -726,8 +818,8 @@ export default function PortfolioPage() {
     return sortDir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
   });
 
-  const totalInvested = holdings.reduce((s, h) => s + (h.avg_price >= 1 ? h.avg_price * h.qty : 0), 0);
-  const totalCurrent  = holdings.reduce((s, h) => s + (h.avg_price >= 1 ? (h.current_price ?? h.avg_price) * h.qty : 0), 0);
+  const totalInvested = displayedHoldings.reduce((s, h) => s + (h.avg_price >= 1 ? h.avg_price * h.qty : 0), 0);
+  const totalCurrent  = displayedHoldings.reduce((s, h) => s + (h.avg_price >= 1 ? (h.current_price ?? h.avg_price) * h.qty : 0), 0);
   const totalPL       = totalCurrent - totalInvested;
   const totalPLPct    = totalInvested > 0 ? (totalPL / totalInvested) * 100 : 0;
   const fmt    = (n: number) => n >= 0 ? `+₹${n.toLocaleString('en-IN', { maximumFractionDigits:0 })}` : `-₹${Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits:0 })}`;
@@ -833,9 +925,11 @@ export default function PortfolioPage() {
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:24, flexWrap:'wrap', gap:16 }}>
         <div>
           <div style={{ fontSize:20, fontWeight:800, letterSpacing:-0.4 }}>My Portfolio</div>
-          <div style={{ fontSize:12, color:'var(--dim)', marginTop:3 }}>{activePortfolio?.name} · {holdings.length} holdings · click any row for details</div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginTop:3 }}>
+            {viewMode === 'all' ? `${portfolios.length} portfolios merged` : activePortfolio?.name} · {displayedHoldings.length} holdings · click any row for details
+          </div>
         </div>
-        {holdings.length > 0 && (
+        {displayedHoldings.length > 0 && (
           <div style={{ textAlign:'right' }}>
             <div style={{ fontSize:32, fontWeight:900, color: totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)', lineHeight:1, letterSpacing:-1 }}>{totalPLPct >= 0 ? '+' : ''}{totalPLPct.toFixed(1)}%</div>
             <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>return · {fmt(totalPL)}</div>
@@ -865,8 +959,14 @@ export default function PortfolioPage() {
 
       {/* Portfolio tabs + management */}
       <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
+        {/* All Portfolios tab — default */}
+        <button
+          onClick={() => { setViewMode('all'); setMenuId(null); }}
+          style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:13, fontWeight: viewMode === 'all' ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: viewMode === 'all' ? '1px solid var(--grn)' : '1px solid var(--bdr)', background: viewMode === 'all' ? 'rgba(0,212,160,0.10)' : 'transparent', color: viewMode === 'all' ? 'var(--grn)' : 'var(--dim)', whiteSpace:'nowrap' }}>
+          📊 All Portfolios
+        </button>
         {portfolios.map(p => {
-          const isActive = p.id === activeId;
+          const isActive = viewMode === p.id;
           const isRenaming = renamingId === p.id;
           return (
             <div key={p.id} style={{ position:'relative', display:'inline-flex', alignItems:'center', gap:0 }}>
@@ -882,7 +982,7 @@ export default function PortfolioPage() {
                 </>
               ) : (
                 <>
-                  <button onClick={() => { setActiveId(p.id); setMenuId(null); }}
+                  <button onClick={() => { setViewMode(p.id); setActiveId(p.id); setMenuId(null); }}
                     style={{ height:34, padding:'0 12px 0 16px', borderRadius: isActive ? '8px 0 0 8px' : '8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: isActive ? '1px solid var(--blu)' : '1px solid var(--bdr)', borderRight: isActive ? 'none' : undefined, background: isActive ? 'rgba(23,64,245,0.1)' : 'transparent', color: isActive ? 'var(--bluL)' : 'var(--dim)' }}>
                     📂 {p.name}
                   </button>
@@ -992,8 +1092,8 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {/* Cross-portfolio summary */}
-      {portfolios.length > 1 && (
+      {/* Cross-portfolio summary — only in 'all' mode, as a breakdown */}
+      {viewMode === 'all' && portfolios.length > 1 && (
         <div style={{ ...card, marginBottom:16 }}>
           <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>All Portfolios Summary</div>
           <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -1049,7 +1149,7 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {holdings.length > 0 && (
+      {displayedHoldings.length > 0 && (
         <>
           <div className="g3" style={{ display:'grid', gap:12, marginBottom:16 }}>
             {[
@@ -1078,7 +1178,7 @@ export default function PortfolioPage() {
             </div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
               {(Object.keys(BUCKET_META) as MlClass[]).map(key => {
-                const count = holdings.filter(h => (h.ml_class ?? classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0)) === key).length;
+                const count = displayedHoldings.filter(h => (h.ml_class ?? classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0)) === key).length;
                 if (count === 0) return null;
                 const meta = BUCKET_META[key];
                 const isActive = activeFilter === key;
@@ -1108,16 +1208,16 @@ export default function PortfolioPage() {
 
       <div style={card}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-          <div style={{ fontSize:14, fontWeight:700 }}>{activePortfolio?.name} · Holdings · ML Classified</div>
-          {holdings.length > 0 && <span style={{ fontSize:12, color:'var(--dim)' }}>{holdings.length} stocks</span>}
+          <div style={{ fontSize:14, fontWeight:700 }}>{viewMode === 'all' ? 'All Portfolios' : activePortfolio?.name} · Holdings · ML Classified</div>
+          {displayedHoldings.length > 0 && <span style={{ fontSize:12, color:'var(--dim)' }}>{displayedHoldings.length} stocks</span>}
         </div>
 
-        {loading ? (
+        {displayedLoading ? (
           <div style={{ textAlign:'center', padding:'40px 0', color:'var(--dim)', fontSize:14 }}>⏳ Fetching prices…</div>
-        ) : holdings.length === 0 ? (
+        ) : displayedHoldings.length === 0 ? (
           <div style={{ textAlign:'center', padding:'40px 0' }}>
             <div style={{ fontSize:40, marginBottom:16 }}>📂</div>
-            <div style={{ fontSize:17, fontWeight:800, marginBottom:6 }}>No holdings in {activePortfolio?.name}</div>
+            <div style={{ fontSize:17, fontWeight:800, marginBottom:6 }}>No holdings in {viewMode === 'all' ? 'any portfolio' : (activePortfolio?.name ?? '')}</div>
             <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Upload your broker export — CSV, Excel, or MStock DP PDF.</div>
             <button onClick={() => fileRef.current?.click()} disabled={syncing}
               style={{ height:48, padding:'0 32px', borderRadius:12, background:'var(--blu)', border:'none', color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:16, display:'inline-flex', alignItems:'center', gap:10 }}>
