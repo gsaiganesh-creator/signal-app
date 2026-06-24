@@ -4,6 +4,9 @@ import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
 import { useState, useEffect } from 'react';
 
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
 function greet() {
   const h = new Date().getHours();
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
@@ -188,10 +191,14 @@ function WelcomeEmpty({ name, email }: { name: string; email?: string }) {
 }
 
 export default function DashboardPage() {
-  const { user, portfolios, holdings, activePortfolio, loading } = usePortfolio();
-  const [prices, setPrices] = useState<Record<string, PriceData>>({});
+  const { user, session, portfolios, holdings, activePortfolio, loading } = usePortfolio();
+  const [prices, setPrices]           = useState<Record<string, PriceData>>({});
   const [pricesLoading, setPricesLoading] = useState(false);
+  const [usHoldings, setUsHoldings]   = useState<{ symbol:string; qty:number; avg_price:number }[]>([]);
+  const [usPrices, setUsPrices]       = useState<Record<string, PriceData>>({});
+  const [usdInr, setUsdInr]           = useState<number | null>(null);
 
+  // India prices
   useEffect(() => {
     if (!holdings.length) { setPrices({}); return; }
     const syms = holdings.map(h => `${h.symbol}.NS`).join(',');
@@ -206,6 +213,31 @@ export default function DashboardPage() {
       .catch(() => {})
       .finally(() => setPricesLoading(false));
   }, [holdings]);
+
+  // US holdings — fetch all NYSE/NASDAQ across all portfolios
+  useEffect(() => {
+    if (!session || !portfolios.length) return;
+    const ids = portfolios.map(p => p.id).join(',');
+    fetch(`${SUPA_URL}/rest/v1/holdings?select=symbol,qty,avg_price&portfolio_id=in.(${ids})&exchange=in.(NYSE,NASDAQ)`, {
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` }
+    })
+      .then(r => r.json())
+      .then(rows => setUsHoldings(Array.isArray(rows) ? rows : []))
+      .catch(() => {});
+  }, [session, portfolios]);
+
+  // US prices + USD/INR
+  useEffect(() => {
+    if (!usHoldings.length) { setUsPrices({}); return; }
+    const syms = [...new Set(usHoldings.map(h => h.symbol)), 'USDINR=X'];
+    fetch(`/api/prices?symbols=${encodeURIComponent(syms.join(','))}`)
+      .then(r => r.json())
+      .then((data: Record<string, PriceData>) => {
+        setUsPrices(data);
+        if (data['USDINR=X']?.price) setUsdInr(data['USDINR=X'].price);
+      })
+      .catch(() => {});
+  }, [usHoldings]);
 
   const name = user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Trader';
 
@@ -241,6 +273,13 @@ export default function DashboardPage() {
   const totalPLPct = invested > 0 ? (totalPL / invested) * 100 : 0;
   const hasPrices = Object.keys(prices).some(k => prices[k].price != null);
   const fmtL = (n: number) => n >= 1e7 ? `₹${(n/1e7).toFixed(2)}Cr` : n >= 1e5 ? `₹${(n/1e5).toFixed(2)}L` : `₹${n.toLocaleString('en-IN', { maximumFractionDigits:0 })}`;
+
+  // US portfolio totals
+  const usInvestedUSD  = usHoldings.reduce((s, h) => s + (h.avg_price > 0.01 ? h.avg_price * h.qty : 0), 0);
+  const usCurrentUSD   = usHoldings.reduce((s, h) => { const p = usPrices[h.symbol]?.price; return p != null ? s + p * h.qty : s; }, 0);
+  const usInrEquiv     = usdInr ? (usCurrentUSD > 0 ? usCurrentUSD : usInvestedUSD) * usdInr : usInvestedUSD > 0 ? usInvestedUSD * 84 : 0;
+  const combinedINR    = invested + usInrEquiv;
+  const hasUSHoldings  = usHoldings.length > 0;
 
   const capDist = { large:0, mid:0, small:0, etf:0 };
   for (const h of validH) capDist[capCat(h.symbol)] += h.avg_price * h.qty;
@@ -290,6 +329,47 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Global Net Worth — shown whenever US holdings exist */}
+      {hasUSHoldings && (
+        <div style={{ ...card, marginBottom:20, background:'linear-gradient(135deg,rgba(23,64,245,0.07),rgba(0,212,160,0.03))', border:'1px solid rgba(79,111,250,0.2)' }}>
+          <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Global Net Worth</div>
+          <div className="g3" style={{ display:'grid', gap:12 }}>
+            <div>
+              <div style={{ fontSize:10, color:'var(--dim)', marginBottom:3 }}>🇮🇳 India Portfolio</div>
+              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>{fmtL(invested)}</div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{holdings.length} holdings</div>
+            </div>
+            <div>
+              <div style={{ fontSize:10, color:'var(--dim)', marginBottom:3 }}>🇺🇸 US Portfolio</div>
+              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>
+                ${usInvestedUSD > 0 ? usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0}) : '0'}
+              </div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
+                {usdInr ? `≈ ${fmtL(usInrEquiv)}` : `${usHoldings.length} holdings`}
+              </div>
+            </div>
+            <div>
+              <div style={{ fontSize:10, color:'var(--dim)', marginBottom:3 }}>💼 Combined (INR)</div>
+              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--grn)' }}>{fmtL(combinedINR)}</div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
+                {usdInr ? `USD/INR ₹${usdInr.toFixed(2)}` : 'live rates loading…'}
+              </div>
+            </div>
+          </div>
+          <div style={{ display:'flex', gap:8, marginTop:14, flexWrap:'wrap' }}>
+            <Link href="/dashboard/us-portfolio" style={{ fontSize:11, fontWeight:600, color:'var(--bluL)', padding:'4px 10px', borderRadius:6, background:'rgba(79,111,250,0.1)', border:'1px solid rgba(79,111,250,0.2)' }}>
+              🇺🇸 US Portfolio →
+            </Link>
+            <Link href="/dashboard/forex" style={{ fontSize:11, fontWeight:600, color:'var(--dim)', padding:'4px 10px', borderRadius:6, background:'var(--surf2)', border:'1px solid var(--bdr)' }}>
+              💱 Forex
+            </Link>
+            <Link href="/dashboard/commodities" style={{ fontSize:11, fontWeight:600, color:'var(--dim)', padding:'4px 10px', borderRadius:6, background:'var(--surf2)', border:'1px solid var(--bdr)' }}>
+              🥇 Commodities
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Analytics: heatmap + cap donut */}
       <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>

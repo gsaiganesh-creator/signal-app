@@ -18,9 +18,11 @@ const SIDEBAR: NavSection[] = [
     { href:'/dashboard/paper-trading',    icon:'🧪', label:'Paper Trading'   },
     { href:'/dashboard/backtest',         icon:'📋', label:'Backtest'        },
   ]},
-  { section:'Insights', links:[
+  { section:'Markets', links:[
     { href:'/dashboard/sectors',          icon:'🔥', label:'Sector Heatmap'  },
     { href:'/dashboard/fii-dii',          icon:'🌍', label:'FII / DII Flow'  },
+    { href:'/dashboard/forex',            icon:'💱', label:'Forex'           },
+    { href:'/dashboard/commodities',      icon:'🥇', label:'Commodities'     },
     { href:'/dashboard/feed',             icon:'𝕏',  label:'Twitter Feed'    },
     { href:'/dashboard/earnings',         icon:'📅', label:'Earnings'        },
   ]},
