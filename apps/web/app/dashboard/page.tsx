@@ -9,14 +9,58 @@ import { TreemapHeatmap } from '@/components/TreemapHeatmap';
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// NSE ticker alias → canonical symbol (handles user typos + renamed tickers)
+// Confirmed NSE ticker renames / common alias → canonical NSE symbol
 const SYM_ALIAS: Record<string, string> = {
-  RECLIMITED: 'RECLTD', RECLMITED: 'RECLTD', RECLIMTED: 'RECLTD',
-  BAJAJFINANCE: 'BAJFINANCE',
-  MOTHERSUMI: 'MOTHERSON',
-  INFRATEL: 'BHARTIARTL',
+  // REC Ltd
+  RECLIMITED:'RECLTD', RECLMITED:'RECLTD', RECLIMTED:'RECLTD', RECLTD:'RECLTD',
+  // Bajaj Finance
+  BAJAJFINANCE:'BAJFINANCE', BAJAJFIN:'BAJFINANCE',
+  // Samvardhana Motherson
+  MOTHERSUMI:'MOTHERSON',
+  // Bharti Airtel (tower demerger)
+  INFRATEL:'BHARTIARTL',
+  // Wipro
+  WIPROIT:'WIPRO',
+  // HDFC twins post-merger
+  HDFC:'HDFCBANK',
+  // Adani aliases
+  ADANITRANS:'ADANITRANS',
+  // Tata group
+  TATAMOTORS_DVR:'TATAMTRDVR',
+  // MF/ETF common aliases
+  NIFTYBEES:'NIFTYBEES', JUNIORBEES:'JUNIORBEES',
 };
-function normSym(s: string): string { const u = s.toUpperCase().trim(); return SYM_ALIAS[u] ?? u; }
+
+// Suffixes that appear in user-entered symbols but aren't part of NSE codes
+const STRIP_SUFFIXES = [
+  'LIMITED', 'LIMITE', 'LIMTED', 'LMITED', 'LIMIED',
+  'LTD', 'LT', 'CORP', 'CORPORATION', 'INC',
+  'INDUSTRIES', 'INDUSTRY', 'INDUSTRI',
+  'ENTERPRISES', 'ENTERPRISE',
+  'EQ', '-EQ', '-SM', '-BE', '-BL',
+  'NS', '.NS', '.BO',
+];
+
+function normSym(raw: string): string {
+  // 1. uppercase, remove spaces, dots outside suffix context, hyphens
+  let s = raw.toUpperCase().trim().replace(/\s+/g, '').replace(/\.NS$|\.BO$/i, '');
+  // 2. explicit alias check first (catches known renames / gross typos)
+  if (SYM_ALIAS[s]) return SYM_ALIAS[s];
+  // 3. strip trailing corporate suffixes iteratively
+  let changed = true;
+  while (changed) {
+    changed = false;
+    for (const sfx of STRIP_SUFFIXES) {
+      if (s.endsWith(sfx) && s.length > sfx.length + 2) {
+        s = s.slice(0, s.length - sfx.length).replace(/[-_\s]+$/, '');
+        changed = true;
+        break; // re-run loop with shorter string
+      }
+    }
+  }
+  // 4. alias check again after stripping (e.g. "RECLIMITED" → "REC" won't happen — min length guard)
+  return SYM_ALIAS[s] ?? s;
+}
 
 function greet() {
   const h = new Date().getHours();
