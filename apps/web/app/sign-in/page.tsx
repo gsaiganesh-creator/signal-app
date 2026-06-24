@@ -76,7 +76,7 @@ export default function SignInPage() {
   const isOk    = msg.startsWith('✅');
 
   return (
-    <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh', display:'grid', gridTemplateColumns:'clamp(0px,45vw,560px) 1fr' }}>
+    <div className="sign-in-outer" style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh', display:'grid', gridTemplateColumns:'clamp(0px,45vw,560px) 1fr' }}>
 
       {/* ── Left panel — hidden on mobile via width:0 when viewport <700px ── */}
       <div style={{ background:'linear-gradient(145deg,#0A1525 0%,#0D1E3A 50%,#0A1525 100%)', borderRight:'1px solid var(--bdr)', padding:48, display:'flex', flexDirection:'column', justifyContent:'space-between', position:'relative', overflow:'hidden', minWidth:0 }}

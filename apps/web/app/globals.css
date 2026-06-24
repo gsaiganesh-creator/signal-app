@@ -122,10 +122,11 @@ button { font-family: inherit; }
 }
 
 /* =====================================================
-   SIGN-IN PAGE — mobile: hide left marketing panel
+   SIGN-IN PAGE — mobile: single column, full width form
    ===================================================== */
 @media (max-width: 700px) {
-  .sign-in-left { display: none !important; }
+  .sign-in-outer { grid-template-columns: 1fr !important; }
+  .sign-in-left  { display: none !important; }
 }
 
 /* =====================================================

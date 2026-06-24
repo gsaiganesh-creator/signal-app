@@ -81,38 +81,44 @@ export default function ReferPage() {
         ))}
       </div>
 
-      {/* Discount ladder */}
-      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:24, marginBottom:24 }}>
-        <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>Discount Ladder</div>
-        <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Each referral who buys a paid plan unlocks the next tier. Discounts are cumulative and non-expiring.</div>
-
-        <div style={{ display:'flex', alignItems:'flex-end', gap:0, position:'relative' }}>
-          <div style={{ position:'absolute', bottom:20, left:0, right:0, height:2, background:'var(--bdr)', zIndex:0 }}/>
+      {/* Discount ladder — mobile-friendly stepper */}
+      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:20, marginBottom:24 }}>
+        <div style={{ fontSize:15, fontWeight:700, marginBottom:4 }}>Discount Ladder</div>
+        <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>Each paid referral unlocks the next tier. Non-expiring.</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
           {TIERS.map((t, i) => {
             const achieved = i <= 2;
             const current  = i === 2;
-            const barBg = achieved ? (current ? 'var(--grn)' : `rgba(0,212,160,${0.3 + i*0.1})`) : `rgba(${i===3?'255,184,0':i===4?'255,92,26':'139,92,246'},0.1)`;
-            const dotBg = achieved ? (current ? 'var(--ylw)' : 'var(--grn)') : 'var(--bdr)';
+            const upcoming = i === 3;
+            const bg = current ? 'rgba(0,212,160,0.1)' : achieved ? 'transparent' : upcoming ? 'rgba(255,184,0,0.05)' : 'transparent';
+            const border = current ? '1px solid rgba(0,212,160,0.3)' : '1px solid transparent';
+            const discColor = current ? 'var(--grn)' : achieved ? 'var(--grn)' : t.color;
             return (
-              <div key={t.refs} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', position:'relative', zIndex:1 }}>
-                <div style={{ borderRadius:'8px 8px 0 0', width:52, height:t.height, background:barBg, border: !achieved ? `1px dashed ${['rgba(255,184,0,0.4)','rgba(255,92,26,0.3)','rgba(139,92,246,0.4)'][i-3] ?? 'transparent'}` : 'none', position:'relative' }}>
-                  {i === 5 && <div style={{ position:'absolute', top:8, left:'50%', transform:'translateX(-50%)', fontSize:10, fontWeight:700, color:'var(--pur)', whiteSpace:'nowrap' }}>MAX</div>}
-                  <div style={{ width:16, height:16, borderRadius:'50%', background:dotBg, border:'2px solid var(--bg)', position:'absolute', bottom:-8, left:'50%', transform:'translateX(-50%)', zIndex:2, boxShadow: current ? '0 0 0 4px rgba(255,184,0,0.2)' : 'none' }}/>
+              <div key={t.refs} style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 14px', borderRadius:10, background:bg, border, marginBottom:4 }}>
+                {/* Step circle */}
+                <div style={{ width:36, height:36, borderRadius:'50%', flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:900,
+                  background: current ? 'var(--ylw)' : achieved ? 'var(--grn)' : 'var(--surf2)',
+                  color: (current || achieved) ? '#000' : 'var(--dim)',
+                  border: upcoming ? '1px dashed var(--ylw)' : 'none' }}>
+                  {achieved && !current ? '✓' : t.refs}
                 </div>
-                <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginTop:20 }}>{t.refs} {t.refs===1?'ref':'refs'}</div>
-                <div style={{ fontSize:14, fontWeight:900, color:t.color, marginTop:3 }}>{t.disc}%</div>
-                <div style={{ fontSize:10, color: current ? 'var(--ylw)' : i===5 ? 'var(--pur)' : 'var(--dim2)', marginTop:2, fontWeight: current||i===5 ? 700 : 400 }}>{t.label}</div>
+                {/* Info */}
+                <div style={{ flex:1 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:'var(--txt)' }}>{t.refs} {t.refs===1?'referral':'referrals'}</div>
+                  <div style={{ fontSize:11, color: current ? 'var(--ylw)' : 'var(--dim)', fontWeight: current ? 700 : 400 }}>{t.label}</div>
+                </div>
+                {/* Discount */}
+                <div style={{ fontSize:20, fontWeight:900, color:discColor }}>{t.disc}%</div>
               </div>
             );
           })}
         </div>
-
-        <div style={{ marginTop:28 }}>
+        <div style={{ marginTop:16, padding:'14px 16px', background:'rgba(255,184,0,0.06)', borderRadius:10, border:'1px solid rgba(255,184,0,0.2)' }}>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:8 }}>
             <span style={{ fontWeight:700 }}>Progress to next tier</span>
-            <span style={{ fontWeight:700, color:'var(--ylw)' }}>2 / 3 referrals → 20% off</span>
+            <span style={{ fontWeight:700, color:'var(--ylw)' }}>2 / 3 → 20% off</span>
           </div>
-          <div style={{ height:8, background:'rgba(255,255,255,0.07)', borderRadius:4, overflow:'hidden' }}>
+          <div style={{ height:7, background:'rgba(255,255,255,0.07)', borderRadius:4, overflow:'hidden' }}>
             <div style={{ height:'100%', borderRadius:4, width:'66.6%', background:'linear-gradient(90deg,var(--grn),#00A87D)' }}/>
           </div>
           <div style={{ fontSize:12, color:'var(--dim)', marginTop:8 }}>1 more paid referral unlocks 20% off your annual plan</div>
@@ -157,8 +163,8 @@ export default function ReferPage() {
           <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
             <thead>
               <tr>
-                {['Friend','Joined','Plan bought','Status','Discount'].map(h => (
-                  <th key={h} style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', padding:'9px 14px', textAlign:'left', borderBottom:'1px solid var(--bdr)', background:'var(--surf2)', textTransform:'uppercase' as const, letterSpacing:0.4 }}>{h}</th>
+                {['Friend','Plan','Status','Disc'].map((h,i) => (
+                  <th key={h} className={i===1?'mob-hide':''} style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', padding:'9px 14px', textAlign:'left', borderBottom:'1px solid var(--bdr)', background:'var(--surf2)', textTransform:'uppercase' as const, letterSpacing:0.4 }}>{h}</th>
                 ))}
               </tr>
             </thead>
@@ -166,13 +172,12 @@ export default function ReferPage() {
               {REFERRALS.map(r => (
                 <tr key={r.email}>
                   <td style={{ padding:'11px 14px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                    <div style={{ fontWeight:700 }}>{r.name}</div>
-                    <div style={{ fontSize:11, color:'var(--dim)' }}>{r.email}</div>
+                    <div style={{ fontWeight:700, fontSize:13 }}>{r.name}</div>
+                    <div style={{ fontSize:11, color:'var(--dim)' }}>{r.joined}</div>
                   </td>
-                  <td style={{ padding:'11px 14px', borderBottom:'1px solid rgba(28,46,74,0.5)', fontSize:12, color:'var(--dim)' }}>{r.joined}</td>
-                  <td style={{ padding:'11px 14px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}><span style={{ fontSize:12, fontWeight:700, color:r.planColor }}>{r.plan}</span></td>
+                  <td className="mob-hide" style={{ padding:'11px 14px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}><span style={{ fontSize:12, fontWeight:700, color:r.planColor }}>{r.plan}</span></td>
                   <td style={{ padding:'11px 14px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}><span style={{ fontSize:10.5, fontWeight:700, padding:'3px 9px', borderRadius:6, background:r.statusBg, color:r.statusColor, border:`1px solid ${r.statusColor}40`, whiteSpace:'nowrap' }}>{r.status}</span></td>
-                  <td style={{ padding:'11px 14px', borderBottom:'1px solid rgba(28,46,74,0.5)', fontWeight:800, color: r.disc.startsWith('+') ? 'var(--grn)' : 'var(--dim)' }}>{r.disc}</td>
+                  <td style={{ padding:'11px 14px', borderBottom:'1px solid rgba(28,46,74,0.5)', fontWeight:800, fontSize:13, color: r.disc.startsWith('+') ? 'var(--grn)' : 'var(--dim)' }}>{r.disc}</td>
                 </tr>
               ))}
             </tbody>
