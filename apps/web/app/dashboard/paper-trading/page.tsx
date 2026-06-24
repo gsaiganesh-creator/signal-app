@@ -1,203 +1,613 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { usePortfolio } from '@/lib/portfolio-context';
 
-const LOG_1 = [
-  { date:'Jun 19 · 09:31', sym:'RELIANCE',  sig:'BUY',  sigC:'var(--grn)', entry:'₹2,880', exit:'—',      pl:'Running',  plC:'var(--ylw)', status:'OPEN',  sC:'var(--ylw)', sBg:'rgba(255,184,0,0.1)' },
-  { date:'Jun 18 · 14:22', sym:'INFY',      sig:'SELL', sigC:'var(--red)', entry:'₹1,450', exit:'₹1,498', pl:'+₹2,340', plC:'var(--grn)', status:'✅ WIN', sC:'var(--grn)', sBg:'rgba(0,212,160,0.1)' },
-  { date:'Jun 17 · 10:15', sym:'SBIN',      sig:'BUY',  sigC:'var(--grn)', entry:'₹808',   exit:'₹838',   pl:'+₹1,800', plC:'var(--grn)', status:'✅ WIN', sC:'var(--grn)', sBg:'rgba(0,212,160,0.1)' },
-  { date:'Jun 17 · 09:45', sym:'WIPRO',     sig:'BUY',  sigC:'var(--grn)', entry:'₹492',   exit:'₹482',   pl:'−₹600',   plC:'var(--red)', status:'⛔ SL',  sC:'var(--red)', sBg:'rgba(255,59,92,0.1)' },
-  { date:'Jun 16 · 11:30', sym:'TCS',       sig:'BUY',  sigC:'var(--grn)', entry:'₹3,820', exit:'₹3,945', pl:'+₹3,750', plC:'var(--grn)', status:'✅ WIN', sC:'var(--grn)', sBg:'rgba(0,212,160,0.1)' },
-  { date:'Jun 13 · 09:35', sym:'HDFCBANK',  sig:'BUY',  sigC:'var(--grn)', entry:'₹1,610', exit:'₹1,572', pl:'−₹2,280', plC:'var(--red)', status:'⛔ SL',  sC:'var(--red)', sBg:'rgba(255,59,92,0.1)' },
-];
+const SUPA  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const ANON  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const LOG_2 = [
-  { date:'Jun 19 · 09:55', sym:'BAJFINANCE', sig:'BUY', sigC:'var(--grn)', entry:'₹8,200', exit:'—',      pl:'Running',  plC:'var(--ylw)', status:'OPEN',  sC:'var(--ylw)', sBg:'rgba(255,184,0,0.1)' },
-  { date:'Jun 18 · 10:10', sym:'TATAMOTORS', sig:'BUY', sigC:'var(--grn)', entry:'₹945',   exit:'₹968',   pl:'+₹1,380', plC:'var(--grn)', status:'✅ WIN', sC:'var(--grn)', sBg:'rgba(0,212,160,0.1)' },
-  { date:'Jun 18 · 09:42', sym:'RELIANCE',   sig:'BUY', sigC:'var(--grn)', entry:'₹2,865', exit:'₹2,845', pl:'−₹1,200', plC:'var(--red)', status:'⛔ SL',  sC:'var(--red)', sBg:'rgba(255,59,92,0.1)' },
-];
+// ─── Types ────────────────────────────────────────────────────────────────────
+interface Strategy {
+  id: string; name: string; type: string;
+  capital: number; rsi_low: number; rsi_high: number;
+  sl_pct: number; target_pct: number;
+  started_at: string; trial_days: number; active: boolean;
+}
 
-const STRATS = [
-  { name:'RSI + EMA Momentum',  sub:'+8.4% · Day 6/7 · 71% win', subC:'var(--grn)', perf:['₹1,08,420','var(--grn)','+8.4%','var(--grn)','71%','var(--grn)','Day 6/7'], log:LOG_1,  curve:"M0,80 L60,78 L100,82 L140,70 L180,65 L220,62 L260,58 L300,52 L340,48 L380,45 L420,42 L460,38 L500,36 L560,32 L600,28", endY:28 },
-  { name:'Momentum Breakout',   sub:'+2.1% · Day 2/7 · 60% win', subC:'var(--dim)',  perf:['₹1,02,100','var(--grn)','+2.1%','var(--grn)','60%','var(--grn)','Day 2/7'], log:LOG_2,  curve:"M0,80 L80,80 L140,82 L200,76 L280,72 L360,70 L440,66 L520,62 L600,58",              endY:58 },
-];
+interface Trade {
+  id: string; strategy_id: string;
+  symbol: string; signal: string;
+  entry_price: number; qty: number; entry_at: string;
+  exit_price: number | null; exit_at: string | null;
+  pl: number | null; status: string;
+}
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function authHeader(token: string) {
+  return { apikey: ANON, Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
+}
+
+async function getPrice(sym: string): Promise<number | null> {
+  try {
+    const r = await fetch(`/api/prices?symbol=${encodeURIComponent(sym.includes('.') ? sym : sym + '.NS')}`);
+    const d = await r.json() as { price?: number };
+    return d.price ?? null;
+  } catch { return null; }
+}
+
+function daysSince(iso: string) {
+  return Math.floor((Date.now() - new Date(iso).getTime()) / 86_400_000);
+}
+
+function fmtINR(n: number) {
+  return '₹' + Math.abs(n).toLocaleString('en-IN', { maximumFractionDigits: 0 });
+}
+
+function equityCurve(trades: Trade[], capital: number): { path: string; endY: number; lastPL: number } {
+  const closed = [...trades]
+    .filter(t => t.pl != null && t.exit_at)
+    .sort((a, b) => new Date(a.exit_at!).getTime() - new Date(b.exit_at!).getTime());
+
+  const W = 600; const H = 90; const BASE = 80;
+  let cum = 0;
+  const points: { x: number; y: number }[] = [{ x: 0, y: BASE }];
+
+  closed.forEach((t, i) => {
+    cum += (t.pl ?? 0);
+    const pct = (cum / capital) * 100;
+    const x   = Math.round(((i + 1) / Math.max(closed.length, 1)) * W);
+    const y   = Math.max(5, Math.min(H - 5, BASE - pct * 2));
+    points.push({ x, y });
+  });
+
+  if (points.length === 1) points.push({ x: W, y: BASE });
+  else points[points.length - 1].x = W;
+
+  const path = points.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ');
+  return { path, endY: points[points.length - 1].y, lastPL: cum };
+}
+
+// ─── Modals ───────────────────────────────────────────────────────────────────
+const INP: React.CSSProperties = {
+  width:'100%', height:40, borderRadius:9, background:'var(--surf2)',
+  border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13,
+  padding:'0 12px', fontFamily:'inherit', outline:'none', boxSizing:'border-box',
+};
+
+function NewStrategyModal({ token, userId, onDone, onClose }: { token: string; userId: string; onDone(): void; onClose(): void }) {
+  const [name, setName] = useState('');
+  const [capital, setCap] = useState('100000');
+  const [sl, setSl] = useState('2.5');
+  const [tgt, setTgt] = useState('6.0');
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function create() {
+    if (!name.trim()) { setErr('Enter a strategy name'); return; }
+    setBusy(true); setErr('');
+    const r = await fetch(`${SUPA}/rest/v1/paper_strategies`, {
+      method: 'POST',
+      headers: { ...authHeader(token), Prefer: 'return=minimal' },
+      body: JSON.stringify({ name: name.trim(), user_id: userId, capital: +capital, sl_pct: +sl, target_pct: +tgt }),
+    });
+    setBusy(false);
+    if (r.ok) onDone();
+    else setErr('Failed to create. Check Supabase connection.');
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.6)' }}>
+      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:28, width:'min(420px,90vw)' }}>
+        <div style={{ fontSize:16, fontWeight:800, marginBottom:20 }}>New Paper Strategy</div>
+        {[
+          { lbl:'Strategy name', val:name, set:(v: string) => setName(v), type:'text', ph:'e.g. RSI Momentum' },
+          { lbl:'Virtual capital (₹)', val:capital, set:(v: string) => setCap(v), type:'number', ph:'100000' },
+          { lbl:'Stop-loss %', val:sl, set:(v: string) => setSl(v), type:'number', ph:'2.5' },
+          { lbl:'Target %', val:tgt, set:(v: string) => setTgt(v), type:'number', ph:'6.0' },
+        ].map(f => (
+          <div key={f.lbl} style={{ marginBottom:14 }}>
+            <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:5 }}>{f.lbl}</label>
+            <input style={INP} type={f.type} value={f.val} placeholder={f.ph}
+              onChange={e => f.set(e.target.value)} />
+          </div>
+        ))}
+        {err && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{err}</div>}
+        <div style={{ display:'flex', gap:10, marginTop:4 }}>
+          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+          <button onClick={create} disabled={busy} style={{ flex:2, height:40, borderRadius:9, background:'var(--grn)', border:'none', color:'#000', fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
+            {busy ? 'Creating…' : 'Create Strategy'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function NewTradeModal({ strategy, token, userId, onDone, onClose }: { strategy: Strategy; token: string; userId: string; onDone(): void; onClose(): void }) {
+  const [sym, setSym] = useState('');
+  const [signal, setSig] = useState<'BUY'|'SELL'>('BUY');
+  const [qty, setQty] = useState('10');
+  const [price, setPrice] = useState('');
+  const [fetching, setFetching] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function fetchPrice() {
+    if (!sym.trim()) return;
+    setFetching(true);
+    const p = await getPrice(sym.trim().toUpperCase());
+    if (p) setPrice(p.toFixed(2));
+    else setErr('Could not fetch price — enter manually');
+    setFetching(false);
+  }
+
+  async function submit() {
+    if (!sym.trim() || !price || !qty) { setErr('Fill all fields'); return; }
+    setBusy(true); setErr('');
+    const r = await fetch(`${SUPA}/rest/v1/paper_trades`, {
+      method: 'POST',
+      headers: { ...authHeader(token), Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        strategy_id: strategy.id, user_id: userId,
+        symbol: sym.trim().toUpperCase().replace('.NS',''),
+        signal, entry_price: +price, qty: +qty, status: 'OPEN',
+      }),
+    });
+    setBusy(false);
+    if (r.ok) onDone();
+    else setErr('Failed to add trade.');
+  }
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.6)' }}>
+      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:28, width:'min(400px,90vw)' }}>
+        <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>Add Paper Trade</div>
+        <div style={{ fontSize:12, color:'var(--dim)', marginBottom:20 }}>{strategy.name} · Virtual only — no real orders placed</div>
+
+        <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+          {(['BUY','SELL'] as const).map(s => (
+            <button key={s} onClick={() => setSig(s)}
+              style={{ flex:1, height:38, borderRadius:9, border:`1px solid ${signal===s ? (s==='BUY'?'var(--grn)':'var(--red)') : 'var(--bdr)'}`, background: signal===s ? (s==='BUY'?'rgba(0,212,160,0.1)':'rgba(255,59,92,0.1)') : 'transparent', color: signal===s ? (s==='BUY'?'var(--grn)':'var(--red)') : 'var(--dim)', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>{s}</button>
+          ))}
+        </div>
+
+        <div style={{ marginBottom:14 }}>
+          <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:5 }}>NSE Symbol</label>
+          <div style={{ display:'flex', gap:8 }}>
+            <input style={{ ...INP, flex:1 }} value={sym} placeholder="e.g. RELIANCE" onChange={e => setSym(e.target.value)} onKeyDown={e => e.key==='Enter' && fetchPrice()}/>
+            <button onClick={fetchPrice} disabled={fetching} style={{ height:40, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
+              {fetching ? '…' : 'Fetch'}
+            </button>
+          </div>
+        </div>
+
+        {[
+          { lbl:'Entry price (₹)', val:price, set:setPrice, ph:'Auto-fetched or enter manually' },
+          { lbl:'Quantity (shares)', val:qty, set:setQty, ph:'10' },
+        ].map(f => (
+          <div key={f.lbl} style={{ marginBottom:14 }}>
+            <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:5 }}>{f.lbl}</label>
+            <input style={INP} type="number" value={f.val} placeholder={f.ph} onChange={e => f.set(e.target.value)} />
+          </div>
+        ))}
+
+        {price && qty && <div style={{ fontSize:12, color:'var(--dim)', marginBottom:14 }}>Value: {fmtINR(+price * +qty)} · SL at {fmtINR(+price * (1 - strategy.sl_pct/100))} · T1 at {fmtINR(+price * (1 + strategy.target_pct/100))}</div>}
+
+        {err && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{err}</div>}
+        <div style={{ display:'flex', gap:10 }}>
+          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+          <button onClick={submit} disabled={busy} style={{ flex:2, height:40, borderRadius:9, background:signal==='BUY'?'var(--grn)':'var(--red)', border:'none', color: signal==='BUY'?'#000':'#fff', fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
+            {busy ? 'Adding…' : `Paper ${signal}`}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CloseTradeModal({ trade, token, onDone, onClose }: { trade: Trade; token: string; onDone(): void; onClose(): void }) {
+  const [price, setPrice] = useState('');
+  const [fetching, setFetching] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function fetchCurrent() {
+    setFetching(true);
+    const p = await getPrice(trade.symbol);
+    if (p) setPrice(p.toFixed(2));
+    else setErr('Could not fetch — enter manually');
+    setFetching(false);
+  }
+
+  async function close() {
+    if (!price) { setErr('Enter exit price'); return; }
+    const exitP = +price;
+    const pl = (exitP - trade.entry_price) * trade.qty * (trade.signal === 'SELL' ? -1 : 1);
+    const status = pl >= 0 ? 'WIN' : 'LOSS';
+    setBusy(true);
+    const r = await fetch(`${SUPA}/rest/v1/paper_trades?id=eq.${trade.id}`, {
+      method: 'PATCH',
+      headers: { ...authHeader(token), Prefer: 'return=minimal' },
+      body: JSON.stringify({ exit_price: exitP, exit_at: new Date().toISOString(), pl: +pl.toFixed(2), status }),
+    });
+    setBusy(false);
+    if (r.ok) onDone();
+    else setErr('Failed to close trade.');
+  }
+
+  const estPL = price ? ((+price - trade.entry_price) * trade.qty * (trade.signal==='SELL'?-1:1)) : null;
+
+  return (
+    <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.6)' }}>
+      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:28, width:'min(360px,90vw)' }}>
+        <div style={{ fontSize:16, fontWeight:800, marginBottom:4 }}>Close Trade — {trade.symbol}</div>
+        <div style={{ fontSize:12, color:'var(--dim)', marginBottom:20 }}>Entry: {fmtINR(trade.entry_price)} × {trade.qty} shares</div>
+        <div style={{ marginBottom:14 }}>
+          <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:5 }}>Exit price (₹)</label>
+          <div style={{ display:'flex', gap:8 }}>
+            <input style={{ ...INP, flex:1 }} type="number" value={price} placeholder="Current market price" onChange={e => setPrice(e.target.value)}/>
+            <button onClick={fetchCurrent} disabled={fetching} style={{ height:40, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
+              {fetching ? '…' : 'Live'}
+            </button>
+          </div>
+        </div>
+        {estPL != null && (
+          <div style={{ padding:'10px 14px', borderRadius:9, background: estPL >= 0 ? 'rgba(0,212,160,0.08)' : 'rgba(255,59,92,0.08)', border:`1px solid ${estPL >= 0 ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`, marginBottom:14 }}>
+            <span style={{ fontSize:14, fontWeight:800, color: estPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+              {estPL >= 0 ? '+' : ''}{fmtINR(estPL)} ({((estPL/(trade.entry_price*trade.qty))*100).toFixed(1)}%)
+            </span>
+          </div>
+        )}
+        {err && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{err}</div>}
+        <div style={{ display:'flex', gap:10 }}>
+          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+          <button onClick={close} disabled={busy} style={{ flex:2, height:40, borderRadius:9, background:'var(--org)', border:'none', color:'#fff', fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
+            {busy ? 'Closing…' : 'Close Trade'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 export default function PaperTradingPage() {
   useEffect(() => { localStorage.setItem('signal_visited_paper', '1'); }, []);
-  const [si, setSi]       = useState(0);
+
+  const { session, user } = usePortfolio();
+  const token = session?.access_token ?? '';
+
+  const [strategies, setStrategies] = useState<Strategy[]>([]);
+  const [trades, setTrades]         = useState<Trade[]>([]);
+  const [si, setSi]                 = useState(0);
+  const [loading, setLoading]       = useState(true);
+
+  const [showNew, setShowNew]       = useState(false);
+  const [showTrade, setShowTrade]   = useState(false);
+  const [closingTrade, setClosing]  = useState<Trade | null>(null);
+  const [savingParams, setSaving]   = useState(false);
+
   const [rsiL, setRsiL]   = useState(35);
   const [rsiH, setRsiH]   = useState(70);
   const [sl,   setSl  ]   = useState(2.5);
   const [tgt,  setTgt ]   = useState(6.0);
-  const st = STRATS[si];
-  const [pv, pc, rv, rc, wv, wc, dv] = st.perf;
+
+  const st = strategies[si];
+
+  // Load strategies
+  const loadStrategies = useCallback(async () => {
+    if (!token) return;
+    setLoading(true);
+    const r = await fetch(`${SUPA}/rest/v1/paper_strategies?select=*&active=eq.true&order=created_at.asc`, {
+      headers: authHeader(token),
+    });
+    const data = await r.json() as Strategy[];
+    setStrategies(data);
+    if (data[si]) {
+      setRsiL(data[si].rsi_low); setRsiH(data[si].rsi_high);
+      setSl(data[si].sl_pct); setTgt(data[si].target_pct);
+    }
+    setLoading(false);
+  }, [token, si]);
+
+  // Load trades for selected strategy
+  const loadTrades = useCallback(async () => {
+    if (!token || !st) return;
+    const r = await fetch(`${SUPA}/rest/v1/paper_trades?strategy_id=eq.${st.id}&order=entry_at.desc`, {
+      headers: authHeader(token),
+    });
+    const data = await r.json() as Trade[];
+    setTrades(data);
+  }, [token, st]);
+
+  useEffect(() => { loadStrategies(); }, [loadStrategies]);
+  useEffect(() => { loadTrades(); }, [loadTrades]);
+
+  // Sync sliders when switching strategy
+  useEffect(() => {
+    if (st) { setRsiL(st.rsi_low); setRsiH(st.rsi_high); setSl(st.sl_pct); setTgt(st.target_pct); }
+  }, [si, st]);
+
+  async function saveParams() {
+    if (!token || !st) return;
+    setSaving(true);
+    await fetch(`${SUPA}/rest/v1/paper_strategies?id=eq.${st.id}`, {
+      method: 'PATCH',
+      headers: { ...authHeader(token), Prefer: 'return=minimal' },
+      body: JSON.stringify({ rsi_low: rsiL, rsi_high: rsiH, sl_pct: sl, target_pct: tgt }),
+    });
+    setSaving(false);
+    await loadStrategies();
+  }
+
+  async function stopStrategy() {
+    if (!token || !st || !confirm(`Stop "${st.name}"? Can't undo.`)) return;
+    await fetch(`${SUPA}/rest/v1/paper_strategies?id=eq.${st.id}`, {
+      method: 'PATCH',
+      headers: { ...authHeader(token), Prefer: 'return=minimal' },
+      body: JSON.stringify({ active: false }),
+    });
+    setSi(0);
+    await loadStrategies();
+  }
+
+  // Computed stats
+  const wins   = trades.filter(t => t.status === 'WIN').length;
+  const losses = trades.filter(t => t.status === 'LOSS').length;
+  const open   = trades.filter(t => t.status === 'OPEN').length;
+  const closed = wins + losses;
+  const winRate = closed > 0 ? Math.round((wins / closed) * 100) : 0;
+  const totalPL = trades.reduce((s, t) => s + (t.pl ?? 0), 0);
+  const capital = st?.capital ?? 100_000;
+  const currentVal = capital + totalPL;
+  const retPct = ((totalPL / capital) * 100).toFixed(1);
+  const days = st ? daysSince(st.started_at) : 0;
+  const { path: curvePath, endY, lastPL } = st ? equityCurve(trades, capital) : { path: 'M0,80 L600,80', endY: 80, lastPL: 0 };
+  const _ = lastPL; // used in computation
+
+  // No session guard
+  if (!session || !user) {
+    return <div style={{ textAlign:'center', padding:60, color:'var(--dim)' }}>Sign in to use paper trading.</div>;
+  }
+
+  // Empty state — no strategies yet
+  if (!loading && strategies.length === 0) {
+    return (
+      <>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
+          <div>
+            <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>Paper Trading</div>
+            <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>Test strategies risk-free · Virtual capital · No real orders</div>
+          </div>
+        </div>
+        <div style={{ textAlign:'center', padding:'64px 24px', background:'var(--surf)', border:'1px dashed var(--bdr)', borderRadius:16 }}>
+          <div style={{ fontSize:48, marginBottom:16 }}>🧪</div>
+          <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>No strategies yet</div>
+          <div style={{ fontSize:13, color:'var(--dim)', maxWidth:360, margin:'0 auto 24px' }}>
+            Create a paper strategy and trade with ₹1,00,000 virtual capital. Win rate, P&L and equity curve tracked in real-time.
+          </div>
+          <button onClick={() => setShowNew(true)} style={{ height:44, padding:'0 32px', borderRadius:12, background:'var(--grn)', border:'none', color:'#000', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
+            + Create First Strategy
+          </button>
+        </div>
+        {showNew && <NewStrategyModal token={token} userId={user.id} onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
+      </>
+    );
+  }
 
   return (
     <>
+      {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
         <div>
           <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>Paper Trading</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>Test strategies risk-free with live NSE/BSE data · Virtual capital ₹1,00,000 per strategy</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>Virtual capital · No real orders placed · ⚠️ Educational only</div>
         </div>
-        <Link href="/dashboard/algo-builder" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, display:'inline-flex', alignItems:'center' }}>+ New Strategy</Link>
+        <div style={{ display:'flex', gap:8 }}>
+          {st && <button onClick={() => setShowTrade(true)} style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--grn)', border:'none', color:'#000', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Paper Trade</button>}
+          <button onClick={() => setShowNew(true)} style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>+ Strategy</button>
+        </div>
       </div>
 
-      {/* Strategy tabs */}
-      <div style={{ display:'flex', gap:10, marginBottom:24, flexWrap:'wrap' }}>
-        {STRATS.map((s, i) => (
-          <div key={i} onClick={() => setSi(i)}
-            style={{ padding:'10px 20px', borderRadius:12, cursor:'pointer', background: si===i ? 'rgba(139,92,246,0.08)' : 'var(--surf)', border:`1px solid ${si===i ? 'var(--pur)' : 'var(--bdr)'}` }}>
+      {/* Strategy selector tabs */}
+      <div style={{ display:'flex', gap:10, marginBottom:24, flexWrap:'wrap', overflowX:'auto', paddingBottom:4 }}>
+        {strategies.map((s, i) => (
+          <div key={s.id} onClick={() => setSi(i)}
+            style={{ padding:'10px 18px', borderRadius:12, cursor:'pointer', flexShrink:0, background: si===i ? 'rgba(139,92,246,0.08)' : 'var(--surf)', border:`1px solid ${si===i ? 'var(--pur)' : 'var(--bdr)'}` }}>
             <div style={{ fontSize:13, fontWeight:700, color: si===i ? 'var(--pur)' : 'var(--txt)' }}>{s.name}</div>
-            <div style={{ fontSize:11, color:s.subC, marginTop:2 }}>{s.sub}</div>
+            <div style={{ fontSize:11, color: totalPL >= 0 ? 'var(--grn)' : 'var(--red)', marginTop:2 }}>
+              {si===i ? `${totalPL >= 0 ? '+' : ''}${retPct}% · ${winRate}% win` : `Active · Day ${daysSince(s.started_at)}`}
+            </div>
           </div>
         ))}
-        <Link href="/dashboard/algo-builder" style={{ padding:'10px 20px', borderRadius:12, background:'var(--surf)', border:'1px dashed var(--bdr)', opacity:0.6, display:'flex', flexDirection:'column', justifyContent:'center' }}>
-          <div style={{ fontSize:13, fontWeight:700, color:'var(--dim)' }}>+ Add strategy</div>
-          <div style={{ fontSize:11, color:'var(--dim)' }}>From Algo Builder</div>
-        </Link>
+        <button onClick={() => setShowNew(true)} style={{ padding:'10px 18px', borderRadius:12, background:'var(--surf)', border:'1px dashed var(--bdr)', cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'var(--dim)' }}>+ New</div>
+          <div style={{ fontSize:11, color:'var(--dim)' }}>Add strategy</div>
+        </button>
       </div>
 
-      <div className="paper-main-grid">
-        <div>
-          {/* Perf cards */}
-          <div className="paper-stats-grid">
-            {[
-              { label:'Virtual Portfolio', val:pv, valC:pc, sub:'Started at ₹1,00,000' },
-              { label:'Paper Returns',     val:rv, valC:rc, sub:'Virtual P&L' },
-              { label:'Win Rate',          val:wv, valC:wc, sub:`${st.log.filter(l=>l.status.includes('WIN')).length}W · ${st.log.filter(l=>l.status.includes('SL')).length}L` },
-              { label:'Time Running',      val:dv, valC:'var(--txt)', sub:'7-day trial' },
-            ].map(c => (
-              <div key={c.label} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:13, padding:16 }}>
-                <div style={{ fontSize:11, color:'var(--dim)', marginBottom:5 }}>{c.label}</div>
-                <div style={{ fontSize:24, fontWeight:900, letterSpacing:-0.5, color:c.valC }}>{c.val}</div>
-                <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>{c.sub}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* Equity curve */}
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18, marginBottom:16 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-              <div style={{ fontSize:14, fontWeight:700 }}>Virtual Equity Curve</div>
-              <span style={{ fontSize:11, fontWeight:700, color:'var(--grn)' }}>{si===0 ? '▲ +₹8,420 (8.4%)' : '▲ +₹2,100 (2.1%)'}</span>
-            </div>
-            <svg width="100%" height="100" viewBox="0 0 600 100" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="ecg" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#00D4A0" stopOpacity={0.2}/>
-                  <stop offset="100%" stopColor="#00D4A0" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <path d={`${st.curve} L600,100 L0,100 Z`} fill="url(#ecg)"/>
-              <path d={st.curve} fill="none" stroke="#00D4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="600" cy={st.endY} r="4" fill="#00D4A0"/>
-            </svg>
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, color:'var(--dim2)', marginTop:6 }}>
-              <span>Jun 13</span><span>Jun 14</span><span>Jun 16</span><span>Jun 17</span><span>Jun 18</span><span>Jun 19</span>
-            </div>
-          </div>
-
-          {/* Signal log */}
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18, marginBottom:16 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-              <div style={{ fontSize:14, fontWeight:700 }}>Signal Log</div>
-              <span style={{ fontSize:11, color:'var(--dim)' }}>{st.log.length} signals fired</span>
-            </div>
-            <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
-              <thead>
-                <tr>
-                  {[['Date & Time','paper-log-date'],['Stock',''],['Signal',''],['Entry',''],['Exit','paper-log-exit'],['P&L',''],['Status','']].map(([h,cls]) => (
-                    <th key={h} className={cls} style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', padding:'7px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4 }}>{h}</th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {st.log.map((row, i) => (
-                  <tr key={i} style={{ borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                    <td className="paper-log-date" style={{ padding:'9px 10px', fontSize:11, color:'var(--dim2)' }}>{row.date}</td>
-                    <td style={{ padding:'9px 10px', fontWeight:700 }}>{row.sym}</td>
-                    <td style={{ padding:'9px 10px' }}>
-                      <span style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
-                        <span style={{ width:8, height:8, borderRadius:'50%', background:row.sigC, display:'inline-block' }}/>
-                        {row.sig}
-                      </span>
-                    </td>
-                    <td style={{ padding:'9px 10px' }}>{row.entry}</td>
-                    <td className="paper-log-exit" style={{ padding:'9px 10px' }}>{row.exit}</td>
-                    <td style={{ padding:'9px 10px', fontWeight:700, color:row.plC }}>{row.pl}</td>
-                    <td style={{ padding:'9px 10px' }}>
-                      <span style={{ fontSize:11, padding:'2px 8px', borderRadius:5, background:row.sBg, color:row.sC, fontWeight:700 }}>{row.status}</span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Parameter editor */}
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18 }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-              <div style={{ fontSize:14, fontWeight:700 }}>Edit Parameters</div>
-              <span style={{ fontSize:12, color:'var(--dim)' }}>Changes apply to new signals only</span>
-            </div>
-            {[
-              { label:'RSI Buy threshold',  desc:'Trigger BUY when RSI falls below this value',  val:rsiL, set:setRsiL,  min:10, max:50, step:1 },
-              { label:'RSI Sell threshold', desc:'Trigger SELL when RSI rises above this value', val:rsiH, set:setRsiH,  min:50, max:90, step:1 },
-              { label:'Stop Loss %',        desc:'Exit if price drops this % from entry',         val:sl,   set:setSl,    min:0.5, max:20, step:0.5 },
-              { label:'Target %',           desc:'Take profit at this % gain from entry',          val:tgt,  set:setTgt,   min:1, max:30, step:0.5 },
-            ].map(p => (
-              <div key={p.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--bdr)' }}>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:600 }}>{p.label}</div>
-                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{p.desc}</div>
+      {loading ? (
+        <div style={{ textAlign:'center', padding:48, color:'var(--dim)' }}>Loading…</div>
+      ) : st && (
+        <div className="paper-main-grid">
+          {/* Left */}
+          <div>
+            {/* Stats */}
+            <div className="paper-stats-grid">
+              {[
+                { label:'Virtual Portfolio',  val: fmtINR(currentVal),                   valC: totalPL >= 0 ? 'var(--grn)' : 'var(--red)',  sub:`Started at ${fmtINR(capital)}` },
+                { label:'Paper Returns',      val:`${totalPL >= 0 ? '+' : ''}${retPct}%`, valC: +retPct >= 0 ? 'var(--grn)' : 'var(--red)', sub: totalPL !== 0 ? `${totalPL >= 0?'+':''}${fmtINR(totalPL)}` : 'No closed trades' },
+                { label:'Win Rate',           val:`${winRate}%`,                           valC:'var(--grn)',  sub:`${wins}W · ${losses}L · ${open} open` },
+                { label:'Days Running',       val:`Day ${days}`,                           valC:'var(--txt)', sub:`${st.trial_days}-day trial` },
+              ].map(c => (
+                <div key={c.label} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:13, padding:16 }}>
+                  <div style={{ fontSize:11, color:'var(--dim)', marginBottom:5 }}>{c.label}</div>
+                  <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:c.valC }}>{c.val}</div>
+                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>{c.sub}</div>
                 </div>
-                <input type="number" value={p.val} onChange={e => p.set(Number(e.target.value))} min={p.min} max={p.max} step={p.step}
-                  style={{ height:34, padding:'0 12px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:700, fontFamily:'inherit', outline:'none', width:100, textAlign:'right' }}/>
+              ))}
+            </div>
+
+            {/* Equity curve */}
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18, marginBottom:16 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                <div style={{ fontSize:14, fontWeight:700 }}>Virtual Equity Curve</div>
+                <span style={{ fontSize:11, fontWeight:700, color: totalPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                  {totalPL >= 0 ? '▲ +' : '▼ '}{fmtINR(Math.abs(totalPL))} ({totalPL >= 0 ? '+' : ''}{retPct}%)
+                </span>
               </div>
-            ))}
-            <button style={{ width:'100%', height:38, borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginTop:14 }}>💾 Save Parameters</button>
+              <svg width="100%" height="100" viewBox="0 0 600 100" preserveAspectRatio="none">
+                <defs>
+                  <linearGradient id="ecg" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#00D4A0" stopOpacity={0.2}/>
+                    <stop offset="100%" stopColor="#00D4A0" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <path d={`${curvePath} L600,100 L0,100 Z`} fill="url(#ecg)"/>
+                <path d={curvePath} fill="none" stroke="#00D4A0" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <circle cx="600" cy={endY} r="4" fill="#00D4A0"/>
+              </svg>
+              {trades.filter(t=>t.exit_at).length === 0 && (
+                <div style={{ fontSize:11, color:'var(--dim)', textAlign:'center', marginTop:6 }}>Close your first trade to see the curve build.</div>
+              )}
+            </div>
+
+            {/* Trade log */}
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18, marginBottom:16 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                <div style={{ fontSize:14, fontWeight:700 }}>Trade Log</div>
+                <span style={{ fontSize:11, color:'var(--dim)' }}>{trades.length} trades</span>
+              </div>
+              {trades.length === 0 ? (
+                <div style={{ textAlign:'center', padding:'32px 0', color:'var(--dim)', fontSize:13 }}>
+                  No trades yet — click <strong style={{ color:'var(--grn)' }}>+ Paper Trade</strong> to add your first.
+                </div>
+              ) : (
+                <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
+                  <thead>
+                    <tr>
+                      {[['Date','paper-log-date'],['Stock',''],['Signal',''],['Entry',''],['Exit','paper-log-exit'],['P&L',''],['Status','']].map(([h,cls]) => (
+                        <th key={h} className={cls} style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', padding:'7px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {trades.map(t => {
+                      const isOpen  = t.status === 'OPEN';
+                      const isWin   = t.status === 'WIN';
+                      const plColor = t.pl == null ? 'var(--ylw)' : t.pl >= 0 ? 'var(--grn)' : 'var(--red)';
+                      const stBg    = isOpen ? 'rgba(255,184,0,0.1)' : isWin ? 'rgba(0,212,160,0.1)' : 'rgba(255,59,92,0.1)';
+                      const stColor = isOpen ? 'var(--ylw)' : isWin ? 'var(--grn)' : 'var(--red)';
+                      const stLabel = isOpen ? 'OPEN' : isWin ? '✅ WIN' : '⛔ LOSS';
+                      return (
+                        <tr key={t.id} style={{ borderBottom:'1px solid rgba(28,46,74,0.5)', cursor: isOpen ? 'pointer' : 'default' }}
+                          onClick={() => isOpen && setClosing(t)}>
+                          <td className="paper-log-date" style={{ padding:'9px 10px', fontSize:11, color:'var(--dim2)' }}>
+                            {new Date(t.entry_at).toLocaleDateString('en-IN', { day:'numeric', month:'short' })}
+                          </td>
+                          <td style={{ padding:'9px 10px', fontWeight:700 }}>
+                            {t.symbol}
+                            {isOpen && <span style={{ marginLeft:5, fontSize:9, color:'var(--dim)' }}>↩ close</span>}
+                          </td>
+                          <td style={{ padding:'9px 10px' }}>
+                            <span style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
+                              <span style={{ width:7, height:7, borderRadius:'50%', background:t.signal==='BUY'?'var(--grn)':'var(--red)', display:'inline-block' }}/>
+                              {t.signal}
+                            </span>
+                          </td>
+                          <td style={{ padding:'9px 10px' }}>{fmtINR(t.entry_price)}</td>
+                          <td className="paper-log-exit" style={{ padding:'9px 10px' }}>{t.exit_price ? fmtINR(t.exit_price) : '—'}</td>
+                          <td style={{ padding:'9px 10px', fontWeight:700, color:plColor }}>
+                            {t.pl != null ? `${t.pl >= 0 ? '+' : ''}${fmtINR(t.pl)}` : 'Running'}
+                          </td>
+                          <td style={{ padding:'9px 10px' }}>
+                            <span style={{ fontSize:11, padding:'2px 8px', borderRadius:5, background:stBg, color:stColor, fontWeight:700 }}>{stLabel}</span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Params editor */}
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+                <div style={{ fontSize:14, fontWeight:700 }}>Parameters</div>
+                <span style={{ fontSize:12, color:'var(--dim)' }}>Applies to new signals only</span>
+              </div>
+              {[
+                { label:'RSI Buy threshold',  val:rsiL, set:setRsiL, min:10, max:50, step:1 },
+                { label:'RSI Sell threshold', val:rsiH, set:setRsiH, min:50, max:90, step:1 },
+                { label:'Stop Loss %',        val:sl,   set:setSl,   min:0.5, max:20, step:0.5 },
+                { label:'Target %',           val:tgt,  set:setTgt,  min:1, max:30, step:0.5 },
+              ].map(p => (
+                <div key={p.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--bdr)' }}>
+                  <div style={{ fontSize:13, fontWeight:600 }}>{p.label}</div>
+                  <input type="number" value={p.val} onChange={e => p.set(+e.target.value)} min={p.min} max={p.max} step={p.step}
+                    style={{ height:34, padding:'0 12px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:700, fontFamily:'inherit', outline:'none', width:90, textAlign:'right' }}/>
+                </div>
+              ))}
+              <button onClick={saveParams} disabled={savingParams}
+                style={{ width:'100%', height:38, borderRadius:10, background:savingParams?'var(--surf2)':'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginTop:14 }}>
+                {savingParams ? 'Saving…' : '💾 Save Parameters'}
+              </button>
+            </div>
+          </div>
+
+          {/* Right panel */}
+          <div>
+            {/* Trial progress */}
+            <div style={{ background:'rgba(139,92,246,0.05)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:14, padding:18, marginBottom:14 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--pur)', marginBottom:8 }}>Day {days} of {st.trial_days}</div>
+              <div style={{ height:6, background:'rgba(255,255,255,0.07)', borderRadius:3, overflow:'hidden', marginBottom:8 }}>
+                <div style={{ height:'100%', width:`${Math.min(100, (days/st.trial_days)*100)}%`, background:'linear-gradient(90deg,var(--pur),#6D3EC1)', borderRadius:3 }}/>
+              </div>
+              <div style={{ fontSize:11, color:'var(--dim)' }}>{Math.max(0, st.trial_days - days)} days remaining</div>
+            </div>
+
+            {/* Strategy summary */}
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18, marginBottom:14 }}>
+              <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>Strategy Summary</div>
+              {[
+                ['Name',       st.name],
+                ['Capital',    fmtINR(capital) + ' virtual'],
+                ['SL',         `${st.sl_pct}%`],
+                ['Target',     `${st.target_pct}%`],
+                ['RSI range',  `${st.rsi_low}–${st.rsi_high}`],
+                ['Open trades',`${open}`],
+              ].map(([k,v]) => (
+                <div key={k} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:'1px solid rgba(28,46,74,0.5)', fontSize:12 }}>
+                  <span style={{ color:'var(--dim)' }}>{k}</span>
+                  <span style={{ fontWeight:600 }}>{v}</span>
+                </div>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <button onClick={() => setShowTrade(true)}
+                style={{ height:46, borderRadius:12, background:'linear-gradient(135deg,var(--grn),#00A87D)', border:'none', color:'#001A12', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
+                🧪 Add Paper Trade
+              </button>
+              <Link href="/dashboard/algo-builder"
+                style={{ height:42, borderRadius:12, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.3)', color:'var(--pur)', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none' }}>
+                ⚙️ Edit in Algo Builder
+              </Link>
+              <button onClick={stopStrategy}
+                style={{ height:42, borderRadius:12, background:'transparent', border:'1px solid rgba(255,59,92,0.3)', color:'var(--red)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                ⛔ Stop Strategy
+              </button>
+            </div>
           </div>
         </div>
+      )}
 
-        {/* Right panel */}
-        <div>
-          <div style={{ background:'rgba(0,212,160,0.05)', border:'1px solid rgba(0,212,160,0.2)', borderRadius:14, padding:18, marginBottom:14 }}>
-            <div style={{ fontSize:12, fontWeight:700, color:'var(--grn)', marginBottom:6, display:'flex', alignItems:'center', gap:5 }}>
-              <span style={{ width:7, height:7, borderRadius:'50%', background:'var(--grn)', display:'inline-block' }}/>
-              {si===0 ? 'Day 6/7 · 1 day left' : 'Day 2/7 · 5 days left'}
-            </div>
-            <div style={{ height:6, background:'rgba(255,255,255,0.07)', borderRadius:3, overflow:'hidden', marginBottom:8 }}>
-              <div style={{ height:'100%', width: si===0 ? '86%' : '29%', background:'linear-gradient(90deg,var(--pur),#6D3EC1)', borderRadius:3 }}/>
-            </div>
-            <div style={{ display:'flex', justifyContent:'space-between', fontSize:12 }}>
-              <span style={{ color:'var(--dim)' }}>7-day trial period</span>
-              <span style={{ color:'var(--pur)', fontWeight:700 }}>{si===0 ? '6/7 days' : '2/7 days'}</span>
-            </div>
-          </div>
-
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18, marginBottom:14 }}>
-            <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>Strategy Summary</div>
-            {[
-              ['Type',     si===0 ? 'RSI + EMA Momentum' : 'Momentum Breakout'],
-              ['Universe', 'NIFTY 50'],
-              ['Capital',  '₹1,00,000 virtual'],
-              ['SL',       `${sl}%`],
-              ['Target',   `${tgt}%`],
-            ].map(([k,v]) => (
-              <div key={k as string} style={{ display:'flex', justifyContent:'space-between', padding:'7px 0', borderBottom:'1px solid rgba(28,46,74,0.5)', fontSize:12 }}>
-                <span style={{ color:'var(--dim)' }}>{k}</span>
-                <span style={{ fontWeight:600 }}>{v}</span>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            <button style={{ height:48, borderRadius:12, background:'linear-gradient(135deg,var(--grn),#00A87D)', border:'none', color:'#001A12', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>🚀 Go Live with Real Money</button>
-            <Link href="/dashboard/algo-builder" style={{ height:44, borderRadius:12, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.3)', color:'var(--pur)', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center' }}>⚙️ Edit in Algo Builder</Link>
-            <button style={{ height:44, borderRadius:12, background:'transparent', border:'1px solid rgba(255,59,92,0.3)', color:'var(--red)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>⛔ Stop Paper Trading</button>
-          </div>
-        </div>
-      </div>
+      {/* Modals */}
+      {showNew     && <NewStrategyModal token={token} userId={user.id}  onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
+      {showTrade   && st && <NewTradeModal strategy={st} token={token} userId={user.id} onDone={async () => { setShowTrade(false); await loadTrades(); }} onClose={() => setShowTrade(false)} />}
+      {closingTrade && <CloseTradeModal trade={closingTrade} token={token} onDone={async () => { setClosing(null); await loadTrades(); }} onClose={() => setClosing(null)} />}
     </>
   );
 }
