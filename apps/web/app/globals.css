@@ -134,8 +134,11 @@ button:active:not(:disabled) { transform: scale(0.97); }
    ===================================================== */
 
 /* Dashboard shell */
-.dash-layout { display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 58px); }
-.dash-sidebar { display: flex !important; flex-direction: column; gap: 4px; }
+.dash-layout { display: block; min-height: calc(100vh - 96px); }
+.dash-sidebar { display: none !important; }
+.dash-top-tabs { display: flex; align-items: center; gap: 0; }
+.dash-subnav { display: flex; align-items: center; gap: 4px; padding: 5px clamp(12px,3vw,32px); overflow-x: auto; scrollbar-width: none; }
+.dash-subnav::-webkit-scrollbar { display: none; }
 .dash-topnav-links { display: flex; align-items: center; flex: 1; gap: 2px; }
 .dash-right { display: flex; align-items: center; gap: 10px; flex-shrink: 0; margin-left: auto; }
 .dash-username { display: inline; }
@@ -161,8 +164,10 @@ button:active:not(:disabled) { transform: scale(0.97); }
 
 /* ---- Tablet (≤ 900px) ---- */
 @media (max-width: 900px) {
-  .dash-layout { grid-template-columns: 1fr; }
+  .dash-layout { display: block; }
   .dash-sidebar { display: none !important; }
+  .dash-top-tabs { display: none; }
+  .dash-subnav { display: none; }
   .dash-topnav-links { display: none; }
   .dash-mobile-nav {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0;

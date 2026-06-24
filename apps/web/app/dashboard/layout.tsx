@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
-import { DashboardTopNav } from '@/components/DashboardTopNav';
+import { DashboardTopNav, DashboardSubNav } from '@/components/DashboardTopNav';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { PortfolioProvider } from '@/lib/portfolio-context';
 import { NavUserChip } from '@/components/NavUserChip';
@@ -39,8 +39,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </div>
         </nav>
 
+        {/* Sub-nav strip — below top nav, above page content */}
+        <div style={{ borderBottom:'1px solid var(--bdr)', background:'var(--surf)', position:'sticky', top:58, zIndex:99 }}>
+          <DashboardSubNav />
+        </div>
+
         <div className="dash-layout">
-          <DashboardSidebar />
           <main style={{ padding:'24px clamp(12px,3vw,32px)', overflowY:'auto', minWidth:0 }}>
             {children}
           </main>
