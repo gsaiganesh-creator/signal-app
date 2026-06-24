@@ -272,7 +272,7 @@ export default function SignalsPage() {
   return (
     <>
       {/* Hero — referral card style */}
-      <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.07),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.18)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
+      <div className="signals-hero" style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.07),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.18)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
         <div>
           <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--grn)', textTransform:'uppercase', marginBottom:8 }}>ML Scanner · Live Signals</div>
           <div style={{ fontSize:26, fontWeight:900, letterSpacing:-0.6, lineHeight:1.2, marginBottom:8 }}>
@@ -283,7 +283,7 @@ export default function SignalsPage() {
             RSI + EMA scan across 200+ NSE stocks. Confidence scored by proximity to EMA, RSI zone, and sector momentum. Updated every hour during market hours.
           </div>
         </div>
-        <div style={{ textAlign:'center', flexShrink:0 }}>
+        <div className="signals-hero-count" style={{ textAlign:'center', flexShrink:0 }}>
           <div style={{ fontSize:52, fontWeight:900, color:'var(--grn)', lineHeight:1 }}>{mlSignals.length}</div>
           <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>signals today</div>
           <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:6, justifyContent:'center' }}>
@@ -294,7 +294,7 @@ export default function SignalsPage() {
       </div>
 
       {/* Controls */}
-      <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
+      <div className="signals-filters" style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
         <div style={{ position:'relative', flex:'1 1 220px', maxWidth:320 }}>
           <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:14, opacity:0.5 }}>🔍</span>
           <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search symbol or sector…"
@@ -323,11 +323,13 @@ export default function SignalsPage() {
       {/* API offline warning */}
       {!mlLoading && mlError && (
         <div style={{ background:'rgba(255,184,0,0.08)', border:'1px solid rgba(255,184,0,0.25)', borderRadius:14, padding:'20px 24px', marginBottom:16 }}>
-          <div style={{ fontWeight:700, marginBottom:6 }}>⚠️ ML API is offline</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginBottom:10 }}>Start the FastAPI backend to see real ML signals:</div>
-          <code style={{ display:'block', fontSize:12, color:'var(--grn)', background:'rgba(0,0,0,0.15)', padding:'10px 14px', borderRadius:8 }}>
-            cd signal-app/apps/api && uvicorn main:app --reload
-          </code>
+          <div style={{ fontWeight:700, marginBottom:6 }}>⚠️ ML Signals unavailable</div>
+          <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6 }}>
+            Live ML signals require the backend API server to be running. This feature will be available once the API is deployed to the cloud.
+          </div>
+          <div style={{ marginTop:10, fontSize:12, color:'var(--dim2)' }}>
+            In the meantime, use Portfolio tab to track your holdings and P&L.
+          </div>
         </div>
       )}
 

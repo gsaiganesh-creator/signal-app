@@ -120,3 +120,28 @@ button { font-family: inherit; }
   /* Hide portfolio switcher on tiny screens — accessible via portfolio page */
   .dash-port-switcher { display: none; }
 }
+
+/* =====================================================
+   SIGN-IN PAGE — mobile: hide left marketing panel
+   ===================================================== */
+@media (max-width: 700px) {
+  .sign-in-left { display: none !important; }
+}
+
+/* =====================================================
+   HEATMAP — mobile: 2 cols, smaller tiles
+   ===================================================== */
+@media (max-width: 600px) {
+  .heatmap-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .heatmap-tile { height: 52px !important; font-size: 9px !important; }
+}
+
+/* =====================================================
+   SIGNALS PAGE — hero banner compact on mobile
+   ===================================================== */
+@media (max-width: 600px) {
+  .signals-hero { padding: 18px 20px !important; flex-direction: column !important; align-items: flex-start !important; }
+  .signals-hero-count { display: none !important; }
+  .signals-filters { flex-wrap: wrap !important; gap: 6px !important; }
+  .signals-filters button { height: 34px !important; padding: 0 10px !important; font-size: 12px !important; }
+}

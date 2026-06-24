@@ -393,7 +393,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Sorted grid: gainers left, losers right */}
-          <div style={{ display:'flex', flexWrap:'wrap', gap:3 }}>
+          <div className="heatmap-grid" style={{ display:'flex', flexWrap:'wrap', gap:3 }}>
             {[...heatTiles]
               .sort((a, b) => {
                 const pa = prices[a.symbol]?.change_pct ?? null;
@@ -411,7 +411,7 @@ export default function DashboardPage() {
                 const txtC = isStrong ? '#fff' : hasData ? 'var(--txt)' : 'var(--dim2)';
                 const chgC = !hasData ? 'var(--dim2)' : pct! > 0 ? 'rgba(80,255,190,0.9)' : 'rgba(255,110,130,0.9)';
                 return (
-                  <div key={h.id}
+                  <div key={h.id} className="heatmap-tile"
                     style={{ width:76, height:50, borderRadius:7, background:bg,
                       border:`1px solid ${isStrong ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.05)'}`,
                       display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',

@@ -76,10 +76,11 @@ export default function SignInPage() {
   const isOk    = msg.startsWith('✅');
 
   return (
-    <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh', display:'grid', gridTemplateColumns:'1fr 1fr' }}>
+    <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh', display:'grid', gridTemplateColumns:'clamp(0px,45vw,560px) 1fr' }}>
 
-      {/* ── Left panel ── */}
-      <div style={{ background:'linear-gradient(145deg,#0A1525 0%,#0D1E3A 50%,#0A1525 100%)', borderRight:'1px solid var(--bdr)', padding:48, display:'flex', flexDirection:'column', justifyContent:'space-between', position:'relative', overflow:'hidden' }}>
+      {/* ── Left panel — hidden on mobile via width:0 when viewport <700px ── */}
+      <div style={{ background:'linear-gradient(145deg,#0A1525 0%,#0D1E3A 50%,#0A1525 100%)', borderRight:'1px solid var(--bdr)', padding:48, display:'flex', flexDirection:'column', justifyContent:'space-between', position:'relative', overflow:'hidden', minWidth:0 }}
+        className="sign-in-left">
         <div style={{ position:'absolute', width:500, height:500, top:-100, left:-100, background:'radial-gradient(circle,rgba(23,64,245,0.14) 0%,transparent 65%)', borderRadius:'50%', pointerEvents:'none' }}/>
         <div style={{ position:'absolute', width:400, height:400, bottom:-100, right:-50, background:'radial-gradient(circle,rgba(0,212,160,0.08) 0%,transparent 65%)', borderRadius:'50%', pointerEvents:'none' }}/>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:10, fontSize:22, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)', position:'relative', zIndex:1 }}>
