@@ -12,9 +12,11 @@ const PRIMARY_TABS = [
 ];
 
 const MORE_LINKS = [
-  { href:'/dashboard/etf-mf',        icon:'🏦', label:'ETF & MF'       },
-  { href:'/dashboard/track-record',  icon:'🏆', label:'Track Record'   },
-  { href:'/dashboard/paper-trading', icon:'🧪', label:'Paper Trading'  },
+  { href:'/dashboard/etf-mf',        icon:'🏦', label:'ETF & MF'        },
+  { href:'/dashboard/algorithms',    icon:'🤖', label:'Algo Library'    },
+  { href:'/dashboard/ai-prompts',    icon:'💬', label:'AI Prompts'      },
+  { href:'/dashboard/track-record',  icon:'🏆', label:'Track Record'    },
+  { href:'/dashboard/paper-trading', icon:'🧪', label:'Paper Trading'   },
   { href:'/dashboard/sectors',       icon:'🔥', label:'Sector Heatmap' },
   { href:'/dashboard/forex',         icon:'💱', label:'Forex'           },
   { href:'/dashboard/commodities',   icon:'🥇', label:'Commodities'    },

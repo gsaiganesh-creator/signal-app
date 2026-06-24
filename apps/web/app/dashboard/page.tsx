@@ -4,6 +4,7 @@ import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
 import { useState, useEffect } from 'react';
 import { OnboardingChecklist } from '@/components/OnboardingChecklist';
+import { TreemapHeatmap } from '@/components/TreemapHeatmap';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -192,28 +193,47 @@ function WelcomeEmpty({ name, email }: { name: string; email?: string }) {
 }
 
 export default function DashboardPage() {
-  const { user, session, portfolios, holdings, activePortfolio, loading } = usePortfolio();
+  const { user, session, portfolios, loading } = usePortfolio();
   const [prices, setPrices]           = useState<Record<string, PriceData>>({});
   const [pricesLoading, setPricesLoading] = useState(false);
+  const [allIndiaRaw, setAllIndiaRaw] = useState<RawHolding[]>([]);
   const [usHoldings, setUsHoldings]   = useState<{ symbol:string; qty:number; avg_price:number }[]>([]);
   const [usPrices, setUsPrices]       = useState<Record<string, PriceData>>({});
   const [usdInr, setUsdInr]           = useState<number | null>(null);
+  const [fxPos,   setFxPos]  = useState<{ id:string; currency:string; amount:number; avg_rate:number }[]>([]);
+  const [cmPos,   setCmPos]  = useState<{ id:string; commodity:string; qty:number; unit:string; avg_price:number }[]>([]);
+  const [fxPrices, setFxPrices] = useState<Record<string, PriceData>>({});
+  const [cmPrices, setCmPrices] = useState<Record<string, PriceData>>({});
 
-  // India prices
+  // All India NSE/BSE holdings across EVERY portfolio
   useEffect(() => {
-    if (!holdings.length) { setPrices({}); return; }
-    const syms = holdings.map(h => `${h.symbol}.NS`).join(',');
+    if (!session || !portfolios.length) return;
+    const ids = portfolios.map(p => p.id).join(',');
+    fetch(
+      `${SUPA_URL}/rest/v1/holdings?select=*&portfolio_id=in.(${ids})&exchange=in.(NSE,BSE)`,
+      { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` } }
+    )
+      .then(r => r.json())
+      .then(rows => setAllIndiaRaw(Array.isArray(rows) ? rows : []))
+      .catch(() => {});
+  }, [session, portfolios]);
+
+  // India prices — all merged symbols from all portfolios
+  useEffect(() => {
+    if (!allIndiaRaw.length) { setPrices({}); return; }
+    const symSet = new Set(allIndiaRaw.map(h => h.symbol + (h.exchange === 'NSE' ? '.NS' : '.BO')));
+    const syms = Array.from(symSet).join(',');
     setPricesLoading(true);
     fetch(`/api/prices?symbols=${encodeURIComponent(syms)}`)
       .then(r => r.json())
       .then((data: Record<string, PriceData>) => {
         const m: Record<string, PriceData> = {};
-        for (const [k, v] of Object.entries(data)) m[k.replace('.NS', '')] = v;
+        for (const [k, v] of Object.entries(data)) m[k.replace('.NS','').replace('.BO','')] = v;
         setPrices(m);
       })
       .catch(() => {})
       .finally(() => setPricesLoading(false));
-  }, [holdings]);
+  }, [allIndiaRaw]);
 
   // US holdings — fetch all NYSE/NASDAQ across all portfolios
   useEffect(() => {
@@ -240,6 +260,45 @@ export default function DashboardPage() {
       .catch(() => {});
   }, [usHoldings]);
 
+  // Forex + commodity positions from localStorage (client-only)
+  useEffect(() => {
+    try { setFxPos(JSON.parse(localStorage.getItem('signal_forex_positions') ?? '[]')); } catch { /**/ }
+    try { setCmPos(JSON.parse(localStorage.getItem('signal_commodity_positions') ?? '[]')); } catch { /**/ }
+  }, []);
+
+  // Forex live prices (same tickers used on forex page)
+  useEffect(() => {
+    if (!fxPos.length && !usdInr) return;
+    const FX_TICKERS: Record<string, string> = {
+      USD:'USDINR=X', EUR:'EURINR=X', GBP:'GBPINR=X', JPY:'JPYINR=X',
+      AED:'AEDINR=X', SGD:'SGDINR=X', AUD:'AUDINR=X', CAD:'CADINR=X', CHF:'CHFINR=X',
+    };
+    const needed = fxPos.map(p => FX_TICKERS[p.currency]).filter(Boolean);
+    if (!needed.length) return;
+    fetch(`/api/prices?symbols=${encodeURIComponent([...new Set(needed)].join(','))}`)
+      .then(r => r.json()).then(setFxPrices).catch(() => {});
+  }, [fxPos]);
+
+  // Commodity live prices
+  useEffect(() => {
+    if (!cmPos.length) return;
+    const CM_TICKERS: Record<string, string> = {
+      Gold:'GC=F', Silver:'SI=F', 'Crude Oil':'CL=F',
+      'Natural Gas':'NG=F', Copper:'HG=F', Aluminium:'ALI=F',
+    };
+    const needed = cmPos.map(p => CM_TICKERS[p.commodity]).filter(Boolean);
+    if (!needed.length) return;
+    const usdInrSym = usdInr ? '' : 'USDINR=X';
+    const syms = [...new Set([...needed, usdInrSym].filter(Boolean))];
+    fetch(`/api/prices?symbols=${encodeURIComponent(syms.join(','))}`)
+      .then(r => r.json())
+      .then((d: Record<string, PriceData>) => {
+        setCmPrices(d);
+        if (!usdInr && d['USDINR=X']?.price) setUsdInr(d['USDINR=X'].price);
+      })
+      .catch(() => {});
+  }, [cmPos, usdInr]);
+
   const name = user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Trader';
 
   if (loading || !user) {
@@ -259,31 +318,97 @@ export default function DashboardPage() {
 
   if (portfolios.length === 0) return <WelcomeEmpty name={name} email={user.email} />;
 
-  const validH = holdings.filter(h => h.avg_price >= 1);
-  const invested = validH.reduce((s, h) => s + h.avg_price * h.qty, 0);
-  const currentValue = validH.reduce((s, h) => {
-    const p = prices[h.symbol];
-    if (p?.price != null) {
-      const ratio = p.price / h.avg_price;
-      if (ratio > 50 || ratio < 0.02) return s + h.avg_price * h.qty;
-      return s + p.price * h.qty;
-    }
-    return s + h.avg_price * h.qty;
-  }, 0);
-  const totalPL = currentValue - invested;
-  const totalPLPct = invested > 0 ? (totalPL / invested) * 100 : 0;
-  const hasPrices = Object.keys(prices).some(k => prices[k].price != null);
   const fmtL = (n: number) => n >= 1e7 ? `₹${(n/1e7).toFixed(2)}Cr` : n >= 1e5 ? `₹${(n/1e5).toFixed(2)}L` : `₹${n.toLocaleString('en-IN', { maximumFractionDigits:0 })}`;
 
+  // Merge all India holdings by symbol (weighted avg across portfolios)
+  const mergedMap = new Map<string, RawHolding>();
+  for (const h of allIndiaRaw.filter(h => h.avg_price >= 1)) {
+    const ex = mergedMap.get(h.symbol);
+    if (ex) {
+      const tq = ex.qty + h.qty;
+      mergedMap.set(h.symbol, { ...ex, qty: tq, avg_price: (ex.avg_price * ex.qty + h.avg_price * h.qty) / tq });
+    } else { mergedMap.set(h.symbol, { ...h }); }
+  }
+  const mergedIndia = Array.from(mergedMap.values());
+  const equityH = mergedIndia.filter(h => capCat(h.symbol) !== 'etf');
+  const etfH    = mergedIndia.filter(h => capCat(h.symbol) === 'etf');
+
+  function curVal(h: RawHolding) {
+    const p = prices[h.symbol];
+    if (p?.price == null) return h.avg_price * h.qty;
+    const ratio = p.price / h.avg_price;
+    return (ratio > 50 || ratio < 0.02) ? h.avg_price * h.qty : p.price * h.qty;
+  }
+
+  const equityInvested  = equityH.reduce((s, h) => s + h.avg_price * h.qty, 0);
+  const etfInvested     = etfH.reduce((s, h) => s + h.avg_price * h.qty, 0);
+  const invested        = equityInvested + etfInvested;
+  const equityCurrent   = equityH.reduce((s, h) => s + curVal(h), 0);
+  const etfCurrent      = etfH.reduce((s, h) => s + curVal(h), 0);
+  const currentValue    = equityCurrent + etfCurrent;
+  const totalPL         = currentValue - invested;
+  const totalPLPct      = invested > 0 ? (totalPL / invested) * 100 : 0;
+  const equityPL        = equityCurrent - equityInvested;
+  const equityPLPct     = equityInvested > 0 ? (equityPL / equityInvested) * 100 : 0;
+  const etfPL           = etfCurrent - etfInvested;
+  const etfPLPct        = etfInvested > 0 ? (etfPL / etfInvested) * 100 : 0;
+  const hasPrices       = Object.keys(prices).some(k => prices[k].price != null);
+
   // US portfolio totals
-  const usInvestedUSD  = usHoldings.reduce((s, h) => s + (h.avg_price > 0.01 ? h.avg_price * h.qty : 0), 0);
-  const usCurrentUSD   = usHoldings.reduce((s, h) => { const p = usPrices[h.symbol]?.price; return p != null ? s + p * h.qty : s; }, 0);
-  const usInrEquiv     = usdInr ? (usCurrentUSD > 0 ? usCurrentUSD : usInvestedUSD) * usdInr : usInvestedUSD > 0 ? usInvestedUSD * 84 : 0;
-  const combinedINR    = invested + usInrEquiv;
-  const hasUSHoldings  = usHoldings.length > 0;
+  const usInvestedUSD = usHoldings.reduce((s, h) => s + (h.avg_price > 0.01 ? h.avg_price * h.qty : 0), 0);
+  const usCurrentUSD  = usHoldings.reduce((s, h) => { const p = usPrices[h.symbol]?.price; return p != null ? s + p * h.qty : s; }, 0);
+  const usInrEquiv    = usdInr ? (usCurrentUSD > 0 ? usCurrentUSD : usInvestedUSD) * usdInr : usInvestedUSD > 0 ? usInvestedUSD * 84 : 0;
+  const usPL          = usdInr && usCurrentUSD > 0 ? (usCurrentUSD - usInvestedUSD) * usdInr : null;
+  const usPLPct       = usInvestedUSD > 0 && usCurrentUSD > 0 ? (usCurrentUSD - usInvestedUSD) / usInvestedUSD * 100 : null;
+  const hasUSHoldings = usHoldings.length > 0;
+
+  // Forex positions (INR invested = amount × avg_rate; current = amount × live_rate)
+  const FX_TICKERS: Record<string, string> = {
+    USD:'USDINR=X', EUR:'EURINR=X', GBP:'GBPINR=X', JPY:'JPYINR=X',
+    AED:'AEDINR=X', SGD:'SGDINR=X', AUD:'AUDINR=X', CAD:'CADINR=X', CHF:'CHFINR=X',
+  };
+  const fxInvestedINR = fxPos.reduce((s, p) => {
+    const scale = p.currency === 'JPY' ? 100 : 1;
+    return s + (p.amount / scale) * p.avg_rate;
+  }, 0);
+  const fxCurrentINR = fxPos.reduce((s, p) => {
+    const ticker = FX_TICKERS[p.currency];
+    const liveRate = ticker ? (fxPrices[ticker]?.price ?? null) : null;
+    const scale = p.currency === 'JPY' ? 100 : 1;
+    if (!liveRate) return s + (p.amount / scale) * p.avg_rate;
+    return s + (p.amount / scale) * liveRate;
+  }, 0);
+  const fxPL    = fxPos.length ? fxCurrentINR - fxInvestedINR : 0;
+  const fxPLPct = fxInvestedINR > 0 ? (fxPL / fxInvestedINR) * 100 : 0;
+
+  // Commodity positions (prices in USD → convert to INR)
+  const CM_TICKERS: Record<string, string> = {
+    Gold:'GC=F', Silver:'SI=F', 'Crude Oil':'CL=F',
+    'Natural Gas':'NG=F', Copper:'HG=F', Aluminium:'ALI=F',
+  };
+  function cmCurrentPriceINR(commodity: string, avgPriceINR: number): number {
+    const ticker = CM_TICKERS[commodity];
+    if (!ticker || !usdInr) return avgPriceINR;
+    const usdPrice = cmPrices[ticker]?.price;
+    if (!usdPrice) return avgPriceINR;
+    // MCX conversion (same as commodities page)
+    const isGold = commodity === 'Gold';
+    const isSilver = commodity === 'Silver';
+    const isCopperOrAl = commodity === 'Copper' || commodity === 'Aluminium';
+    if (isGold)      return usdPrice * usdInr / 31.1035 * 10;   // per 10g
+    if (isSilver)    return usdPrice * usdInr / 31.1035 * 1000; // per kg
+    if (isCopperOrAl) return usdPrice * usdInr * 2.20462;       // per kg
+    return usdPrice * usdInr;                                    // crude/gas per barrel
+  }
+  const cmInvestedINR = cmPos.reduce((s, p) => s + p.avg_price * p.qty, 0);
+  const cmCurrentINR  = cmPos.reduce((s, p) => s + cmCurrentPriceINR(p.commodity, p.avg_price) * p.qty, 0);
+  const cmPL    = cmPos.length ? cmCurrentINR - cmInvestedINR : 0;
+  const cmPLPct = cmInvestedINR > 0 ? (cmPL / cmInvestedINR) * 100 : 0;
+
+  const combinedINR = invested + usInrEquiv + fxCurrentINR + cmCurrentINR;
 
   const capDist = { large:0, mid:0, small:0, etf:0 };
-  for (const h of validH) capDist[capCat(h.symbol)] += h.avg_price * h.qty;
+  for (const h of mergedIndia) capDist[capCat(h.symbol)] += h.avg_price * h.qty;
   const capTotal = Object.values(capDist).reduce((s, v) => s + v, 0);
   const capSegments = [
     { label:'Large Cap', value:capDist.large, color:'#4F6FFA' },
@@ -292,8 +417,8 @@ export default function DashboardPage() {
     { label:'ETF / MF',  value:capDist.etf,   color:'#8B5CF6' },
   ].filter(s => s.value > 0);
 
-  const insights = buildInsights(holdings);
-  const heatTiles = [...validH].sort((a, b) => b.avg_price * b.qty - a.avg_price * a.qty);
+  const insights  = buildInsights(mergedIndia);
+  const heatTiles = [...mergedIndia].sort((a, b) => b.avg_price * b.qty - a.avg_price * a.qty);
 
   return (
     <>
@@ -310,138 +435,170 @@ export default function DashboardPage() {
 
       <OnboardingChecklist />
 
-      {/* Key metrics */}
-      <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>
+      {/* Consolidated summary — all portfolios merged */}
+      <div className="g4" style={{ display:'grid', gap:12, marginBottom:14 }}>
+        {/* Equity */}
         <div style={card}>
-          <div style={{ fontSize:11, fontWeight:600, color:'var(--dim)', letterSpacing:0.3, marginBottom:6 }}>Holdings</div>
-          <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, lineHeight:1 }}>{holdings.length}</div>
-          <div style={{ fontSize:12, color:'var(--dim)', marginTop:5 }}>{activePortfolio?.name}</div>
+          <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, marginBottom:6, textTransform:'uppercase' }}>Equity Stocks</div>
+          <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, lineHeight:1 }}>{equityH.length}</div>
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>{fmtL(equityInvested)} invested</div>
+          {hasPrices && equityInvested > 0 && (
+            <div style={{ fontSize:12, fontWeight:700, marginTop:3, color: equityPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+              {equityPL >= 0 ? '+' : ''}{equityPLPct.toFixed(1)}%
+            </div>
+          )}
         </div>
+        {/* ETF & MF */}
+        <div style={{ ...card, borderColor: etfH.length > 0 ? 'rgba(139,92,246,0.3)' : 'var(--bdr)' }}>
+          <div style={{ fontSize:10, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, marginBottom:6, textTransform:'uppercase' }}>ETF & MF</div>
+          <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, lineHeight:1 }}>{etfH.length}</div>
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>{etfInvested > 0 ? fmtL(etfInvested) : '—'} invested</div>
+          {hasPrices && etfInvested > 0 && (
+            <div style={{ fontSize:12, fontWeight:700, marginTop:3, color: etfPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+              {etfPL >= 0 ? '+' : ''}{etfPLPct.toFixed(1)}%
+            </div>
+          )}
+        </div>
+        {/* Total Invested */}
         <div style={card}>
-          <div style={{ fontSize:11, fontWeight:600, color:'var(--dim)', letterSpacing:0.3, marginBottom:6 }}>Total Invested</div>
+          <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, marginBottom:6, textTransform:'uppercase' }}>Total Invested</div>
           <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, lineHeight:1 }}>{fmtL(invested)}</div>
-          <div style={{ fontSize:12, color:'var(--dim)', marginTop:5 }}>cost basis</div>
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>
+            {portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''} · India
+          </div>
         </div>
+        {/* Combined Return */}
         <div style={card}>
-          <div style={{ fontSize:11, fontWeight:600, color:'var(--dim)', letterSpacing:0.3, marginBottom:6 }}>Portfolio Return</div>
+          <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, marginBottom:6, textTransform:'uppercase' }}>Combined Return</div>
           <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, lineHeight:1, color: hasPrices ? (totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
             {hasPrices ? `${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(1)}%` : '—'}
           </div>
-          <div style={{ fontSize:12, color:'var(--dim)', marginTop:5 }}>
-            {hasPrices && totalPL !== 0 ? `${totalPL >= 0 ? '+' : ''}${fmtL(Math.abs(totalPL))}` : pricesLoading ? 'loading prices…' : 'prices unavailable'}
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>
+            {hasPrices && totalPL !== 0 ? `${totalPL >= 0 ? '+' : ''}${fmtL(Math.abs(totalPL))}` : pricesLoading ? 'loading…' : '—'}
           </div>
         </div>
       </div>
 
-      {/* Global Net Worth — shown whenever US holdings exist */}
-      {hasUSHoldings && (
-        <div style={{ ...card, marginBottom:20, background:'linear-gradient(135deg,rgba(23,64,245,0.07),rgba(0,212,160,0.03))', border:'1px solid rgba(79,111,250,0.2)' }}>
-          <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>Global Net Worth</div>
-          <div className="g3" style={{ display:'grid', gap:12 }}>
-            <div>
-              <div style={{ fontSize:10, color:'var(--dim)', marginBottom:3 }}>🇮🇳 India Portfolio</div>
-              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>{fmtL(invested)}</div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{holdings.length} holdings</div>
-            </div>
-            <div>
-              <div style={{ fontSize:10, color:'var(--dim)', marginBottom:3 }}>🇺🇸 US Portfolio</div>
-              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>
-                ${usInvestedUSD > 0 ? usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0}) : '0'}
-              </div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
-                {usdInr ? `≈ ${fmtL(usInrEquiv)}` : `${usHoldings.length} holdings`}
-              </div>
-            </div>
-            <div>
-              <div style={{ fontSize:10, color:'var(--dim)', marginBottom:3 }}>💼 Combined (INR)</div>
-              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--grn)' }}>{fmtL(combinedINR)}</div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
-                {usdInr ? `USD/INR ₹${usdInr.toFixed(2)}` : 'live rates loading…'}
-              </div>
-            </div>
+      {/* ETF & MF breakdown */}
+      {etfH.length > 0 && (
+        <div style={{ ...card, marginBottom:16 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+            <div style={{ fontSize:13, fontWeight:700 }}>🏦 ETF & MF Holdings</div>
+            <Link href="/dashboard/etf-mf" style={{ fontSize:11, color:'var(--bluL)', fontWeight:600 }}>ETF / MF page →</Link>
           </div>
-          <div style={{ display:'flex', gap:8, marginTop:14, flexWrap:'wrap' }}>
-            <Link href="/dashboard/us-portfolio" style={{ fontSize:11, fontWeight:600, color:'var(--bluL)', padding:'4px 10px', borderRadius:6, background:'rgba(79,111,250,0.1)', border:'1px solid rgba(79,111,250,0.2)' }}>
-              🇺🇸 US Portfolio →
-            </Link>
-            <Link href="/dashboard/forex" style={{ fontSize:11, fontWeight:600, color:'var(--dim)', padding:'4px 10px', borderRadius:6, background:'var(--surf2)', border:'1px solid var(--bdr)' }}>
-              💱 Forex
-            </Link>
-            <Link href="/dashboard/commodities" style={{ fontSize:11, fontWeight:600, color:'var(--dim)', padding:'4px 10px', borderRadius:6, background:'var(--surf2)', border:'1px solid var(--bdr)' }}>
-              🥇 Commodities
-            </Link>
+          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+            {[...etfH].sort((a, b) => b.avg_price * b.qty - a.avg_price * a.qty).map(h => {
+              const p    = prices[h.symbol]?.price;
+              const ratio = p != null ? p / h.avg_price : null;
+              const plPct = (p != null && ratio != null && ratio > 0.02 && ratio < 50)
+                ? (p - h.avg_price) / h.avg_price * 100 : null;
+              return (
+                <div key={h.symbol} style={{ background:'rgba(139,92,246,0.07)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:10, padding:'8px 14px', minWidth:110 }}>
+                  <div style={{ fontSize:12, fontWeight:800, letterSpacing:0.3 }}>{h.symbol}</div>
+                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{fmtL(h.avg_price * h.qty)}</div>
+                  {plPct != null ? (
+                    <div style={{ fontSize:11, fontWeight:700, marginTop:2, color: plPct >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                      {plPct >= 0 ? '+' : ''}{plPct.toFixed(1)}%
+                    </div>
+                  ) : <div style={{ fontSize:10, color:'var(--dim2)', marginTop:2 }}>—</div>}
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* Analytics: heatmap + cap donut */}
-      <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
-        {/* Heatmap */}
-        <div style={{ ...card, padding:'16px' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-            <div>
-              <div style={{ fontSize:13, fontWeight:700 }}>Portfolio Heatmap</div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
-                Daily change% · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => prices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
+      {/* Multi-asset summary blocks */}
+      {(hasUSHoldings || fxPos.length > 0 || cmPos.length > 0) && (() => {
+        type AssetBlock = { key:string; icon:string; label:string; invested:string; investedSub:string; pl:number|null; plPct:number|null; count:number; unit:string; href:string; accent:string; accentBdr:string };
+        const blocks: AssetBlock[] = ([
+          hasUSHoldings && {
+            key:'us', icon:'🇺🇸', label:'US Stocks',
+            invested: fmtL(usInrEquiv || usInvestedUSD * 84),
+            investedSub: usInvestedUSD > 0 ? `$${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '',
+            pl: usPL, plPct: usPLPct, count: usHoldings.length, unit: 'stocks',
+            href:'/dashboard/us-portfolio',
+            accent:'rgba(79,111,250,0.15)', accentBdr:'rgba(79,111,250,0.3)',
+          },
+          fxPos.length > 0 && {
+            key:'fx', icon:'💱', label:'Forex',
+            invested: fmtL(fxInvestedINR),
+            investedSub: `${fxPos.length} currencies`,
+            pl: fxPL, plPct: fxPLPct, count: fxPos.length, unit: 'positions',
+            href:'/dashboard/forex',
+            accent:'rgba(0,212,160,0.08)', accentBdr:'rgba(0,212,160,0.25)',
+          },
+          cmPos.length > 0 && {
+            key:'cm', icon:'🥇', label:'Commodities',
+            invested: fmtL(cmInvestedINR),
+            investedSub: `${cmPos.length} positions`,
+            pl: cmPL, plPct: cmPLPct, count: cmPos.length, unit: 'positions',
+            href:'/dashboard/commodities',
+            accent:'rgba(255,184,0,0.08)', accentBdr:'rgba(255,184,0,0.25)',
+          },
+        ] as (AssetBlock | false)[]).filter((b): b is AssetBlock => !!b);
+
+        return (
+          <div style={{ marginBottom:20 }}>
+            {/* Combined net worth strip */}
+            <div style={{ ...card, marginBottom:12, background:'linear-gradient(135deg,rgba(23,64,245,0.06),rgba(0,212,160,0.03))', border:'1px solid rgba(79,111,250,0.2)', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1 }}>Combined Net Worth (INR)</div>
+                <div style={{ fontSize:24, fontWeight:900, letterSpacing:-1, color:'var(--grn)', marginTop:4 }}>{fmtL(combinedINR)}</div>
+                <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
+                  India {fmtL(invested)} · US {fmtL(usInrEquiv)}
+                  {fxPos.length > 0 ? ` · Forex ${fmtL(fxCurrentINR)}` : ''}
+                  {cmPos.length > 0 ? ` · Cmdy ${fmtL(cmCurrentINR)}` : ''}
+                </div>
               </div>
+              {usdInr && <div style={{ fontSize:12, color:'var(--dim)', background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:8, padding:'4px 10px' }}>USD/INR ₹{usdInr.toFixed(2)}</div>}
             </div>
-            <div style={{ display:'flex', gap:8 }}>
-              {[['#2A6A45','▰','+5%'],['rgba(255,255,255,0.12)','▰','flat'],['#7A2A35','▰','-5%']].map(([c,ico,lbl]) => (
-                <span key={lbl as string} style={{ display:'flex', alignItems:'center', gap:3 }}>
-                  <span style={{ color:c as string, fontSize:11 }}>{ico}</span>
-                  <span style={{ fontSize:9.5, color:'var(--dim)' }}>{lbl}</span>
-                </span>
+
+            {/* Per-asset blocks */}
+            <div className={`g${blocks.length === 1 ? '2' : blocks.length === 2 ? '2' : '3'}`} style={{ display:'grid', gap:12 }}>
+              {blocks.map(b => (
+                <Link key={b.key} href={b.href} style={{ textDecoration:'none' }}>
+                  <div style={{ background:b.accent, border:`1px solid ${b.accentBdr}`, borderRadius:14, padding:'14px 16px', height:'100%' }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
+                      <span style={{ fontSize:18 }}>{b.icon}</span>
+                      <span style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5 }}>{b.label}</span>
+                    </div>
+                    <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>{b.invested}</div>
+                    <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{b.investedSub} · {b.count} {b.unit}</div>
+                    {b.pl != null && (
+                      <div style={{ fontSize:13, fontWeight:700, marginTop:6, color: b.pl >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                        {b.pl >= 0 ? '+' : ''}{fmtL(Math.abs(b.pl))} ({b.plPct != null ? `${b.plPct >= 0 ? '+' : ''}${b.plPct.toFixed(1)}%` : '—'})
+                      </div>
+                    )}
+                    <div style={{ fontSize:10, color:'var(--dim)', marginTop:6 }}>Tap to manage →</div>
+                  </div>
+                </Link>
               ))}
             </div>
           </div>
+        );
+      })()}
 
-          {/* Sorted grid: gainers left, losers right */}
-          <div className="heatmap-grid" style={{ display:'flex', flexWrap:'wrap', gap:3 }}>
-            {[...heatTiles]
-              .sort((a, b) => {
-                const pa = prices[a.symbol]?.change_pct ?? null;
-                const pb = prices[b.symbol]?.change_pct ?? null;
-                if (pa == null && pb == null) return 0;
-                if (pa == null) return 1;
-                if (pb == null) return -1;
-                return pb - pa;
-              })
-              .map(h => {
-                const pct = prices[h.symbol]?.change_pct ?? null;
-                const bg = heatColor(pct);
-                const hasData = pct != null;
-                const isStrong = hasData && Math.abs(pct!) > 1.5;
-                const txtC = isStrong ? '#fff' : hasData ? 'var(--txt)' : 'var(--dim2)';
-                const chgC = !hasData ? 'var(--dim2)' : pct! > 0 ? 'rgba(80,255,190,0.9)' : 'rgba(255,110,130,0.9)';
-                return (
-                  <div key={h.id} className="heatmap-tile"
-                    style={{ width:76, height:50, borderRadius:7, background:bg,
-                      border:`1px solid ${isStrong ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.05)'}`,
-                      display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center',
-                      padding:'0 3px', overflow:'hidden', flexShrink:0, transition:'transform 0.1s' }}
-                    title={`${h.symbol}${pct != null ? `: ${pct >= 0 ? '+' : ''}${pct.toFixed(2)}% today` : ''}`}
-                    onMouseEnter={e => (e.currentTarget.style.transform = 'scale(1.05)')}
-                    onMouseLeave={e => (e.currentTarget.style.transform = 'scale(1)')}>
-                    <div style={{ fontSize:10.5, fontWeight:800, color:txtC, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'100%', textAlign:'center', letterSpacing:0.3 }}>{h.symbol}</div>
-                    <div style={{ fontSize:9.5, fontWeight:700, color:chgC, marginTop:1 }}>{pct != null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(2)}%` : '—'}</div>
-                  </div>
-                );
-              })}
-          </div>
-
-          {/* Gainers / losers summary */}
-          {heatTiles.some(h => prices[h.symbol]?.change_pct != null) && (() => {
-            const live = heatTiles.filter(h => prices[h.symbol]?.change_pct != null);
-            const g = live.filter(h => (prices[h.symbol]?.change_pct ?? 0) > 0).length;
-            const l = live.filter(h => (prices[h.symbol]?.change_pct ?? 0) < 0).length;
-            return (
-              <div style={{ display:'flex', gap:16, marginTop:12, paddingTop:10, borderTop:'1px solid var(--bdr)', fontSize:11 }}>
-                <span style={{ color:'var(--grn)', fontWeight:700 }}>▲ {g} gaining</span>
-                <span style={{ color:'var(--dim)' }}>{live.length - g - l} flat</span>
-                <span style={{ color:'var(--red)', fontWeight:700 }}>▼ {l} falling</span>
+      {/* Analytics: treemap heatmap + cap donut */}
+      <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
+        {/* Treemap heatmap */}
+        <div style={{ ...card, padding:'16px' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+            <div>
+              <div style={{ fontSize:13, fontWeight:700 }}>Portfolio Heatmap</div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
+                Tile size = portfolio weight · Color = daily change% · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => prices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
               </div>
-            );
-          })()}
+            </div>
+          </div>
+          <TreemapHeatmap
+            height={420}
+            items={heatTiles.map(h => ({
+              symbol:    h.symbol,
+              value:     h.avg_price * h.qty,
+              changePct: prices[h.symbol]?.change_pct ?? null,
+            }))}
+          />
         </div>
 
         {/* Market cap donut */}
@@ -453,8 +610,8 @@ export default function DashboardPage() {
             <>
               <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:14 }}>
                 <DonutChart segments={capSegments} />
-                <div style={{ fontSize:13, fontWeight:900, marginTop:-4 }}>{holdings.length} stocks</div>
-                <div style={{ fontSize:11, color:'var(--dim)' }}>{activePortfolio?.name}</div>
+                <div style={{ fontSize:13, fontWeight:900, marginTop:-4 }}>{mergedIndia.length} holdings</div>
+                <div style={{ fontSize:11, color:'var(--dim)' }}>{portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''}</div>
               </div>
               <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
                 {capSegments.map(s => {

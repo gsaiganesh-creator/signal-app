@@ -3,7 +3,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.signal.app',
   appName: 'SIGNAL',
-  webDir: 'out',
+  webDir: 'public',
   server: {
     url: 'https://signal-app-api.vercel.app',
     cleartext: false,

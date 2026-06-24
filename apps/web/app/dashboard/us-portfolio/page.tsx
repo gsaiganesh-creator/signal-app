@@ -10,6 +10,28 @@ const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(-
 
 interface USHolding { id: string; symbol: string; exchange: string; qty: number; avg_price: number; portfolio_id: string; portfolio_name?: string; }
 type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
+type Num = number | null;
+
+interface StockDetail {
+  symbol: string; name: string; price: Num; change_pct: Num; prev_close: Num;
+  ema20: Num; ema50: Num; ema200: Num; rsi14: Num; macd: Num; atr14: Num;
+  bb_upper: Num; bb_lower: Num; bb_mid: Num; bb_pct: Num;
+  high_52w: Num; low_52w: Num; from_52h: Num;
+  volume: Num; avg_volume: Num; vol_ratio: Num;
+  stop_loss: Num; target1: Num; target2: Num;
+  signals: string[];
+  // Fundamentals (US only)
+  trailing_pe: Num; forward_pe: Num; ev_ebitda: Num; price_to_sales: Num; beta: Num;
+  revenue_growth: Num; earnings_growth: Num;
+  gross_margin: Num; operating_margin: Num; net_margin: Num; roe: Num;
+  debt_to_equity: Num; current_ratio: Num;
+  dividend_yield: Num; payout_ratio: Num; ex_div_date: string | null;
+  market_cap: Num;
+  analyst_count: Num; analyst_consensus: string | null; analyst_target: Num;
+  analyst_target_high: Num; analyst_target_low: Num; upside_to_target: Num;
+  next_earnings_date: string | null; days_to_earnings: Num;
+  short_pct_float: Num; short_ratio: Num;
+}
 
 const INDICES = [
   { name:'S&P 500', sym:'^GSPC' }, { name:'Nasdaq', sym:'^IXIC' },
@@ -61,7 +83,9 @@ export default function USPortfolioPage() {
   const [addOpen, setAddOpen]         = useState(false);
   const [newPortName, setNewPortName] = useState('');
   const [creatingPort, setCreatingPort] = useState(false);
-  const [selectedHolding, setSelected] = useState<USHolding | null>(null);
+  const [selectedHolding, setSelected]   = useState<USHolding | null>(null);
+  const [stockDetail,     setDetail]     = useState<StockDetail | null>(null);
+  const [detailLoading,   setDetailLoad] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadPortId, setUploadPortId] = useState<string | null>(null);
 
@@ -210,6 +234,17 @@ export default function USPortfolioPage() {
     if (result.id) { setAddForm(f => ({ ...f, portfolio_id: result.id! })); setUploadPortId(result.id); }
   }
 
+  async function selectHolding(h: USHolding) {
+    setSelected(h);
+    setDetail(null);
+    setDetailLoad(true);
+    try {
+      const res = await fetch(`/api/stock-detail?symbol=${h.symbol}&exchange=${h.exchange}`, { signal: AbortSignal.timeout(12000) });
+      if (res.ok) setDetail(await res.json());
+    } catch { /* ignore */ }
+    setDetailLoad(false);
+  }
+
   // Group by portfolio for by-portfolio view
   const byPortfolio = portfolios.map(p => ({
     portfolio: p,
@@ -335,7 +370,7 @@ export default function USPortfolioPage() {
                   const plPct = (pl != null && h.avg_price > 0.01) ? (cmp! - h.avg_price) / h.avg_price * 100 : null;
                   const plPos = pl == null || pl >= 0;
                   return (
-                    <tr key={h.id} onClick={() => setSelected(h)} style={{ cursor:'pointer', transition:'background 0.1s' }}
+                    <tr key={h.id} onClick={() => selectHolding(h)} style={{ cursor:'pointer', transition:'background 0.1s' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.4)' }}>
@@ -487,57 +522,216 @@ export default function USPortfolioPage() {
 
       {/* Stock detail modal */}
       {selectedHolding && (() => {
-        const h = selectedHolding;
-        const p = prices[h.symbol];
-        const cmp = p?.price ?? null;
-        const chg = p?.change_pct ?? null;
-        const pl = (cmp != null && h.avg_price > 0.01) ? (cmp - h.avg_price) * h.qty : null;
+        const h   = selectedHolding;
+        const d   = stockDetail;
+        const p   = prices[h.symbol];
+        const cmp = d?.price ?? p?.price ?? null;
+        const chg = d?.change_pct ?? p?.change_pct ?? null;
+        const pl    = (cmp != null && h.avg_price > 0.01) ? (cmp - h.avg_price) * h.qty : null;
         const plPct = (pl != null && h.avg_price > 0.01) ? (cmp! - h.avg_price) / h.avg_price * 100 : null;
         const plPos = pl == null || pl >= 0;
+
+        // INR-adjusted return (stock % ± forex %)
+        const usdInrReturn = usdInr && h.avg_price > 0 && cmp
+          ? ((cmp / h.avg_price) - 1) * 100 : null;
+
+        function Stat({ label, val, sub, color }: { label:string; val:string; sub?:string; color?:string }) {
+          return (
+            <div style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:9, padding:'9px 12px' }}>
+              <div style={{ fontSize:9, color:'var(--dim)', fontWeight:700, letterSpacing:0.4, marginBottom:3 }}>{label.toUpperCase()}</div>
+              <div style={{ fontSize:13, fontWeight:800, color: color ?? 'var(--txt)' }}>{val}</div>
+              {sub && <div style={{ fontSize:9.5, color:'var(--dim)', marginTop:1 }}>{sub}</div>}
+            </div>
+          );
+        }
+
+        function Section({ title }: { title:string }) {
+          return <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:8, marginTop:4 }}>{title}</div>;
+        }
+
+        const consensusColor = (c: string | null) =>
+          c === 'buy' || c === 'strong_buy' ? 'var(--grn)'
+          : c === 'sell' || c === 'strong_sell' ? 'var(--red)'
+          : 'var(--ylw)';
+
+        function fmt(n: Num, suffix = '', prefix = '') { return n != null ? `${prefix}${n}${suffix}` : '—'; }
+
         return (
-          <div onClick={() => setSelected(null)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-            <div onClick={e => e.stopPropagation()} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:24, width:'min(440px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.45)', maxHeight:'90vh', overflowY:'auto' }}>
-              <div style={{ display:'flex', justifyContent:'space-between', marginBottom:16 }}>
+          <div onClick={() => { setSelected(null); setDetail(null); }}
+            style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16, overflowY:'auto' }}>
+            <div onClick={e => e.stopPropagation()}
+              style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:24, width:'min(560px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.5)', maxHeight:'92vh', overflowY:'auto' }}>
+
+              {/* Header */}
+              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
                 <div>
                   <div style={{ fontSize:22, fontWeight:900 }}>{h.symbol}</div>
-                  <div style={{ fontSize:11, color:'var(--dim)' }}>{h.portfolio_name} · {h.exchange} · {h.qty} shares</div>
+                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
+                    {d?.name ?? h.symbol} · {h.portfolio_name} · {h.qty} shares
+                  </div>
                 </div>
-                <button onClick={() => setSelected(null)} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--dim)', fontSize:15 }}>✕</button>
+                <button onClick={() => { setSelected(null); setDetail(null); }}
+                  style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:8, width:32, height:32, cursor:'pointer', color:'var(--dim)', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
               </div>
+
+              {/* Price row */}
               {cmp != null && (
                 <div style={{ display:'flex', alignItems:'baseline', gap:10, marginBottom:14 }}>
-                  <div style={{ fontSize:26, fontWeight:900 }}>${cmp.toFixed(2)}</div>
-                  {chg != null && <div style={{ fontSize:13, fontWeight:700, color: chg >= 0 ? 'var(--grn)' : 'var(--red)' }}>{chg >= 0 ? '+' : ''}{chg.toFixed(2)}% today</div>}
+                  <div style={{ fontSize:28, fontWeight:900 }}>${cmp.toFixed(2)}</div>
+                  {chg != null && (
+                    <div style={{ fontSize:13, fontWeight:700, color: chg >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                      {chg >= 0 ? '+' : ''}{chg.toFixed(2)}% today
+                    </div>
+                  )}
+                  {detailLoading && <div style={{ fontSize:11, color:'var(--dim)' }}>loading details…</div>}
                 </div>
               )}
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:14 }}>
-                {[
-                  { label:'Avg Cost', val:`$${h.avg_price.toFixed(2)}`, sub:'per share' },
-                  { label:'CMP', val: cmp != null ? `$${cmp.toFixed(2)}` : '—', sub: chg != null ? `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}% today` : '' },
-                  { label:'Invested', val:`$${(h.avg_price*h.qty).toFixed(0)}`, sub: usdInr ? `≈ ₹${(h.avg_price*h.qty*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '' },
-                  { label:'Current Value', val: cmp != null ? `$${(cmp*h.qty).toFixed(0)}` : '—', sub: (cmp && usdInr) ? `≈ ₹${(cmp*h.qty*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '' },
-                ].map(m => (
-                  <div key={m.label} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:9, padding:'9px 12px' }}>
-                    <div style={{ fontSize:9.5, color:'var(--dim)', fontWeight:700, marginBottom:3 }}>{m.label.toUpperCase()}</div>
-                    <div style={{ fontSize:14, fontWeight:800 }}>{m.val}</div>
-                    {m.sub && <div style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>{m.sub}</div>}
-                  </div>
-                ))}
-              </div>
+
+              {/* P&L banner */}
               {pl != null && (
-                <div style={{ background: plPos ? 'rgba(0,212,160,0.08)' : 'rgba(255,59,92,0.08)', border:`1px solid ${plPos ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`, borderRadius:9, padding:'12px 14px', display:'flex', justifyContent:'space-between', marginBottom:16 }}>
+                <div style={{ background: plPos ? 'rgba(0,212,160,0.07)' : 'rgba(255,59,92,0.07)', border:`1px solid ${plPos ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`, borderRadius:10, padding:'12px 16px', display:'flex', justifyContent:'space-between', marginBottom:16 }}>
                   <div>
                     <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)' }}>UNREALISED P&L</div>
-                    <div style={{ fontSize:20, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{plPos ? '+' : '-'}${Math.abs(pl).toFixed(0)}</div>
+                    <div style={{ fontSize:22, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{plPos ? '+' : '-'}${Math.abs(pl).toFixed(0)}</div>
                     {usdInr && <div style={{ fontSize:10, color:'var(--dim)' }}>≈ {plPos ? '+' : '-'}₹{(Math.abs(pl)*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}</div>}
                   </div>
                   <div style={{ textAlign:'right' }}>
                     <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)' }}>RETURN</div>
-                    <div style={{ fontSize:20, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{plPct != null ? `${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}%` : '—'}</div>
+                    <div style={{ fontSize:22, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)' }}>
+                      {plPct != null ? `${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}%` : '—'}
+                    </div>
+                    {usdInr && usdInrReturn != null && (
+                      <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>
+                        INR adj.: {usdInrReturn >= 0 ? '+' : ''}{usdInrReturn.toFixed(1)}%
+                      </div>
+                    )}
                   </div>
                 </div>
               )}
-              <button onClick={() => { handleDelete(h); setSelected(null); }}
+
+              {/* Position stats */}
+              <Section title="Position" />
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+                <Stat label="Avg Cost"      val={`$${h.avg_price.toFixed(2)}`} />
+                <Stat label="Invested"      val={`$${(h.avg_price*h.qty).toFixed(0)}`} sub={usdInr ? `≈ ₹${(h.avg_price*h.qty*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : undefined} />
+                <Stat label="Current Value" val={cmp ? `$${(cmp*h.qty).toFixed(0)}` : '—'} sub={(cmp && usdInr) ? `≈ ₹${(cmp*h.qty*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : undefined} />
+              </div>
+
+              {d && (
+                <>
+                  {/* Valuation */}
+                  {(d.trailing_pe || d.forward_pe || d.ev_ebitda || d.price_to_sales || d.beta || d.market_cap) && (
+                    <>
+                      <Section title="Valuation" />
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+                        {d.trailing_pe    != null && <Stat label="P/E (TTM)"   val={fmt(d.trailing_pe)} />}
+                        {d.forward_pe     != null && <Stat label="Forward P/E" val={fmt(d.forward_pe)} />}
+                        {d.ev_ebitda      != null && <Stat label="EV/EBITDA"   val={fmt(d.ev_ebitda)} />}
+                        {d.price_to_sales != null && <Stat label="P/S"         val={fmt(d.price_to_sales, 'x')} />}
+                        {d.beta           != null && <Stat label="Beta"        val={fmt(d.beta)} sub="vs S&P 500" />}
+                        {d.market_cap     != null && <Stat label="Market Cap"  val={d.market_cap >= 1e12 ? `$${(d.market_cap/1e12).toFixed(2)}T` : `$${(d.market_cap/1e9).toFixed(1)}B`} />}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Growth & Profitability */}
+                  {(d.revenue_growth || d.earnings_growth || d.gross_margin || d.operating_margin || d.net_margin || d.roe) && (
+                    <>
+                      <Section title="Growth & Profitability" />
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+                        {d.revenue_growth   != null && <Stat label="Revenue Growth"   val={fmt(d.revenue_growth, '%')}   color={d.revenue_growth >= 0 ? 'var(--grn)' : 'var(--red)'} />}
+                        {d.earnings_growth  != null && <Stat label="Earnings Growth"  val={fmt(d.earnings_growth, '%')}  color={d.earnings_growth >= 0 ? 'var(--grn)' : 'var(--red)'} />}
+                        {d.gross_margin     != null && <Stat label="Gross Margin"     val={fmt(d.gross_margin, '%')} />}
+                        {d.operating_margin != null && <Stat label="Op. Margin"       val={fmt(d.operating_margin, '%')} />}
+                        {d.net_margin       != null && <Stat label="Net Margin"       val={fmt(d.net_margin, '%')} />}
+                        {d.roe              != null && <Stat label="ROE"              val={fmt(d.roe, '%')} />}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Analyst & Earnings */}
+                  {(d.analyst_target || d.next_earnings_date) && (
+                    <>
+                      <Section title="Analyst & Earnings" />
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+                        {d.analyst_consensus && <Stat label="Consensus" val={d.analyst_consensus.replace('_',' ').toUpperCase()} color={consensusColor(d.analyst_consensus)} />}
+                        {d.analyst_target    != null && <Stat label="Avg Target" val={`$${d.analyst_target}`} sub={d.analyst_count ? `${d.analyst_count} analysts` : undefined} />}
+                        {d.upside_to_target  != null && <Stat label="Upside" val={`${d.upside_to_target >= 0 ? '+' : ''}${d.upside_to_target}%`} color={d.upside_to_target >= 10 ? 'var(--grn)' : d.upside_to_target < -5 ? 'var(--red)' : 'var(--ylw)'} />}
+                        {d.next_earnings_date && (
+                          <Stat label="Next Earnings" val={d.next_earnings_date}
+                            sub={d.days_to_earnings != null ? `${d.days_to_earnings}d away` : undefined}
+                            color={d.days_to_earnings != null && d.days_to_earnings <= 14 ? 'var(--ylw)' : 'var(--txt)'} />
+                        )}
+                        {d.analyst_target_low != null && d.analyst_target_high != null && (
+                          <Stat label="Target Range" val={`$${d.analyst_target_low}–$${d.analyst_target_high}`} />
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Dividend & Short */}
+                  {(d.dividend_yield || d.short_pct_float) && (
+                    <>
+                      <Section title="Dividend & Short Interest" />
+                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+                        {d.dividend_yield  != null && <Stat label="Div Yield" val={fmt(d.dividend_yield, '%')} color="var(--grn)" />}
+                        {d.payout_ratio    != null && <Stat label="Payout Ratio" val={fmt(d.payout_ratio, '%')} />}
+                        {d.ex_div_date               && <Stat label="Ex-Div Date" val={d.ex_div_date} />}
+                        {d.short_pct_float != null && <Stat label="Short Float" val={fmt(d.short_pct_float, '%')} color={d.short_pct_float > 20 ? 'var(--ylw)' : 'var(--txt)'} />}
+                        {d.short_ratio     != null && <Stat label="Short Ratio" val={fmt(d.short_ratio, 'd')} sub="days to cover" />}
+                      </div>
+                    </>
+                  )}
+
+                  {/* Technicals */}
+                  <Section title="Technicals" />
+                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+                    {d.rsi14   != null && <Stat label="RSI 14"   val={d.rsi14.toString()} color={d.rsi14 > 70 ? 'var(--red)' : d.rsi14 < 35 ? 'var(--grn)' : 'var(--txt)'} />}
+                    {d.macd    != null && <Stat label="MACD"     val={d.macd.toString()}  color={d.macd >= 0 ? 'var(--grn)' : 'var(--red)'} />}
+                    {d.atr14   != null && <Stat label="ATR 14"   val={`$${d.atr14}`} sub={cmp ? `${(d.atr14/cmp*100).toFixed(1)}% of price` : undefined} />}
+                    {d.bb_pct  != null && <Stat label="BB %"     val={`${d.bb_pct}%`} sub="0=lower 100=upper" />}
+                    {d.vol_ratio != null && <Stat label="Vol Ratio" val={`${d.vol_ratio}x`} sub="vs 10d avg" color={d.vol_ratio > 2 ? 'var(--ylw)' : 'var(--txt)'} />}
+                    {d.from_52h != null && <Stat label="vs 52W High" val={`${d.from_52h}%`} color={d.from_52h > -5 ? 'var(--grn)' : 'var(--dim)'} />}
+                    {d.ema20   != null && <Stat label="EMA 20"   val={`$${d.ema20}`} color={cmp && cmp > d.ema20 ? 'var(--grn)' : 'var(--red)'} />}
+                    {d.ema50   != null && <Stat label="EMA 50"   val={`$${d.ema50}`} color={cmp && cmp > d.ema50 ? 'var(--grn)' : 'var(--red)'} />}
+                    {d.ema200  != null && <Stat label="EMA 200"  val={`$${d.ema200}`} color={cmp && cmp > d.ema200 ? 'var(--grn)' : 'var(--red)'} />}
+                  </div>
+
+                  {/* ATR-based position sizing hint */}
+                  {d.atr14 != null && h.avg_price > 0 && (
+                    <div style={{ background:'rgba(23,64,245,0.06)', border:'1px solid rgba(23,64,245,0.2)', borderRadius:9, padding:'10px 14px', marginBottom:14, fontSize:12 }}>
+                      <span style={{ fontWeight:700, color:'var(--bluL)' }}>Position Sizing (1% portfolio risk):</span>
+                      <span style={{ color:'var(--dim)', marginLeft:6 }}>
+                        Stop 1 ATR below entry → risk ${d.atr14}/share.
+                        For $10K portfolio: hold {Math.floor(100 / d.atr14)} shares max.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Signals */}
+                  {d.signals.length > 0 && (
+                    <>
+                      <Section title="Signals" />
+                      <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
+                        {d.signals.map((s, i) => (
+                          <div key={i} style={{ fontSize:12, padding:'7px 12px', background:'var(--surf2)', borderRadius:8, border:'1px solid var(--bdr)',
+                            color: s.startsWith('⚠') ? 'var(--ylw)' : s.includes('bullish') || s.includes('ABOVE') || s.includes('upside') ? 'var(--grn)' : s.includes('bearish') || s.includes('BELOW') || s.includes('elevated') ? 'var(--red)' : 'var(--txt)' }}>
+                            {s}
+                          </div>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </>
+              )}
+
+              {detailLoading && !d && (
+                <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:14 }}>
+                  {[1,2,3].map(i => <div key={i} className="shimmer" style={{ height:60, borderRadius:9 }} />)}
+                </div>
+              )}
+
+              <button onClick={() => { handleDelete(h); setSelected(null); setDetail(null); }}
                 style={{ width:'100%', height:38, borderRadius:9, background:'rgba(255,59,92,0.08)', border:'1px solid rgba(255,59,92,0.25)', color:'var(--red)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
                 🗑️ Remove from Portfolio
               </button>

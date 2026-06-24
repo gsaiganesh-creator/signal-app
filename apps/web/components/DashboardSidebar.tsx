@@ -16,6 +16,8 @@ const SIDEBAR: NavSection[] = [
   { section:'Tools', links:[
     { href:'/dashboard/track-record',     icon:'🏆', label:'Track Record'    },
     { href:'/dashboard/algo-builder',     icon:'⚙️', label:'Algo Builder'    },
+    { href:'/dashboard/algorithms',       icon:'🤖', label:'Algorithm Library', badge:'NEW' },
+    { href:'/dashboard/ai-prompts',       icon:'💬', label:'AI Prompts'      },
     { href:'/dashboard/paper-trading',    icon:'🧪', label:'Paper Trading'   },
     { href:'/dashboard/backtest',         icon:'📋', label:'Backtest'        },
   ]},
