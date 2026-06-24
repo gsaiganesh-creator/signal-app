@@ -15,11 +15,14 @@ export default function SignInPage() {
 
   async function doOAuth(provider: 'google' | 'twitter') {
     setLoading(true);
+    // In Capacitor, use URL scheme so OAuth returns to the app (not Safari)
+    const isCapacitor = typeof window !== 'undefined' && !!(window as { Capacitor?: unknown }).Capacitor;
+    const redirectTo = isCapacitor
+      ? `com.gsaiganesh.signal.app://auth/callback`
+      : `${location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
-      options: {
-        redirectTo: `${location.origin}/auth/callback`,
-      },
+      options: { redirectTo },
     });
     if (error) { setMsg(error.message); setLoading(false); }
     // on success browser redirects — no more code runs here

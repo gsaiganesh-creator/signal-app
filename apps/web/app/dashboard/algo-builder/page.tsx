@@ -102,21 +102,21 @@ export default function AlgoBuilderPage() {
       </div>
 
       {/* Step progress */}
-      <div style={{ display:'flex', alignItems:'center', marginBottom:28 }}>
+      <div className="algo-steps" style={{ gap:0 }}>
         {STEPS.map((s, i) => (
           <div key={i} style={{ display:'contents' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
               <div style={{ width:30, height:30, borderRadius:9, display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:800, flexShrink:0, background: step>i+1 ? 'var(--grn)' : (step===i+1 ? 'var(--blu)' : 'var(--surf2)'), color: step>i+1 ? '#001A12' : (step===i+1 ? '#fff' : 'var(--dim)') }}>
                 {step > i+1 ? '✓' : i+1}
               </div>
-              <span style={{ fontSize:13, fontWeight:600, color: step>i+1 ? 'var(--grn)' : (step===i+1 ? 'var(--txt)' : 'var(--dim)'), whiteSpace:'nowrap' }}>{s}</span>
+              <span className="algo-step-label" style={{ color: step>i+1 ? 'var(--grn)' : (step===i+1 ? 'var(--txt)' : 'var(--dim)') }}>{s}</span>
             </div>
-            {i < 3 && <div style={{ flex:1, height:2, background: step>i+1 ? 'var(--grn)' : 'var(--bdr)', margin:'0 8px', minWidth:16 }}/>}
+            {i < 3 && <div style={{ flex:1, height:2, background: step>i+1 ? 'var(--grn)' : 'var(--bdr)', margin:'0 8px', minWidth:12 }}/>}
           </div>
         ))}
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 340px', gap:20 }}>
+      <div className="algo-main-grid">
         <div>
           {/* Step 1 */}
           <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:20, marginBottom:16 }}>
@@ -222,7 +222,7 @@ export default function AlgoBuilderPage() {
           {/* Step 4 */}
           <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:20 }}>
             <div style={{ fontSize:14, fontWeight:700, marginBottom:16 }}>Step 4 — Backtest &amp; Deploy</div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:14 }}>
+            <div className="bt-stats-grid">
               {BT.map(b => (
                 <div key={b.lbl} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:11, padding:'12px 14px', textAlign:'center' }}>
                   <div style={{ fontSize:20, fontWeight:900, color:b.c }}>{b.val}</div>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
+import { CapacitorOAuthListener } from '@/components/CapacitorOAuthListener';
 
 export const metadata: Metadata = {
   title: 'SIGNAL — ML-Powered Algo Trading Platform',
@@ -28,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body>
         <ThemeProvider>{children}</ThemeProvider>
+        <CapacitorOAuthListener />
       </body>
     </html>
   );

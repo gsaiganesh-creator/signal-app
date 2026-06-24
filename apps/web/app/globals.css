@@ -58,6 +58,7 @@ button { font-family: inherit; }
 
 /* Table mobile-hide columns */
 .mob-hide { display: table-cell; }
+.paper-log-date, .paper-log-exit { display: table-cell; }
 
 /* ---- Tablet (≤ 900px) ---- */
 @media (max-width: 900px) {
@@ -119,6 +120,35 @@ button { font-family: inherit; }
   .g4 { grid-template-columns: 1fr; }
   /* Hide portfolio switcher on tiny screens — accessible via portfolio page */
   .dash-port-switcher { display: none; }
+}
+
+/* =====================================================
+   PAPER TRADING PAGE
+   ===================================================== */
+.paper-main-grid  { display: grid; grid-template-columns: 1fr 300px; gap: 16px; }
+.paper-stats-grid { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 16px; }
+@media (max-width: 900px) {
+  .paper-main-grid  { grid-template-columns: 1fr; }
+  .paper-stats-grid { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 600px) {
+  .paper-log-date, .paper-log-exit { display: none; }
+}
+
+/* =====================================================
+   ALGO BUILDER PAGE
+   ===================================================== */
+.algo-main-grid { display: grid; grid-template-columns: 1fr 340px; gap: 20px; }
+.algo-steps     { display: flex; align-items: center; margin-bottom: 28px; overflow-x: auto; padding-bottom: 4px; }
+.algo-step-label { font-size: 13px; font-weight: 600; white-space: nowrap; }
+.bt-stats-grid  { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 14px; }
+@media (max-width: 900px) {
+  .algo-main-grid { grid-template-columns: 1fr; }
+  .bt-stats-grid  { grid-template-columns: repeat(2,1fr); }
+}
+@media (max-width: 600px) {
+  .algo-step-label { display: none; }
+  .algo-steps      { gap: 4px !important; }
 }
 
 /* =====================================================

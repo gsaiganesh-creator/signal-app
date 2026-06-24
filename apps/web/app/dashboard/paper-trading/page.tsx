@@ -56,10 +56,10 @@ export default function PaperTradingPage() {
         </Link>
       </div>
 
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 300px', gap:16 }}>
+      <div className="paper-main-grid">
         <div>
           {/* Perf cards */}
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10, marginBottom:16 }}>
+          <div className="paper-stats-grid">
             {[
               { label:'Virtual Portfolio', val:pv, valC:pc, sub:'Started at ₹1,00,000' },
               { label:'Paper Returns',     val:rv, valC:rc, sub:'Virtual P&L' },
@@ -105,15 +105,15 @@ export default function PaperTradingPage() {
             <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
               <thead>
                 <tr>
-                  {['Date & Time','Stock','Signal','Entry','Exit','P&L','Status'].map(h => (
-                    <th key={h} style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', padding:'7px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4 }}>{h}</th>
+                  {[['Date & Time','paper-log-date'],['Stock',''],['Signal',''],['Entry',''],['Exit','paper-log-exit'],['P&L',''],['Status','']].map(([h,cls]) => (
+                    <th key={h} className={cls} style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', padding:'7px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4 }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {st.log.map((row, i) => (
                   <tr key={i} style={{ borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                    <td style={{ padding:'9px 10px', fontSize:11, color:'var(--dim2)' }}>{row.date}</td>
+                    <td className="paper-log-date" style={{ padding:'9px 10px', fontSize:11, color:'var(--dim2)' }}>{row.date}</td>
                     <td style={{ padding:'9px 10px', fontWeight:700 }}>{row.sym}</td>
                     <td style={{ padding:'9px 10px' }}>
                       <span style={{ display:'inline-flex', alignItems:'center', gap:4 }}>
@@ -122,7 +122,7 @@ export default function PaperTradingPage() {
                       </span>
                     </td>
                     <td style={{ padding:'9px 10px' }}>{row.entry}</td>
-                    <td style={{ padding:'9px 10px' }}>{row.exit}</td>
+                    <td className="paper-log-exit" style={{ padding:'9px 10px' }}>{row.exit}</td>
                     <td style={{ padding:'9px 10px', fontWeight:700, color:row.plC }}>{row.pl}</td>
                     <td style={{ padding:'9px 10px' }}>
                       <span style={{ fontSize:11, padding:'2px 8px', borderRadius:5, background:row.sBg, color:row.sC, fontWeight:700 }}>{row.status}</span>
