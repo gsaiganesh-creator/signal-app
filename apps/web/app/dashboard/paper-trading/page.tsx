@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 const LOG_1 = [
@@ -23,6 +23,7 @@ const STRATS = [
 ];
 
 export default function PaperTradingPage() {
+  useEffect(() => { localStorage.setItem('signal_visited_paper', '1'); }, []);
   const [si, setSi]       = useState(0);
   const [rsiL, setRsiL]   = useState(35);
   const [rsiH, setRsiH]   = useState(70);

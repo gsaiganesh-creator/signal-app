@@ -249,6 +249,7 @@ export default function SignalsPage() {
   }, []);
 
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { localStorage.setItem('signal_visited_signals', '1'); }, []);
 
   const hasPortfolio = portfolioSymbols.length > 0;
   const portfolioCnt = mlSignals.filter(s => portfolioSymbols.includes(s.symbol.replace('.NS',''))).length;
@@ -391,8 +392,13 @@ export default function SignalsPage() {
       )}
 
       {!mlLoading && !mlError && shown.length === 0 && (
-        <div style={{ textAlign:'center', padding:'48px', color:'var(--dim)' }}>
-          No signals match current filter.
+        <div style={{ textAlign:'center', padding:'48px 24px', background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14 }}>
+          <div style={{ fontSize:36, marginBottom:12 }}>🔍</div>
+          <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No signals match this filter</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginBottom:16 }}>Try switching to <strong>All</strong> or <strong>In My Portfolio</strong> — the scan refreshes every hour.</div>
+          <button onClick={() => { setFilter('all'); setSearch(''); }} style={{ height:36, padding:'0 20px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+            Show All Signals
+          </button>
         </div>
       )}
 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
 import { useState, useEffect } from 'react';
+import { OnboardingChecklist } from '@/components/OnboardingChecklist';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -306,6 +307,8 @@ export default function DashboardPage() {
           📊 View Full P&L →
         </Link>
       </div>
+
+      <OnboardingChecklist />
 
       {/* Key metrics */}
       <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>

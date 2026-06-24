@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 // ─── Historical signal calls (since March 2026) ───────────────────────────────
 type Status = 'T2 Hit' | 'T1 Hit' | 'SL Hit' | 'Running';
@@ -87,6 +87,7 @@ const MONTH_LABELS: Record<string, string> = {
 };
 
 export default function TrackRecordPage() {
+  useEffect(() => { localStorage.setItem('signal_visited_track', '1'); }, []);
   const [tab, setTab] = useState<'calls'|'sectors'|'method'>('calls');
 
   return (
