@@ -14,6 +14,7 @@ const SIDEBAR: NavSection[] = [
     { href:'/dashboard/etf-mf',           icon:'🏦', label:'ETF & MF'        },
   ]},
   { section:'Tools', links:[
+    { href:'/dashboard/track-record',     icon:'🏆', label:'Track Record'    },
     { href:'/dashboard/algo-builder',     icon:'⚙️', label:'Algo Builder'    },
     { href:'/dashboard/paper-trading',    icon:'🧪', label:'Paper Trading'   },
     { href:'/dashboard/backtest',         icon:'📋', label:'Backtest'        },

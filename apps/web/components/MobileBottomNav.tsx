@@ -11,6 +11,7 @@ const PRIMARY_TABS = [
 ];
 
 const MORE_LINKS = [
+  { href:'/dashboard/track-record',  icon:'🏆', label:'Track Record'  },
   { href:'/dashboard/paper-trading', icon:'🧪', label:'Paper Trading' },
   { href:'/dashboard/sectors',       icon:'🔥', label:'Sector Heatmap' },
   { href:'/dashboard/forex',         icon:'💱', label:'Forex'          },
