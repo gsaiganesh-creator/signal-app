@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
 import { DashboardTopNav, DashboardSubNav } from '@/components/DashboardTopNav';
+import { DashboardNavProvider } from '@/components/DashboardNavContext';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { PortfolioProvider } from '@/lib/portfolio-context';
 import { NavUserChip } from '@/components/NavUserChip';
@@ -9,7 +10,7 @@ import { PortfolioSwitcher } from '@/components/PortfolioSwitcher';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <PortfolioProvider>
+    <PortfolioProvider><DashboardNavProvider>
       <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh' }}>
 
         {/* Top Nav */}
@@ -52,6 +53,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
         <MobileBottomNav />
       </div>
-    </PortfolioProvider>
+    </DashboardNavProvider></PortfolioProvider>
   );
 }

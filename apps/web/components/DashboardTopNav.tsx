@@ -1,66 +1,10 @@
 'use client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, useEffect } from 'react';
-
-const TABS = [
-  {
-    key: 'home', label: 'Home',
-    links: [
-      { href: '/dashboard',              label: 'Dashboard'   },
-      { href: '/dashboard/signals',      label: 'Signals'     },
-      { href: '/dashboard/portfolio',    label: 'Portfolio'   },
-      { href: '/dashboard/us-portfolio', label: 'US Stocks'   },
-      { href: '/dashboard/etf-mf',       label: 'ETF & MF'   },
-    ],
-  },
-  {
-    key: 'tools', label: 'Tools',
-    links: [
-      { href: '/dashboard/algorithms',    label: 'Algo Library'  },
-      { href: '/dashboard/ai-prompts',    label: 'AI Prompts'    },
-      { href: '/dashboard/algo-builder',  label: 'Algo Builder'  },
-      { href: '/dashboard/paper-trading', label: 'Paper Trading' },
-      { href: '/dashboard/backtest',      label: 'Backtest'      },
-      { href: '/dashboard/track-record',  label: 'Track Record'  },
-    ],
-  },
-  {
-    key: 'markets', label: 'Markets',
-    links: [
-      { href: '/dashboard/sectors',     label: 'Heatmap'     },
-      { href: '/dashboard/fii-dii',     label: 'FII / DII'   },
-      { href: '/dashboard/forex',       label: 'Forex'       },
-      { href: '/dashboard/commodities', label: 'Commodities' },
-      { href: '/dashboard/earnings',    label: 'Earnings'    },
-    ],
-  },
-  {
-    key: 'account', label: 'Account',
-    links: [
-      { href: '/dashboard/upgrade', label: 'Upgrade'      },
-      { href: '/dashboard/brokers', label: 'Broker'       },
-      { href: '/dashboard/refer',   label: 'Refer & Earn' },
-      { href: '/sign-out',          label: 'Sign Out'     },
-    ],
-  },
-];
-
-function resolveTab(pathname: string): string {
-  for (const tab of TABS) {
-    if (tab.links.some(l => pathname === l.href || (l.href !== '/dashboard' && pathname.startsWith(l.href)))) {
-      return tab.key;
-    }
-  }
-  return 'home';
-}
+import { TABS, useNavCtx } from '@/components/DashboardNavContext';
 
 export function DashboardTopNav() {
-  const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState(() => resolveTab(pathname));
-
-  useEffect(() => { setActiveTab(resolveTab(pathname)); }, [pathname]);
-
+  const { activeTab, setActiveTab } = useNavCtx();
   return (
     <div className="dash-top-tabs">
       {TABS.map(tab => {
@@ -88,11 +32,8 @@ export function DashboardTopNav() {
 }
 
 export function DashboardSubNav() {
+  const { activeTab } = useNavCtx();
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState(() => resolveTab(pathname));
-
-  useEffect(() => { setActiveTab(resolveTab(pathname)); }, [pathname]);
-
   const tab = TABS.find(t => t.key === activeTab)!;
 
   return (
