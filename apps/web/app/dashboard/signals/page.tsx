@@ -240,6 +240,49 @@ export default function SignalsPage() {
   const [search, setSearch] = useState('');
   const [selected, setSelected] = useState<MLSignal | null>(null);
 
+  // Live stock search (all NSE stocks)
+  const [searchResults, setSearchResults] = useState<{ symbol:string; ticker:string; name:string; exchange:string }[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const searchRef = useState<ReturnType<typeof setTimeout> | null>(null);
+
+  function onSearchChange(val: string) {
+    setSearch(val);
+    if (searchRef[0]) clearTimeout(searchRef[0]);
+    if (!val.trim()) { setSearchResults([]); setShowDropdown(false); return; }
+    setSearchLoading(true);
+    searchRef[0] = setTimeout(async () => {
+      try {
+        const r = await fetch(`/api/stock-search?q=${encodeURIComponent(val)}`);
+        const d = await r.json() as { results: { symbol:string; ticker:string; name:string; exchange:string }[] };
+        setSearchResults(d.results ?? []);
+        setShowDropdown(true);
+      } catch { /**/ }
+      setSearchLoading(false);
+    }, 300);
+  }
+
+  // Analyse a searched stock — fetch via stock-detail and show in modal as synthetic signal
+  async function analyseStock(item: { symbol:string; ticker:string; name:string; exchange:string }) {
+    setShowDropdown(false); setSearch(item.name);
+    const r = await fetch(`/api/stock-detail?symbol=${item.ticker}&exchange=${item.exchange}`);
+    if (!r.ok) return;
+    const d = await r.json();
+    // Build a synthetic MLSignal from stock-detail data so modal can render it
+    const synthetic: MLSignal = {
+      symbol: item.ticker, name: item.name, sector: 'Custom',
+      cmp: d.price ?? 0, chg: d.change_pct ?? 0,
+      rsi: d.rsi14 ?? 50, ema20: d.ema20 ?? 0,
+      ema_dist_pct: d.ema20 ? +((d.price - d.ema20) / d.ema20 * 100).toFixed(1) : 0,
+      entry_low: d.entry_low ?? 0, entry_high: d.entry_high ?? 0,
+      target: d.target1 ?? 0, sl: d.stop_loss ?? 0,
+      signal: d.signals?.[0] ?? 'ANALYSIS',
+      confidence: d.rsi14 ? Math.min(99, Math.round(50 + Math.abs(50 - d.rsi14))) : 60,
+      score: 0,
+    };
+    setSelected(synthetic);
+  }
+
   const load = useCallback(async () => {
     setMlLoading(true); setMlError(false);
     const sigs = await fetchMLSignals();
@@ -318,10 +361,36 @@ export default function SignalsPage() {
 
       {/* Controls */}
       <div className="signals-filters" style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
-        <div style={{ position:'relative', flex:'1 1 220px', maxWidth:320 }}>
-          <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:14, opacity:0.5 }}>🔍</span>
-          <input value={search} onChange={e => setSearch(e.target.value)} placeholder="Search symbol or sector…"
-            style={{ width:'100%', height:38, paddingLeft:36, paddingRight:12, borderRadius:10, border:'1px solid var(--bdr)', background:'var(--surf)', color:'var(--txt)', fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }}/>
+        {/* Live stock search — all NSE/BSE listed stocks */}
+        <div style={{ position:'relative', flex:'1 1 220px', maxWidth:340 }}>
+          <span style={{ position:'absolute', left:12, top:'50%', transform:'translateY(-50%)', fontSize:14, opacity:0.5, zIndex:1 }}>
+            {searchLoading ? '⏳' : '🔍'}
+          </span>
+          <input
+            value={search}
+            onChange={e => onSearchChange(e.target.value)}
+            onFocus={() => searchResults.length && setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+            placeholder="Search any listed stock…"
+            style={{ width:'100%', height:38, paddingLeft:36, paddingRight:12, borderRadius:10, border:'1px solid var(--bdr)', background:'var(--surf)', color:'var(--txt)', fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }}
+          />
+          {showDropdown && searchResults.length > 0 && (
+            <div style={{ position:'absolute', top:42, left:0, right:0, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, zIndex:200, boxShadow:'0 8px 32px rgba(0,0,0,0.3)', overflow:'hidden' }}>
+              {searchResults.map(item => (
+                <button
+                  key={item.ticker}
+                  onMouseDown={() => analyseStock(item)}
+                  style={{ width:'100%', display:'flex', alignItems:'center', gap:10, padding:'10px 14px', background:'none', border:'none', borderBottom:'1px solid var(--bdr)', cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}
+                  onMouseEnter={e => (e.currentTarget.style.background = 'var(--surf2)')}
+                  onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                  <span style={{ fontSize:11, fontWeight:800, background:'rgba(23,64,245,0.12)', color:'var(--bluL)', borderRadius:5, padding:'2px 7px', flexShrink:0 }}>{item.symbol}</span>
+                  <span style={{ fontSize:12, color:'var(--txt)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</span>
+                  <span style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto', flexShrink:0 }}>{item.exchange}</span>
+                </button>
+              ))}
+              <div style={{ padding:'8px 14px', fontSize:11, color:'var(--dim)' }}>Select to analyse →</div>
+            </div>
+          )}
         </div>
         {FILTERS.map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)}
