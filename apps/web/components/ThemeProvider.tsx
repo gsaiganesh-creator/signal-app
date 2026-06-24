@@ -17,6 +17,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   function toggle() {
     const next: Theme = theme === 'dark' ? 'light' : 'dark';
+    document.documentElement.classList.add('theme-switching');
+    setTimeout(() => document.documentElement.classList.remove('theme-switching'), 400);
     setTheme(next);
     localStorage.setItem('signal-theme', next);
     document.documentElement.setAttribute('data-theme', next);

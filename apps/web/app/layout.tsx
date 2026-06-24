@@ -28,6 +28,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <link rel="icon" type="image/svg+xml" href="/icons/icon.svg" />
       </head>
       <body>
+        {/* Prevent flash of wrong theme — runs before first paint */}
+        <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('signal-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}` }} />
         <ThemeProvider>{children}</ThemeProvider>
         <CapacitorOAuthListener />
       </body>
