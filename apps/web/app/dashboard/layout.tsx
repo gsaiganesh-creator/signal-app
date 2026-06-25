@@ -28,7 +28,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <DashboardTopNav />
 
           <div className="dash-right" style={{ marginLeft: 0, justifySelf:'end' }}>
-            <div className="dash-port-switcher"><PortfolioSwitcher /></div>
             <ThemeToggle />
             <div className="dash-bell" style={{ width:34, height:34, borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', flexShrink:0 }}>
               <span style={{ fontSize:14 }}>🔔</span>
