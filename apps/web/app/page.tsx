@@ -44,7 +44,6 @@ export default function LandingPage() {
   const [coupon, setCoupon]  = useState('');
   const [couponMsg, setCouponMsg] = useState<{text:string;ok:boolean}|null>(null);
   const [openMenu, setOpenMenu] = useState<string|null>(null);
-  const [mobileMenu, setMobileMenu] = useState(false);
   const pr = PRICE[period];
 
   function applyCoupon() {
@@ -102,44 +101,14 @@ export default function LandingPage() {
             <a href="#download" style={{ height:34, padding:'0 12px', display:'flex', alignItems:'center', gap:5, fontSize:13, fontWeight:700, color:'var(--grn)', textDecoration:'none', borderRadius:8, border:'1px solid rgba(0,212,160,0.25)', whiteSpace:'nowrap' }}>↓ Get App</a>
           </div>
 
-          {/* Right: theme toggle + sign in + get started (desktop) + hamburger (mobile) */}
+          {/* Right: desktop = theme + sign in + get started | mobile = sign in only */}
           <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
-            <ThemeToggle style={{ background:'rgba(255,255,255,0.08)', borderColor:'rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.7)' }} />
-            <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.16)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Sign In</Link>
-            {/* "Get Started" hidden on mobile — available in hamburger menu */}
-            <Link href="/sign-in" className="pub-nav-cta-desktop" style={{ height:34, padding:'0 16px', borderRadius:8, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Get Started →</Link>
-            {/* Hamburger — mobile only */}
-            <button className="pub-nav-hamburger" onClick={() => setMobileMenu(m => !m)}
-              style={{ display:'none', background:'transparent', border:'1px solid rgba(255,255,255,0.18)', borderRadius:8, width:36, height:36, alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, color:'#fff' }}>
-              {mobileMenu
-                ? <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-                : <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
-              }
-            </button>
+            <span className="pub-nav-theme"><ThemeToggle style={{ background:'rgba(255,255,255,0.08)', borderColor:'rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.7)' }} /></span>
+            <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none', flexShrink:0 }}>Sign In</Link>
+            <Link href="/sign-in" className="pub-nav-cta-desktop" style={{ height:34, padding:'0 16px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.22)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Get Started →</Link>
           </div>
         </div>
 
-        {/* Mobile slide-down menu */}
-        {mobileMenu && (
-          <div className="pub-nav-mobile-menu" style={{ borderTop:'1px solid rgba(255,255,255,0.08)', padding:'12px 20px 20px', display:'flex', flexDirection:'column', gap:4 }}>
-            {NAV_GROUPS.map(group => (
-              <div key={group.id}>
-                <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:'uppercase', color:'rgba(255,255,255,0.3)', padding:'10px 8px 6px' }}>{group.label}</div>
-                {group.items.map(item => (
-                  <a key={item.h} href={item.h} onClick={() => setMobileMenu(false)}
-                    style={{ display:'block', padding:'9px 8px', borderRadius:8, color:'rgba(255,255,255,0.8)', textDecoration:'none', fontSize:14, fontWeight:500 }}>
-                    {item.l}
-                  </a>
-                ))}
-              </div>
-            ))}
-            <a href="#pricing" onClick={() => setMobileMenu(false)} style={{ display:'block', padding:'9px 8px', borderRadius:8, color:'rgba(255,255,255,0.8)', textDecoration:'none', fontSize:14, fontWeight:500 }}>Pricing</a>
-            <a href="#download" onClick={() => setMobileMenu(false)} style={{ display:'block', padding:'9px 8px', borderRadius:8, color:'var(--grn)', textDecoration:'none', fontSize:14, fontWeight:700 }}>↓ Get App</a>
-            <div style={{ marginTop:8, paddingTop:12, borderTop:'1px solid rgba(255,255,255,0.08)' }}>
-              <Link href="/sign-in" onClick={() => setMobileMenu(false)} style={{ display:'block', width:'100%', height:44, borderRadius:10, background:'var(--blu)', color:'#fff', fontSize:14, fontWeight:700, textDecoration:'none', textAlign:'center', lineHeight:'44px' }}>Get Started — No Card Needed →</Link>
-            </div>
-          </div>
-        )}
       </nav>
 
       {/* Hero */}

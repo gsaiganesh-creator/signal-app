@@ -179,9 +179,10 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .dash-subnav { display: none; }
   .dash-topnav-links { display: none; }
   .pub-nav-center      { display: none; }
-  .pub-nav-hamburger   { display: flex !important; }
+  .pub-nav-hamburger   { display: none !important; }
   .pub-nav-cta-desktop { display: none !important; }
-  .pricing-grid { grid-template-columns: 1fr 1fr; }
+  .pub-nav-theme       { display: none; }
+  .pricing-grid        { grid-template-columns: 1fr 1fr; }
   .dash-mobile-nav {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0;
     height: calc(60px + env(safe-area-inset-bottom));
