@@ -54,7 +54,7 @@ export default function LandingPage() {
   }
 
   return (
-    <div data-theme="dark" style={{ background:'#070D1A', color:'#FFFFFF', minHeight:'100vh' }}>
+    <div data-theme="dark" style={{ background:'#070D1A', color:'#FFFFFF', minHeight:'100vh', overflowX:'hidden', maxWidth:'100vw' }}>
       {/* SEBI Banner */}
       <div style={{ background:'rgba(255,184,0,0.08)', borderBottom:'1px solid rgba(255,184,0,0.2)', padding:'9px 5vw', display:'flex', alignItems:'center', justifyContent:'center', flexWrap:'wrap', gap:10 }}>
         <span style={{ fontSize:12, color:'var(--ylw)', lineHeight:1.5 }}>⚠️ <strong>IMPORTANT DISCLAIMER:</strong> SIGNAL is <strong>NOT SEBI registered</strong>. All signals, picks, and analysis are for <strong>informational and educational purposes only</strong>. Not financial advice. Trade at your own risk.</span>
@@ -111,8 +111,41 @@ export default function LandingPage() {
 
       </nav>
 
-      {/* Hero */}
-      <section style={{ padding:'72px clamp(20px,6vw,120px) 56px', textAlign:'center', position:'relative', overflow:'hidden' }}>
+      {/* Mobile splash — replaces hero on phones, hidden on desktop */}
+      <section className="pub-mobile-splash">
+        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'85dvh', padding:'40px 28px', textAlign:'center', gap:0 }}>
+          <div style={{ marginBottom:24 }}>
+            <SignalLogo />
+          </div>
+          <div style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:'uppercase', color:'var(--bluL)', marginBottom:16 }}>ML-Powered Trading Signals</div>
+          <h1 style={{ fontSize:34, fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:12 }}>
+            Trade smarter.<br/><span style={{ color:'var(--blu)' }}>Not harder.</span>
+          </h1>
+          <p style={{ fontSize:14, color:'var(--dim)', lineHeight:1.6, maxWidth:300, marginBottom:40 }}>
+            Random Forest signals · Portfolio analysis · Algo Builder — at ₹299/month.
+          </p>
+          <Link href="/sign-in" style={{ width:'100%', maxWidth:320, height:52, borderRadius:14, background:'linear-gradient(135deg,var(--blu),var(--bluL))', color:'#fff', fontSize:16, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', boxShadow:'0 8px 32px rgba(23,64,245,0.4)', marginBottom:14 }}>
+            Sign In
+          </Link>
+          <Link href="/sign-in" style={{ width:'100%', maxWidth:320, height:52, borderRadius:14, background:'transparent', border:'1px solid rgba(255,255,255,0.18)', color:'rgba(255,255,255,0.85)', fontSize:15, fontWeight:600, display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none', marginBottom:40 }}>
+            Get Started Free — No Card →
+          </Link>
+          <div style={{ display:'flex', gap:28, justifyContent:'center' }}>
+            {[{v:'71.4%',l:'Accuracy'},{v:'4,000+',l:'Stocks'},{v:'₹299',l:'/month'}].map((s,i) => (
+              <div key={i} style={{ textAlign:'center' }}>
+                <div style={{ fontSize:22, fontWeight:900, color:'var(--txt)' }}>{s.v}</div>
+                <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{s.l}</div>
+              </div>
+            ))}
+          </div>
+          <a href="#features" style={{ marginTop:40, color:'var(--dim)', fontSize:12, textDecoration:'none', display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+            See features ↓
+          </a>
+        </div>
+      </section>
+
+      {/* Hero — desktop only */}
+      <section id="features" className="pub-desktop-hero" style={{ padding:'72px clamp(20px,6vw,120px) 56px', textAlign:'center', position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', width:800, height:800, top:-300, left:'50%', transform:'translateX(-50%)', background:'radial-gradient(circle,rgba(23,64,245,0.16) 0%,transparent 65%)', borderRadius:'50%', pointerEvents:'none' }}/>
         <div style={{ position:'absolute', width:500, height:500, bottom:-100, right:-100, background:'radial-gradient(circle,rgba(255,92,26,0.1) 0%,transparent 65%)', borderRadius:'50%', pointerEvents:'none' }}/>
         <div style={{ position:'relative', zIndex:1, maxWidth:1200, margin:'0 auto' }}>

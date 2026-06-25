@@ -168,6 +168,10 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .pub-nav-cta-desktop  { display: flex; }
 .pub-nav-mobile-menu  { display: flex; }
 
+/* Mobile splash vs desktop hero */
+.pub-mobile-splash  { display: none; }
+.pub-desktop-hero   { display: block; }
+
 /* Pricing plan cards grid */
 .pricing-grid { grid-template-columns: repeat(4, 1fr); }
 
@@ -182,6 +186,8 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .pub-nav-hamburger   { display: none !important; }
   .pub-nav-cta-desktop { display: none !important; }
   .pub-nav-theme       { display: none; }
+  .pub-mobile-splash   { display: block; }
+  .pub-desktop-hero    { display: none; }
   .pricing-grid        { grid-template-columns: 1fr 1fr; }
   .dash-mobile-nav {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0;
