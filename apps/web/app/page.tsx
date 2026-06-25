@@ -3,6 +3,20 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
+const NAV_GROUPS = [
+  { id:'product', label:'Product', items:[
+    { h:'#portfolio', l:'Portfolio Analysis', sub:'ML-classified holdings' },
+    { h:'#etf-mf',    l:'ETF & Mutual Funds', sub:'SIP optimizer + signals' },
+    { h:'#signals',   l:'Live Signals',       sub:'BUY / HOLD / SELL scores' },
+    { h:'#algo',      l:'Algo Builder',       sub:'Build & generate Python' },
+    { h:'#paper',     l:'Paper Trade',        sub:'Test risk-free' },
+  ]},
+  { id:'company', label:'Company', items:[
+    { h:'/track-record', l:'Track Record', sub:'Every call, public & tracked' },
+    { h:'/about',        l:'About',         sub:'Mission & team' },
+  ]},
+];
+
 const SignalLogo = () => (
   <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
     <rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.18"/>
@@ -30,6 +44,7 @@ export default function LandingPage() {
   const [coupon, setCoupon]  = useState('');
   const [couponMsg, setCouponMsg] = useState<{text:string;ok:boolean}|null>(null);
   const [openMenu, setOpenMenu] = useState<string|null>(null);
+  const [mobileMenu, setMobileMenu] = useState(false);
   const pr = PRICE[period];
 
   function applyCoupon() {
@@ -47,67 +62,84 @@ export default function LandingPage() {
       </div>
 
       {/* Nav */}
-      <nav style={{ position:'sticky', top:0, zIndex:100, display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:62, padding:'0 clamp(16px,4vw,48px)', background:'rgba(7,13,26,0.95)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.08)', overflow:'hidden' }}>
+      <nav style={{ position:'sticky', top:0, zIndex:100, background:'rgba(7,13,26,0.95)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ display:'flex', alignItems:'center', height:62, padding:'0 clamp(16px,4vw,48px)', gap:8 }}>
 
-        {/* Logo — left */}
-        <Link href="/" style={{ display:'flex', alignItems:'center', gap:9, fontSize:19, fontWeight:900, letterSpacing:-0.5, color:'#fff', justifySelf:'start', flexShrink:0 }}>
-          <SignalLogo /> SIGNAL
-        </Link>
+          {/* Logo */}
+          <Link href="/" style={{ display:'flex', alignItems:'center', gap:9, fontSize:19, fontWeight:900, letterSpacing:-0.5, color:'#fff', flexShrink:0, textDecoration:'none', marginRight:8 }}>
+            <SignalLogo /> SIGNAL
+          </Link>
 
-        {/* Centered nav groups — hidden on mobile via pub-nav-center */}
-        <div className="pub-nav-center" style={{ display:'flex', alignItems:'center', gap:2 }}>
-          {/* Product dropdown */}
-          {[
-            { id:'product', label:'Product', items:[
-              { h:'#portfolio', l:'Portfolio Analysis', sub:'ML-classified holdings' },
-              { h:'#etf-mf',    l:'ETF & Mutual Funds', sub:'SIP optimizer + signals' },
-              { h:'#signals',   l:'Live Signals',       sub:'BUY / HOLD / SELL scores' },
-              { h:'#algo',      l:'Algo Builder',       sub:'Build & generate Python' },
-              { h:'#paper',     l:'Paper Trade',        sub:'Test risk-free' },
-            ]},
-            { id:'company', label:'Company', items:[
-              { h:'/track-record', l:'Track Record', sub:'Every call, public & tracked' },
-              { h:'/about',        l:'About',         sub:'Mission & team' },
-            ]},
-          ].map(group => (
-            <div key={group.id} style={{ position:'relative' }}
-              onMouseEnter={() => setOpenMenu(group.id)}
-              onMouseLeave={() => setOpenMenu(null)}>
-              <button style={{ height:36, padding:'0 14px', border:'none', background:'transparent', color: openMenu === group.id ? '#fff' : 'rgba(255,255,255,0.6)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:5, borderRadius:8, transition:'color 0.15s', whiteSpace:'nowrap' }}>
-                {group.label}
-                <svg width="10" height="6" viewBox="0 0 10 6" style={{ opacity:0.5, transition:'transform 0.15s', transform: openMenu === group.id ? 'rotate(180deg)' : 'none' }}>
-                  <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
-                </svg>
-              </button>
-              {openMenu === group.id && (
-                <div style={{ position:'absolute', top:'calc(100% + 6px)', left:'50%', transform:'translateX(-50%)', background:'rgba(10,18,34,0.98)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:8, minWidth:230, backdropFilter:'blur(24px)', boxShadow:'0 16px 48px rgba(0,0,0,0.5)', zIndex:200 }}>
-                  {group.items.map(item => (
-                    <a key={item.h} href={item.h} style={{ display:'block', padding:'9px 12px', borderRadius:9, color:'rgba(255,255,255,0.85)', textDecoration:'none', transition:'background 0.12s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.07)')}
-                      onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
-                      <div style={{ fontSize:13, fontWeight:600, color:'#fff' }}>{item.l}</div>
-                      <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:2 }}>{item.sub}</div>
-                    </a>
-                  ))}
-                </div>
-              )}
+          {/* Desktop center nav — hidden on mobile */}
+          <div className="pub-nav-center" style={{ display:'flex', alignItems:'center', gap:2, flex:1, justifyContent:'center' }}>
+            {NAV_GROUPS.map(group => (
+              <div key={group.id} style={{ position:'relative' }}
+                onMouseEnter={() => setOpenMenu(group.id)}
+                onMouseLeave={() => setOpenMenu(null)}>
+                <button style={{ height:36, padding:'0 14px', border:'none', background:'transparent', color: openMenu === group.id ? '#fff' : 'rgba(255,255,255,0.6)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:5, borderRadius:8, transition:'color 0.15s', whiteSpace:'nowrap' }}>
+                  {group.label}
+                  <svg width="10" height="6" viewBox="0 0 10 6" style={{ opacity:0.5, transition:'transform 0.15s', transform: openMenu === group.id ? 'rotate(180deg)' : 'none' }}>
+                    <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                  </svg>
+                </button>
+                {openMenu === group.id && (
+                  <div style={{ position:'absolute', top:'calc(100% + 6px)', left:'50%', transform:'translateX(-50%)', background:'rgba(10,18,34,0.98)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:8, minWidth:230, backdropFilter:'blur(24px)', boxShadow:'0 16px 48px rgba(0,0,0,0.5)', zIndex:200 }}>
+                    {group.items.map(item => (
+                      <a key={item.h} href={item.h} style={{ display:'block', padding:'9px 12px', borderRadius:9, color:'rgba(255,255,255,0.85)', textDecoration:'none', transition:'background 0.12s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.07)')}
+                        onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
+                        <div style={{ fontSize:13, fontWeight:600, color:'#fff' }}>{item.l}</div>
+                        <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:2 }}>{item.sub}</div>
+                      </a>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            <a href="#pricing" style={{ height:36, padding:'0 14px', display:'flex', alignItems:'center', fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.6)', textDecoration:'none', borderRadius:8, whiteSpace:'nowrap' }}
+              onMouseEnter={e => (e.currentTarget.style.color='#fff')}
+              onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.6)')}>Pricing</a>
+            <a href="#download" style={{ height:34, padding:'0 12px', display:'flex', alignItems:'center', gap:5, fontSize:13, fontWeight:700, color:'var(--grn)', textDecoration:'none', borderRadius:8, border:'1px solid rgba(0,212,160,0.25)', whiteSpace:'nowrap' }}>↓ Get App</a>
+          </div>
+
+          {/* Right: theme toggle + sign in + get started (desktop) + hamburger (mobile) */}
+          <div style={{ marginLeft:'auto', display:'flex', alignItems:'center', gap:8, flexShrink:0 }}>
+            <ThemeToggle style={{ background:'rgba(255,255,255,0.08)', borderColor:'rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.7)' }} />
+            <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.16)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Sign In</Link>
+            {/* "Get Started" hidden on mobile — available in hamburger menu */}
+            <Link href="/sign-in" className="pub-nav-cta-desktop" style={{ height:34, padding:'0 16px', borderRadius:8, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Get Started →</Link>
+            {/* Hamburger — mobile only */}
+            <button className="pub-nav-hamburger" onClick={() => setMobileMenu(m => !m)}
+              style={{ display:'none', background:'transparent', border:'1px solid rgba(255,255,255,0.18)', borderRadius:8, width:36, height:36, alignItems:'center', justifyContent:'center', cursor:'pointer', flexShrink:0, color:'#fff' }}>
+              {mobileMenu
+                ? <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 2l12 12M14 2L2 14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+                : <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 4h12M2 8h12M2 12h12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/></svg>
+              }
+            </button>
+          </div>
+        </div>
+
+        {/* Mobile slide-down menu */}
+        {mobileMenu && (
+          <div className="pub-nav-mobile-menu" style={{ borderTop:'1px solid rgba(255,255,255,0.08)', padding:'12px 20px 20px', display:'flex', flexDirection:'column', gap:4 }}>
+            {NAV_GROUPS.map(group => (
+              <div key={group.id}>
+                <div style={{ fontSize:11, fontWeight:700, letterSpacing:1.5, textTransform:'uppercase', color:'rgba(255,255,255,0.3)', padding:'10px 8px 6px' }}>{group.label}</div>
+                {group.items.map(item => (
+                  <a key={item.h} href={item.h} onClick={() => setMobileMenu(false)}
+                    style={{ display:'block', padding:'9px 8px', borderRadius:8, color:'rgba(255,255,255,0.8)', textDecoration:'none', fontSize:14, fontWeight:500 }}>
+                    {item.l}
+                  </a>
+                ))}
+              </div>
+            ))}
+            <a href="#pricing" onClick={() => setMobileMenu(false)} style={{ display:'block', padding:'9px 8px', borderRadius:8, color:'rgba(255,255,255,0.8)', textDecoration:'none', fontSize:14, fontWeight:500 }}>Pricing</a>
+            <a href="#download" onClick={() => setMobileMenu(false)} style={{ display:'block', padding:'9px 8px', borderRadius:8, color:'var(--grn)', textDecoration:'none', fontSize:14, fontWeight:700 }}>↓ Get App</a>
+            <div style={{ marginTop:8, paddingTop:12, borderTop:'1px solid rgba(255,255,255,0.08)' }}>
+              <Link href="/sign-in" onClick={() => setMobileMenu(false)} style={{ display:'block', width:'100%', height:44, borderRadius:10, background:'var(--blu)', color:'#fff', fontSize:14, fontWeight:700, textDecoration:'none', textAlign:'center', lineHeight:'44px' }}>Get Started — No Card Needed →</Link>
             </div>
-          ))}
-          <a href="#pricing" style={{ height:36, padding:'0 14px', display:'flex', alignItems:'center', fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.6)', textDecoration:'none', borderRadius:8, whiteSpace:'nowrap', transition:'color 0.15s' }}
-            onMouseEnter={e => (e.currentTarget.style.color='#fff')}
-            onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.6)')}>
-            Pricing
-          </a>
-          <a href="#download" style={{ height:34, padding:'0 12px', display:'flex', alignItems:'center', gap:5, fontSize:13, fontWeight:700, color:'var(--grn)', textDecoration:'none', borderRadius:8, border:'1px solid rgba(0,212,160,0.25)', whiteSpace:'nowrap' }}>
-            ↓ Get App
-          </a>
-        </div>
-
-        {/* Right CTA — always visible */}
-        <div className="pub-nav-right" style={{ justifySelf:'end', display:'flex', alignItems:'center', gap:8 }}>
-          <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.16)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Sign In</Link>
-          <Link href="/sign-in" style={{ height:34, padding:'0 16px', borderRadius:8, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Get Started →</Link>
-        </div>
+          </div>
+        )}
       </nav>
 
       {/* Hero */}

@@ -163,8 +163,10 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .paper-log-date, .paper-log-exit { display: table-cell; }
 
 /* Public landing page nav */
-.pub-nav-center { display: flex; align-items: center; gap: 2px; }
-.pub-nav-right   { justify-self: end; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.pub-nav-center       { display: flex; align-items: center; gap: 2px; }
+.pub-nav-hamburger    { display: none !important; }
+.pub-nav-cta-desktop  { display: flex; }
+.pub-nav-mobile-menu  { display: flex; }
 
 /* Pricing plan cards grid */
 .pricing-grid { grid-template-columns: repeat(4, 1fr); }
@@ -176,7 +178,9 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .dash-top-tabs { display: none; }
   .dash-subnav { display: none; }
   .dash-topnav-links { display: none; }
-  .pub-nav-center { display: none; }
+  .pub-nav-center      { display: none; }
+  .pub-nav-hamburger   { display: flex !important; }
+  .pub-nav-cta-desktop { display: none !important; }
   .pricing-grid { grid-template-columns: 1fr 1fr; }
   .dash-mobile-nav {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0;
