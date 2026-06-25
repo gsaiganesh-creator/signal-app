@@ -29,6 +29,7 @@ export default function LandingPage() {
   const [period, setPeriod] = useState<'mo'|'qtr'|'half'|'yr'>('mo');
   const [coupon, setCoupon]  = useState('');
   const [couponMsg, setCouponMsg] = useState<{text:string;ok:boolean}|null>(null);
+  const [openMenu, setOpenMenu] = useState<string|null>(null);
   const pr = PRICE[period];
 
   function applyCoupon() {
@@ -45,32 +46,67 @@ export default function LandingPage() {
         <span style={{ fontSize:12, color:'var(--ylw)', lineHeight:1.5 }}>⚠️ <strong>IMPORTANT DISCLAIMER:</strong> SIGNAL is <strong>NOT SEBI registered</strong>. All signals, picks, and analysis are for <strong>informational and educational purposes only</strong>. Not financial advice. Trade at your own risk.</span>
       </div>
 
-      {/* Nav — always dark bg, always white text */}
-      <nav style={{ position:'sticky', top:0, zIndex:100, display:'flex', alignItems:'center', gap:0, padding:'0 clamp(16px,4vw,60px)', height:62, background:'rgba(7,13,26,0.95)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
-        <Link href="/" style={{ display:'flex', alignItems:'center', gap:9, fontSize:19, fontWeight:900, letterSpacing:-0.5, color:'#fff', flexShrink:0, marginRight:24 }}>
+      {/* Nav */}
+      <nav style={{ position:'sticky', top:0, zIndex:100, display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:62, padding:'0 clamp(16px,4vw,48px)', background:'rgba(7,13,26,0.95)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+
+        {/* Logo — left */}
+        <Link href="/" style={{ display:'flex', alignItems:'center', gap:9, fontSize:19, fontWeight:900, letterSpacing:-0.5, color:'#fff', justifySelf:'start', flexShrink:0 }}>
           <SignalLogo /> SIGNAL
         </Link>
-        <div className="dash-topnav-links" style={{ gap:10, fontSize:12, fontWeight:500 }}>
+
+        {/* Centered nav groups */}
+        <div style={{ display:'flex', alignItems:'center', gap:2 }}>
+          {/* Product dropdown */}
           {[
-            { h:'#portfolio',    l:'Portfolio' },
-            { h:'#etf-mf',       l:'ETF & MF' },
-            { h:'#signals',      l:'Signals' },
-            { h:'#algo',         l:'Algo Builder' },
-            { h:'#paper',        l:'Paper Trade' },
-            { h:'/track-record', l:'Track Record' },
-            { h:'/about',        l:'About' },
-            { h:'#pricing',      l:'Pricing' },
-            { h:'#download',     l:'↓ Get App', special:true },
-          ].map(({ h, l, special }) => (
-            special
-              ? <a key={h} href={h} style={{ color:'var(--grn)', fontWeight:600, transition:'color 0.15s', whiteSpace:'nowrap', padding:'0 6px' }}>{l}</a>
-              : <a key={h} href={h} style={{ color:'rgba(255,255,255,0.55)', transition:'color 0.15s', whiteSpace:'nowrap', padding:'0 6px' }} onMouseOver={e=>(e.currentTarget.style.color='#fff')} onMouseOut={e=>(e.currentTarget.style.color='rgba(255,255,255,0.55)')}>{l}</a>
+            { id:'product', label:'Product', items:[
+              { h:'#portfolio', l:'Portfolio Analysis', sub:'ML-classified holdings' },
+              { h:'#etf-mf',    l:'ETF & Mutual Funds', sub:'SIP optimizer + signals' },
+              { h:'#signals',   l:'Live Signals',       sub:'BUY / HOLD / SELL scores' },
+              { h:'#algo',      l:'Algo Builder',       sub:'Build & generate Python' },
+              { h:'#paper',     l:'Paper Trade',        sub:'Test risk-free' },
+            ]},
+            { id:'company', label:'Company', items:[
+              { h:'/track-record', l:'Track Record', sub:'Every call, public & tracked' },
+              { h:'/about',        l:'About',         sub:'Mission & team' },
+            ]},
+          ].map(group => (
+            <div key={group.id} style={{ position:'relative' }}
+              onMouseEnter={() => setOpenMenu(group.id)}
+              onMouseLeave={() => setOpenMenu(null)}>
+              <button style={{ height:36, padding:'0 14px', border:'none', background:'transparent', color: openMenu === group.id ? '#fff' : 'rgba(255,255,255,0.6)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:5, borderRadius:8, transition:'color 0.15s', whiteSpace:'nowrap' }}>
+                {group.label}
+                <svg width="10" height="6" viewBox="0 0 10 6" style={{ opacity:0.5, transition:'transform 0.15s', transform: openMenu === group.id ? 'rotate(180deg)' : 'none' }}>
+                  <path d="M1 1l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round"/>
+                </svg>
+              </button>
+              {openMenu === group.id && (
+                <div style={{ position:'absolute', top:'calc(100% + 6px)', left:'50%', transform:'translateX(-50%)', background:'rgba(10,18,34,0.98)', border:'1px solid rgba(255,255,255,0.1)', borderRadius:14, padding:8, minWidth:230, backdropFilter:'blur(24px)', boxShadow:'0 16px 48px rgba(0,0,0,0.5)', zIndex:200 }}>
+                  {group.items.map(item => (
+                    <a key={item.h} href={item.h} style={{ display:'block', padding:'9px 12px', borderRadius:9, color:'rgba(255,255,255,0.85)', textDecoration:'none', transition:'background 0.12s' }}
+                      onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.07)')}
+                      onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
+                      <div style={{ fontSize:13, fontWeight:600, color:'#fff' }}>{item.l}</div>
+                      <div style={{ fontSize:11, color:'rgba(255,255,255,0.4)', marginTop:2 }}>{item.sub}</div>
+                    </a>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
+          <a href="#pricing" style={{ height:36, padding:'0 14px', display:'flex', alignItems:'center', fontSize:13, fontWeight:600, color:'rgba(255,255,255,0.6)', textDecoration:'none', borderRadius:8, whiteSpace:'nowrap', transition:'color 0.15s' }}
+            onMouseEnter={e => (e.currentTarget.style.color='#fff')}
+            onMouseLeave={e => (e.currentTarget.style.color='rgba(255,255,255,0.6)')}>
+            Pricing
+          </a>
+          <a href="#download" style={{ height:34, padding:'0 12px', display:'flex', alignItems:'center', gap:5, fontSize:13, fontWeight:700, color:'var(--grn)', textDecoration:'none', borderRadius:8, border:'1px solid rgba(0,212,160,0.25)', whiteSpace:'nowrap' }}>
+            ↓ Get App
+          </a>
         </div>
-        <div className="dash-right" style={{ marginLeft:16 }}>
-          <ThemeToggle style={{ background:'rgba(255,255,255,0.08)', borderColor:'rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.7)' }} />
-          <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.18)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', flexShrink:0, whiteSpace:'nowrap' }}>Sign In</Link>
-          <Link href="/sign-in" style={{ height:34, padding:'0 16px', borderRadius:8, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', flexShrink:0, whiteSpace:'nowrap' }}>Get Started →</Link>
+
+        {/* Right CTA — end */}
+        <div style={{ justifySelf:'end', display:'flex', alignItems:'center', gap:8 }}>
+          <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.16)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Sign In</Link>
+          <Link href="/sign-in" style={{ height:34, padding:'0 16px', borderRadius:8, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Get Started →</Link>
         </div>
       </nav>
 
@@ -94,7 +130,7 @@ export default function LandingPage() {
             <Link href="/sign-in" style={{ height:54, padding:'0 32px', borderRadius:14, fontSize:16, fontWeight:700, background:'linear-gradient(135deg,var(--blu),var(--bluL))', color:'#fff', boxShadow:'0 8px 32px rgba(23,64,245,0.38)', display:'flex', alignItems:'center' }}>Start Free — No Card Needed →</Link>
             <button style={{ height:54, padding:'0 32px', borderRadius:14, fontSize:16, fontWeight:700, background:'transparent', border:'1px solid var(--bdr)', color:'var(--txt)', cursor:'pointer' }}>Watch Demo ▶</button>
           </div>
-          <div style={{ display:'flex', gap:40, justifyContent:'center', flexWrap:'wrap', marginTop:56, alignItems:'center' }}>
+          <div style={{ display:'flex', gap:40, justifyContent:'center', flexWrap:'wrap', marginTop:40, alignItems:'center' }}>
             {[
               { v:'71.4%', c:'var(--grn)', l:'90-day signal accuracy' },
               { v:'₹299',  c:'var(--txt)', l:'vs ₹5,000+/mo elsewhere' },
@@ -177,22 +213,20 @@ export default function LandingPage() {
             </table>
           </div>
 
-          <div style={{ display:'grid', gap:20, marginTop:24 }}>
-            <div style={{ background:'rgba(255,59,92,0.06)', border:'1px solid rgba(255,59,92,0.2)', borderRadius:16, padding:28 }}>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, textTransform:'uppercase', color:'var(--red)', marginBottom:16 }}>What you're paying for now</div>
-              {['₹5,000–₹20,000/month — no accuracy proof','Same call blasted to 50,000 subscribers','Human bias, emotion, no backtesting','Telegram-only, no portfolio sync','No algo builder, no paper trading'].map((item,i) => (
-                <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12, fontSize:14, color:'var(--dim)', lineHeight:1.5 }}>
-                  <div style={{ width:20, height:20, borderRadius:'50%', background:'rgba(255,59,92,0.15)', color:'var(--red)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>✕</div>
-                  {item}
+          <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginTop:20 }}>
+            <div style={{ background:'rgba(255,59,92,0.05)', border:'1px solid rgba(255,59,92,0.18)', borderRadius:14, padding:'18px 20px' }}>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, textTransform:'uppercase', color:'var(--red)', marginBottom:12 }}>What you pay for now</div>
+              {['₹5,000–₹20,000/mo · no accuracy proof','Blasted to 50,000 subscribers','Human bias, no backtesting','No algo builder or paper trading'].map((item,i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, fontSize:13, color:'var(--dim)' }}>
+                  <span style={{ color:'var(--red)', flexShrink:0, fontWeight:700 }}>✕</span>{item}
                 </div>
               ))}
             </div>
-            <div style={{ background:'rgba(23,64,245,0.07)', border:'1px solid rgba(23,64,245,0.25)', borderRadius:16, padding:28 }}>
-              <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, textTransform:'uppercase', color:'var(--grn)', marginBottom:16 }}>What SIGNAL gives you</div>
-              {['₹199–₹599/mo — 10–75× cheaper','ML-personalized signals for your stocks','Full public accuracy record on Twitter','Live broker sync + portfolio ML analysis','Algo builder + paper trading included'].map((item,i) => (
-                <div key={i} style={{ display:'flex', alignItems:'flex-start', gap:10, marginBottom:12, fontSize:14, color:'var(--dim)', lineHeight:1.5 }}>
-                  <div style={{ width:20, height:20, borderRadius:'50%', background:'rgba(0,212,160,0.15)', color:'var(--grn)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:700, flexShrink:0 }}>✓</div>
-                  {item}
+            <div style={{ background:'rgba(0,212,160,0.04)', border:'1px solid rgba(0,212,160,0.18)', borderRadius:14, padding:'18px 20px' }}>
+              <div style={{ fontSize:11, fontWeight:700, letterSpacing:1, textTransform:'uppercase', color:'var(--grn)', marginBottom:12 }}>What SIGNAL gives you</div>
+              {['₹199–₹599/mo · 10–75× cheaper','ML-personalized for your stocks','Public accuracy record on X/Twitter','Algo builder + paper trading included'].map((item,i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:8, marginBottom:8, fontSize:13, color:'var(--dim)' }}>
+                  <span style={{ color:'var(--grn)', flexShrink:0, fontWeight:700 }}>✓</span>{item}
                 </div>
               ))}
             </div>
