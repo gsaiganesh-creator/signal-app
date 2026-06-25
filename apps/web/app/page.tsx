@@ -75,14 +75,14 @@ export default function LandingPage() {
       </nav>
 
       {/* Hero */}
-      <section style={{ padding:'100px clamp(20px,6vw,120px) 80px', textAlign:'center', position:'relative', overflow:'hidden' }}>
+      <section style={{ padding:'72px clamp(20px,6vw,120px) 56px', textAlign:'center', position:'relative', overflow:'hidden' }}>
         <div style={{ position:'absolute', width:800, height:800, top:-300, left:'50%', transform:'translateX(-50%)', background:'radial-gradient(circle,rgba(23,64,245,0.16) 0%,transparent 65%)', borderRadius:'50%', pointerEvents:'none' }}/>
         <div style={{ position:'absolute', width:500, height:500, bottom:-100, right:-100, background:'radial-gradient(circle,rgba(255,92,26,0.1) 0%,transparent 65%)', borderRadius:'50%', pointerEvents:'none' }}/>
         <div style={{ position:'relative', zIndex:1, maxWidth:1200, margin:'0 auto' }}>
           <div style={{ display:'inline-flex', alignItems:'center', gap:7, padding:'5px 14px 5px 10px', borderRadius:20, background:'rgba(23,64,245,0.1)', border:'1px solid rgba(23,64,245,0.28)', fontSize:12, fontWeight:600, color:'var(--bluL)', marginBottom:28 }}>
             <span className="live-dot"/> Live · NSE &amp; BSE · 4,000+ stocks
           </div>
-          <h1 style={{ fontSize:'clamp(40px,6.5vw,84px)', fontWeight:900, letterSpacing:-3, lineHeight:0.97, marginBottom:24 }}>
+          <h1 style={{ fontSize:'clamp(36px,5.5vw,72px)', fontWeight:900, letterSpacing:-2.5, lineHeight:0.97, marginBottom:24 }}>
             ML-Powered Trading<br/>
             <span style={{ color:'var(--blu)' }}>Without the</span><br/>
             <span style={{ color:'var(--org)' }}>₹20,000 Price Tag</span>
@@ -114,7 +114,7 @@ export default function LandingPage() {
       </section>
 
       {/* How It Works */}
-      <section style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--bluL)', marginBottom:12 }}>How It Works</div>
           <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>From account to signals<br/>in under 5 minutes</h2>
@@ -137,7 +137,7 @@ export default function LandingPage() {
       </section>
 
       {/* Comparison */}
-      <section style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--org)', marginBottom:12 }}>The Real Cost</div>
           <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>Stop paying ₹15,000/month<br/>for unverified calls</h2>
@@ -201,7 +201,7 @@ export default function LandingPage() {
       </section>
 
       {/* Portfolio Intelligence */}
-      <section id="portfolio" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section id="portfolio" style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div>
@@ -251,7 +251,7 @@ export default function LandingPage() {
       </section>
 
       {/* Signals */}
-      <section id="signals" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section id="signals" style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:22 }}>
@@ -316,7 +316,7 @@ export default function LandingPage() {
       </section>
 
       {/* ETF & Mutual Funds */}
-      <section id="etf-mf" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section id="etf-mf" style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div>
@@ -369,7 +369,7 @@ export default function LandingPage() {
       </section>
 
       {/* Account Aggregator */}
-      <section id="aa" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section id="aa" style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:22 }}>
@@ -424,7 +424,7 @@ export default function LandingPage() {
       </section>
 
       {/* Algo Builder */}
-      <section id="algo" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section id="algo" style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--org)', marginBottom:12 }}>Algo Builder</div>
           <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>Build your strategy.<br/>Generate the code.</h2>
@@ -521,7 +521,7 @@ export default function LandingPage() {
       </section>
 
       {/* Paper Trading */}
-      <section id="paper" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section id="paper" style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--pur)', marginBottom:12 }}>Paper Trading</div>
           <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>Test your algo with<br/>real market data.<br/><span style={{ color:'var(--pur)' }}>Zero real money.</span></h2>
@@ -547,12 +547,16 @@ export default function LandingPage() {
                 ['Jun 17 14:22','SELL','var(--red)','rgba(255,59,92,0.12)','INFY','@ ₹1,498 · RSI=72, target hit ✓','+₹2,340 virtual','var(--grn)'],
                 ['Jun 16 10:05','HOLD','var(--ylw)','rgba(255,184,0,0.12)','HDFCBANK','@ ₹1,620 · waiting for RSI confirmation','—','var(--dim)'],
               ].map(([date,sig,sc,sbg,sym,desc,pl,plc]) => (
-                <div key={date} style={{ display:'flex', alignItems:'center', gap:10, fontSize:12, marginBottom:6 }}>
-                  <span style={{ color:'var(--dim2)' }}>{date}</span>
-                  <span style={{ padding:'2px 8px', borderRadius:5, background:sbg, color:sc, fontWeight:700 }}>{sig}</span>
-                  <span style={{ fontWeight:700 }}>{sym}</span>
-                  <span style={{ color:'var(--dim)' }}>{desc}</span>
-                  <span style={{ marginLeft:'auto', color:plc, fontWeight:700 }}>{pl}</span>
+                <div key={date} style={{ marginBottom:8, paddingBottom:8, borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    <span style={{ padding:'2px 8px', borderRadius:5, background:sbg, color:sc, fontWeight:700, fontSize:11, flexShrink:0 }}>{sig}</span>
+                    <span style={{ fontWeight:700, fontSize:13 }}>{sym}</span>
+                    <span style={{ marginLeft:'auto', color:plc, fontWeight:800, fontSize:13, flexShrink:0 }}>{pl}</span>
+                  </div>
+                  <div style={{ display:'flex', justifyContent:'space-between', marginTop:4, gap:8 }}>
+                    <span style={{ color:'var(--dim)', fontSize:11, lineHeight:1.4 }}>{desc}</span>
+                    <span style={{ color:'var(--dim2)', fontSize:10, flexShrink:0 }}>{date}</span>
+                  </div>
                 </div>
               ))}
             </div>
@@ -561,7 +565,7 @@ export default function LandingPage() {
       </section>
 
       {/* Track Record tweets */}
-      <section style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--bluL)', marginBottom:12 }}>Track Record</div>
           <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>Every call is public.<br/>Every result is tracked.</h2>
@@ -591,7 +595,7 @@ export default function LandingPage() {
       </section>
 
       {/* US Markets */}
-      <section id="us-markets" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section id="us-markets" style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', flexWrap:'wrap', gap:24, marginBottom:40 }}>
             <div>
@@ -633,7 +637,7 @@ export default function LandingPage() {
       </section>
 
       {/* Pricing */}
-      <section id="pricing" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section id="pricing" style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--bluL)', marginBottom:12 }}>Pricing</div>
           <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>One plan beats every<br/>premium call service.</h2>
@@ -652,7 +656,7 @@ export default function LandingPage() {
             {[
               { name:'Free', nameC:'var(--dim)', price:'₹0', cycle:'forever · no card needed', feats:['5 stocks portfolio tracking','3 ML signals per week','NIFTY 50 basic prices','ETF & MF tracking (5 funds)','7-day delayed scorecard'], nope:['No real-time alerts','No broker/AA sync','No Algo Builder'], featured:false },
               { name:'Starter', nameC:'var(--bluL)', price:pr.s, cycle:pr.cy, feats:['25 stocks · ML buy/sell signals','ETF & MF tracking (20 funds)','Excel import · Swing + Momentum','𝕏 Twitter sentiment per stock','RF Pick of the Day','Real-time push alerts'], nope:['No broker/AA sync','No Algo Builder'], featured:false },
-              { name:'Pro', nameC:'var(--org)', price:pr.p, cycle:pr.cy, feats:['Unlimited stocks — all NSE/BSE','AA sync — stocks, MF, FD, NPS','Live broker sync (6 brokers)','Portfolio ML classifier (all 5)','Full Algo Builder + Python gen','Paper Trading (unlimited)','Real-time push + WhatsApp alerts','Earnings calendar + impact pred'], nope:[], featured:true },
+              { name:'Pro', nameC:'var(--ylw)', price:pr.p, cycle:pr.cy, feats:['Unlimited stocks — all NSE/BSE','AA sync — stocks, MF, FD, NPS','Live broker sync (6 brokers)','Portfolio ML classifier (all 5)','Full Algo Builder + Python gen','Paper Trading (unlimited)','Real-time push + WhatsApp alerts','Earnings calendar + impact pred'], nope:[], featured:true },
               { name:'Elite', nameC:'var(--pur)', price:pr.e, cycle:pr.cy, feats:['Everything in Pro','Auto-execute orders via API','Custom ML model for your portfolio','Early US markets access (beta)','Priority 24/7 WhatsApp support','Dedicated AI portfolio manager','Twitter card API','Multi-broker sync (up to 3)'], nope:[], featured:false },
             ].map(plan => (
               <div key={plan.name} style={{ background: plan.featured ? 'linear-gradient(145deg,#0D1E45,#0E1628)' : 'var(--surf)', border:`1px solid ${plan.featured ? 'var(--blu)' : 'var(--bdr)'}`, borderRadius:20, padding:32, position:'relative' }}>
@@ -694,21 +698,37 @@ export default function LandingPage() {
       </section>
 
       {/* Download App */}
-      <section id="download" style={{ padding:'80px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
+      <section id="download" style={{ padding:'60px clamp(20px,6vw,120px)', borderTop:'1px solid var(--bdr)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto' }}>
           <div className="g-mission" style={{ display:'grid', alignItems:'center' }}>
             <div>
               <div style={{ fontSize:11, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--grn)', marginBottom:12 }}>Mobile App</div>
               <h2 style={{ fontSize:'clamp(28px,4vw,46px)', fontWeight:900, letterSpacing:-1.5, lineHeight:1.05, marginBottom:14 }}>SIGNAL in<br/>your pocket</h2>
               <p style={{ fontSize:16, color:'var(--dim)', lineHeight:1.65, maxWidth:520, marginBottom:32 }}>The full platform — signals, portfolio analysis, algo builder, paper trading — on iOS and Android. Launching soon. Sign up on the website now for early access.</p>
-              <div style={{ display:'flex', flexDirection:'column', gap:12, maxWidth:240 }}>
-                <a href="#" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 22px', borderRadius:14, background:'var(--txt)', color:'var(--bg)', textDecoration:'none' }}>
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M17.5 12c0-3-1.7-5.6-4.3-6.9l.8-1.4c.2-.3 0-.7-.3-.8-.3-.1-.7 0-.8.3l-.8 1.4C11.4 4.2 10.7 4 10 4s-1.4.2-2.1.6l-.8-1.4c-.2-.3-.5-.4-.8-.3-.3.1-.5.5-.3.8l.8 1.4C4.2 6.4 2.5 9 2.5 12h15z"/><path d="M2.5 12v6.5c0 .6.4 1 1 1H4c.6 0 1-.4 1-1v-.5h10v.5c0 .6.4 1 1 1h.5c.6 0 1-.4 1-1V12H2.5z"/><circle cx="7" cy="15" r="1.2" fill="white"/><circle cx="13" cy="15" r="1.2" fill="white"/></svg>
-                  <div><div style={{ fontSize:10, opacity:0.5, marginBottom:1 }}>Coming soon</div><div style={{ fontSize:16, fontWeight:800 }}>Google Play</div></div>
+              <div style={{ display:'flex', flexDirection:'column', gap:12, maxWidth:220 }}>
+                {/* Google Play badge */}
+                <a href="#" style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 20px', borderRadius:13, background:'#000', border:'1px solid rgba(255,255,255,0.14)', color:'#fff', textDecoration:'none' }}>
+                  <svg width="22" height="24" viewBox="0 0 22 24" fill="none">
+                    <path d="M1 0.8C0.5 1.3 0.2 2.1 0.2 3V21c0 .9.3 1.7.8 2.2L1.2 23.4 12.1 12.5v-.3L1.2.6 1 .8z" fill="#4285F4"/>
+                    <path d="M15.8 16.3l-3.7-3.7v-.3L15.8 8.6l.1.1 4.4 2.5c1.3.7 1.3 1.9 0 2.6l-4.4 2.5h-.1z" fill="#FBBC04"/>
+                    <path d="M15.9 16.2L12.1 12.4 1 23.2c.4.5 1.1.5 1.9.1l13-7.1z" fill="#34A853"/>
+                    <path d="M15.9 8.7L2.9.8C2.1.4 1.4.4 1 .9l11.1 10.8 3.8-3z" fill="#EA4335"/>
+                  </svg>
+                  <div>
+                    <div style={{ fontSize:9, opacity:0.6, letterSpacing:0.3, lineHeight:1 }}>GET IT ON</div>
+                    <div style={{ fontSize:16, fontWeight:800, lineHeight:1.2 }}>Google Play</div>
+                  </div>
                 </a>
-                <a href="#" style={{ display:'flex', alignItems:'center', gap:14, padding:'14px 22px', borderRadius:14, background:'var(--txt)', color:'var(--bg)', textDecoration:'none' }}>
-                  <svg width="20" height="24" viewBox="0 0 20 24" fill="currentColor"><path d="M10 0C7.8 0 5.8 2 5.8 4h8.4C14.2 2 12.2 0 10 0z" opacity="0.4"/><path d="M15 5.5H5C3 5.5 1.5 7 1.5 9v9c0 2 1.5 3.5 3.5 3.5h10c2 0 3.5-1.5 3.5-3.5V9c0-2-1.5-3.5-3.5-3.5z"/><rect x="8.5" y="17" width="3" height="1.5" rx="0.75" fill="white" opacity="0.7"/></svg>
-                  <div><div style={{ fontSize:10, opacity:0.5, marginBottom:1 }}>Coming soon</div><div style={{ fontSize:16, fontWeight:800 }}>App Store</div></div>
+                {/* App Store badge */}
+                <a href="#" style={{ display:'flex', alignItems:'center', gap:14, padding:'12px 20px', borderRadius:13, background:'#000', border:'1px solid rgba(255,255,255,0.14)', color:'#fff', textDecoration:'none' }}>
+                  <svg width="20" height="24" viewBox="0 0 20 24" fill="white">
+                    <path d="M16.7 12.8c0-3.5 2.9-5.2 3-5.3-1.6-2.4-4.2-2.7-5.1-2.7-2.2-.2-4.2 1.3-5.3 1.3-1.1 0-2.7-1.3-4.5-1.2-2.3.1-4.4 1.3-5.6 3.4-2.4 4.1-.6 10.1 1.7 13.4 1.1 1.6 2.5 3.4 4.2 3.4 1.7-.1 2.3-1.1 4.3-1.1 2 0 2.6 1.1 4.4 1 1.8-.1 3-1.7 4.1-3.4.8-1.1 1.4-2.3 1.7-3.5-3.7-1.4-4-7.3-.9-7.3z"/>
+                    <path d="M13.6 3.2C14.6 2 15.3.3 15.1-1.4c-1.4.1-3.1.9-4.1 2.1-1 1.1-1.7 2.8-1.5 4.4 1.5.1 3-.7 4.1-1.9z"/>
+                  </svg>
+                  <div>
+                    <div style={{ fontSize:9, opacity:0.6, letterSpacing:0.3, lineHeight:1 }}>DOWNLOAD ON THE</div>
+                    <div style={{ fontSize:16, fontWeight:800, lineHeight:1.2 }}>App Store</div>
+                  </div>
                 </a>
               </div>
             </div>
