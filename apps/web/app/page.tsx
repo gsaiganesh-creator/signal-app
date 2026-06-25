@@ -47,15 +47,15 @@ export default function LandingPage() {
       </div>
 
       {/* Nav */}
-      <nav style={{ position:'sticky', top:0, zIndex:100, display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:62, padding:'0 clamp(16px,4vw,48px)', background:'rgba(7,13,26,0.95)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.08)' }}>
+      <nav style={{ position:'sticky', top:0, zIndex:100, display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:62, padding:'0 clamp(16px,4vw,48px)', background:'rgba(7,13,26,0.95)', backdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.08)', overflow:'hidden' }}>
 
         {/* Logo — left */}
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:9, fontSize:19, fontWeight:900, letterSpacing:-0.5, color:'#fff', justifySelf:'start', flexShrink:0 }}>
           <SignalLogo /> SIGNAL
         </Link>
 
-        {/* Centered nav groups */}
-        <div style={{ display:'flex', alignItems:'center', gap:2 }}>
+        {/* Centered nav groups — hidden on mobile via pub-nav-center */}
+        <div className="pub-nav-center" style={{ display:'flex', alignItems:'center', gap:2 }}>
           {/* Product dropdown */}
           {[
             { id:'product', label:'Product', items:[
@@ -103,8 +103,8 @@ export default function LandingPage() {
           </a>
         </div>
 
-        {/* Right CTA — end */}
-        <div style={{ justifySelf:'end', display:'flex', alignItems:'center', gap:8 }}>
+        {/* Right CTA — always visible */}
+        <div className="pub-nav-right" style={{ justifySelf:'end', display:'flex', alignItems:'center', gap:8 }}>
           <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.16)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Sign In</Link>
           <Link href="/sign-in" style={{ height:34, padding:'0 16px', borderRadius:8, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', whiteSpace:'nowrap', textDecoration:'none' }}>Get Started →</Link>
         </div>
@@ -686,7 +686,7 @@ export default function LandingPage() {
             ))}
           </div>
           {pr.note && <div style={{ fontSize:13, color:'var(--grn)', marginBottom:24, fontWeight:600 }}>{pr.note}</div>}
-          <div className="g4" style={{ display:'grid', gap:14 }}>
+          <div className="pricing-grid" style={{ display:'grid', gap:14 }}>
             {[
               { name:'Free', nameC:'var(--dim)', price:'₹0', cycle:'forever · no card needed', feats:['5 stocks portfolio tracking','3 ML signals per week','NIFTY 50 basic prices','ETF & MF tracking (5 funds)','7-day delayed scorecard'], nope:['No real-time alerts','No broker/AA sync','No Algo Builder'], featured:false },
               { name:'Starter', nameC:'var(--bluL)', price:pr.s, cycle:pr.cy, feats:['25 stocks · ML buy/sell signals','ETF & MF tracking (20 funds)','Excel import · Swing + Momentum','𝕏 Twitter sentiment per stock','RF Pick of the Day','Real-time push alerts'], nope:['No broker/AA sync','No Algo Builder'], featured:false },

@@ -162,6 +162,13 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .mob-hide { display: table-cell; }
 .paper-log-date, .paper-log-exit { display: table-cell; }
 
+/* Public landing page nav */
+.pub-nav-center { display: flex; align-items: center; gap: 2px; }
+.pub-nav-right   { justify-self: end; display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
+/* Pricing plan cards grid */
+.pricing-grid { grid-template-columns: repeat(4, 1fr); }
+
 /* ---- Tablet (≤ 900px) ---- */
 @media (max-width: 900px) {
   .dash-layout { display: block; }
@@ -169,6 +176,8 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .dash-top-tabs { display: none; }
   .dash-subnav { display: none; }
   .dash-topnav-links { display: none; }
+  .pub-nav-center { display: none; }
+  .pricing-grid { grid-template-columns: 1fr 1fr; }
   .dash-mobile-nav {
     display: flex; position: fixed; bottom: 0; left: 0; right: 0;
     height: calc(60px + env(safe-area-inset-bottom));
@@ -217,6 +226,7 @@ button:active:not(:disabled) { transform: scale(0.97); }
 
 /* ---- Phone (≤ 480px) ---- */
 @media (max-width: 480px) {
+  .pricing-grid { grid-template-columns: 1fr; }
   .g4 { grid-template-columns: 1fr 1fr; }
   .g3 { grid-template-columns: 1fr; }
   .g3-earnings { grid-template-columns: 1fr; }
