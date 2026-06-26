@@ -395,6 +395,13 @@ export default function USPortfolioPage() {
   const displayHoldings = viewMode === 'merged' ? merged :
     (activePortId ? allHoldings.filter(h => h.portfolio_id === activePortId) : merged);
 
+  // Summary totals across all US holdings
+  const sumInvestedUSD = merged.reduce((s, h) => s + (h.avg_price > 0.01 ? h.avg_price * h.qty : 0), 0);
+  const sumCurrentUSD  = merged.reduce((s, h) => { const p = prices[h.symbol]?.price; return s + (p != null ? p * h.qty : (h.avg_price > 0.01 ? h.avg_price * h.qty : 0)); }, 0);
+  const sumPL          = sumCurrentUSD - sumInvestedUSD;
+  const sumPLPct       = sumInvestedUSD > 0 ? (sumPL / sumInvestedUSD) * 100 : 0;
+  const sumHasPrices   = merged.some(h => prices[h.symbol]?.price != null);
+
   const allMomentumSyms = Object.values(MOMENTUM_PICKS).flat().map(s => s.sym);
 
   return (
@@ -421,6 +428,24 @@ export default function USPortfolioPage() {
           <input type="file" ref={fileRef} accept=".csv,.xlsx,.xls" style={{ display:'none' }} onChange={handleFile} />
         </div>
       </div>
+
+      {/* Summary cards */}
+      {merged.length > 0 && (
+        <div className="g4" style={{ display:'grid', gap:12, marginBottom:20 }}>
+          {[
+            { label:'Total Invested', val:`$${sumInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `≈ ₹${(sumInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
+            { label:'Current Value',  val: sumHasPrices ? `$${sumCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: (sumHasPrices&&usdInr) ? `≈ ₹${(sumCurrentUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
+            { label:'Unrealised P&L', val: sumHasPrices ? `${sumPL>=0?'+':'-'}$${Math.abs(sumPL).toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: sumHasPrices ? `${sumPLPct>=0?'+':''}${sumPLPct.toFixed(2)}%` : '', color: sumHasPrices?(sumPL>=0?'var(--grn)':'var(--red)'):'var(--txt)' },
+            { label:'Holdings',       val:`${merged.length} stocks`, sub: usdInr ? `USD/INR ₹${usdInr.toFixed(2)}` : '', color:'var(--txt)' },
+          ].map(m => (
+            <div key={m.label} style={{ ...card, padding:'14px 16px' }}>
+              <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:5 }}>{m.label}</div>
+              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
+              {m.sub && <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{m.sub}</div>}
+            </div>
+          ))}
+        </div>
+      )}
 
       {msg && (
         <div style={{ marginBottom:14, padding:'10px 14px', borderRadius:9, background: msg.startsWith('✅') ? 'rgba(0,212,160,0.08)' : 'rgba(255,59,92,0.08)', border:`1px solid ${msg.startsWith('✅') ? 'rgba(0,212,160,0.25)' : 'rgba(255,59,92,0.25)'}`, fontSize:13 }}>

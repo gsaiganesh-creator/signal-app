@@ -742,6 +742,51 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
+          {/* Per-stock compact rows */}
+          {usHoldings.length > 0 && (
+            <div style={{ ...card, marginBottom:12, overflow:'hidden' }}>
+              <div style={{ overflowX:'auto' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                  <thead>
+                    <tr>
+                      {['Stock','Qty','Avg','CMP','P&L $','P&L %'].map((h,i) => (
+                        <th key={i} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'6px 10px', textAlign:'left', borderBottom:'1px solid rgba(255,255,255,0.07)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {[...usHoldings].sort((a,b) => (b.avg_price*b.qty)-(a.avg_price*a.qty)).map(h => {
+                      const cmp  = usPrices[h.symbol]?.price ?? null;
+                      const chg  = usPrices[h.symbol]?.change_pct ?? null;
+                      const pl   = cmp != null && h.avg_price > 0.01 ? (cmp - h.avg_price) * h.qty : null;
+                      const plPct = cmp != null && h.avg_price > 0.01 ? (cmp - h.avg_price) / h.avg_price * 100 : null;
+                      const pos  = pl == null || pl >= 0;
+                      return (
+                        <tr key={h.symbol}
+                          onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.025)')}
+                          onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
+                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
+                            <div style={{ fontWeight:700 }}>{h.symbol}</div>
+                            {chg != null && <div style={{ fontSize:9, color: chg>=0?'var(--grn)':'var(--red)' }}>{chg>=0?'+':''}{chg.toFixed(2)}% today</div>}
+                          </td>
+                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', color:'var(--dim)' }}>{h.qty}</td>
+                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', color:'var(--dim)', whiteSpace:'nowrap' }}>${h.avg_price.toFixed(2)}</td>
+                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', whiteSpace:'nowrap' }}>{cmp != null ? `$${cmp.toFixed(2)}` : '—'}</td>
+                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', fontWeight:700, color:pos?'var(--grn)':'var(--red)', whiteSpace:'nowrap' }}>
+                            {pl!=null ? `${pl>=0?'+':'-'}$${Math.abs(pl).toFixed(0)}` : '—'}
+                          </td>
+                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', fontWeight:700, color:pos?'var(--grn)':'var(--red)', whiteSpace:'nowrap' }}>
+                            {plPct!=null ? `${plPct>=0?'+':''}${plPct.toFixed(1)}%` : '—'}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
           <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
             <Link href="/dashboard/us-portfolio" style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
               US Portfolio →

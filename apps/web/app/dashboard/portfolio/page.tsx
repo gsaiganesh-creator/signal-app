@@ -1101,7 +1101,7 @@ export default function PortfolioPage() {
           <div style={{ flex:1, minWidth:90 }}>
             <div style={{ fontSize:11, fontWeight:600, color:'var(--dim)', marginBottom:5 }}>Exchange</div>
             <select style={{ ...inp, appearance:'none' }} value={form.exchange} onChange={e => setForm(f => ({ ...f, exchange: e.target.value as Exchange }))}>
-              {(['NSE','BSE','NYSE','NASDAQ'] as Exchange[]).map(x => <option key={x} value={x}>{x}</option>)}
+              {(['NSE','BSE'] as Exchange[]).map(x => <option key={x} value={x}>{x}</option>)}
             </select>
           </div>
           <button onClick={handleAdd}
