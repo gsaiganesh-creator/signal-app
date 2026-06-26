@@ -66,7 +66,7 @@ function greet() {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
-const card: React.CSSProperties = { background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'0 4px 40px rgba(0,0,0,0.22),0 0 60px rgba(23,64,245,0.07),inset 0 1px 0 rgba(255,255,255,0.09)' };
+const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
 
 const LARGE_CAP = new Set([
   'RELIANCE','INFY','TCS','HDFCBANK','ICICIBANK','SBIN','WIPRO','HINDUNILVR','ITC',
@@ -182,7 +182,7 @@ function MarketOverview() {
           { name:'BANK NIFTY', val:'53,240', chg:'-88 (-0.17%)',  up:false },
           { name:'NIFTY IT',   val:'38,120', chg:'+420 (+1.12%)', up:true  },
         ].map(m => (
-          <div key={m.name} style={{ background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', borderRadius:10, padding:'10px 13px' }}>
+          <div key={m.name} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:10, padding:'10px 13px' }}>
             <div style={{ fontSize:11, color:'var(--dim)', marginBottom:2 }}>{m.name}</div>
             <div style={{ fontSize:17, fontWeight:900, letterSpacing:-0.5 }}>{m.val}</div>
             <div style={{ fontSize:11, fontWeight:700, marginTop:2, color: m.up ? 'var(--grn)' : 'var(--red)' }}>{m.up ? '▲' : '▼'} {m.chg}</div>
@@ -358,7 +358,7 @@ export default function DashboardPage() {
       <div>
         <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>
           {[0,1,2].map(i => (
-            <div key={i} style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:'18px 20px' }}>
+            <div key={i} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px' }}>
               <div style={{ width:80, height:11, background:'var(--surf2)', borderRadius:4, marginBottom:12 }}/>
               <div style={{ width:120, height:28, background:'var(--surf2)', borderRadius:6 }}/>
             </div>
@@ -483,12 +483,12 @@ export default function DashboardPage() {
         </div>
         <div style={{ display:'flex', gap:6, alignItems:'center' }}>
           <Link href="/dashboard/portfolio"
-            style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
+            style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
             🇮🇳 India P&L →
           </Link>
           {hasUSHoldings && (
             <Link href="/dashboard/us-portfolio"
-              style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
+              style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
               🇺🇸 US P&L →
             </Link>
           )}
@@ -613,7 +613,7 @@ export default function DashboardPage() {
                   {cmPos.length > 0 ? ` · Cmdy ${fmtL(cmCurrentINR)}` : ''}
                 </div>
               </div>
-              {usdInr && <div style={{ fontSize:12, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', borderRadius:8, padding:'4px 10px' }}>USD/INR ₹{usdInr.toFixed(2)}</div>}
+              {usdInr && <div style={{ fontSize:12, color:'var(--dim)', background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:8, padding:'4px 10px' }}>USD/INR ₹{usdInr.toFixed(2)}</div>}
             </div>
 
             {/* Per-asset blocks */}
@@ -721,82 +721,85 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* US Portfolio summary — always visible when holdings exist */}
-      {hasUSHoldings && (
-        <div style={{ marginBottom:16 }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <div style={{ fontSize:13, fontWeight:700 }}>🇺🇸 US Portfolio</div>
-            <Link href="/dashboard/us-portfolio" style={{ fontSize:11, color:'var(--bluL)', fontWeight:600, textDecoration:'none' }}>View full →</Link>
-          </div>
-          <div className="g4" style={{ display:'grid', gap:12, marginBottom:12 }}>
-            {[
-              { label:'US Invested', val:`$${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `₹${(usInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})} equiv` : '', color:'var(--txt)' },
-              { label:'Current Value', val: usCurrentUSD>0 ? `$${usCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: usdInr&&usCurrentUSD>0 ? `₹${(usCurrentUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})} equiv` : '', color:'var(--txt)' },
-              { label:'Unrealised P&L', val: usPL!=null ? `${usPL>=0?'+':'-'}₹${Math.abs(usPL).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', sub: usPLPct!=null ? `${usPLPct>=0?'+':''}${usPLPct.toFixed(2)}%` : '', color: usPL!=null?(usPL>=0?'var(--grn)':'var(--red)'):'var(--txt)' },
-              { label:'Holdings', val:`${usHoldings.length} stocks`, sub: usdInr ? `USD/INR ₹${usdInr.toFixed(2)}` : '', color:'var(--txt)' },
-            ].map(m => (
-              <div key={m.label} style={{ ...card, padding:'14px 16px' }}>
-                <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:5 }}>{m.label}</div>
-                <div style={{ fontSize:18, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
-                {m.sub && <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{m.sub}</div>}
-              </div>
-            ))}
-          </div>
-          {/* Per-stock compact rows */}
-          {usHoldings.length > 0 && (
-            <div style={{ ...card, marginBottom:12, overflow:'hidden' }}>
-              <div style={{ overflowX:'auto' }}>
-                <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-                  <thead>
-                    <tr>
-                      {['Stock','Qty','Avg','CMP','P&L $','P&L %'].map((h,i) => (
-                        <th key={i} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'6px 10px', textAlign:'left', borderBottom:'1px solid rgba(255,255,255,0.07)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap' }}>{h}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {[...usHoldings].sort((a,b) => (b.avg_price*b.qty)-(a.avg_price*a.qty)).map(h => {
-                      const cmp  = usPrices[h.symbol]?.price ?? null;
-                      const chg  = usPrices[h.symbol]?.change_pct ?? null;
-                      const pl   = cmp != null && h.avg_price > 0.01 ? (cmp - h.avg_price) * h.qty : null;
-                      const plPct = cmp != null && h.avg_price > 0.01 ? (cmp - h.avg_price) / h.avg_price * 100 : null;
-                      const pos  = pl == null || pl >= 0;
-                      return (
-                        <tr key={h.symbol}
-                          onMouseEnter={e => (e.currentTarget.style.background='rgba(255,255,255,0.025)')}
-                          onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
-                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)' }}>
-                            <div style={{ fontWeight:700 }}>{h.symbol}</div>
-                            {chg != null && <div style={{ fontSize:9, color: chg>=0?'var(--grn)':'var(--red)' }}>{chg>=0?'+':''}{chg.toFixed(2)}% today</div>}
-                          </td>
-                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', color:'var(--dim)' }}>{h.qty}</td>
-                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', color:'var(--dim)', whiteSpace:'nowrap' }}>${h.avg_price.toFixed(2)}</td>
-                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', whiteSpace:'nowrap' }}>{cmp != null ? `$${cmp.toFixed(2)}` : '—'}</td>
-                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', fontWeight:700, color:pos?'var(--grn)':'var(--red)', whiteSpace:'nowrap' }}>
-                            {pl!=null ? `${pl>=0?'+':'-'}$${Math.abs(pl).toFixed(0)}` : '—'}
-                          </td>
-                          <td style={{ padding:'8px 10px', borderBottom:'1px solid rgba(255,255,255,0.05)', fontWeight:700, color:pos?'var(--grn)':'var(--red)', whiteSpace:'nowrap' }}>
-                            {plPct!=null ? `${plPct>=0?'+':''}${plPct.toFixed(1)}%` : '—'}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
+      {/* US Portfolio summary — always visible */}
+      <div style={{ ...card, marginBottom:16 }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+          <div style={{ fontSize:14, fontWeight:800, letterSpacing:-0.3 }}>🇺🇸 US Portfolio</div>
+          <Link href="/dashboard/us-portfolio" style={{ fontSize:11, color:'var(--bluL)', fontWeight:600, textDecoration:'none' }}>
+            {hasUSHoldings ? 'View full →' : 'Set up →'}
+          </Link>
+        </div>
+        {hasUSHoldings ? (
+          <>
+            <div className="g4" style={{ display:'grid', gap:10, marginBottom:12 }}>
+              {[
+                { label:'Invested', val:`$${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `≈ ₹${(usInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
+                { label:'Current', val: usCurrentUSD>0 ? `$${usCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: usdInr&&usCurrentUSD>0 ? `≈ ₹${(usCurrentUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
+                { label:'P&L', val: usPL!=null ? `${usPL>=0?'+':'-'}₹${Math.abs(usPL).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', sub: usPLPct!=null ? `${usPLPct>=0?'+':''}${usPLPct.toFixed(2)}%` : '', color: usPL!=null?(usPL>=0?'var(--grn)':'var(--red)'):'var(--txt)' },
+                { label:'Holdings', val:`${usHoldings.length} stocks`, sub: usdInr ? `USD/INR ₹${usdInr.toFixed(2)}` : '', color:'var(--txt)' },
+              ].map(m => (
+                <div key={m.label} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(79,111,250,0.15)', borderRadius:10, padding:'10px 13px' }}>
+                  <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:4 }}>{m.label}</div>
+                  <div style={{ fontSize:16, fontWeight:900, letterSpacing:-0.3, color:m.color }}>{m.val}</div>
+                  {m.sub && <div style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>{m.sub}</div>}
+                </div>
+              ))}
             </div>
-          )}
-
-          <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-            <Link href="/dashboard/us-portfolio" style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
+            <div style={{ overflowX:'auto', marginBottom:12 }}>
+              <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                <thead>
+                  <tr>{['Stock','Qty','Avg','CMP','P&L $','P&L %'].map((h,i) => (
+                    <th key={i} style={{ fontSize:9, fontWeight:700, color:'var(--dim)', padding:'5px 8px', textAlign:'left', borderBottom:'1px solid rgba(79,111,250,0.15)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap' }}>{h}</th>
+                  ))}</tr>
+                </thead>
+                <tbody>
+                  {[...usHoldings].sort((a,b) => (b.avg_price*b.qty)-(a.avg_price*a.qty)).map(h => {
+                    const cmp   = usPrices[h.symbol]?.price ?? null;
+                    const chg   = usPrices[h.symbol]?.change_pct ?? null;
+                    const pl    = cmp != null && h.avg_price > 0.01 ? (cmp - h.avg_price) * h.qty : null;
+                    const plPct = cmp != null && h.avg_price > 0.01 ? (cmp - h.avg_price) / h.avg_price * 100 : null;
+                    const pos   = pl == null || pl >= 0;
+                    return (
+                      <tr key={h.symbol}
+                        onMouseEnter={e => (e.currentTarget.style.background='rgba(79,111,250,0.06)')}
+                        onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
+                        <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)' }}>
+                          <div style={{ fontWeight:700 }}>{h.symbol}</div>
+                          {chg != null && <div style={{ fontSize:9, color: chg>=0?'var(--grn)':'var(--red)' }}>{chg>=0?'+':''}{chg.toFixed(2)}%</div>}
+                        </td>
+                        <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', color:'var(--dim)' }}>{h.qty}</td>
+                        <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', color:'var(--dim)', whiteSpace:'nowrap' }}>${h.avg_price.toFixed(2)}</td>
+                        <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', whiteSpace:'nowrap' }}>{cmp!=null?`$${cmp.toFixed(2)}`:'—'}</td>
+                        <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', fontWeight:700, color:pos?'var(--grn)':'var(--red)', whiteSpace:'nowrap' }}>{pl!=null?`${pl>=0?'+':'-'}$${Math.abs(pl).toFixed(0)}`:'—'}</td>
+                        <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', fontWeight:700, color:pos?'var(--grn)':'var(--red)', whiteSpace:'nowrap' }}>{plPct!=null?`${plPct>=0?'+':''}${plPct.toFixed(1)}%`:'—'}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </>
+        ) : (
+          <div style={{ textAlign:'center', padding:'20px 0 8px' }}>
+            <div style={{ fontSize:28, marginBottom:8 }}>🇺🇸</div>
+            <div style={{ fontSize:13, fontWeight:600, marginBottom:6 }}>No US stocks yet</div>
+            <div style={{ fontSize:11, color:'var(--dim)', marginBottom:14 }}>Create a portfolio and import your broker file (Schwab, Robinhood, Fidelity, etc.)</div>
+            <Link href="/dashboard/us-portfolio" style={{ height:34, padding:'0 18px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, display:'inline-flex', alignItems:'center', textDecoration:'none' }}>
+              Set up US Portfolio →
+            </Link>
+          </div>
+        )}
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop: hasUSHoldings ? 0 : 12 }}>
+          {hasUSHoldings && (
+            <Link href="/dashboard/us-portfolio" style={{ height:32, padding:'0 14px', borderRadius:8, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
               US Portfolio →
             </Link>
-            <Link href="/dashboard/equity-comp" style={{ height:34, padding:'0 14px', borderRadius:9, background:'rgba(139,92,246,0.12)', border:'1px solid rgba(139,92,246,0.35)', color:'var(--pur)', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
-              ESPP &amp; RSU →
-            </Link>
-          </div>
+          )}
+          <Link href="/dashboard/equity-comp" style={{ height:32, padding:'0 14px', borderRadius:8, background:'rgba(139,92,246,0.12)', border:'1px solid rgba(139,92,246,0.35)', color:'var(--pur)', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
+            ESPP &amp; RSU →
+          </Link>
         </div>
-      )}
+      </div>
 
       <div className="g-side" style={{ display:'grid', gap:16 }}>
         <div>
@@ -828,7 +831,7 @@ export default function DashboardPage() {
             <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Quick Links</div>
             {[
               { href:'/dashboard/signals',      label:'📈 Live Signals',       sub:'BUY/SELL on 4000+ stocks' },
-              { href:'/dashboard/portfolio',    label:'💼 My Portfolio',       sub:'P&L, ML signals, upload' },
+              { href:'/dashboard/portfolio',    label:'💼 Indian Portfolio',       sub:'P&L, ML signals, upload' },
               { href:'/dashboard/us-portfolio', label:'🇺🇸 US Portfolio',      sub:'Track US stocks in USD' },
               { href:'/dashboard/paper-trading',label:'🧪 Paper Trading',      sub:'Test strategies risk-free' },
               { href:'/dashboard/sectors',      label:'🔥 Sector Heatmap',     sub:'Which sectors are hot' },

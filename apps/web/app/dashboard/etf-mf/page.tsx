@@ -116,7 +116,7 @@ export default function ETFMFPage() {
 
   const inp: React.CSSProperties = {
     width:'100%', height:42, borderRadius:9, background:'var(--surf2)',
-    border:'1px solid rgba(79,111,250,0.22)', color:'var(--txt)', fontSize:13,
+    border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13,
     padding:'0 12px', fontFamily:'inherit', outline:'none', boxSizing:'border-box',
   };
 
@@ -156,7 +156,7 @@ export default function ETFMFPage() {
               const live = etfPrices[e.sym];
               const chgPos = (live?.chg ?? 0) >= 0;
               return (
-                <div key={e.sym} style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:18 }}>
+                <div key={e.sym} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:18 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
                     <div style={{ width:42, height:42, borderRadius:12, background: CAT_COLORS[e.cat] ?? 'rgba(23,64,245,0.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:900, flexShrink:0 }}>
                       {e.name.slice(0,3).toUpperCase()}
@@ -206,14 +206,14 @@ export default function ETFMFPage() {
                 <div style={{ fontSize:13, fontWeight:700, color:'var(--dim)', marginBottom:10, textTransform:'uppercase', letterSpacing:0.5 }}>{cat}</div>
                 <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                   {funds.map(m => (
-                    <div key={m.name} style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:13, padding:'16px 18px', display:'flex', alignItems:'flex-start', gap:14 }}>
+                    <div key={m.name} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:13, padding:'16px 18px', display:'flex', alignItems:'flex-start', gap:14 }}>
                       <div style={{ width:44, height:44, borderRadius:12, background: CAT_COLORS[m.cat] ?? 'rgba(23,64,245,0.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:900, flexShrink:0 }}>
                         {m.amc.slice(0,3).toUpperCase()}
                       </div>
                       <div style={{ flex:1, minWidth:0 }}>
                         <div style={{ display:'flex', alignItems:'center', gap:8, flexWrap:'wrap', marginBottom:4 }}>
                           <span style={{ fontSize:14, fontWeight:800 }}>{m.name}</span>
-                          <span style={{ fontSize:10, padding:'2px 7px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid rgba(79,111,250,0.22)' }}>{m.type}</span>
+                          <span style={{ fontSize:10, padding:'2px 7px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>{m.type}</span>
                           <span style={{ fontSize:12, color:'var(--ylw)' }}>{m.rating}</span>
                         </div>
                         <div style={{ fontSize:11, color:'var(--dim)', marginBottom:6 }}>{m.amc} · Min SIP {m.min} · Exp {m.exp}</div>
@@ -237,7 +237,7 @@ export default function ETFMFPage() {
       {tab === 'compare' && (
         <>
           {/* Decision guide */}
-          <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:16, padding:20, marginBottom:20 }}>
+          <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:20, marginBottom:20 }}>
             <div style={{ fontSize:15, fontWeight:700, marginBottom:16 }}>Choose your path</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
               {[
@@ -269,7 +269,7 @@ export default function ETFMFPage() {
           </div>
 
           {/* Comparison table */}
-          <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, overflow:'hidden', marginBottom:20 }}>
+          <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, overflow:'hidden', marginBottom:20 }}>
             <div style={{ padding:'14px 20px', borderBottom:'1px solid var(--bdr)', fontSize:14, fontWeight:700 }}>Side-by-side comparison</div>
             <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
               <thead>
@@ -327,7 +327,7 @@ export default function ETFMFPage() {
           </div>
 
           {showAdd && (
-            <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:20, marginBottom:20 }}>
+            <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:20, marginBottom:20 }}>
               <div style={{ fontSize:14, fontWeight:700, marginBottom:16 }}>Add ETF / MF Holding</div>
               <div style={{ display:'flex', gap:8, marginBottom:16 }}>
                 {(['etf','mf'] as const).map(k => (
@@ -367,7 +367,7 @@ export default function ETFMFPage() {
           )}
 
           {holdings.length === 0 ? (
-            <div style={{ textAlign:'center', padding:'48px 20px', background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14 }}>
+            <div style={{ textAlign:'center', padding:'48px 20px', background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14 }}>
               <div style={{ fontSize:36, marginBottom:12 }}>📭</div>
               <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No holdings yet</div>
               <div style={{ fontSize:13, color:'var(--dim)' }}>Add your ETF and MF holdings to get keep / review / exit recommendations.</div>
@@ -381,7 +381,7 @@ export default function ETFMFPage() {
                 const ret  = gain != null ? (gain / invested) * 100 : null;
                 const r = ret != null ? rec(ret) : null;
                 return (
-                  <div key={h.id} style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:'16px 20px' }}>
+                  <div key={h.id} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'16px 20px' }}>
                     <div style={{ display:'flex', alignItems:'flex-start', gap:12 }}>
                       <div style={{ width:44, height:44, borderRadius:12, background: h.kind === 'etf' ? 'rgba(23,64,245,0.1)' : 'rgba(139,92,246,0.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900, flexShrink:0 }}>
                         {h.kind === 'etf' ? 'ETF' : 'MF'}
@@ -419,7 +419,7 @@ export default function ETFMFPage() {
                         )}
                       </div>
                       <button onClick={() => removeHolding(h.id)}
-                        style={{ width:28, height:28, borderRadius:7, background:'transparent', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', cursor:'pointer', fontSize:13, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+                        style={{ width:28, height:28, borderRadius:7, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--dim)', cursor:'pointer', fontSize:13, flexShrink:0, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
                     </div>
                   </div>
                 );

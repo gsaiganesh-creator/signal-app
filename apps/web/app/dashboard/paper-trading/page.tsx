@@ -70,7 +70,7 @@ function equityCurve(trades: Trade[], capital: number): { path: string; endY: nu
 // ─── Modals ───────────────────────────────────────────────────────────────────
 const INP: React.CSSProperties = {
   width:'100%', height:40, borderRadius:9, background:'var(--surf2)',
-  border:'1px solid rgba(79,111,250,0.22)', color:'var(--txt)', fontSize:13,
+  border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13,
   padding:'0 12px', fontFamily:'inherit', outline:'none', boxSizing:'border-box',
 };
 
@@ -97,7 +97,7 @@ function NewStrategyModal({ token, userId, onDone, onClose }: { token: string; u
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.6)' }}>
-      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:18, padding:28, width:'min(420px,90vw)' }}>
+      <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:18, padding:28, width:'min(420px,90vw)' }}>
         <div style={{ fontSize:16, fontWeight:800, marginBottom:20 }}>New Paper Strategy</div>
         {[
           { lbl:'Strategy name', val:name, set:(v: string) => setName(v), type:'text', ph:'e.g. RSI Momentum' },
@@ -113,7 +113,7 @@ function NewStrategyModal({ token, userId, onDone, onClose }: { token: string; u
         ))}
         {err && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{err}</div>}
         <div style={{ display:'flex', gap:10, marginTop:4 }}>
-          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
           <button onClick={create} disabled={busy} style={{ flex:2, height:40, borderRadius:9, background:'var(--grn)', border:'none', color:'#000', fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
             {busy ? 'Creating…' : 'Create Strategy'}
           </button>
@@ -160,7 +160,7 @@ function NewTradeModal({ strategy, token, userId, onDone, onClose }: { strategy:
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.6)' }}>
-      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:18, padding:28, width:'min(400px,90vw)' }}>
+      <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:18, padding:28, width:'min(400px,90vw)' }}>
         <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>Add Paper Trade</div>
         <div style={{ fontSize:12, color:'var(--dim)', marginBottom:20 }}>{strategy.name} · Virtual only — no real orders placed</div>
 
@@ -175,7 +175,7 @@ function NewTradeModal({ strategy, token, userId, onDone, onClose }: { strategy:
           <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:5 }}>NSE Symbol</label>
           <div style={{ display:'flex', gap:8 }}>
             <input style={{ ...INP, flex:1 }} value={sym} placeholder="e.g. RELIANCE" onChange={e => setSym(e.target.value)} onKeyDown={e => e.key==='Enter' && fetchPrice()}/>
-            <button onClick={fetchPrice} disabled={fetching} style={{ height:40, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
+            <button onClick={fetchPrice} disabled={fetching} style={{ height:40, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
               {fetching ? '…' : 'Fetch'}
             </button>
           </div>
@@ -195,7 +195,7 @@ function NewTradeModal({ strategy, token, userId, onDone, onClose }: { strategy:
 
         {err && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{err}</div>}
         <div style={{ display:'flex', gap:10 }}>
-          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
           <button onClick={submit} disabled={busy} style={{ flex:2, height:40, borderRadius:9, background:signal==='BUY'?'var(--grn)':'var(--red)', border:'none', color: signal==='BUY'?'#000':'#fff', fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
             {busy ? 'Adding…' : `Paper ${signal}`}
           </button>
@@ -239,14 +239,14 @@ function CloseTradeModal({ trade, token, onDone, onClose }: { trade: Trade; toke
 
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.6)' }}>
-      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:18, padding:28, width:'min(360px,90vw)' }}>
+      <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:18, padding:28, width:'min(360px,90vw)' }}>
         <div style={{ fontSize:16, fontWeight:800, marginBottom:4 }}>Close Trade — {trade.symbol}</div>
         <div style={{ fontSize:12, color:'var(--dim)', marginBottom:20 }}>Entry: {fmtINR(trade.entry_price)} × {trade.qty} shares</div>
         <div style={{ marginBottom:14 }}>
           <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:5 }}>Exit price (₹)</label>
           <div style={{ display:'flex', gap:8 }}>
             <input style={{ ...INP, flex:1 }} type="number" value={price} placeholder="Current market price" onChange={e => setPrice(e.target.value)}/>
-            <button onClick={fetchCurrent} disabled={fetching} style={{ height:40, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
+            <button onClick={fetchCurrent} disabled={fetching} style={{ height:40, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
               {fetching ? '…' : 'Live'}
             </button>
           </div>
@@ -260,7 +260,7 @@ function CloseTradeModal({ trade, token, onDone, onClose }: { trade: Trade; toke
         )}
         {err && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{err}</div>}
         <div style={{ display:'flex', gap:10 }}>
-          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
           <button onClick={close} disabled={busy} style={{ flex:2, height:40, borderRadius:9, background:'var(--org)', border:'none', color:'#fff', fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
             {busy ? 'Closing…' : 'Close Trade'}
           </button>
@@ -391,7 +391,7 @@ export default function PaperTradingPage() {
             <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>Test strategies risk-free · Virtual capital · No real orders</div>
           </div>
         </div>
-        <div style={{ textAlign:'center', padding:'64px 24px', background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px dashed var(--bdr)', borderRadius:16 }}>
+        <div style={{ textAlign:'center', padding:'64px 24px', background:'var(--card-bg)', border:'1px dashed var(--bdr)', borderRadius:16 }}>
           <div style={{ fontSize:48, marginBottom:16 }}>🧪</div>
           <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>No strategies yet</div>
           <div style={{ fontSize:13, color:'var(--dim)', maxWidth:360, margin:'0 auto 24px' }}>
@@ -417,7 +417,7 @@ export default function PaperTradingPage() {
         </div>
         <div style={{ display:'flex', gap:8 }}>
           {st && <button onClick={() => setShowTrade(true)} style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--grn)', border:'none', color:'#000', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Paper Trade</button>}
-          <button onClick={() => setShowNew(true)} style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>+ Strategy</button>
+          <button onClick={() => setShowNew(true)} style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>+ Strategy</button>
         </div>
       </div>
 
@@ -432,7 +432,7 @@ export default function PaperTradingPage() {
             </div>
           </div>
         ))}
-        <button onClick={() => setShowNew(true)} style={{ padding:'10px 18px', borderRadius:12, background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px dashed var(--bdr)', cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
+        <button onClick={() => setShowNew(true)} style={{ padding:'10px 18px', borderRadius:12, background:'var(--card-bg)', border:'1px dashed var(--bdr)', cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
           <div style={{ fontSize:13, fontWeight:700, color:'var(--dim)' }}>+ New</div>
           <div style={{ fontSize:11, color:'var(--dim)' }}>Add strategy</div>
         </button>
@@ -452,7 +452,7 @@ export default function PaperTradingPage() {
                 { label:'Win Rate',           val:`${winRate}%`,                           valC:'var(--grn)',  sub:`${wins}W · ${losses}L · ${open} open` },
                 { label:'Days Running',       val:`Day ${days}`,                           valC:'var(--txt)', sub:`${st.trial_days}-day trial` },
               ].map(c => (
-                <div key={c.label} style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:13, padding:16 }}>
+                <div key={c.label} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:13, padding:16 }}>
                   <div style={{ fontSize:11, color:'var(--dim)', marginBottom:5 }}>{c.label}</div>
                   <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:c.valC }}>{c.val}</div>
                   <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>{c.sub}</div>
@@ -461,7 +461,7 @@ export default function PaperTradingPage() {
             </div>
 
             {/* Equity curve */}
-            <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:18, marginBottom:16 }}>
+            <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:18, marginBottom:16 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
                 <div style={{ fontSize:14, fontWeight:700 }}>Virtual Equity Curve</div>
                 <span style={{ fontSize:11, fontWeight:700, color: totalPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
@@ -485,7 +485,7 @@ export default function PaperTradingPage() {
             </div>
 
             {/* Trade log */}
-            <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:18, marginBottom:16 }}>
+            <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:18, marginBottom:16 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
                 <div style={{ fontSize:14, fontWeight:700 }}>Trade Log</div>
                 <span style={{ fontSize:11, color:'var(--dim)' }}>{trades.length} trades</span>
@@ -544,7 +544,7 @@ export default function PaperTradingPage() {
             </div>
 
             {/* Params editor */}
-            <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:18 }}>
+            <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:18 }}>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
                 <div style={{ fontSize:14, fontWeight:700 }}>Parameters</div>
                 <span style={{ fontSize:12, color:'var(--dim)' }}>Applies to new signals only</span>
@@ -558,7 +558,7 @@ export default function PaperTradingPage() {
                 <div key={p.label} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'10px 0', borderBottom:'1px solid var(--bdr)' }}>
                   <div style={{ fontSize:13, fontWeight:600 }}>{p.label}</div>
                   <input type="number" value={p.val} onChange={e => p.set(+e.target.value)} min={p.min} max={p.max} step={p.step}
-                    style={{ height:34, padding:'0 12px', borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--txt)', fontSize:13, fontWeight:700, fontFamily:'inherit', outline:'none', width:90, textAlign:'right' }}/>
+                    style={{ height:34, padding:'0 12px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:700, fontFamily:'inherit', outline:'none', width:90, textAlign:'right' }}/>
                 </div>
               ))}
               <button onClick={saveParams} disabled={savingParams}
@@ -580,7 +580,7 @@ export default function PaperTradingPage() {
             </div>
 
             {/* Strategy summary */}
-            <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:18, marginBottom:14 }}>
+            <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:18, marginBottom:14 }}>
               <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>Strategy Summary</div>
               {[
                 ['Name',       st.name],
