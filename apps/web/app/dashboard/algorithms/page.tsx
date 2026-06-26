@@ -258,7 +258,7 @@ stop   = BB_mid                   # back inside squeeze = failed`,
 
 const CATEGORIES = ['All', ...Array.from(new Set(ALGOS.map(a => a.category)))];
 
-const card: React.CSSProperties = { background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'20px' };
+const card: React.CSSProperties = { background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:'20px' };
 
 export default function AlgorithmsPage() {
   const [tab,      setTab    ] = useState<'library'|'deploy'>('library');
@@ -298,7 +298,7 @@ export default function AlgorithmsPage() {
       </div>
 
       {/* Main tab switcher: Library | Deploy */}
-      <div style={{ display:'flex', gap:4, marginBottom:20, background:'var(--surf2)', borderRadius:10, padding:4, width:'fit-content', border:'1px solid rgba(255,255,255,0.08)' }}>
+      <div style={{ display:'flex', gap:4, marginBottom:20, background:'var(--surf2)', borderRadius:10, padding:4, width:'fit-content', border:'1px solid rgba(79,111,250,0.22)' }}>
         {(['library','deploy'] as const).map(t => (
           <button key={t} onClick={() => setTab(t)}
             style={{ height:34, padding:'0 18px', borderRadius:7, border:'none', cursor:'pointer', fontFamily:'inherit', fontSize:13, fontWeight:700, transition:'all 0.15s',
@@ -405,7 +405,7 @@ export default function AlgorithmsPage() {
                       ))}
                       <div style={{ marginLeft:'auto', display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
                         {a.tags.map(t => (
-                          <span key={t} style={{ fontSize:10, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'2px 8px', fontWeight:600 }}>{t}</span>
+                          <span key={t} style={{ fontSize:10, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', borderRadius:20, padding:'2px 8px', fontWeight:600 }}>{t}</span>
                         ))}
                       </div>
                     </div>
@@ -439,7 +439,7 @@ export default function AlgorithmsPage() {
                     <div style={{ display:'flex', gap:6, flexShrink:0 }}>
                       <button
                         onClick={() => setExpanded(isOpen ? null : a.id)}
-                        style={{ height:34, padding:'0 12px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                        style={{ height:34, padding:'0 12px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
                         {isOpen ? 'Hide' : 'View Logic'}
                       </button>
                       <button
@@ -468,7 +468,7 @@ export default function AlgorithmsPage() {
                     ))}
                     <div style={{ marginLeft:'auto', display:'flex', gap:6, alignItems:'center', flexWrap:'wrap' }}>
                       {a.tags.map(t => (
-                        <span key={t} style={{ fontSize:10, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'2px 8px', fontWeight:600 }}>{t}</span>
+                        <span key={t} style={{ fontSize:10, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', borderRadius:20, padding:'2px 8px', fontWeight:600 }}>{t}</span>
                       ))}
                     </div>
                   </div>
@@ -480,7 +480,7 @@ export default function AlgorithmsPage() {
                         {/* Logic */}
                         <div>
                           <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:8 }}>Algorithm Logic</div>
-                          <div style={{ background:'#080f1e', borderRadius:10, padding:14, fontSize:11.5, fontFamily:'JetBrains Mono, monospace', lineHeight:1.7, color:'#a8d8a8', whiteSpace:'pre-wrap', wordBreak:'break-word', maxHeight:320, overflowY:'auto', border:'1px solid rgba(255,255,255,0.08)' }}>
+                          <div style={{ background:'#080f1e', borderRadius:10, padding:14, fontSize:11.5, fontFamily:'JetBrains Mono, monospace', lineHeight:1.7, color:'#a8d8a8', whiteSpace:'pre-wrap', wordBreak:'break-word', maxHeight:320, overflowY:'auto', border:'1px solid rgba(79,111,250,0.22)' }}>
                             {a.logic}
                           </div>
                         </div>
@@ -490,7 +490,7 @@ export default function AlgorithmsPage() {
                           <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:8 }}>Parameters</div>
                           <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                             {a.params.map(p => (
-                              <div key={p.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 12px', background:'var(--surf2)', borderRadius:8, border:'1px solid rgba(255,255,255,0.08)' }}>
+                              <div key={p.label} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'8px 12px', background:'var(--surf2)', borderRadius:8, border:'1px solid rgba(79,111,250,0.22)' }}>
                                 <span style={{ fontSize:12, color:'var(--dim)', fontWeight:500 }}>{p.label}</span>
                                 <span style={{ fontSize:13, fontWeight:800 }}>{p.value}</span>
                               </div>
@@ -577,11 +577,11 @@ if __name__ == "__main__":
                         {codeCopied === a.id ? '✓ Copied' : '📋 Copy Package'}
                       </button>
                     </div>
-                    <pre style={{ background:'#080f1e', borderRadius:10, padding:14, fontSize:11, fontFamily:'JetBrains Mono, monospace', lineHeight:1.7, color:'#a8d8a8', whiteSpace:'pre-wrap', wordBreak:'break-word', maxHeight:200, overflowY:'auto', border:'1px solid rgba(255,255,255,0.08)', margin:0 }}>
+                    <pre style={{ background:'#080f1e', borderRadius:10, padding:14, fontSize:11, fontFamily:'JetBrains Mono, monospace', lineHeight:1.7, color:'#a8d8a8', whiteSpace:'pre-wrap', wordBreak:'break-word', maxHeight:200, overflowY:'auto', border:'1px solid rgba(79,111,250,0.22)', margin:0 }}>
                       {pkg}
                     </pre>
                     <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginTop:10 }}>
-                      {a.tags.map(t => <span key={t} style={{ fontSize:10, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'2px 8px', fontWeight:600 }}>{t}</span>)}
+                      {a.tags.map(t => <span key={t} style={{ fontSize:10, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', borderRadius:20, padding:'2px 8px', fontWeight:600 }}>{t}</span>)}
                     </div>
                   </div>
                 );

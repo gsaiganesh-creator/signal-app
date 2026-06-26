@@ -80,7 +80,7 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
       <div onClick={onClose} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:300, backdropFilter:'blur(2px)' }}/>
 
       {/* Drawer */}
-      <div style={{ position:'fixed', top:0, right:0, bottom:0, width:'min(480px,100vw)', background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', borderLeft:'1px solid var(--bdr)', zIndex:301, overflowY:'auto', display:'flex', flexDirection:'column' }}>
+      <div style={{ position:'fixed', top:0, right:0, bottom:0, width:'min(480px,100vw)', background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', borderLeft:'1px solid var(--bdr)', zIndex:301, overflowY:'auto', display:'flex', flexDirection:'column' }}>
 
         {/* Header */}
         <div style={{ padding:'20px 24px 16px', borderBottom:'1px solid var(--bdr)', background:'var(--surf2)', position:'sticky', top:0, zIndex:1 }}>
@@ -89,7 +89,7 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
               <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.4 }}>{sig.symbol.replace('.NS','')}</div>
               <div style={{ fontSize:12, color:'var(--dim)', marginTop:2 }}>{sig.name} · NSE</div>
             </div>
-            <button onClick={onClose} style={{ width:34, height:34, borderRadius:9, background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+            <button onClick={onClose} style={{ width:34, height:34, borderRadius:9, background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
           </div>
           <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
             <span style={{ fontSize:24, fontWeight:900 }}>₹{sig.cmp.toLocaleString('en-IN', { maximumFractionDigits:2 })}</span>
@@ -222,7 +222,7 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
           <div style={{ fontSize:10, color:'var(--dim2)', marginBottom:8 }}>⚠️ NOT SEBI REGISTERED · ML signals are probabilistic · Not financial advice · DYOR</div>
           <div style={{ display:'flex', gap:8 }}>
             <button style={{ flex:1, height:40, borderRadius:10, background:'var(--grn)', border:'none', color:'#000', fontWeight:800, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>🧪 Paper Trade</button>
-            <button style={{ flex:1, height:40, borderRadius:10, background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📋 Add to Watchlist</button>
+            <button style={{ flex:1, height:40, borderRadius:10, background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', color:'var(--txt)', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📋 Add to Watchlist</button>
           </div>
         </div>
       </div>
@@ -372,10 +372,10 @@ export default function SignalsPage() {
             onFocus={() => searchResults.length && setShowDropdown(true)}
             onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
             placeholder="Search any listed stock…"
-            style={{ width:'100%', height:38, paddingLeft:36, paddingRight:12, borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', color:'var(--txt)', fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }}
+            style={{ width:'100%', height:38, paddingLeft:36, paddingRight:12, borderRadius:10, border:'1px solid rgba(79,111,250,0.22)', background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', color:'var(--txt)', fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }}
           />
           {showDropdown && searchResults.length > 0 && (
-            <div style={{ position:'absolute', top:42, left:0, right:0, background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, zIndex:200, boxShadow:'0 8px 32px rgba(0,0,0,0.3)', overflow:'hidden' }}>
+            <div style={{ position:'absolute', top:42, left:0, right:0, background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:10, zIndex:200, boxShadow:'0 8px 32px rgba(0,0,0,0.3)', overflow:'hidden' }}>
               {searchResults.map(item => (
                 <button
                   key={item.ticker}
@@ -398,7 +398,7 @@ export default function SignalsPage() {
             {f.label}
           </button>
         ))}
-        <button onClick={load} style={{ height:38, padding:'0 16px', borderRadius:10, border:'1px solid rgba(255,255,255,0.08)', background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto' }}>
+        <button onClick={load} style={{ height:38, padding:'0 16px', borderRadius:10, border:'1px solid rgba(79,111,250,0.22)', background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto' }}>
           🔄 Refresh
         </button>
       </div>
@@ -407,7 +407,7 @@ export default function SignalsPage() {
       {mlLoading && (
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {[1,2,3,4].map(i => (
-            <div key={i} style={{ height:90, borderRadius:14, background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', animation:'pulse 1.5s infinite', opacity:0.7 }}/>
+            <div key={i} style={{ height:90, borderRadius:14, background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', animation:'pulse 1.5s infinite', opacity:0.7 }}/>
           ))}
         </div>
       )}
@@ -434,7 +434,7 @@ export default function SignalsPage() {
             const secBg = sectorColor(sig.sector);
             return (
               <div key={sig.symbol} onClick={() => setSelected(sig)}
-                style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'16px 20px', cursor:'pointer', transition:'border-color 0.15s, box-shadow 0.15s', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:14, alignItems:'center' }}
+                style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:'16px 20px', cursor:'pointer', transition:'border-color 0.15s, box-shadow 0.15s', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:14, alignItems:'center' }}
                 onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(0,212,160,0.4)'; (e.currentTarget as HTMLElement).style.boxShadow='0 2px 16px rgba(0,212,160,0.08)'; }}
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='var(--bdr)'; (e.currentTarget as HTMLElement).style.boxShadow='none'; }}>
 
@@ -467,7 +467,7 @@ export default function SignalsPage() {
                       `EMA dist ${sig.ema_dist_pct > 0 ? '+' : ''}${sig.ema_dist_pct}%`,
                       `Chg ${sig.chg >= 0 ? '+' : ''}${sig.chg.toFixed(1)}%`,
                     ].map(t => (
-                      <span key={t} style={{ fontSize:10, padding:'2px 7px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid rgba(255,255,255,0.08)' }}>{t}</span>
+                      <span key={t} style={{ fontSize:10, padding:'2px 7px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid rgba(79,111,250,0.22)' }}>{t}</span>
                     ))}
                   </div>
                 </div>
@@ -492,7 +492,7 @@ export default function SignalsPage() {
       )}
 
       {!mlLoading && !mlError && shown.length === 0 && (
-        <div style={{ textAlign:'center', padding:'48px 24px', background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14 }}>
+        <div style={{ textAlign:'center', padding:'48px 24px', background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14 }}>
           <div style={{ fontSize:36, marginBottom:12 }}>🔍</div>
           <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No signals match this filter</div>
           <div style={{ fontSize:13, color:'var(--dim)', marginBottom:16 }}>Try switching to <strong>All</strong> or <strong>In My Portfolio</strong> — the scan refreshes every hour.</div>

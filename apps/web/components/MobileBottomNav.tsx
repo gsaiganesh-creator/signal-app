@@ -82,7 +82,7 @@ export function MobileBottomNav() {
       {moreOpen && (
         <>
           <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 190 }} />
-          <div style={{ position: 'fixed', bottom: 'calc(60px + env(safe-area-inset-bottom))', left: 0, right: 0, zIndex: 195, background: 'linear-gradient(180deg,rgba(10,18,36,0.95),rgba(6,11,24,0.98))', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderTop: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px 16px 0 0', padding: '4px 0 4px', maxHeight: '75vh', overflowY: 'auto' }}>
+          <div style={{ position: 'fixed', bottom: 'calc(60px + env(safe-area-inset-bottom))', left: 0, right: 0, zIndex: 195, background: 'linear-gradient(180deg,rgba(17,36,80,0.92),rgba(8,14,42,0.96))', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', borderTop: '1px solid rgba(79,111,250,0.25)', borderRadius: '16px 16px 0 0', padding: '4px 0 4px', maxHeight: '75vh', overflowY: 'auto' }}>
 
             {/* Theme toggle */}
             <button

@@ -291,11 +291,11 @@ export default function EquityCompPage() {
                   {/* Actions */}
                   <div style={{ display:'flex', gap:6, flexShrink:0 }}>
                     <button onClick={() => setExpanded(isExp ? null : g.id)}
-                      style={{ height:30, padding:'0 10px', borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                      style={{ height:30, padding:'0 10px', borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
                       {isExp ? '▲' : '▼ Details'}
                     </button>
                     <button onClick={() => openEdit(g)}
-                      style={{ height:30, width:30, borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+                      style={{ height:30, width:30, borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
                       ✏️
                     </button>
                     <button onClick={() => deleteGrant(g.id)}
@@ -309,33 +309,33 @@ export default function EquityCompPage() {
                 {isExp && (
                   <div style={{ borderTop:'1px solid var(--bdr)', background:'var(--surf2)', padding:'16px 18px' }}>
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(150px,1fr))', gap:14, marginBottom: ld?.signals?.length ? 14 : 0 }}>
-                      <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:11, padding:'12px 14px' }}>
+                      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:11, padding:'12px 14px' }}>
                         <div style={{ fontSize:10, color:'var(--dim)', marginBottom:4, fontWeight:600 }}>RSI (14)</div>
                         <div style={{ fontSize:20, fontWeight:900 }}>{ld?.rsi14?.toFixed(1) ?? '—'}</div>
                         <div style={{ fontSize:10, color:rsi.color, fontWeight:600, marginTop:2 }}>{rsi.txt}</div>
                       </div>
-                      <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:11, padding:'12px 14px' }}>
+                      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:11, padding:'12px 14px' }}>
                         <div style={{ fontSize:10, color:'var(--dim)', marginBottom:4, fontWeight:600 }}>EMA 20</div>
                         <div style={{ fontSize:20, fontWeight:900 }}>{ld?.ema20?.toFixed(2) ?? '—'}</div>
                         <div style={{ fontSize:10, color:price>(ld?.ema20??0)?'var(--grn)':'var(--red)', fontWeight:600, marginTop:2 }}>
                           {ld?.ema20 ? (price>ld.ema20?'Above EMA20':'Below EMA20') : '—'}
                         </div>
                       </div>
-                      <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:11, padding:'12px 14px' }}>
+                      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:11, padding:'12px 14px' }}>
                         <div style={{ fontSize:10, color:'var(--dim)', marginBottom:4, fontWeight:600 }}>EMA 50</div>
                         <div style={{ fontSize:20, fontWeight:900 }}>{ld?.ema50?.toFixed(2) ?? '—'}</div>
                         <div style={{ fontSize:10, color:priceAbEma?'var(--grn)':'var(--red)', fontWeight:600, marginTop:2 }}>
                           {ld?.ema50 ? (priceAbEma?'Above EMA50':'Below EMA50') : '—'}
                         </div>
                       </div>
-                      <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:11, padding:'12px 14px' }}>
+                      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:11, padding:'12px 14px' }}>
                         <div style={{ fontSize:10, color:'var(--dim)', marginBottom:4, fontWeight:600 }}>Total Value</div>
                         <div style={{ fontSize:20, fontWeight:900 }}>{price ? fmtUSD(price * g.shares) : '—'}</div>
                         <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>
                           ≈ ₹{price ? ((price * g.shares * usdInr)/100000).toFixed(2)+'L' : '—'}
                         </div>
                       </div>
-                      <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:11, padding:'12px 14px' }}>
+                      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:11, padding:'12px 14px' }}>
                         <div style={{ fontSize:10, color:'var(--dim)', marginBottom:4, fontWeight:600 }}>Gain per Share</div>
                         <div style={{ fontSize:20, fontWeight:900, color:gainUSD>=0?'var(--grn)':'var(--red)' }}>
                           {price ? `${gainUSD>=0?'+':''}${fmtUSD(price - g.grantPrice)}` : '—'}
@@ -349,7 +349,7 @@ export default function EquityCompPage() {
                         <div style={{ fontSize:10, color:'var(--dim)', marginBottom:6, fontWeight:700, letterSpacing:0.5 }}>ML SIGNALS</div>
                         <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
                           {ld.signals.map((s, i) => (
-                            <span key={i} style={{ fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.08)' }}>{s}</span>
+                            <span key={i} style={{ fontSize:11, fontWeight:600, padding:'3px 10px', borderRadius:20, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(79,111,250,0.22)' }}>{s}</span>
                           ))}
                         </div>
                       </div>
@@ -379,12 +379,12 @@ export default function EquityCompPage() {
       {addOpen && (
         <>
           <div onClick={() => setAddOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:300 }} />
-          <div style={{ position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'92%', maxWidth:540, maxHeight:'90vh', overflowY:'auto', zIndex:310, background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:28 }}>
+          <div style={{ position:'fixed', top:'50%', left:'50%', transform:'translate(-50%,-50%)', width:'92%', maxWidth:540, maxHeight:'90vh', overflowY:'auto', zIndex:310, background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:20, padding:28 }}>
 
             <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:22 }}>
               <div style={{ fontSize:18, fontWeight:800 }}>{editId ? 'Edit' : 'Add'} Equity Grant</div>
               <button onClick={() => setAddOpen(false)}
-                style={{ width:30, height:30, borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', cursor:'pointer', fontFamily:'inherit', fontSize:14 }}>✕</button>
+                style={{ width:30, height:30, borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', cursor:'pointer', fontFamily:'inherit', fontSize:14 }}>✕</button>
             </div>
 
             {/* Type toggle */}
@@ -465,7 +465,7 @@ export default function EquityCompPage() {
 
             <div style={{ display:'flex', gap:10 }}>
               <button onClick={() => setAddOpen(false)}
-                style={{ flex:1, height:44, borderRadius:12, background:'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                style={{ flex:1, height:44, borderRadius:12, background:'transparent', border:'1px solid rgba(79,111,250,0.22)', color:'var(--dim)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
                 Cancel
               </button>
               <button onClick={saveGrant}

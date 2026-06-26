@@ -49,7 +49,7 @@ export default function BacktestPage() {
       {/* Feature grid */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(200px,1fr))', gap:14, marginBottom:28 }}>
         {FEATURES.map(f => (
-          <div key={f.t} style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px' }}>
+          <div key={f.t} style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:'18px 20px' }}>
             <div style={{ fontSize:24, marginBottom:10 }}>{f.icon}</div>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:4 }}>{f.t}</div>
             <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.5 }}>{f.d}</div>
@@ -58,7 +58,7 @@ export default function BacktestPage() {
       </div>
 
       {/* Coming soon list */}
-      <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:'22px 24px' }}>
+      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:16, padding:'22px 24px' }}>
         <div style={{ fontSize:14, fontWeight:800, marginBottom:14 }}>What&apos;s being built</div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {COMING.map(c => (

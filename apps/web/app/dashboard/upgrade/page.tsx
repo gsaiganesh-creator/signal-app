@@ -167,7 +167,7 @@ export default function UpgradePage() {
           const price = billing === 'annual' ? p.annual : p.monthly;
           const isLoading = loading === p.id;
           return (
-            <div key={p.id} style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:`2px solid ${'badge' in p && p.badge ? p.border : 'var(--bdr)'}`, borderRadius:18, padding:'22px 20px', position:'relative', display:'flex', flexDirection:'column' }}>
+            <div key={p.id} style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:`2px solid ${'badge' in p && p.badge ? p.border : 'var(--bdr)'}`, borderRadius:18, padding:'22px 20px', position:'relative', display:'flex', flexDirection:'column' }}>
               {'badge' in p && p.badge && (
                 <div style={{ position:'absolute', top:-1, left:'50%', transform:'translateX(-50%)', fontSize:10, fontWeight:800, padding:'3px 12px', borderRadius:'0 0 8px 8px', background:p.color, color:'#000', whiteSpace:'nowrap' }}>{p.badge}</div>
               )}

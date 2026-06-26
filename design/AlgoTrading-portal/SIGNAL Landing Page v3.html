@@ -1,0 +1,1169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SIGNAL — ML-Powered Trading Intelligence</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg:#070D1A; --surf:#0E1628; --surf2:#162038; --bdr:#1C2E4A;
+      --txt:#FFFFFF; --dim:#7A8BAA; --dim2:#3A4E6A;
+      --blu:#1740F5; --bluL:#4F6FFA; --org:#FF5C1A;
+      --grn:#00D4A0; --red:#FF3B5C; --ylw:#FFB800; --pur:#8B5CF6;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    html{scroll-behavior:smooth;}
+    body{background:var(--bg);color:var(--txt);font-family:'Inter',system-ui,sans-serif;overflow-x:hidden;}
+
+    /* ── GLASSMORPHISM CARD BASE ─────────────────── */
+    .glass{
+      backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);
+      border-radius:22px;
+      border:1px solid rgba(255,255,255,0.1);
+      box-shadow:0 8px 40px rgba(0,0,0,0.45),inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    /* Vibrant (default) */
+    .gc-grn{background:linear-gradient(145deg,rgba(0,212,160,0.32),rgba(0,130,95,0.14));border-color:rgba(0,212,160,0.5);box-shadow:0 8px 56px rgba(0,212,160,0.28),inset 0 1px 0 rgba(255,255,255,0.13);}
+    .gc-blu{background:linear-gradient(145deg,rgba(79,111,250,0.38),rgba(23,64,245,0.14));border-color:rgba(79,111,250,0.52);box-shadow:0 8px 56px rgba(23,64,245,0.3),inset 0 1px 0 rgba(255,255,255,0.13);}
+    .gc-pur{background:linear-gradient(145deg,rgba(139,92,246,0.38),rgba(100,40,200,0.14));border-color:rgba(139,92,246,0.52);box-shadow:0 8px 56px rgba(139,92,246,0.3),inset 0 1px 0 rgba(255,255,255,0.13);}
+    .gc-org{background:linear-gradient(145deg,rgba(255,92,26,0.36),rgba(200,50,0,0.14));border-color:rgba(255,92,26,0.5);box-shadow:0 8px 56px rgba(255,92,26,0.26),inset 0 1px 0 rgba(255,255,255,0.13);}
+    .gc-ylw{background:linear-gradient(145deg,rgba(255,184,0,0.32),rgba(180,110,0,0.14));border-color:rgba(255,184,0,0.48);box-shadow:0 8px 56px rgba(255,184,0,0.24),inset 0 1px 0 rgba(255,255,255,0.13);}
+    .gc-mix{background:linear-gradient(145deg,rgba(0,212,160,0.22),rgba(79,111,250,0.3));border-color:rgba(79,111,250,0.44);box-shadow:0 8px 56px rgba(79,111,250,0.24),inset 0 1px 0 rgba(255,255,255,0.13);}
+    /* Subtle override */
+    body.subtle .gc-grn{background:linear-gradient(145deg,rgba(0,212,160,0.12),rgba(0,80,60,0.05));border-color:rgba(0,212,160,0.22);box-shadow:0 8px 32px rgba(0,212,160,0.1),inset 0 1px 0 rgba(255,255,255,0.06);}
+    body.subtle .gc-blu{background:linear-gradient(145deg,rgba(79,111,250,0.14),rgba(15,40,130,0.05));border-color:rgba(79,111,250,0.22);box-shadow:0 8px 32px rgba(23,64,245,0.1),inset 0 1px 0 rgba(255,255,255,0.06);}
+    body.subtle .gc-pur{background:linear-gradient(145deg,rgba(139,92,246,0.14),rgba(80,30,180,0.05));border-color:rgba(139,92,246,0.22);box-shadow:0 8px 32px rgba(139,92,246,0.1),inset 0 1px 0 rgba(255,255,255,0.06);}
+    body.subtle .gc-org{background:linear-gradient(145deg,rgba(255,92,26,0.13),rgba(180,50,0,0.05));border-color:rgba(255,92,26,0.2);box-shadow:0 8px 32px rgba(255,92,26,0.08),inset 0 1px 0 rgba(255,255,255,0.06);}
+    body.subtle .gc-ylw{background:linear-gradient(145deg,rgba(255,184,0,0.12),rgba(160,100,0,0.05));border-color:rgba(255,184,0,0.2);box-shadow:0 8px 32px rgba(255,184,0,0.08),inset 0 1px 0 rgba(255,255,255,0.06);}
+    body.subtle .gc-mix{background:linear-gradient(145deg,rgba(0,212,160,0.08),rgba(79,111,250,0.12));border-color:rgba(79,111,250,0.18);box-shadow:0 8px 32px rgba(79,111,250,0.08),inset 0 1px 0 rgba(255,255,255,0.06);}
+
+    /* ── FLOAT ANIMATIONS ────────────────────────── */
+    @keyframes fl1{0%,100%{transform:translateY(0px) rotate(-2deg)}50%{transform:translateY(-20px) rotate(1.5deg)}}
+    @keyframes fl2{0%,100%{transform:translateY(-6px) rotate(2deg)}50%{transform:translateY(14px) rotate(-1deg)}}
+    @keyframes fl3{0%,100%{transform:translateY(0px) rotate(3deg)}50%{transform:translateY(-24px) rotate(0deg)}}
+    @keyframes fl4{0%,100%{transform:translateY(-10px) rotate(-1deg)}50%{transform:translateY(10px) rotate(2.5deg)}}
+    @keyframes fl5{0%,100%{transform:translateY(4px) rotate(1deg)}50%{transform:translateY(-16px) rotate(-2deg)}}
+    @keyframes fl6{0%,100%{transform:translateY(0px) rotate(-3deg)}50%{transform:translateY(18px) rotate(1deg)}}
+    @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+    @keyframes drift1{0%,100%{transform:translateX(-50%) scale(1)}50%{transform:translateX(-46%) scale(1.08)}}
+    @keyframes drift2{0%,100%{transform:scale(1)}50%{transform:scale(1.15)}}
+    @keyframes drift3{0%,100%{transform:scale(1)}50%{transform:scale(1.2) translate(20px,-15px)}}
+    @keyframes scrollRight{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+    @keyframes scrollLeft{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+    @keyframes revealUp{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
+
+    /* ── SEBI BANNER ─────────────────────────────── */
+    .sebi-banner{background:rgba(255,184,0,0.07);border-bottom:1px solid rgba(255,184,0,0.15);padding:8px 24px;text-align:center;}
+    .sebi-banner span{font-size:11.5px;color:rgba(255,184,0,0.75);}
+    .sebi-banner strong{color:var(--ylw);}
+
+    /* ── NAV ──────────────────────────────────────── */
+    nav{position:sticky;top:0;z-index:200;display:flex;align-items:center;justify-content:space-between;padding:0 clamp(20px,5vw,80px);height:60px;background:rgba(7,13,26,0.8);backdrop-filter:blur(24px);border-bottom:1px solid rgba(255,255,255,0.05);}
+    .nav-logo{display:flex;align-items:center;gap:9px;font-size:19px;font-weight:900;letter-spacing:-.5px;text-decoration:none;color:var(--txt);}
+    .nav-links{display:flex;align-items:center;gap:28px;}
+    .nav-links a{font-size:13px;font-weight:500;color:var(--dim);text-decoration:none;transition:color .18s;}
+    .nav-links a:hover{color:var(--txt);}
+    .nav-cta{display:flex;gap:10px;}
+    .btn-ghost{height:36px;padding:0 16px;border-radius:9px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);color:var(--txt);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;}
+    .btn-pri{height:36px;padding:0 18px;border-radius:9px;background:var(--blu);border:none;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit;}
+    @media(max-width:768px){.nav-links{display:none;}}
+
+    /* ── HERO ─────────────────────────────────────── */
+    .hero{position:relative;overflow:hidden;min-height:100vh;display:flex;align-items:center;padding:0 clamp(20px,5vw,80px);}
+    .orb{position:absolute;border-radius:50%;pointer-events:none;filter:blur(90px);}
+    .orb-1{width:800px;height:800px;top:-300px;left:50%;transform:translateX(-50%);background:radial-gradient(circle,rgba(23,64,245,0.2),transparent 70%);animation:drift1 14s ease-in-out infinite;}
+    .orb-2{width:500px;height:500px;top:20%;right:-150px;background:radial-gradient(circle,rgba(139,92,246,0.14),transparent 70%);animation:drift2 18s ease-in-out infinite;}
+    .orb-3{width:400px;height:400px;bottom:-100px;left:-100px;background:radial-gradient(circle,rgba(255,92,26,0.1),transparent 70%);animation:drift3 20s ease-in-out infinite;}
+
+    .hero-grid{position:relative;z-index:2;display:grid;grid-template-columns:1fr 1fr;gap:60px;align-items:center;max-width:1300px;margin:0 auto;width:100%;padding:100px 0 80px;}
+    @media(max-width:900px){.hero-grid{grid-template-columns:1fr;}.hero-cards{display:none;}}
+
+    /* Hero text */
+    .hero-badge{display:inline-flex;align-items:center;gap:7px;padding:5px 14px 5px 10px;border-radius:20px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);font-size:12px;font-weight:600;color:var(--dim);margin-bottom:28px;}
+    .live-dot{width:6px;height:6px;border-radius:50%;background:var(--grn);animation:blink 2s infinite;}
+    h1{font-size:clamp(44px,6.5vw,88px);font-weight:900;letter-spacing:-3.5px;line-height:.93;margin-bottom:24px;}
+    .g-blu{background:linear-gradient(135deg,#fff 0%,var(--bluL) 55%,var(--pur) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .g-org{background:linear-gradient(135deg,var(--org),var(--ylw));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .g-grn{background:linear-gradient(135deg,var(--grn),#00FFD1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+    .hero-sub{font-size:clamp(15px,1.6vw,18px);color:var(--dim);line-height:1.7;max-width:480px;margin-bottom:36px;}
+    .hero-btns{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:44px;}
+    .btn-xl{height:54px;padding:0 32px;border-radius:15px;font-size:16px;font-weight:700;cursor:pointer;font-family:inherit;border:none;transition:transform .2s,box-shadow .2s;}
+    .btn-xl-p{background:linear-gradient(135deg,var(--blu),var(--bluL));color:#fff;box-shadow:0 8px 40px rgba(23,64,245,0.4);}
+    .btn-xl-p:hover{transform:translateY(-2px);box-shadow:0 14px 50px rgba(23,64,245,0.55);}
+    .btn-xl-g{background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);color:var(--txt);}
+    .btn-xl-g:hover{background:rgba(255,255,255,0.1);}
+    .hero-stats{display:flex;gap:28px;flex-wrap:wrap;}
+    .hstat{display:flex;flex-direction:column;}
+    .hstat-n{font-size:24px;font-weight:900;letter-spacing:-1px;}
+    .hstat-l{font-size:11px;color:var(--dim);margin-top:2px;}
+    .hstat-div{width:1px;background:var(--bdr);align-self:stretch;}
+
+    /* Hero floating cards zone */
+    .hero-cards{position:relative;height:560px;}
+    .hcard{position:absolute;padding:18px 20px;cursor:default;transition:transform .3s;}
+    .hcard:hover{transform:scale(1.03) translateY(-4px) !important;}
+
+    /* ── MARQUEE ─────────────────────────────────── */
+    .marquee-section{padding:48px 0;overflow:hidden;}
+    .marquee-label{text-align:center;font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim2);margin-bottom:20px;}
+    .marquee-wrap{overflow:hidden;}
+    .marquee-track{display:flex;gap:14px;width:max-content;}
+    .mw-right .marquee-track{animation:scrollRight 38s linear infinite;}
+    .mw-left  .marquee-track{animation:scrollLeft  32s linear infinite;}
+    .marquee-wrap:hover .marquee-track{animation-play-state:paused;}
+    .mcard{padding:16px 18px;min-width:220px;max-width:240px;flex-shrink:0;cursor:default;transition:transform .2s;}
+    .mcard:hover{transform:translateY(-4px);}
+    .mcard-hdr{font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;opacity:.6;margin-bottom:10px;}
+    .sig-tag{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-size:10.5px;font-weight:800;}
+    .st-buy{background:rgba(0,212,160,.2);color:var(--grn);border:1px solid rgba(0,212,160,.35);}
+    .st-sell{background:rgba(255,59,92,.18);color:var(--red);border:1px solid rgba(255,59,92,.35);}
+    .st-hold{background:rgba(255,184,0,.15);color:var(--ylw);border:1px solid rgba(255,184,0,.3);}
+    .cbar{height:4px;background:rgba(255,255,255,.08);border-radius:2px;margin:9px 0 4px;overflow:hidden;}
+    .cfill{height:100%;border-radius:2px;}
+
+    /* ── SECTION DIVIDER ─────────────────────────── */
+    .sdiv{height:1px;background:linear-gradient(90deg,transparent,var(--bdr) 30%,var(--bdr) 70%,transparent);margin:0 clamp(20px,6vw,100px);}
+
+    /* ── FEATURE SECTIONS ────────────────────────── */
+    .feat{padding:clamp(80px,10vw,140px) clamp(20px,6vw,100px);}
+    .feat-inner{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:center;}
+    .feat-inner.rev{direction:rtl;}
+    .feat-inner.rev > *{direction:ltr;}
+    @media(max-width:900px){.feat-inner{grid-template-columns:1fr;gap:48px;direction:ltr !important;}.feat-inner > *{direction:ltr;}}
+    .feat-eyebrow{font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;margin-bottom:14px;}
+    .feat-title{font-size:clamp(28px,3.8vw,50px);font-weight:900;letter-spacing:-2px;line-height:.97;margin-bottom:16px;}
+    .feat-sub{font-size:15px;color:var(--dim);line-height:1.75;margin-bottom:28px;}
+    .feat-pills{display:flex;flex-direction:column;gap:10px;}
+    .fpill{display:flex;align-items:flex-start;gap:12px;padding:13px 15px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.06);border-radius:13px;}
+    .fpill-ico{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;margin-top:1px;}
+    .fpill-t{font-size:13px;font-weight:700;margin-bottom:2px;}
+    .fpill-d{font-size:12px;color:var(--dim);line-height:1.5;}
+
+    /* Floating card visual panel */
+    .feat-visual{position:relative;height:480px;}
+    .fcard{position:absolute;padding:20px 22px;transition:transform .3s;}
+    .fcard:hover{transform:scale(1.02) translateY(-4px) !important;}
+    .fcard-sm{position:absolute;padding:14px 16px;}
+
+    /* ── BENTO ────────────────────────────────────── */
+    .bento{padding:clamp(60px,8vw,100px) clamp(20px,6vw,100px);}
+    .bento-inner{max-width:1200px;margin:0 auto;}
+    .bento-hdr{text-align:center;margin-bottom:52px;}
+    .bento-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+    .bc{padding:28px;border-radius:22px;position:relative;overflow:hidden;transition:transform .2s,box-shadow .2s;}
+    .bc:hover{transform:translateY(-3px);}
+    .bc.span2{grid-column:span 2;}
+    .bc.tall{grid-row:span 2;}
+    .bc-ico{width:44px;height:44px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:20px;margin-bottom:16px;}
+    .bc-title{font-size:17px;font-weight:800;margin-bottom:8px;}
+    .bc-desc{font-size:13px;color:var(--dim);line-height:1.65;}
+    .bc-glow{position:absolute;border-radius:50%;filter:blur(60px);pointer-events:none;}
+    @media(max-width:900px){.bento-grid{grid-template-columns:1fr 1fr;}.bc.span2{grid-column:span 1;}.bc.tall{grid-row:span 1;}}
+    @media(max-width:600px){.bento-grid{grid-template-columns:1fr;}}
+
+    /* ── PRICING ──────────────────────────────────── */
+    .pricing{padding:clamp(60px,8vw,100px) clamp(20px,6vw,100px);}
+    .pricing-inner{max-width:1100px;margin:0 auto;}
+    .pricing-hdr{text-align:center;margin-bottom:52px;}
+    .plans{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
+    .plan{background:var(--surf);border:1px solid var(--bdr);border-radius:20px;padding:28px;position:relative;}
+    .plan.feat-plan{background:linear-gradient(145deg,#0D1E45,#0E1628);border-color:rgba(23,64,245,.5);box-shadow:0 0 60px rgba(23,64,245,.12);}
+    .plan-badge{position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:var(--blu);color:#fff;font-size:10px;font-weight:700;padding:4px 14px;border-radius:0 0 10px 10px;}
+    .plan-name{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:8px;}
+    .plan-price{font-size:44px;font-weight:900;letter-spacing:-2px;line-height:1;margin-bottom:4px;}
+    .plan-cycle{font-size:12px;color:var(--dim);margin-bottom:22px;}
+    .plan-feats{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:24px;}
+    .plan-feats li{display:flex;align-items:flex-start;gap:8px;font-size:13px;color:#C4D0E8;line-height:1.4;}
+    .plan-feats li::before{content:'✓';color:var(--grn);font-weight:700;flex-shrink:0;}
+    .plan-feats li.no::before{content:'–';color:var(--dim2);}
+    .plan-feats li.no{color:var(--dim);}
+    .btn-plan{width:100%;height:46px;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+    .bpp{background:linear-gradient(135deg,var(--blu),var(--bluL));color:#fff;border:none;}
+    .bpg{background:transparent;border:1px solid var(--bdr);color:var(--txt);}
+    @media(max-width:900px){.plans{grid-template-columns:repeat(2,1fr);}}
+    @media(max-width:500px){.plans{grid-template-columns:1fr;}}
+
+    /* ── CTA SECTION ──────────────────────────────── */
+    .cta{padding:clamp(60px,8vw,100px) clamp(20px,6vw,100px);}
+    .cta-inner{max-width:1100px;margin:0 auto;background:linear-gradient(135deg,rgba(23,64,245,.12),rgba(139,92,246,.08),rgba(255,92,26,.06));border:1px solid rgba(255,255,255,.08);border-radius:30px;padding:clamp(48px,6vw,80px);text-align:center;position:relative;overflow:hidden;}
+
+    /* ── FOOTER ───────────────────────────────────── */
+    footer{border-top:1px solid var(--bdr);padding:40px clamp(20px,6vw,80px);}
+    .footer-inner{max-width:1200px;margin:0 auto;display:flex;justify-content:space-between;flex-wrap:wrap;gap:32px;}
+    .flinks{display:flex;flex-direction:column;gap:9px;}
+    .flinks a{font-size:13px;color:var(--dim);text-decoration:none;transition:color .18s;}
+    .flinks a:hover{color:var(--txt);}
+    .fcopy{max-width:1200px;margin:24px auto 0;padding-top:20px;border-top:1px solid var(--bdr);font-size:12px;color:var(--dim2);line-height:1.7;}
+
+    /* ── REVEAL ───────────────────────────────────── */
+    .reveal{opacity:0;transform:translateY(28px);transition:opacity .7s ease,transform .7s ease;}
+    .reveal.vis{opacity:1;transform:translateY(0);}
+    .rd1{transition-delay:.1s;}.rd2{transition-delay:.2s;}.rd3{transition-delay:.3s;}
+
+    /* ── THEME TRANSITION ──────────────────────────── */
+    body,nav,.glass,.mcard,.hcard,.fcard,.fcard-sm,.bc,.plan,.sdiv{
+      transition:background .35s ease,background-color .35s ease,border-color .35s ease,box-shadow .35s ease,color .2s ease;
+    }
+
+    /* ── LIGHT THEME ───────────────────────────────── */
+    [data-theme="light"]{
+      --bg:#EEF1FF; --surf:#FFFFFF; --surf2:#E6EBFF; --bdr:#C8D3EE;
+      --txt:#0A1428; --dim:#4A5878; --dim2:#8A9BB8;
+    }
+    [data-theme="light"] body{background:var(--bg);}
+    [data-theme="light"] nav{
+      background:rgba(238,241,255,0.88);
+      border-bottom-color:#C8D3EE;
+    }
+    [data-theme="light"] .btn-ghost{
+      background:rgba(0,0,40,0.05);border-color:rgba(0,0,40,0.14);color:var(--txt);
+    }
+    [data-theme="light"] .sebi-banner{
+      background:rgba(255,184,0,0.1);border-bottom-color:rgba(255,184,0,0.3);
+    }
+    /* light orbs — softer */
+    [data-theme="light"] .orb-1{background:radial-gradient(circle,rgba(79,111,250,0.12),transparent 70%);}
+    [data-theme="light"] .orb-2{background:radial-gradient(circle,rgba(139,92,246,0.08),transparent 70%);}
+    [data-theme="light"] .orb-3{background:radial-gradient(circle,rgba(255,92,26,0.06),transparent 70%);}
+    /* light glass cards */
+    [data-theme="light"] .glass{
+      box-shadow:0 4px 24px rgba(0,10,80,0.1),inset 0 1px 0 rgba(255,255,255,0.95);
+    }
+    [data-theme="light"] .gc-grn{
+      background:linear-gradient(145deg,rgba(0,180,130,0.13),rgba(0,212,160,0.04));
+      border-color:rgba(0,160,115,0.38);
+      box-shadow:0 4px 28px rgba(0,160,115,0.14);
+    }
+    [data-theme="light"] .gc-blu{
+      background:linear-gradient(145deg,rgba(23,64,245,0.11),rgba(79,111,250,0.04));
+      border-color:rgba(23,64,245,0.28);
+      box-shadow:0 4px 28px rgba(23,64,245,0.12);
+    }
+    [data-theme="light"] .gc-pur{
+      background:linear-gradient(145deg,rgba(139,92,246,0.13),rgba(100,50,200,0.04));
+      border-color:rgba(139,92,246,0.3);
+      box-shadow:0 4px 28px rgba(139,92,246,0.12);
+    }
+    [data-theme="light"] .gc-org{
+      background:linear-gradient(145deg,rgba(255,92,26,0.13),rgba(200,50,0,0.04));
+      border-color:rgba(255,92,26,0.3);
+      box-shadow:0 4px 28px rgba(255,92,26,0.1);
+    }
+    [data-theme="light"] .gc-ylw{
+      background:linear-gradient(145deg,rgba(220,155,0,0.14),rgba(180,100,0,0.04));
+      border-color:rgba(220,155,0,0.32);
+      box-shadow:0 4px 28px rgba(220,155,0,0.1);
+    }
+    [data-theme="light"] .gc-mix{
+      background:linear-gradient(145deg,rgba(0,180,130,0.09),rgba(23,64,245,0.09));
+      border-color:rgba(79,111,250,0.28);
+      box-shadow:0 4px 28px rgba(79,111,250,0.1);
+    }
+    /* card inner text */
+    [data-theme="light"] .hcard,[data-theme="light"] .mcard,
+    [data-theme="light"] .fcard,[data-theme="light"] .fcard-sm{
+      color:var(--txt);
+    }
+    /* light bento cards */
+    [data-theme="light"] .bc{
+      color:var(--txt);
+    }
+    [data-theme="light"] .bc.gc-grn,[data-theme="light"] .bc.gc-blu,
+    [data-theme="light"] .bc.gc-pur,[data-theme="light"] .bc.gc-org,
+    [data-theme="light"] .bc.gc-ylw,[data-theme="light"] .bc.gc-mix{
+      color:var(--txt);
+    }
+    /* light plan cards */
+    [data-theme="light"] .plan{
+      background:#FFFFFF;border-color:#C8D3EE;
+    }
+    [data-theme="light"] .plan.feat-plan{
+      background:linear-gradient(145deg,#EAF0FF,#FFFFFF);border-color:rgba(23,64,245,0.3);
+    }
+    [data-theme="light"] .plan-feats li{color:#1A2A4A;}
+    [data-theme="light"] .plan-feats li.no{color:var(--dim2);}
+    /* light nav links */
+    [data-theme="light"] .nav-links a{color:var(--dim);}
+    [data-theme="light"] .nav-links a:hover{color:var(--txt);}
+    /* light footer */
+    [data-theme="light"] footer{border-top-color:#C8D3EE;}
+    [data-theme="light"] .fcopy{border-top-color:#C8D3EE;}
+    /* light section divider */
+    [data-theme="light"] .sdiv{
+      background:linear-gradient(90deg,transparent,#C8D3EE 30%,#C8D3EE 70%,transparent);
+    }
+    /* light feature pill */
+    [data-theme="light"] .fpill{
+      background:rgba(0,10,60,0.03);border-color:rgba(0,10,60,0.08);
+    }
+    /* light cta */
+    [data-theme="light"] .cta-inner{
+      background:linear-gradient(135deg,rgba(23,64,245,0.07),rgba(139,92,246,0.05),rgba(255,92,26,0.04));
+      border-color:rgba(0,0,0,0.08);
+    }
+    /* light tweaks panel */
+    [data-theme="light"] #tweaks-root > div{
+      background:rgba(245,248,255,0.97);border-color:#C8D3EE;
+      box-shadow:0 16px 48px rgba(0,10,80,0.15);
+    }
+    [data-theme="light"] #tweaks-root span:first-child{color:#0A1428;}
+
+    /* ── THEME TOGGLE BUTTON ───────────────────────── */
+    #theme-btn{
+      width:38px;height:38px;border-radius:10px;
+      background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);
+      cursor:pointer;font-size:18px;display:flex;align-items:center;justify-content:center;
+      transition:background .2s,border-color .2s;
+      flex-shrink:0;
+    }
+    #theme-btn:hover{background:rgba(255,255,255,0.13);}
+    [data-theme="light"] #theme-btn{
+      background:rgba(0,0,50,0.06);border-color:rgba(0,0,50,0.14);
+    }
+  </style>
+</head>
+<body>
+
+<!-- SEBI -->
+<div class="sebi-banner"><span>⚠️ <strong>NOT SEBI REGISTERED.</strong> All signals are for informational &amp; educational purposes only. Not financial advice. Trade at your own risk.</span></div>
+
+<!-- NAV -->
+<nav>
+  <a class="nav-logo" href="#">
+    <svg width="24" height="24" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>
+    SIGNAL
+  </a>
+  <div class="nav-links">
+    <a href="#signals">Signals</a>
+    <a href="#portfolio">Portfolio</a>
+    <a href="#algo">Algo Builder</a>
+    <a href="#pricing">Pricing</a>
+    <a href="SIGNAL Track Record.html">Track Record</a>
+  </div>
+  <div class="nav-cta">
+    <button id="theme-btn" title="Toggle dark / light mode" onclick="toggleTheme()">🌙</button>
+    <button class="btn-ghost" onclick="location.href='SIGNAL Sign In.html'">Sign In</button>
+    <button class="btn-pri"   onclick="location.href='SIGNAL Sign In.html'">Get Started Free →</button>
+  </div>
+</nav>
+
+<!-- ══════════════════════════════════════
+     HERO — text left, floating cards right
+══════════════════════════════════════════ -->
+<section class="hero">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+
+  <div class="hero-grid">
+
+    <!-- LEFT: text -->
+    <div>
+      <div class="hero-badge"><div class="live-dot"></div> Live · NSE &amp; BSE · 4,000+ stocks</div>
+      <h1>
+        <span class="g-blu">Trade</span><br>
+        <span class="g-org">Smarter</span><br>
+        <span class="g-grn">with ML</span>
+      </h1>
+      <p class="hero-sub">Portfolio ML classification, Random Forest buy/sell signals, no-code Algo Builder, and Paper Trading — for a fraction of what premium services charge.</p>
+      <div class="hero-btns">
+        <button class="btn-xl btn-xl-p" onclick="location.href='SIGNAL Sign In.html'">Start Free — No Card Needed →</button>
+        <button class="btn-xl btn-xl-g">Watch Demo ▶</button>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat"><span class="hstat-n g-grn">71.4%</span><span class="hstat-l">Signal accuracy</span></div>
+        <div class="hstat-div"></div>
+        <div class="hstat"><span class="hstat-n" style="color:var(--bluL)">4,000+</span><span class="hstat-l">Stocks tracked</span></div>
+        <div class="hstat-div"></div>
+        <div class="hstat"><span class="hstat-n g-org">₹599</span><span class="hstat-l">vs ₹15,000 elsewhere</span></div>
+        <div class="hstat-div"></div>
+        <div class="hstat"><span class="hstat-n" style="color:var(--pur)">6</span><span class="hstat-l">Brokers synced</span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: floating glassmorphic cards -->
+    <div class="hero-cards">
+
+      <!-- Card 1: BUY Signal — green — top left -->
+      <div class="hcard glass gc-grn" style="width:220px;top:2%;left:0%;animation:fl1 7s ease-in-out infinite;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:10px;">ML Signal · NSE</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+          <div><div style="font-size:17px;font-weight:900;">RELIANCE</div><div style="font-size:11px;color:var(--dim);">₹2,912 · ▲ +1.80%</div></div>
+          <span class="sig-tag st-buy">STRONG BUY</span>
+        </div>
+        <div class="cbar"><div class="cfill" style="width:87%;background:var(--grn);"></div></div>
+        <div style="font-size:11px;color:var(--dim);">Confidence <strong style="color:var(--grn);">87%</strong> · RSI 34 · EMA ✓</div>
+      </div>
+
+      <!-- Card 2: Portfolio ML — blue — top right -->
+      <div class="hcard glass gc-blu" style="width:210px;top:0%;right:0%;animation:fl2 9s ease-in-out infinite .8s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:10px;">Portfolio ML</div>
+        <div style="display:flex;flex-direction:column;gap:5px;">
+          <div style="display:flex;justify-content:space-between;padding:5px 9px;background:rgba(0,212,160,.1);border-radius:7px;border:1px solid rgba(0,212,160,.2);">
+            <span style="font-size:11.5px;font-weight:700;color:var(--grn);">🚀 Momentum</span><span style="font-size:11px;color:var(--dim);">5</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 9px;background:rgba(79,111,250,.1);border-radius:7px;border:1px solid rgba(79,111,250,.2);">
+            <span style="font-size:11.5px;font-weight:700;color:var(--bluL);">🔄 Swing</span><span style="font-size:11px;color:var(--dim);">4</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;padding:5px 9px;background:rgba(255,59,92,.08);border-radius:7px;border:1px solid rgba(255,59,92,.2);">
+            <span style="font-size:11.5px;font-weight:700;color:var(--red);">⚠️ Exit Now</span><span style="font-size:11px;color:var(--dim);">2</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 3: Accuracy scorecard — mix — middle center -->
+      <div class="hcard glass gc-mix" style="width:200px;top:32%;left:28%;animation:fl5 8s ease-in-out infinite 1.5s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:8px;">Week 23 Scorecard</div>
+        <div style="font-size:34px;font-weight:900;letter-spacing:-2px;color:var(--grn);line-height:1;margin-bottom:4px;">71.4%</div>
+        <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;margin-bottom:6px;">
+          <div style="height:100%;width:71.4%;background:linear-gradient(90deg,var(--grn),#00FFD1);border-radius:3px;"></div>
+        </div>
+        <div style="font-size:10.5px;color:var(--dim);">14 signals · 10 hit · 2 SL</div>
+      </div>
+
+      <!-- Card 4: Paper Trading — purple — mid-right -->
+      <div class="hcard glass gc-pur" style="width:200px;top:42%;right:2%;animation:fl3 6s ease-in-out infinite .3s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:10px;">Paper Trading</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">
+          <div style="text-align:center;padding:8px;background:rgba(0,212,160,.08);border:1px solid rgba(0,212,160,.18);border-radius:9px;">
+            <div style="font-size:16px;font-weight:900;color:var(--grn);">+8.4%</div>
+            <div style="font-size:10px;color:var(--dim);">P&amp;L</div>
+          </div>
+          <div style="text-align:center;padding:8px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);border-radius:9px;">
+            <div style="font-size:16px;font-weight:900;color:var(--pur);">71%</div>
+            <div style="font-size:10px;color:var(--dim);">Win Rate</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Card 5: Algo Generated — orange — bottom left -->
+      <div class="hcard glass gc-org" style="width:210px;bottom:5%;left:5%;animation:fl4 10s ease-in-out infinite 2s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:8px;">Algo Builder</div>
+        <div style="background:rgba(0,0,0,.35);border-radius:10px;padding:10px;font-family:'JetBrains Mono',monospace;font-size:10px;line-height:1.75;">
+          <div style="color:#68D391;"># RSI + EMA Strategy</div>
+          <div style="color:#F6C90E;">RSI_LOW = 35</div>
+          <div style="color:#FF7D46;">def signal(df):</div>
+          <div style="color:#E2E8F0;">  if rsi &lt; RSI_LOW:</div>
+          <div style="color:#68D391;">    return "BUY"</div>
+        </div>
+      </div>
+
+      <!-- Card 6: Sentiment — yellow — bottom right -->
+      <div class="hcard glass gc-ylw" style="width:195px;bottom:2%;right:5%;animation:fl6 11s ease-in-out infinite 1s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:9px;">𝕏 Sentiment · SBIN</div>
+        <div style="height:7px;background:rgba(255,59,92,.2);border-radius:4px;overflow:hidden;margin-bottom:6px;">
+          <div style="height:100%;width:76%;background:linear-gradient(90deg,var(--grn),#00FFD1);border-radius:4px;"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;">
+          <span style="color:var(--grn);">76% Bullish</span>
+          <span style="color:var(--red);">24%</span>
+        </div>
+        <div style="font-size:10px;color:var(--dim);margin-top:5px;">212 posts · 24h window</div>
+      </div>
+
+    </div><!-- /hero-cards -->
+
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     MARQUEE — glossy gradient cards
+══════════════════════════════════════════ -->
+<div class="sdiv"></div>
+<section class="marquee-section">
+  <div class="marquee-label">Live signals · Portfolio insights · Real-time intelligence</div>
+  <div class="marquee-wrap mw-right" style="margin-bottom:12px;">
+    <div class="marquee-track" id="mq1">
+      <div class="mcard glass gc-grn"><div class="mcard-hdr">NSE · ML Signal</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div><div style="font-size:16px;font-weight:900;">RELIANCE</div><div style="font-size:10.5px;color:var(--dim);">₹2,912 · ▲ +1.80%</div></div><span class="sig-tag st-buy">BUY</span></div><div class="cbar"><div class="cfill" style="width:87%;background:var(--grn);"></div></div><div style="font-size:10.5px;color:var(--dim);">Confidence <strong style="color:var(--grn);">87%</strong></div></div>
+
+      <div class="mcard glass gc-blu"><div class="mcard-hdr">Portfolio ML</div><div style="font-size:14px;font-weight:800;margin-bottom:8px;">16 stocks classified</div><div style="display:flex;flex-direction:column;gap:4px;"><div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--grn);">🚀 Momentum</span><span>5</span></div><div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--bluL);">🔄 Swing</span><span>4</span></div><div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--red);">⚠️ Exit</span><span>2</span></div></div></div>
+
+      <div class="mcard glass gc-mix"><div class="mcard-hdr">Week 23 · Track Record</div><div style="font-size:32px;font-weight:900;color:var(--grn);letter-spacing:-2px;margin-bottom:5px;">71.4%</div><div style="height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;margin-bottom:5px;"><div style="height:100%;width:71.4%;background:var(--grn);border-radius:2px;"></div></div><div style="font-size:10.5px;color:var(--dim);">14 signals · 10 hit · 2 SL</div></div>
+
+      <div class="mcard glass gc-pur"><div class="mcard-hdr">Paper Trading · Day 6</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:4px;"><div style="text-align:center;padding:9px;background:rgba(0,212,160,.08);border:1px solid rgba(0,212,160,.18);border-radius:9px;"><div style="font-size:17px;font-weight:900;color:var(--grn);">+8.4%</div><div style="font-size:10px;color:var(--dim);">P&amp;L</div></div><div style="text-align:center;padding:9px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.2);border-radius:9px;"><div style="font-size:17px;font-weight:900;color:var(--pur);">71%</div><div style="font-size:10px;color:var(--dim);">Win</div></div></div></div>
+
+      <div class="mcard glass gc-org"><div class="mcard-hdr">NSE · ML Signal</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div><div style="font-size:16px;font-weight:900;">SBIN</div><div style="font-size:10.5px;color:var(--dim);">₹812 · ▲ +2.1%</div></div><span class="sig-tag st-buy">MOMENTUM</span></div><div class="cbar"><div class="cfill" style="width:78%;background:var(--org);"></div></div><div style="font-size:10.5px;color:var(--dim);">Confidence <strong style="color:var(--org);">78%</strong></div></div>
+
+      <div class="mcard glass gc-ylw"><div class="mcard-hdr">Backtest · 1 Year</div><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;"><div style="text-align:center;padding:7px;background:rgba(0,0,0,.2);border-radius:8px;"><div style="font-size:15px;font-weight:900;color:var(--grn);">+24.3%</div><div style="font-size:9.5px;color:var(--dim);">Returns</div></div><div style="text-align:center;padding:7px;background:rgba(0,0,0,.2);border-radius:8px;"><div style="font-size:15px;font-weight:900;color:var(--bluL);">1.84</div><div style="font-size:9.5px;color:var(--dim);">Sharpe</div></div><div style="text-align:center;padding:7px;background:rgba(0,0,0,.2);border-radius:8px;"><div style="font-size:15px;font-weight:900;color:var(--grn);">64%</div><div style="font-size:9.5px;color:var(--dim);">Win Rate</div></div><div style="text-align:center;padding:7px;background:rgba(0,0,0,.2);border-radius:8px;"><div style="font-size:15px;font-weight:900;color:var(--red);">−8.2%</div><div style="font-size:9.5px;color:var(--dim);">Drawdown</div></div></div></div>
+
+      <div class="mcard glass gc-grn"><div class="mcard-hdr">NSE · ML Signal</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div><div style="font-size:16px;font-weight:900;">TATAMOTORS</div><div style="font-size:10.5px;color:var(--dim);">₹960 · ▲ +3.5%</div></div><span class="sig-tag st-buy">BUY</span></div><div class="cbar"><div class="cfill" style="width:81%;background:var(--grn);"></div></div><div style="font-size:10.5px;color:var(--dim);">Result: <strong style="color:var(--grn);">+8.4% · Target hit</strong></div></div>
+
+      <div class="mcard glass gc-blu"><div class="mcard-hdr">𝕏 Sentiment</div><div style="font-size:15px;font-weight:800;margin-bottom:6px;">TATAMOTORS</div><div style="height:6px;background:rgba(255,59,92,.2);border-radius:3px;overflow:hidden;margin-bottom:5px;"><div style="height:100%;width:76%;background:var(--grn);border-radius:3px;"></div></div><div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;"><span style="color:var(--grn);">76% Bullish</span><span style="color:var(--red);">24%</span></div><div style="font-size:10px;color:var(--dim);margin-top:4px;">212 posts · 24h</div></div>
+    </div>
+  </div>
+
+  <div class="marquee-wrap mw-left">
+    <div class="marquee-track" id="mq2">
+      <div class="mcard glass gc-pur"><div class="mcard-hdr">Account Aggregator</div><div style="font-size:26px;font-weight:900;letter-spacing:-1px;margin-bottom:4px;">₹18.7L</div><div style="font-size:10.5px;color:var(--dim);margin-bottom:8px;">Total wealth · 4 institutions</div><div style="display:flex;gap:5px;flex-wrap:wrap;"><span style="font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(0,212,160,.12);color:var(--grn);">SBI</span><span style="font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(56,126,209,.12);color:#387ED1;">HDFC</span><span style="font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(255,92,26,.12);color:var(--org);">mStock</span><span style="font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:5px;background:rgba(139,92,246,.12);color:var(--pur);">MF</span></div></div>
+
+      <div class="mcard glass gc-org"><div class="mcard-hdr">NSE · ML Signal</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div><div style="font-size:16px;font-weight:900;">ZOMATO</div><div style="font-size:10.5px;color:var(--dim);">₹189 · ▼ −1.4%</div></div><span class="sig-tag st-sell">EXIT</span></div><div class="cbar"><div class="cfill" style="width:81%;background:var(--red);"></div></div><div style="font-size:10.5px;color:var(--dim);">Confidence <strong style="color:var(--red);">81%</strong> · Below support</div></div>
+
+      <div class="mcard glass gc-grn"><div class="mcard-hdr">ETF &amp; MF Portfolio</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><span style="font-size:13px;font-weight:700;">₹1,23,000</span><span style="font-size:18px;font-weight:900;color:var(--grn);">+24.5%</span></div><div style="display:flex;flex-direction:column;gap:4px;"><div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--dim);">Mirae Asset</span><span style="color:var(--grn);font-weight:700;">+16.3%</span></div><div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--dim);">NIFTYBEES</span><span style="color:var(--grn);font-weight:700;">+12.0%</span></div><div style="display:flex;justify-content:space-between;font-size:11px;"><span style="color:var(--dim);">SBI Small Cap</span><span style="color:var(--grn);font-weight:700;">+40.0%</span></div></div></div>
+
+      <div class="mcard glass gc-mix"><div class="mcard-hdr">Broker Connect</div><div style="display:flex;flex-direction:column;gap:6px;"><div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;"><span style="font-size:11px;font-weight:700;">mStock</span><span style="margin-left:auto;font-size:10px;color:var(--grn);font-weight:700;">Connected ✓</span></div><div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;"><span style="font-size:11px;font-weight:700;">Zerodha</span><span style="margin-left:auto;font-size:10px;color:var(--bluL);font-weight:700;">Connect →</span></div><div style="display:flex;align-items:center;gap:8px;padding:7px 9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;"><span style="font-size:11px;font-weight:700;">Upstox</span><span style="margin-left:auto;font-size:10px;color:var(--bluL);font-weight:700;">Connect →</span></div></div></div>
+
+      <div class="mcard glass gc-ylw"><div class="mcard-hdr">NSE · ML Signal</div><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;"><div><div style="font-size:16px;font-weight:900;">HDFCBANK</div><div style="font-size:10.5px;color:var(--dim);">₹1,620 · ▲ +0.6%</div></div><span class="sig-tag st-hold">HOLD</span></div><div class="cbar"><div class="cfill" style="width:62%;background:var(--ylw);"></div></div><div style="font-size:10.5px;color:var(--dim);">Confidence <strong style="color:var(--ylw);">62%</strong></div></div>
+
+      <div class="mcard glass gc-blu"><div class="mcard-hdr">Public Track Record</div><div style="margin-bottom:7px;"><div style="font-size:13px;font-weight:700;color:var(--grn);">🎯 TATAMOTORS +8.4%</div><div style="font-size:10.5px;color:var(--dim);">Entry ₹960 → Target hit · 3 days</div></div><div style="padding-top:7px;border-top:1px solid rgba(255,255,255,.08);"><div style="font-size:13px;font-weight:700;color:var(--grn);">🚀 SBIN +5.9%</div><div style="font-size:10.5px;color:var(--dim);">Entry ₹812 → Target hit · 2 days</div></div></div>
+
+      <div class="mcard glass gc-pur"><div class="mcard-hdr">Algo Indicators</div><div style="display:flex;flex-wrap:wrap;gap:5px;"><span style="padding:3px 9px;border-radius:20px;background:rgba(79,111,250,.18);border:1px solid rgba(79,111,250,.35);font-size:10.5px;font-weight:700;color:var(--bluL);">RSI (14)</span><span style="padding:3px 9px;border-radius:20px;background:rgba(79,111,250,.18);border:1px solid rgba(79,111,250,.35);font-size:10.5px;font-weight:700;color:var(--bluL);">EMA 20/50</span><span style="padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:10.5px;color:var(--dim);">MACD</span><span style="padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:10.5px;color:var(--dim);">Bollinger</span><span style="padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:10.5px;color:var(--dim);">ADX</span><span style="padding:3px 9px;border-radius:20px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);font-size:10.5px;color:var(--dim);">ATR</span></div></div>
+    </div>
+  </div>
+</section>
+<div class="sdiv"></div>
+
+<!-- ══════════════════════════════════════
+     FEATURE 1 — ML SIGNALS
+     Text left, floating cards right
+══════════════════════════════════════════ -->
+<section class="feat" id="signals">
+  <div class="feat-inner reveal">
+    <!-- TEXT -->
+    <div>
+      <div class="feat-eyebrow" style="color:var(--grn);">ML Signals</div>
+      <h2 class="feat-title">Buy. Sell. Hold.<br><span class="g-grn">Know exactly why.</span></h2>
+      <p class="feat-sub">Every signal comes with a confidence score, Twitter/X sentiment, delivery volume %, and a full breakdown of the 15 parameters that fired it — not a human guess.</p>
+      <div class="feat-pills">
+        <div class="fpill">
+          <div class="fpill-ico" style="background:rgba(0,212,160,.12);">🤖</div>
+          <div><div class="fpill-t">Random Forest · 200 trees, 15 parameters</div><div class="fpill-d">RSI, MACD, EMA, ADX, FII/DII flow, Twitter sentiment, delivery %, earnings, beta and more — trained on 5Y NSE/BSE data.</div></div>
+        </div>
+        <div class="fpill">
+          <div class="fpill-ico" style="background:rgba(79,111,250,.12);">⚡</div>
+          <div><div class="fpill-t">Updated every 2 min · instant alerts</div><div class="fpill-d">Real-time signals during market hours with push + WhatsApp notification the moment a signal fires.</div></div>
+        </div>
+        <div class="fpill">
+          <div class="fpill-ico" style="background:rgba(139,92,246,.12);">📊</div>
+          <div><div class="fpill-t">Public track record on Twitter/𝕏</div><div class="fpill-d">Every signal auto-posted publicly with entry, target, SL. Weekly scorecards — full accountability.</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- VISUAL: stacked floating cards -->
+    <div class="feat-visual">
+      <!-- Back card -->
+      <div class="fcard glass gc-ylw" style="width:300px;top:30px;left:30px;transform:rotate(-5deg);animation:fl3 8s ease-in-out infinite;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:8px;">𝕏 Twitter Sentiment</div>
+        <div style="font-size:16px;font-weight:800;margin-bottom:8px;">TATAMOTORS</div>
+        <div style="height:7px;background:rgba(255,59,92,.2);border-radius:4px;overflow:hidden;margin-bottom:6px;"><div style="height:100%;width:76%;background:linear-gradient(90deg,var(--grn),#00FFD1);border-radius:4px;"></div></div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;font-weight:700;"><span style="color:var(--grn);">76% Bullish</span><span style="color:var(--red);">24%</span></div>
+        <div style="font-size:10.5px;color:var(--dim);margin-top:5px;">212 posts · 24h window</div>
+      </div>
+      <!-- Main card -->
+      <div class="fcard glass gc-grn" style="width:310px;top:0;left:0;animation:fl1 7s ease-in-out infinite .5s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.7;margin-bottom:12px;">ML Signal · NSE</div>
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+          <div><div style="font-size:22px;font-weight:900;letter-spacing:-.5px;">RELIANCE</div><div style="font-size:11.5px;color:var(--dim);">Reliance Industries · Large Cap</div></div>
+          <div style="text-align:right;"><div style="font-size:26px;font-weight:900;letter-spacing:-1px;">₹2,912</div><div style="font-size:12px;color:var(--grn);font-weight:700;">▲ +1.80%</div></div>
+        </div>
+        <svg width="100%" height="36" viewBox="0 0 280 36" preserveAspectRatio="none" style="margin-bottom:10px;display:block;"><defs><linearGradient id="sg1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#00D4A0" stop-opacity=".3"/><stop offset="100%" stop-color="#00D4A0" stop-opacity="0"/></linearGradient></defs><path d="M0,34 C30,30 55,24 80,18 S130,10 160,7 S220,4 250,3 L280,2 L280,36 L0,36Z" fill="url(#sg1)"/><path d="M0,34 C30,30 55,24 80,18 S130,10 160,7 S220,4 250,3 L280,2" fill="none" stroke="#00D4A0" stroke-width="2" stroke-linecap="round"/></svg>
+        <div style="background:rgba(0,212,160,.1);border:1px solid rgba(0,212,160,.25);border-radius:11px;padding:11px 13px;margin-bottom:9px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;"><span style="font-size:11.5px;font-weight:700;color:var(--grn);">🚀 MOMENTUM</span><span style="font-size:12px;font-weight:800;padding:2px 10px;border-radius:7px;background:rgba(0,212,160,.2);color:var(--grn);border:1px solid rgba(0,212,160,.4);">STRONG BUY</span></div>
+          <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;"><div style="height:100%;width:87%;background:linear-gradient(90deg,var(--grn),#00FFD1);border-radius:3px;"></div></div>
+          <div style="font-size:10.5px;color:var(--dim);margin-top:5px;">Confidence <strong style="color:var(--grn);">87%</strong> · 15/15 params · Updated 2 min ago</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;">
+          <div style="text-align:center;background:rgba(0,0,0,.25);border-radius:8px;padding:7px;"><div style="font-size:9.5px;color:var(--dim);">Delivery%</div><div style="font-size:13px;font-weight:700;color:var(--grn);">63.2%</div></div>
+          <div style="text-align:center;background:rgba(0,0,0,.25);border-radius:8px;padding:7px;"><div style="font-size:9.5px;color:var(--dim);">P/E</div><div style="font-size:13px;font-weight:700;">28.4×</div></div>
+          <div style="text-align:center;background:rgba(0,0,0,.25);border-radius:8px;padding:7px;"><div style="font-size:9.5px;color:var(--dim);">Mkt Cap</div><div style="font-size:13px;font-weight:700;">₹19.7L Cr</div></div>
+        </div>
+      </div>
+      <!-- Accent pill -->
+      <div class="fcard-sm glass gc-pur" style="width:180px;bottom:20px;right:10px;animation:fl4 9s ease-in-out infinite 2s;">
+        <div style="font-size:9.5px;font-weight:700;opacity:.6;margin-bottom:6px;">Live Alert</div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:2px;">🔔 SBIN Signal Fired</div>
+        <div style="font-size:11px;color:var(--dim);">Momentum · Conf 78%</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sdiv"></div>
+
+<!-- ══════════════════════════════════════
+     FEATURE 2 — PORTFOLIO ML
+     Cards left, text right
+══════════════════════════════════════════ -->
+<section class="feat" id="portfolio">
+  <div class="feat-inner rev reveal">
+    <!-- TEXT -->
+    <div>
+      <div class="feat-eyebrow" style="color:var(--bluL);">Portfolio Intelligence</div>
+      <h2 class="feat-title">Your holdings,<br><span style="background:linear-gradient(135deg,var(--bluL),var(--pur));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">classified by ML.</span></h2>
+      <p class="feat-sub">Connect your broker via secure OAuth or upload Excel. Our model instantly tags every stock — Momentum, Swing, Long Term, Exit Now — and syncs live P&amp;L every 30 seconds.</p>
+      <div class="feat-pills">
+        <div class="fpill">
+          <div class="fpill-ico" style="background:rgba(79,111,250,.12);">🔗</div>
+          <div><div class="fpill-t">6 brokers + RBI Account Aggregator</div><div class="fpill-d">mStock, Zerodha, Upstox, Angel One, HDFC Sec, Groww — or upload .xlsx. AA sync brings in MFs, FDs, NPS, EPF too.</div></div>
+        </div>
+        <div class="fpill">
+          <div class="fpill-ico" style="background:rgba(0,212,160,.12);">📈</div>
+          <div><div class="fpill-t">Live P&amp;L sync every 30 seconds</div><div class="fpill-d">LTP, unrealised P&amp;L, delivery %, institutional flow — all live during market hours in one dashboard.</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- VISUAL -->
+    <div class="feat-visual">
+      <!-- Back card -->
+      <div class="fcard glass gc-grn" style="width:280px;top:40px;left:40px;transform:rotate(4deg);animation:fl2 9s ease-in-out infinite 1s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:10px;">Live P&amp;L</div>
+        <div style="font-size:28px;font-weight:900;letter-spacing:-1.5px;color:var(--grn);margin-bottom:3px;">₹12,40,000</div>
+        <div style="font-size:13px;color:var(--grn);font-weight:700;margin-bottom:8px;">▲ +18.4% YoY</div>
+        <div style="height:5px;background:rgba(255,255,255,.08);border-radius:3px;overflow:hidden;"><div style="height:100%;width:68%;background:linear-gradient(90deg,var(--grn),#00FFD1);border-radius:3px;"></div></div>
+      </div>
+      <!-- Main card -->
+      <div class="fcard glass gc-blu" style="width:300px;top:0;left:0;animation:fl1 7s ease-in-out infinite .3s;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+          <div style="font-size:15px;font-weight:800;">Portfolio Analysis</div>
+          <div style="font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:rgba(0,212,160,.12);border:1px solid rgba(0,212,160,.3);color:var(--grn);">ML ✓ Live</div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="padding:11px;background:rgba(0,212,160,.08);border:1px solid rgba(0,212,160,.2);border-radius:11px;">
+            <div style="font-size:10.5px;font-weight:800;color:var(--grn);margin-bottom:3px;">🚀 Momentum</div>
+            <div style="font-size:18px;font-weight:900;">5</div>
+            <div style="font-size:9.5px;color:var(--dim);">RELIANCE, TML…</div>
+          </div>
+          <div style="padding:11px;background:rgba(79,111,250,.08);border:1px solid rgba(79,111,250,.2);border-radius:11px;">
+            <div style="font-size:10.5px;font-weight:800;color:var(--bluL);margin-bottom:3px;">🔄 Swing</div>
+            <div style="font-size:18px;font-weight:900;">4</div>
+            <div style="font-size:9.5px;color:var(--dim);">HDFC, BAJFIN…</div>
+          </div>
+          <div style="padding:11px;background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:11px;">
+            <div style="font-size:10.5px;font-weight:800;color:var(--pur);margin-bottom:3px;">🏛️ Long Term</div>
+            <div style="font-size:18px;font-weight:900;">5</div>
+            <div style="font-size:9.5px;color:var(--dim);">TCS, INFY…</div>
+          </div>
+          <div style="padding:11px;background:rgba(255,59,92,.07);border:1px solid rgba(255,59,92,.2);border-radius:11px;">
+            <div style="font-size:10.5px;font-weight:800;color:var(--red);margin-bottom:3px;">⚠️ Exit Now</div>
+            <div style="font-size:18px;font-weight:900;">2</div>
+            <div style="font-size:9.5px;color:var(--dim);">ZOMATO, PAYTM</div>
+          </div>
+        </div>
+      </div>
+      <!-- Accent -->
+      <div class="fcard-sm glass gc-pur" style="width:170px;bottom:30px;right:0;animation:fl5 10s ease-in-out infinite 1.5s;">
+        <div style="font-size:9.5px;font-weight:700;opacity:.6;margin-bottom:6px;">AA Sync · Jaitik</div>
+        <div style="font-size:13px;font-weight:800;margin-bottom:2px;">₹18.7L total</div>
+        <div style="font-size:11px;color:var(--dim);">4 institutions linked</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sdiv"></div>
+
+<!-- ══════════════════════════════════════
+     FEATURE 3 — ALGO BUILDER
+     Text left, cards right
+══════════════════════════════════════════ -->
+<section class="feat" id="algo">
+  <div class="feat-inner reveal">
+    <div>
+      <div class="feat-eyebrow" style="color:var(--org);">Algo Builder</div>
+      <h2 class="feat-title">Build your strategy.<br><span class="g-org">No code needed.</span></h2>
+      <p class="feat-sub">Pick a strategy, select indicators, set entry/exit conditions. SIGNAL generates production-ready Python with full 1-year backtest results — then paper-trade it before going live.</p>
+      <div class="feat-pills">
+        <div class="fpill">
+          <div class="fpill-ico" style="background:rgba(255,92,26,.12);">🛠️</div>
+          <div><div class="fpill-t">Visual no-code builder</div><div class="fpill-d">Momentum, Trend Following, Mean Reversion, Breakout — pick type, drag in indicators, set rules in minutes.</div></div>
+        </div>
+        <div class="fpill">
+          <div class="fpill-ico" style="background:rgba(255,184,0,.12);">🧪</div>
+          <div><div class="fpill-t">1-year backtesting on real NSE data</div><div class="fpill-d">Sharpe ratio, win rate, max drawdown, full returns — calculated on actual historical data before you risk a rupee.</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- VISUAL -->
+    <div class="feat-visual">
+      <!-- Back card: backtest results -->
+      <div class="fcard glass gc-ylw" style="width:280px;top:50px;left:50px;transform:rotate(-4deg);animation:fl2 8s ease-in-out infinite 1s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:12px;">1Y Backtest Results</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+          <div style="text-align:center;padding:10px;background:rgba(0,0,0,.3);border-radius:9px;"><div style="font-size:20px;font-weight:900;color:var(--grn);">+24.3%</div><div style="font-size:9.5px;color:var(--dim);">Returns</div></div>
+          <div style="text-align:center;padding:10px;background:rgba(0,0,0,.3);border-radius:9px;"><div style="font-size:20px;font-weight:900;color:var(--bluL);">1.84</div><div style="font-size:9.5px;color:var(--dim);">Sharpe</div></div>
+          <div style="text-align:center;padding:10px;background:rgba(0,0,0,.3);border-radius:9px;"><div style="font-size:20px;font-weight:900;color:var(--grn);">64%</div><div style="font-size:9.5px;color:var(--dim);">Win Rate</div></div>
+          <div style="text-align:center;padding:10px;background:rgba(0,0,0,.3);border-radius:9px;"><div style="font-size:20px;font-weight:900;color:var(--red);">−8.2%</div><div style="font-size:9.5px;color:var(--dim);">Drawdown</div></div>
+        </div>
+      </div>
+      <!-- Main card: code output -->
+      <div class="fcard glass gc-org" style="width:310px;top:0;left:0;animation:fl1 7s ease-in-out infinite .4s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.7;margin-bottom:12px;">Algo Builder · Generated Code</div>
+        <div style="background:#0A0E18;border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:9px 13px;background:#0D1117;border-bottom:1px solid rgba(255,255,255,.07);">
+            <span style="font-size:11px;color:#8B949E;font-family:'JetBrains Mono',monospace;">signal_rsi_ema.py</span>
+            <span style="font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;background:rgba(79,111,250,.15);color:var(--bluL);border:1px solid rgba(79,111,250,.3);">⎘ Copy</span>
+          </div>
+          <div style="padding:13px;font-family:'JetBrains Mono',monospace;font-size:11px;line-height:1.8;">
+            <div style="color:#68D391;"># SIGNAL · RSI + EMA Strategy</div>
+            <div style="color:#F6C90E;">RSI_LOW, RSI_HIGH = 35, 70</div>
+            <div style="color:#F6C90E;">EMA_FAST, EMA_SLOW = 20, 50</div>
+            <div style="color:#F6C90E;">STOP_LOSS = 2.5</div>
+            <div>&nbsp;</div>
+            <div style="color:#FF7D46;">def signal(df):</div>
+            <div style="color:#E2E8F0;">  r = rsi(df["close"])</div>
+            <div style="color:#E2E8F0;">  if r &lt; RSI_LOW <span style="color:#FF7D46;">and</span> cross:</div>
+            <div style="color:#68D391;">    return <span style="color:#A8D5A2;">"BUY"</span></div>
+            <div style="color:#E2E8F0;">  if r &gt; RSI_HIGH:</div>
+            <div style="color:#FC8181;">    return <span style="color:#FCA5A5;">"SELL"</span></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:7px;">
+          <div style="flex:1;text-align:center;padding:8px;background:rgba(0,212,160,.08);border:1px solid rgba(0,212,160,.18);border-radius:9px;"><div style="font-size:14px;font-weight:900;color:var(--grn);">+24.3%</div><div style="font-size:9.5px;color:var(--dim);">Returns</div></div>
+          <div style="flex:1;text-align:center;padding:8px;background:rgba(0,212,160,.08);border:1px solid rgba(0,212,160,.18);border-radius:9px;"><div style="font-size:14px;font-weight:900;color:var(--grn);">64%</div><div style="font-size:9.5px;color:var(--dim);">Win Rate</div></div>
+          <div style="flex:1;text-align:center;padding:8px;background:rgba(255,59,92,.07);border:1px solid rgba(255,59,92,.15);border-radius:9px;"><div style="font-size:14px;font-weight:900;color:var(--red);">−8.2%</div><div style="font-size:9.5px;color:var(--dim);">Drawdown</div></div>
+        </div>
+      </div>
+      <!-- Accent -->
+      <div class="fcard-sm glass gc-pur" style="width:175px;bottom:20px;right:0;animation:fl4 9s ease-in-out infinite 2s;">
+        <div style="font-size:9.5px;font-weight:700;opacity:.6;margin-bottom:6px;">Paper Trading →</div>
+        <div style="font-size:12px;font-weight:700;margin-bottom:2px;">Ready to test live</div>
+        <div style="font-size:11px;color:var(--dim);">₹1L virtual · 0 real risk</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sdiv"></div>
+
+<!-- ══════════════════════════════════════
+     FEATURE 4 — PAPER TRADING
+     Cards left, text right
+══════════════════════════════════════════ -->
+<section class="feat" id="paper">
+  <div class="feat-inner rev reveal">
+    <div>
+      <div class="feat-eyebrow" style="color:var(--pur);">Paper Trading</div>
+      <h2 class="feat-title">Test risk-free on<br><span style="background:linear-gradient(135deg,var(--pur),#A78BFA);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;">live market data.</span></h2>
+      <p class="feat-sub">Deploy your algo with ₹1,00,000 virtual capital on real NSE/BSE live feeds. Watch signals fire, track virtual P&amp;L, tweak any parameter — then go live when you're confident.</p>
+      <div class="feat-pills">
+        <div class="fpill">
+          <div class="fpill-ico" style="background:rgba(139,92,246,.12);">🎮</div>
+          <div><div class="fpill-t">Real data, zero real money</div><div class="fpill-d">Live NSE/BSE market feed with ₹1,00,000 virtual capital. Adjust any strategy parameter anytime without restarting.</div></div>
+        </div>
+        <div class="fpill">
+          <div class="fpill-ico" style="background:rgba(0,212,160,.12);">🚀</div>
+          <div><div class="fpill-t">Go live when you're ready</div><div class="fpill-d">After consistent results, SIGNAL generates a step-by-step deploy guide to run your strategy on your real broker via API.</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- VISUAL -->
+    <div class="feat-visual">
+      <!-- Back card -->
+      <div class="fcard glass gc-grn" style="width:280px;top:60px;left:30px;transform:rotate(5deg);animation:fl3 9s ease-in-out infinite .7s;">
+        <div style="font-size:9.5px;font-weight:700;letter-spacing:1px;text-transform:uppercase;opacity:.6;margin-bottom:8px;">Signal Log</div>
+        <div style="display:flex;flex-direction:column;gap:6px;">
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;"><span style="color:var(--dim2);">09:31</span><span style="padding:1px 7px;border-radius:4px;background:rgba(0,212,160,.15);color:var(--grn);font-weight:700;">BUY</span><span style="font-weight:700;">RELIANCE</span><span style="margin-left:auto;color:var(--grn);">+₹1,632</span></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;"><span style="color:var(--dim2);">14:22</span><span style="padding:1px 7px;border-radius:4px;background:rgba(255,59,92,.12);color:var(--red);font-weight:700;">SELL</span><span style="font-weight:700;">INFY</span><span style="margin-left:auto;color:var(--grn);">+₹2,340</span></div>
+          <div style="display:flex;align-items:center;gap:8px;font-size:11px;"><span style="color:var(--dim2);">10:05</span><span style="padding:1px 7px;border-radius:4px;background:rgba(255,184,0,.12);color:var(--ylw);font-weight:700;">HOLD</span><span style="font-weight:700;">HDFC</span><span style="margin-left:auto;color:var(--dim);">—</span></div>
+        </div>
+      </div>
+      <!-- Main card -->
+      <div class="fcard glass gc-pur" style="width:310px;top:0;left:0;animation:fl1 7s ease-in-out infinite .2s;">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+          <div style="width:8px;height:8px;border-radius:50%;background:var(--pur);animation:blink 2s infinite;"></div>
+          <span style="font-size:12px;font-weight:700;color:var(--pur);">Paper Trading · Day 6 of 7</span>
+        </div>
+        <div style="font-size:11px;color:var(--dim);margin-bottom:14px;">RSI + EMA Strategy · RELIANCE, HDFCBANK, INFY</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:12px;">
+          <div style="text-align:center;padding:13px;background:rgba(0,212,160,.08);border:1px solid rgba(0,212,160,.2);border-radius:12px;">
+            <div style="font-size:22px;font-weight:900;color:var(--grn);">+8.4%</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:2px;">Virtual P&amp;L</div>
+          </div>
+          <div style="text-align:center;padding:13px;background:rgba(139,92,246,.1);border:1px solid rgba(139,92,246,.22);border-radius:12px;">
+            <div style="font-size:22px;font-weight:900;color:var(--pur);">71%</div>
+            <div style="font-size:10px;color:var(--dim);margin-top:2px;">Win Rate</div>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:7px;">
+          <div style="text-align:center;padding:8px;background:rgba(0,0,0,.25);border-radius:9px;"><div style="font-size:15px;font-weight:900;">7</div><div style="font-size:9.5px;color:var(--dim);">Signals</div></div>
+          <div style="text-align:center;padding:8px;background:rgba(0,0,0,.25);border-radius:9px;"><div style="font-size:15px;font-weight:900;color:var(--grn);">5</div><div style="font-size:9.5px;color:var(--dim);">Wins</div></div>
+          <div style="text-align:center;padding:8px;background:rgba(0,0,0,.25);border-radius:9px;"><div style="font-size:15px;font-weight:900;color:var(--grn);">₹1,08,420</div><div style="font-size:9.5px;color:var(--dim);">Virtual</div></div>
+        </div>
+      </div>
+      <!-- Accent -->
+      <div class="fcard-sm glass gc-org" style="width:165px;bottom:20px;right:10px;animation:fl6 8s ease-in-out infinite 1.5s;">
+        <div style="font-size:9.5px;font-weight:700;opacity:.6;margin-bottom:5px;">Strategy status</div>
+        <div style="font-size:12px;font-weight:700;color:var(--grn);margin-bottom:2px;">✓ Ready to deploy</div>
+        <div style="font-size:11px;color:var(--dim);">7 days confirmed</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="sdiv"></div>
+
+<!-- ══════════════════════════════════════
+     BENTO — feature overview
+══════════════════════════════════════════ -->
+<section class="bento">
+  <div class="bento-inner">
+    <div class="bento-hdr reveal">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim2);margin-bottom:12px;">Everything Included</div>
+      <h2 style="font-size:clamp(28px,4vw,48px);font-weight:900;letter-spacing:-2px;">One platform.<br>All the tools.</h2>
+    </div>
+    <div class="bento-grid reveal">
+
+      <div class="bc tall gc-pur glass" style="box-shadow:0 8px 48px rgba(139,92,246,0.18);">
+        <div class="bc-glow" style="width:200px;height:200px;bottom:-60px;right:-60px;background:radial-gradient(circle,rgba(139,92,246,.2),transparent 70%);"></div>
+        <div class="bc-ico" style="background:rgba(139,92,246,.18);">🧪</div>
+        <div class="bc-title">Paper Trading</div>
+        <div class="bc-desc">Live market data, virtual capital, zero real-money risk. Test, tweak, then deploy.</div>
+        <div style="margin-top:20px;background:rgba(0,0,0,.3);border:1px solid rgba(139,92,246,.2);border-radius:12px;padding:14px;">
+          <div style="display:flex;align-items:center;gap:7px;margin-bottom:10px;"><div style="width:6px;height:6px;border-radius:50%;background:var(--pur);animation:blink 2s infinite;"></div><span style="font-size:11px;font-weight:700;color:var(--pur);">Running · Day 6</span></div>
+          <div style="display:flex;justify-content:space-between;margin-bottom:5px;"><span style="font-size:12px;color:var(--dim);">Virtual P&amp;L</span><span style="font-size:13px;font-weight:800;color:var(--grn);">+₹8,420</span></div>
+          <div style="display:flex;justify-content:space-between;"><span style="font-size:12px;color:var(--dim);">Win Rate</span><span style="font-size:13px;font-weight:800;color:var(--pur);">71%</span></div>
+        </div>
+      </div>
+
+      <div class="bc gc-grn glass" style="box-shadow:0 8px 48px rgba(0,212,160,0.14);">
+        <div class="bc-glow" style="width:150px;height:150px;top:-40px;right:-40px;background:radial-gradient(circle,rgba(0,212,160,.15),transparent 70%);"></div>
+        <div class="bc-ico" style="background:rgba(0,212,160,.15);">🇮🇳</div>
+        <div class="bc-title">Account Aggregator</div>
+        <div class="bc-desc">RBI-regulated AA sync — stocks, MFs, FDs, NPS, EPF in one SIGNAL dashboard.</div>
+      </div>
+
+      <div class="bc gc-ylw glass" style="box-shadow:0 8px 48px rgba(255,184,0,0.1);">
+        <div class="bc-ico" style="background:rgba(255,184,0,.15);">📅</div>
+        <div class="bc-title">Earnings Calendar</div>
+        <div class="bc-desc">ML-predicted earnings impact for every NSE/BSE quarterly result — pre-position before the announcement.</div>
+      </div>
+
+      <div class="bc span2 gc-blu glass" style="box-shadow:0 8px 48px rgba(23,64,245,0.14);">
+        <div class="bc-glow" style="width:200px;height:200px;top:-60px;left:50%;background:radial-gradient(circle,rgba(79,111,250,.12),transparent 70%);"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:center;">
+          <div>
+            <div class="bc-ico" style="background:rgba(79,111,250,.15);">𝕏</div>
+            <div class="bc-title">Twitter / 𝕏 Track Record</div>
+            <div class="bc-desc">Every single signal auto-posted publicly. Weekly scorecards — full P&amp;L accountability. Nothing hidden.</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:7px;">
+            <div style="padding:10px 14px;background:rgba(0,212,160,.08);border:1px solid rgba(0,212,160,.2);border-radius:10px;display:flex;justify-content:space-between;"><span style="font-size:13px;font-weight:700;">Week 23 Accuracy</span><span style="font-size:14px;font-weight:900;color:var(--grn);">71.4%</span></div>
+            <div style="padding:10px 14px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07);border-radius:10px;display:flex;justify-content:space-between;"><span style="font-size:13px;">Signals fired</span><span style="font-size:13px;font-weight:700;">14</span></div>
+            <div style="padding:10px 14px;background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.07);border-radius:10px;display:flex;justify-content:space-between;"><span style="font-size:13px;">✅ Targets hit</span><span style="font-size:13px;font-weight:700;color:var(--grn);">10</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="bc gc-org glass" style="box-shadow:0 8px 48px rgba(255,92,26,0.12);">
+        <div class="bc-ico" style="background:rgba(255,92,26,.15);">🌍</div>
+        <div class="bc-title">US Markets <span style="font-size:11px;padding:2px 7px;border-radius:5px;background:rgba(255,184,0,.12);color:var(--ylw);vertical-align:middle;font-weight:600;">Soon</span></div>
+        <div class="bc-desc">NYSE &amp; NASDAQ signals for Indian LRS investors via Vested and INDmoney. US-adapted ML model.</div>
+      </div>
+
+      <div class="bc gc-mix glass">
+        <div class="bc-ico" style="background:rgba(79,111,250,.12);">📱</div>
+        <div class="bc-title">Mobile App <span style="font-size:11px;padding:2px 7px;border-radius:5px;background:rgba(255,184,0,.12);color:var(--ylw);vertical-align:middle;font-weight:600;">Soon</span></div>
+        <div class="bc-desc">Full SIGNAL on iOS &amp; Android — signals, alerts, portfolio sync, paper trading in your pocket.</div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<div class="sdiv"></div>
+
+<!-- ══════════════════════════════════════
+     PRICING
+══════════════════════════════════════════ -->
+<section class="pricing" id="pricing">
+  <div class="pricing-inner">
+    <div class="pricing-hdr reveal">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim2);margin-bottom:12px;">Pricing</div>
+      <h2 style="font-size:clamp(28px,4vw,52px);font-weight:900;letter-spacing:-2px;margin-bottom:12px;">One plan beats<br>every premium service.</h2>
+      <p style="font-size:15px;color:var(--dim);max-width:460px;margin:0 auto;line-height:1.7;">Transparent pricing. Cancel anytime. Public accuracy record so you know what you're paying for before you pay.</p>
+    </div>
+    <div class="plans reveal">
+      <div class="plan">
+        <div class="plan-name">Free</div>
+        <div class="plan-price">₹0</div>
+        <div class="plan-cycle">forever · no card</div>
+        <ul class="plan-feats">
+          <li>5 stocks tracking</li>
+          <li>3 ML signals/week</li>
+          <li>NIFTY 50 prices</li>
+          <li class="no">No real-time alerts</li>
+          <li class="no">No broker sync</li>
+          <li class="no">No Algo Builder</li>
+        </ul>
+        <button class="btn-plan bpg">Start Free</button>
+      </div>
+      <div class="plan">
+        <div class="plan-name" style="color:var(--bluL);">Starter</div>
+        <div class="plan-price" style="color:var(--bluL);">₹199</div>
+        <div class="plan-cycle">per month</div>
+        <ul class="plan-feats">
+          <li>25 stocks · ML signals</li>
+          <li>𝕏 Twitter sentiment</li>
+          <li>RF Pick of the Day</li>
+          <li>Real-time alerts</li>
+          <li>ETF &amp; MF (20 funds)</li>
+          <li class="no">No broker/AA sync</li>
+        </ul>
+        <button class="btn-plan bpg">Get Starter →</button>
+      </div>
+      <div class="plan feat-plan">
+        <div class="plan-badge">BEST VALUE</div>
+        <div class="plan-name" style="color:var(--org);">Pro</div>
+        <div class="plan-price" style="color:var(--org);">₹599</div>
+        <div class="plan-cycle">per month</div>
+        <ul class="plan-feats">
+          <li>Unlimited stocks · NSE/BSE</li>
+          <li>AA sync · stocks, MF, FD, NPS</li>
+          <li>Live broker sync · 6 brokers</li>
+          <li>Full Algo Builder + code gen</li>
+          <li>Paper Trading (unlimited)</li>
+          <li>WhatsApp + push alerts</li>
+        </ul>
+        <button class="btn-plan bpp">Start Pro →</button>
+      </div>
+      <div class="plan">
+        <div class="plan-name" style="color:var(--pur);">Elite</div>
+        <div class="plan-price" style="color:var(--pur);">₹1,499</div>
+        <div class="plan-cycle">per month</div>
+        <ul class="plan-feats">
+          <li>Everything in Pro</li>
+          <li>Auto-execute orders</li>
+          <li>Custom ML model</li>
+          <li>US markets early access</li>
+          <li>Priority 24/7 support</li>
+          <li>Dedicated AI portfolio mgr</li>
+        </ul>
+        <button class="btn-plan bpg">Get Elite →</button>
+      </div>
+    </div>
+    <div style="margin-top:28px;padding:16px 22px;background:rgba(255,184,0,.04);border:1px solid rgba(255,184,0,.14);border-radius:14px;" class="reveal">
+      <p style="font-size:12px;color:rgba(255,184,0,.7);line-height:1.7;"><strong style="color:var(--ylw);">⚠️ SEBI DISCLAIMER:</strong> SIGNAL is <strong style="color:var(--ylw);">NOT registered with SEBI</strong>. All signals, picks, and analysis are for <strong style="color:var(--ylw);">informational and educational purposes only</strong>. Not financial advice. Consult a SEBI-registered advisor before investing.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════
+     CTA
+══════════════════════════════════════════ -->
+<section class="cta">
+  <div class="cta-inner reveal">
+    <div class="orb" style="width:500px;height:500px;top:-200px;left:50%;transform:translateX(-50%);background:radial-gradient(circle,rgba(23,64,245,.15),transparent 70%);filter:blur(80px);"></div>
+    <div class="orb" style="width:300px;height:300px;bottom:-100px;right:-50px;background:radial-gradient(circle,rgba(255,92,26,.1),transparent 70%);filter:blur(70px);"></div>
+    <div style="position:relative;z-index:2;">
+      <div style="font-size:10.5px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--dim2);margin-bottom:16px;">Get Started Today</div>
+      <h2 style="font-size:clamp(30px,5vw,64px);font-weight:900;letter-spacing:-2.5px;line-height:.95;margin-bottom:16px;">Stop paying for<br><span class="g-org">unverified calls.</span></h2>
+      <p style="font-size:16px;color:var(--dim);max-width:480px;margin:0 auto 40px;line-height:1.7;">Free to start. Public track record every week. Verify the accuracy before you spend a single rupee.</p>
+      <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:20px;">
+        <button class="btn-xl btn-xl-p" onclick="location.href='SIGNAL Sign In.html'">Start Free — No Card Needed →</button>
+        <button class="btn-xl btn-xl-g" onclick="location.href='SIGNAL Track Record.html'">View Track Record</button>
+      </div>
+      <div style="font-size:12px;color:var(--dim2);">NSE · BSE · 4,000+ stocks · 71.4% accuracy · Posted live on Twitter/𝕏</div>
+    </div>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div>
+      <div style="display:flex;align-items:center;gap:8px;font-size:19px;font-weight:900;letter-spacing:-.5px;margin-bottom:6px;"><svg width="22" height="22" viewBox="0 0 26 26" fill="none"><rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/><polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/><circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/></svg>SIGNAL</div>
+      <div style="font-size:12px;color:var(--dim);max-width:260px;line-height:1.6;">ML-powered trading intelligence for NSE &amp; BSE. Not SEBI registered. Not financial advice.</div>
+    </div>
+    <div style="display:flex;gap:48px;flex-wrap:wrap;">
+      <div>
+        <div style="font-size:10.5px;font-weight:700;color:var(--dim2);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Platform</div>
+        <div class="flinks">
+          <a href="SIGNAL Portfolio.html">Portfolio Analysis</a>
+          <a href="SIGNAL Signals.html">ML Signals</a>
+          <a href="SIGNAL Algo Builder.html">Algo Builder</a>
+          <a href="SIGNAL Paper Trading.html">Paper Trading</a>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:10.5px;font-weight:700;color:var(--dim2);letter-spacing:1px;text-transform:uppercase;margin-bottom:12px;">Company</div>
+        <div class="flinks">
+          <a href="SIGNAL About.html">About &amp; Founders</a>
+          <a href="SIGNAL Track Record.html">Track Record</a>
+          <a href="#">Twitter / 𝕏</a>
+          <a href="#">Contact</a>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="fcopy">© 2026 SIGNAL · Built by Vaasudev Amitav &amp; Sai Kumar Bethala &nbsp;·&nbsp;<strong style="color:var(--ylw);">NOT SEBI REGISTERED</strong> &nbsp;·&nbsp; All signals for educational purposes only &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; Trade at your own risk</div>
+</footer>
+
+<script>
+// ── Duplicate marquee content for seamless loop
+['mq1','mq2'].forEach(id => {
+  const t = document.getElementById(id);
+  if (t) t.innerHTML += t.innerHTML;
+});
+
+// ── Scroll reveal
+const io = new IntersectionObserver(entries => {
+  entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('vis'); io.unobserve(e.target); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// ── Dark / Light theme toggle
+const root = document.documentElement;
+const btn  = document.getElementById('theme-btn');
+let isDark = true;
+
+const THEMES = {
+  dark:  { '--bg':'#070D1A','--surf':'#0E1628','--surf2':'#162038','--bdr':'#1C2E4A','--txt':'#FFFFFF','--dim':'#7A8BAA','--dim2':'#3A4E6A' },
+  light: { '--bg':'#EEF2FF','--surf':'#FFFFFF','--surf2':'#E8EDFF','--bdr':'#C5D0EE','--txt':'#0A1428','--dim':'#485878','--dim2':'#8A9BB8' }
+};
+
+function applyTheme(dark) {
+  isDark = dark;
+  const v = THEMES[dark ? 'dark' : 'light'];
+
+  // 1. CSS custom properties (inherited by all elements using var())
+  Object.entries(v).forEach(([k,val]) => root.style.setProperty(k, val));
+  root.setAttribute('data-theme', dark ? 'dark' : 'light');
+
+  // 2. Direct overrides for elements with hardcoded dark backgrounds
+  document.body.style.background            = v['--bg'];
+  document.body.style.color                 = v['--txt'];
+
+  const nav = document.querySelector('nav');
+  nav.style.background     = dark ? 'rgba(7,13,26,0.82)' : 'rgba(238,242,255,0.88)';
+  nav.style.borderBottom   = dark ? '1px solid rgba(255,255,255,0.05)' : '1px solid #C5D0EE';
+
+  // 3. Orbs — reduce to a whisper in light mode
+  document.querySelectorAll('.orb').forEach(o => o.style.opacity = dark ? '1' : '0.18');
+
+  // 4. Update all glass cards: swap dark inner rgba backgrounds in light mode
+  const cardInners = document.querySelectorAll('.hcard, .mcard, .fcard, .fcard-sm, .bc');
+  cardInners.forEach(el => { el.style.color = v['--txt']; });
+
+  // 5. Plan cards
+  document.querySelectorAll('.plan').forEach(el => {
+    if (!el.classList.contains('feat-plan')) {
+      el.style.background  = dark ? '' : '#FFFFFF';
+      el.style.borderColor = dark ? '' : '#C5D0EE';
+    }
+  });
+
+  // 6. Bento glow divs — hide in light mode
+  document.querySelectorAll('.bc-glow').forEach(el => el.style.opacity = dark ? '1' : '0');
+
+  // 7. Sebi banner
+  const sebi = document.querySelector('.sebi-banner');
+  sebi.style.background   = dark ? 'rgba(255,184,0,0.07)' : 'rgba(255,184,0,0.1)';
+  sebi.style.borderBottom = dark ? '1px solid rgba(255,184,0,0.15)' : '1px solid rgba(255,184,0,0.35)';
+
+  btn.textContent = dark ? '🌙' : '☀️';
+  btn.title       = dark ? 'Switch to light mode' : 'Switch to dark mode';
+  try { localStorage.setItem('signal-theme', dark ? 'dark' : 'light'); } catch(e){}
+}
+
+function toggleTheme() { applyTheme(!isDark); }
+
+// Restore saved preference on load
+try {
+  const saved = localStorage.getItem('signal-theme');
+  if (saved === 'light') applyTheme(false); else applyTheme(true);
+} catch(e) { applyTheme(true); }
+</script>
+
+<!-- ══ TWEAKS PANEL ══ -->
+<div id="tweaks-root" style="position:fixed;bottom:20px;right:20px;z-index:9999;width:272px;display:none;font-family:'Inter',system-ui,sans-serif;">
+  <div style="background:rgba(9,15,26,0.97);backdrop-filter:blur(28px);-webkit-backdrop-filter:blur(28px);border:1px solid rgba(255,255,255,0.12);border-radius:20px;padding:20px;box-shadow:0 20px 64px rgba(0,0,0,0.65);">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+      <span style="font-size:13px;font-weight:700;color:#fff;">Tweaks</span>
+      <button id="tw-close" style="width:26px;height:26px;border-radius:7px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.1);color:#7A8BAA;cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center;">✕</button>
+    </div>
+
+    <!-- Card Colors -->
+    <div style="margin-bottom:16px;">
+      <div style="font-size:10px;font-weight:700;color:#3A4E6A;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Card Colors</div>
+      <div style="display:flex;gap:6px;">
+        <button id="tw-vibrant" onclick="setCardStyle('vibrant')" style="flex:1;height:34px;border-radius:9px;background:linear-gradient(135deg,rgba(79,111,250,.3),rgba(139,92,246,.25));border:1px solid rgba(79,111,250,.5);color:#fff;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;">✦ Vibrant</button>
+        <button id="tw-subtle"  onclick="setCardStyle('subtle')"  style="flex:1;height:34px;border-radius:9px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#7A8BAA;font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">Subtle</button>
+      </div>
+    </div>
+
+    <!-- Float Speed -->
+    <div style="margin-bottom:16px;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+        <span style="font-size:10px;font-weight:700;color:#3A4E6A;letter-spacing:1px;text-transform:uppercase;">Float Speed</span>
+        <span id="tw-spd-lbl" style="font-size:11px;font-weight:700;color:#4F6FFA;">Normal</span>
+      </div>
+      <input type="range" id="tw-speed" min="0.4" max="3" step="0.2" value="1" style="width:100%;accent-color:#4F6FFA;height:4px;cursor:pointer;">
+    </div>
+
+    <!-- Hero Headline -->
+    <div>
+      <div style="font-size:10px;font-weight:700;color:#3A4E6A;letter-spacing:1px;text-transform:uppercase;margin-bottom:8px;">Hero Headline</div>
+      <div style="display:flex;gap:5px;">
+        <button onclick="setHero('trade')"   style="flex:1;height:30px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#7A8BAA;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Trade ML</button>
+        <button onclick="setHero('signals')" style="flex:1;height:30px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#7A8BAA;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Signals</button>
+        <button onclick="setHero('invest')"  style="flex:1;height:30px;border-radius:8px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:#7A8BAA;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;">Invest</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Tweaks panel — host toggle protocol
+const tweaksEl = document.getElementById('tweaks-root');
+document.getElementById('tw-close').addEventListener('click', () => {
+  tweaksEl.style.display = 'none';
+  try { parent.postMessage({type:'tweaks:closed'}, '*'); } catch(e){}
+});
+window.addEventListener('message', e => {
+  const t = e.data && e.data.type;
+  if (t === 'tweaks:open'  || t === 'tweaks:show') tweaksEl.style.display = 'block';
+  if (t === 'tweaks:close' || t === 'tweaks:hide') tweaksEl.style.display = 'none';
+});
+
+// ── Card color style
+let currentStyle = 'vibrant';
+function setCardStyle(s) {
+  currentStyle = s;
+  document.body.classList.toggle('subtle', s === 'subtle');
+  document.getElementById('tw-vibrant').style.opacity = s === 'vibrant' ? '1' : '0.45';
+  document.getElementById('tw-subtle').style.opacity  = s === 'subtle'  ? '1' : '0.45';
+  document.getElementById('tw-vibrant').style.color = s === 'vibrant' ? '#fff' : '#7A8BAA';
+  document.getElementById('tw-subtle').style.color  = s === 'subtle'  ? '#fff' : '#7A8BAA';
+}
+setCardStyle('vibrant');
+
+// ── Float speed
+const speedLabels = {0.4:'Very Fast', 0.6:'Fast', 0.8:'Brisk', 1:'Normal', 1.4:'Slow', 2:'Very Slow', 3:'Glacial'};
+document.getElementById('tw-speed').addEventListener('input', function() {
+  const v = parseFloat(this.value);
+  const nearest = Object.keys(speedLabels).reduce((a,b) => Math.abs(b-v) < Math.abs(a-v) ? b : a);
+  document.getElementById('tw-spd-lbl').textContent = speedLabels[nearest] || 'Custom';
+  // Scale all float animations
+  document.querySelectorAll('.hcard,.fcard,.fcard-sm').forEach(el => {
+    const dur = (7 * v).toFixed(1);
+    el.style.animationDuration = dur + 's';
+  });
+});
+
+// ── Hero headline variants
+const heroLines = {
+  trade:   ['Trade','Smarter','with ML'],
+  signals: ['ML-Powered','Trading','Signals'],
+  invest:  ['Invest','Smarter,','Not Harder']
+};
+const heroColors = {
+  trade:   ['g-blu','g-org','g-grn'],
+  signals: ['g-grn','g-blu','g-org'],
+  invest:  ['g-org','g-grn','g-blu']
+};
+function setHero(key) {
+  const h1 = document.querySelector('h1');
+  if (!h1) return;
+  const lines = heroLines[key], cols = heroColors[key];
+  h1.innerHTML = lines.map((t,i) => `<span class="${cols[i]}">${t}</span><br>`).join('');
+  document.querySelectorAll('#tweaks-root button[onclick*="setHero"]').forEach(b => {
+    const active = b.getAttribute('onclick').includes(`'${key}'`);
+    b.style.background = active ? 'rgba(79,111,250,.2)' : 'rgba(255,255,255,.05)';
+    b.style.borderColor = active ? 'rgba(79,111,250,.4)' : 'rgba(255,255,255,.1)';
+    b.style.color = active ? '#fff' : '#7A8BAA';
+  });
+}
+</script>
+
+</body>
+</html>

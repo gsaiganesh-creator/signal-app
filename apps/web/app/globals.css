@@ -1,12 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root, [data-theme="dark"] {
-  --bg: #060C18; --surf: #0D1A2E; --surf2: #152336; --bdr: #1E3256;
+  --bg: #050B16; --surf: #0B1830; --surf2: #0E2050; --bdr: rgba(79,111,250,0.28);
   --txt: #FFFFFF; --dim: #7A8BAA; --dim2: #3A4E6A;
   --blu: #1740F5; --bluL: #4F6FFA; --org: #FF5C1A; --orgL: #FF7D46;
   --grn: #00D4A0; --red: #FF3B5C; --ylw: #FFB800; --pur: #8B5CF6;
-  --glass: linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92));
-  --glass-bdr: rgba(255,255,255,0.08);
+  --glass: linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82));
+  --glass-bdr: rgba(79,111,250,0.22);
 }
 
 [data-theme="light"] {
@@ -31,10 +31,11 @@ body::before {
   z-index: -1;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 1100px 700px at 5%  15%, rgba(23,64,245,0.14)   0%, transparent 60%),
-    radial-gradient(ellipse 800px  600px at 95% 80%, rgba(0,212,160,0.07)   0%, transparent 60%),
-    radial-gradient(ellipse 600px  500px at 55% -5%, rgba(139,92,246,0.08)  0%, transparent 60%),
-    radial-gradient(ellipse 700px  500px at 85% 25%, rgba(255,92,26,0.05)   0%, transparent 60%);
+    radial-gradient(ellipse 1200px 800px at 5%  15%, rgba(23,64,245,0.22)   0%, transparent 55%),
+    radial-gradient(ellipse 900px  700px at 95% 80%, rgba(0,212,160,0.10)   0%, transparent 55%),
+    radial-gradient(ellipse 700px  600px at 55% -5%, rgba(139,92,246,0.12)  0%, transparent 55%),
+    radial-gradient(ellipse 800px  600px at 85% 25%, rgba(255,92,26,0.07)   0%, transparent 55%),
+    radial-gradient(ellipse 600px  500px at 50% 90%, rgba(23,64,245,0.08)   0%, transparent 55%);
   animation: mesh-breathe 18s ease-in-out infinite alternate;
 }
 [data-theme="light"] body::before {
@@ -196,9 +197,9 @@ button:active:not(:disabled) { transform: scale(0.97); }
     display: flex; position: fixed; bottom: 0; left: 0; right: 0;
     height: calc(60px + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
-    background: linear-gradient(180deg,rgba(10,18,36,0.95),rgba(6,11,24,0.98));
-    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
-    border-top: 1px solid rgba(255,255,255,0.09);
+    background: linear-gradient(180deg,rgba(17,36,80,0.88),rgba(8,14,42,0.96));
+    backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+    border-top: 1px solid rgba(79,111,250,0.25);
     z-index: 200; align-items: stretch;
   }
   .dash-mobile-nav a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px; font-size: 10px; font-weight: 600; color: var(--dim); text-decoration: none; transition: color 0.15s; }

@@ -74,7 +74,7 @@ export default function ReferPage() {
           { val:'10%',valColor:'var(--grn)', lbl:'Discount unlocked' },
           { val:'3',  valColor:'var(--txt)', lbl:'More referrals to max' },
         ].map(s => (
-          <div key={s.lbl} style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:13, padding:18, textAlign:'center' as const }}>
+          <div key={s.lbl} style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:13, padding:18, textAlign:'center' as const }}>
             <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, color:s.valColor }}>{s.val}</div>
             <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>{s.lbl}</div>
           </div>
@@ -82,7 +82,7 @@ export default function ReferPage() {
       </div>
 
       {/* Discount ladder — mobile-friendly stepper */}
-      <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:20, marginBottom:24 }}>
+      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:16, padding:20, marginBottom:24 }}>
         <div style={{ fontSize:15, fontWeight:700, marginBottom:4 }}>Discount Ladder</div>
         <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>Each paid referral unlocks the next tier. Non-expiring.</div>
         <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
@@ -126,11 +126,11 @@ export default function ReferPage() {
       </div>
 
       {/* Referral link box */}
-      <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:22, marginBottom:24 }}>
+      <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:22, marginBottom:24 }}>
         <div style={{ fontSize:15, fontWeight:700, marginBottom:4 }}>Your unique referral link</div>
         <div style={{ fontSize:13, color:'var(--dim)', marginBottom:10 }}>Share this link. When a friend signs up via it and buys any paid plan, your discount instantly updates.</div>
         <div style={{ display:'flex', gap:10, marginTop:10 }}>
-          <input readOnly value={refLink} style={{ flex:1, height:48, borderRadius:11, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--grn)', fontSize:13, fontWeight:700, padding:'0 16px', fontFamily:'monospace', outline:'none', letterSpacing:0.5 }}/>
+          <input readOnly value={refLink} style={{ flex:1, height:48, borderRadius:11, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--grn)', fontSize:13, fontWeight:700, padding:'0 16px', fontFamily:'monospace', outline:'none', letterSpacing:0.5 }}/>
           <button onClick={copyLink} style={{ height:48, padding:'0 22px', borderRadius:11, background:'var(--grn)', border:'none', color:'#001A12', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
             {copied ? '✅ Copied!' : '⎘ Copy Link'}
           </button>
@@ -145,7 +145,7 @@ export default function ReferPage() {
           <button onClick={() => window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(refLink)}`, '_blank')} style={{ height:36, padding:'0 16px', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background:'rgba(23,64,245,0.1)', border:'1px solid rgba(23,64,245,0.25)', color:'var(--bluL)', display:'flex', alignItems:'center', gap:6 }}>
             in Share on LinkedIn
           </button>
-          <button onClick={copyLink} style={{ height:36, padding:'0 16px', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', display:'flex', alignItems:'center', gap:6 }}>
+          <button onClick={copyLink} style={{ height:36, padding:'0 16px', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', color:'var(--txt)', display:'flex', alignItems:'center', gap:6 }}>
             📧 Copy &amp; Email
           </button>
         </div>
@@ -155,7 +155,7 @@ export default function ReferPage() {
       <div className="g-side" style={{ display:'grid', gap:16 }}>
 
         {/* Referral log */}
-        <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, overflow:'hidden' }}>
+        <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, overflow:'hidden' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'16px 20px', borderBottom:'1px solid var(--bdr)' }}>
             <div style={{ fontSize:14, fontWeight:700 }}>Referral Log</div>
             <span style={{ fontSize:12, color:'var(--dim)' }}>3 total</span>
@@ -189,7 +189,7 @@ export default function ReferPage() {
 
         {/* Tiers + Rules */}
         <div>
-          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, overflow:'hidden', marginBottom:14 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, overflow:'hidden', marginBottom:14 }}>
             <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--bdr)', fontSize:14, fontWeight:700 }}>Discount Tiers</div>
             <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
               <thead>
@@ -217,7 +217,7 @@ export default function ReferPage() {
             </table>
           </div>
 
-          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:22 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:22 }}>
             <div style={{ fontSize:14, fontWeight:700, marginBottom:14 }}>How it works</div>
             {[
               'Share your unique referral link. Friends sign up via your link.',
@@ -228,7 +228,7 @@ export default function ReferPage() {
               'If a referred friend cancels their subscription, your discount tier adjusts accordingly at your next renewal.',
             ].map((rule, i) => (
               <div key={i} style={{ display:'flex', gap:12, padding:'10px 0', borderBottom: i < 5 ? '1px solid var(--bdr)' : 'none', fontSize:13, color:'var(--dim)', lineHeight:1.6 }}>
-                <div style={{ width:24, height:24, borderRadius:7, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, color:'var(--dim)', flexShrink:0, marginTop:1 }}>{i+1}</div>
+                <div style={{ width:24, height:24, borderRadius:7, background:'var(--surf2)', border:'1px solid rgba(79,111,250,0.22)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:800, color:'var(--dim)', flexShrink:0, marginTop:1 }}>{i+1}</div>
                 <div dangerouslySetInnerHTML={{ __html: rule.replace('only when', '<strong>only when</strong>').replace('annual subscriptions only', '<strong>annual subscriptions only</strong>').replace('incremental and non-expiring', '<strong>incremental and non-expiring</strong>').replace('80% off annual', '<strong style="color:var(--pur)">80% off annual</strong>') }}/>
               </div>
             ))}
