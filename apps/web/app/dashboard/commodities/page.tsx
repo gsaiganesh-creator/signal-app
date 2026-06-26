@@ -1,8 +1,13 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 
-const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
+const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
 const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' };
+const STAT_GRADS = [
+  ['linear-gradient(135deg,rgba(255,184,0,0.12),rgba(255,184,0,0.03))','rgba(255,184,0,0.28)'],
+  ['linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,212,160,0.02))','rgba(0,212,160,0.25)'],
+  ['linear-gradient(135deg,rgba(255,92,26,0.10),rgba(255,184,0,0.03))','rgba(255,92,26,0.25)'],
+] as const;
 
 // Commodity tickers — Yahoo Finance
 // Gold futures: GC=F (USD/troy oz), Silver: SI=F, Crude: CL=F, NG: NG=F, Copper: HG=F
@@ -184,8 +189,8 @@ export default function CommoditiesPage() {
             { label:'Total Invested', val:`₹${totalInvested.toLocaleString('en-IN',{maximumFractionDigits:0})}`, color:'var(--txt)' },
             { label:'Current Value',  val: totalCurrentVal > 0 ? `₹${totalCurrentVal.toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', color:'var(--txt)' },
             { label:'Unrealised P&L', val: totalCurrentVal > 0 ? `${totalPL >= 0 ? '+' : '-'}₹${Math.abs(totalPL).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', color: totalPL >= 0 ? 'var(--grn)' : 'var(--red)' },
-          ].map(m => (
-            <div key={m.label} style={card}>
+          ].map((m, i) => (
+            <div key={m.label} style={{ background:STAT_GRADS[i][0], border:`1px solid ${STAT_GRADS[i][1]}`, borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
               <div style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:6 }}>{m.label}</div>
               <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
             </div>
@@ -194,7 +199,7 @@ export default function CommoditiesPage() {
       )}
 
       {/* Live Price Cards */}
-      <div style={{ ...card, marginBottom:20 }}>
+      <div style={{ ...card, marginBottom:20, borderColor:'rgba(255,184,0,0.20)', background:'linear-gradient(160deg,rgba(255,184,0,0.04),var(--card-bg))' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
           <div style={{ fontSize:13, fontWeight:700 }}>Live Prices (MCX Proxy via Futures)</div>
           {loading && <span style={{ fontSize:11, color:'var(--dim)' }}>⏳</span>}
@@ -231,7 +236,7 @@ export default function CommoditiesPage() {
       </div>
 
       {/* My Positions */}
-      <div style={card}>
+      <div style={{ ...card, borderColor:'rgba(255,92,26,0.18)', background:'linear-gradient(160deg,rgba(255,92,26,0.04),var(--card-bg))' }}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>My Positions</div>
         {positions.length === 0 ? (
           <div style={{ textAlign:'center', padding:'32px 0', color:'var(--dim)' }}>

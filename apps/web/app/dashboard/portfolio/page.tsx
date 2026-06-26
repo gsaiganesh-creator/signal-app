@@ -485,8 +485,13 @@ async function parseFile(file: File): Promise<{ result: ParsedRow[]; debug: stri
   }
 }
 
-const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
+const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
 const inp: React.CSSProperties = { height:40, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:'100%' };
+const PORT_STAT_GRADS = [
+  ['linear-gradient(135deg,rgba(79,111,250,0.12),rgba(23,64,245,0.03))','rgba(79,111,250,0.28)'],
+  ['linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,212,160,0.02))','rgba(0,212,160,0.25)'],
+  ['linear-gradient(135deg,rgba(255,92,26,0.10),rgba(255,184,0,0.03))','rgba(255,92,26,0.25)'],
+] as const;
 
 export default function PortfolioPage() {
   const { portfolios, activeId, activePortfolio, holdings: rawHoldings, setActiveId, createPortfolio, renamePortfolio, deletePortfolio, refresh: refreshContext, session } = usePortfolio();
@@ -1173,8 +1178,8 @@ export default function PortfolioPage() {
               { label:'Total Invested', val:`₹${totalInvested.toLocaleString('en-IN', { maximumFractionDigits:0 })}` },
               { label:'Current Value',  val:`₹${totalCurrent.toLocaleString('en-IN', { maximumFractionDigits:0 })}` },
               { label:'Total P&L', val:fmt(totalPL), sub:fmtPct(totalPLPct), valC: totalPL >= 0 ? 'var(--grn)' : 'var(--red)', subC: totalPL >= 0 ? 'var(--grn)' : 'var(--red)' },
-            ].map(m => (
-              <div key={m.label} style={card}>
+            ].map((m, i) => (
+              <div key={m.label} style={{ background:PORT_STAT_GRADS[i][0], border:`1px solid ${PORT_STAT_GRADS[i][1]}`, borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
                 <div style={{ fontSize:11, fontWeight:600, color:'var(--dim)', marginBottom:6 }}>{m.label}</div>
                 <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:(m as { valC?: string }).valC ?? 'var(--txt)' }}>{m.val}</div>
                 {(m as { sub?: string }).sub && <div style={{ fontSize:13, fontWeight:700, color:(m as { subC?: string }).subC, marginTop:3 }}>{(m as { sub?: string }).sub}</div>}
@@ -1223,7 +1228,7 @@ export default function PortfolioPage() {
         </>
       )}
 
-      <div style={card}>
+      <div style={{ ...card, borderColor:'rgba(79,111,250,0.18)', background:'linear-gradient(160deg,rgba(79,111,250,0.04),var(--card-bg))' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
           <div style={{ fontSize:14, fontWeight:700 }}>{viewMode === 'all' ? 'All Portfolios' : activePortfolio?.name} · Holdings · ML Classified</div>
           {displayedHoldings.length > 0 && <span style={{ fontSize:12, color:'var(--dim)' }}>{displayedHoldings.length} stocks</span>}

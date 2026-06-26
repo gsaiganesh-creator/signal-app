@@ -67,7 +67,7 @@ export default function SectorHeatmapPage() {
       </div>
 
       {/* Signal density bar chart */}
-      <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:20 }}>
+      <div style={{ background:'linear-gradient(160deg,rgba(23,64,245,0.05),var(--card-bg))', border:'1px solid rgba(23,64,245,0.20)', borderRadius:16, padding:20 }}>
         <div style={{ fontSize:14, fontWeight:700, marginBottom:14 }}>Signal Density by Sector · Today</div>
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {SECTORS.filter(s => s.count > 0).map(s => {

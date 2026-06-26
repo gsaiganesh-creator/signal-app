@@ -76,8 +76,8 @@ export default function EarningsCalendarPage() {
       {/* Calendar grid */}
       <div className="g3-earnings" style={{ display:'grid', gap:14, marginBottom:24 }}>
         {filteredDays.map(day => (
-          <div key={day.date} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, overflow:'hidden' }}>
-            <div style={{ padding:'12px 16px', background:'var(--surf2)', borderBottom:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+          <div key={day.date} style={{ background:'linear-gradient(160deg,rgba(79,111,250,0.05),var(--card-bg))', border:'1px solid rgba(79,111,250,0.18)', borderRadius:16, overflow:'hidden', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)' }}>
+            <div style={{ padding:'12px 16px', background:'rgba(79,111,250,0.07)', borderBottom:'1px solid rgba(79,111,250,0.15)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <div style={{ fontSize:13, fontWeight:800 }}>{day.date}</div>
               <span style={{ fontSize:11, color:'var(--dim)' }}>{day.count}</span>
             </div>
@@ -95,8 +95,8 @@ export default function EarningsCalendarPage() {
             ))}
           </div>
         ))}
-        <div style={{ background:'rgba(255,255,255,0.01)', border:'1px solid var(--card-bdr)', borderRadius:14, overflow:'hidden' }}>
-          <div style={{ padding:'12px 16px', background:'rgba(255,255,255,0.02)', borderBottom:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ background:'linear-gradient(160deg,rgba(139,92,246,0.05),var(--card-bg))', border:'1px solid rgba(139,92,246,0.18)', borderRadius:16, overflow:'hidden' }}>
+          <div style={{ padding:'12px 16px', background:'rgba(139,92,246,0.07)', borderBottom:'1px solid rgba(139,92,246,0.15)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div style={{ fontSize:13, fontWeight:800, color:'var(--dim)' }}>Next Week</div>
             <span style={{ fontSize:11, color:'var(--dim)' }}>12+ results</span>
           </div>
@@ -108,7 +108,7 @@ export default function EarningsCalendarPage() {
       </div>
 
       {/* ML predictions */}
-      <div style={{ background:'rgba(23,64,245,0.05)', border:'1px solid rgba(23,64,245,0.18)', borderRadius:12, padding:16 }}>
+      <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.09),rgba(139,92,246,0.04))', border:'1px solid rgba(23,64,245,0.24)', borderRadius:16, padding:20 }}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:8 }}>🎯 ML Earnings Prediction</div>
         <div className="g2" style={{ display:'grid', gap:10 }}>
           <div style={{ padding:12, background:'rgba(0,212,160,0.06)', border:'1px solid rgba(0,212,160,0.2)', borderRadius:10 }}>

@@ -359,6 +359,24 @@ export default function SignalsPage() {
         </div>
       </div>
 
+      {/* Signal count KPI row */}
+      {!mlLoading && mlSignals.length > 0 && (
+        <div className="g4" style={{ display:'grid', gap:12, marginBottom:20 }}>
+          {[
+            { label:'BUY',        cnt:buyCnt,        grad:'linear-gradient(135deg,rgba(0,212,160,0.13),rgba(0,212,160,0.03))',  bdr:'rgba(0,212,160,0.30)',  color:'var(--grn)' },
+            { label:'ACCUMULATE', cnt:accumulateCnt, grad:'linear-gradient(135deg,rgba(79,111,250,0.12),rgba(79,111,250,0.03))', bdr:'rgba(79,111,250,0.28)', color:'var(--bluL)' },
+            { label:'HOLD',       cnt:holdCnt,       grad:'linear-gradient(135deg,rgba(255,184,0,0.10),rgba(255,184,0,0.02))',   bdr:'rgba(255,184,0,0.27)',  color:'var(--ylw)' },
+            { label:'SELL',       cnt:sellCnt,       grad:'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.02))',   bdr:'rgba(255,59,92,0.25)',  color:'var(--red)' },
+          ].map(m => (
+            <div key={m.label} style={{ background:m.grad, border:`1px solid ${m.bdr}`, borderRadius:16, padding:'16px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
+              <div style={{ fontSize:9.5, fontWeight:800, color:m.color, letterSpacing:1.5, textTransform:'uppercase', marginBottom:6 }}>{m.label}</div>
+              <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, color:m.color }}>{m.cnt}</div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>signals</div>
+            </div>
+          ))}
+        </div>
+      )}
+
       {/* Controls */}
       <div className="signals-filters" style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
         {/* Live stock search — all NSE/BSE listed stocks */}
@@ -434,9 +452,9 @@ export default function SignalsPage() {
             const secBg = sectorColor(sig.sector);
             return (
               <div key={sig.symbol} onClick={() => setSelected(sig)}
-                style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'16px 20px', cursor:'pointer', transition:'border-color 0.15s, box-shadow 0.15s', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:14, alignItems:'center' }}
-                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(0,212,160,0.4)'; (e.currentTarget as HTMLElement).style.boxShadow='0 2px 16px rgba(0,212,160,0.08)'; }}
-                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='var(--bdr)'; (e.currentTarget as HTMLElement).style.boxShadow='none'; }}>
+                style={{ background:`linear-gradient(160deg,${secBg},var(--card-bg))`, border:'1px solid var(--card-bdr)', borderRadius:16, padding:'16px 20px', cursor:'pointer', transition:'border-color 0.15s, box-shadow 0.15s', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:14, alignItems:'center' }}
+                onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(0,212,160,0.4)'; (e.currentTarget as HTMLElement).style.boxShadow='0 4px 20px rgba(0,212,160,0.10)'; }}
+                onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='var(--card-bdr)'; (e.currentTarget as HTMLElement).style.boxShadow='none'; }}>
 
                 {/* Left: symbol chip */}
                 <div style={{ width:52, height:52, borderRadius:13, background:secBg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900, color:'var(--txt)', flexShrink:0, border:'1px solid rgba(255,255,255,0.06)' }}>

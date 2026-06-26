@@ -110,7 +110,7 @@ export default function FIIDIIPage() {
             ].map(c => {
               const pos = c.net >= 0;
               return (
-                <div key={c.label} style={{ background: pos ? 'rgba(0,212,160,0.03)' : 'rgba(255,59,92,0.03)', border:`1px solid ${pos ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`, borderRadius:16, padding:24 }}>
+                <div key={c.label} style={{ background: pos ? 'linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,212,160,0.02))' : 'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.02))', border:`1px solid ${pos ? 'rgba(0,212,160,0.28)' : 'rgba(255,59,92,0.26)'}`, borderRadius:16, padding:24, backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)' }}>
                   <div style={{ fontSize:12, fontWeight:700, textTransform:'uppercase', letterSpacing:0.5, color:'var(--dim)', marginBottom:6 }}>{c.label}</div>
                   <div style={{ fontSize:36, fontWeight:900, letterSpacing:-1.5, marginBottom:4, color: pos ? 'var(--grn)' : 'var(--red)' }}>
                     {crore(c.net)}
@@ -143,7 +143,7 @@ export default function FIIDIIPage() {
           )}
 
           {/* History table */}
-          <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:20 }}>
+          <div style={{ background:'linear-gradient(160deg,rgba(79,111,250,0.04),var(--card-bg))', border:'1px solid rgba(79,111,250,0.18)', borderRadius:16, padding:20 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div style={{ fontSize:14, fontWeight:700 }}>Recent Trading Days</div>
               <span style={{ fontSize:11, color:'var(--dim)' }}>{rows.length} days tracked</span>
