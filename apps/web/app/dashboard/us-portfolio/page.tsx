@@ -306,10 +306,19 @@ export default function USPortfolioPage() {
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
-    if (!file || !session || !uploadPortId) return;
-    setMsg('⏳ Parsing file…');
+    e.target.value = '';
+    if (!file || !session) return;
+    if (!uploadPortId) {
+      setMsg('⚠️ Select or create a portfolio tab first, then import your file.');
+      return;
+    }
+    setMsg(`⏳ Parsing "${file.name}"…`);
     const { result, msg: parseMsg } = await parseUSFile(file);
-    if (!result.length) { setMsg(parseMsg); e.target.value = ''; return; }
+    if (!result.length) {
+      setMsg(`${parseMsg}\n\nTip: Make sure the file has columns named Symbol/Ticker and Qty/Shares. Supported brokers: Schwab, Fidelity, Robinhood, Webull, IBKR.`);
+      return;
+    }
+    setMsg(`⏳ Saving ${result.length} holdings…`);
     // Delete existing holdings for this portfolio before inserting
     await fetch(`${SUPA_URL}/rest/v1/holdings?portfolio_id=eq.${uploadPortId}&exchange=in.(NYSE,NASDAQ,AMEX,ARCA)`, {
       method:'DELETE',
@@ -324,23 +333,28 @@ export default function USPortfolioPage() {
       });
       if (res.ok) added++;
     }
-    setMsg(`${parseMsg} (${added} saved)`);
-    e.target.value = '';
+    const portName = usPortfolios.find(p => p.id === uploadPortId)?.name ?? 'portfolio';
+    setMsg(`${parseMsg.replace('✅','✅')} → ${added}/${result.length} saved to "${portName}"`);
     await fetchHoldings();
   }
 
   async function handleCreatePortfolio() {
-    if (!newPortName.trim()) return;
+    const name = newPortName.trim();
+    if (!name) return;
     setCreatingPort(true);
-    const result = await createPortfolio(newPortName.trim());
+    const result = await createPortfolio(name);
     setCreatingPort(false);
     if (result.error) { setMsg(`❌ ${result.error}`); return; }
     setNewPortName('');
-    setMsg(`✅ Created "${newPortName.trim()}"`);
+    setShowNewPortInput(false);
     if (result.id) {
       setManualUSPortIds(prev => new Set([...prev, result.id!]));
       setAddForm(f => ({ ...f, portfolio_id: result.id! }));
       setUploadPortId(result.id);
+      // Auto-select the new portfolio tab
+      setActivePortId(result.id);
+      setViewMode('by-portfolio');
+      setMsg(`✅ Portfolio "${name}" created — now import your holdings`);
     }
   }
 
@@ -627,13 +641,30 @@ export default function USPortfolioPage() {
       ) : !loading && (
         <div style={{ ...card, textAlign:'center', padding:'40px 20px', marginBottom:20 }}>
           <div style={{ fontSize:28, marginBottom:10 }}>🇺🇸</div>
-          <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No US holdings yet</div>
-          <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>Add stocks manually or import from your broker (CSV or Excel)</div>
-          <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
-            <button onClick={() => setAddOpen(true)} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Add Stock</button>
-            <button onClick={() => fileRef.current?.click()} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📂 Import CSV / XLSX</button>
-          </div>
-          <div style={{ marginTop:12, fontSize:11, color:'var(--dim2)' }}>Supports: Schwab · Fidelity · Robinhood · Webull · TD Ameritrade · Merrill Edge · IBKR</div>
+          {usPortfolios.length === 0 ? (
+            <>
+              <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>Create a portfolio first</div>
+              <div style={{ fontSize:12, color:'var(--dim)', marginBottom:20 }}>Click <strong style={{ color:'var(--txt)' }}>+ New Portfolio</strong> above to create a US portfolio (e.g. "Schwab", "Robinhood"), then import your broker file.</div>
+              <button onClick={() => setShowNewPortInput(true)}
+                style={{ height:38, padding:'0 20px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                + Create US Portfolio
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No stocks in this portfolio</div>
+              <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>
+                {uploadPortId ? (
+                  <>Importing to <strong style={{ color:'var(--txt)' }}>{usPortfolios.find(p => p.id === uploadPortId)?.name}</strong> — select a file below.</>
+                ) : 'Select a portfolio tab above, then add stocks or import a file.'}
+              </div>
+              <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
+                <button onClick={() => setAddOpen(true)} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Add Stock</button>
+                <button onClick={() => fileRef.current?.click()} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📂 Import CSV / XLSX</button>
+              </div>
+              <div style={{ marginTop:12, fontSize:11, color:'var(--dim2)' }}>Schwab · Fidelity · Robinhood · Webull · TD Ameritrade · Merrill Edge · IBKR</div>
+            </>
+          )}
         </div>
       )}
 
