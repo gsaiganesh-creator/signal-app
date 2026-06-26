@@ -194,3 +194,31 @@ create trigger profiles_updated_at
 create trigger holdings_updated_at
   before update on public.holdings
   for each row execute function public.set_updated_at();
+
+-- ─── 8. EQUITY GRANTS (RSU / ESPP) ──────────────────────────
+create table if not exists public.equity_grants (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references public.profiles(id) on delete cascade,
+  type        text not null check (type in ('RSU', 'ESPP')),
+  symbol      text not null,
+  company     text not null default '',
+  employer    text not null default '',
+  shares      numeric(14, 4) not null check (shares > 0),
+  grant_price numeric(12, 4) not null check (grant_price >= 0),
+  vest_date   date,
+  brokerage   text not null default '',
+  notes       text not null default '',
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+
+alter table public.equity_grants enable row level security;
+
+create policy "equity_grants: own"
+  on public.equity_grants for all
+  using  (auth.uid() = user_id)
+  with check (auth.uid() = user_id);
+
+create trigger equity_grants_updated_at
+  before update on public.equity_grants
+  for each row execute function public.set_updated_at();
