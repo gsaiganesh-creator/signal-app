@@ -500,8 +500,8 @@ export default function DashboardPage() {
       </div>
 
 
-      {/* Consolidated summary — India portfolios */}
-      <div className="g4" style={{ display:'grid', gap:12, marginBottom:14 }}>
+      {/* KPI strip — India + Net Worth + US all in one row */}
+      <div className="g6" style={{ display:'grid', gap:12, marginBottom:14 }}>
         {/* Equity */}
         <div style={colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)')}>
           <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
@@ -562,6 +562,47 @@ export default function DashboardPage() {
             </div>
           );
         })()}
+
+        {/* Combined Net Worth */}
+        <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none' }}>
+          <div style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.16),rgba(23,64,245,0.07))','rgba(0,212,160,0.32)'), height:'100%' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+              <div style={{ width:26, height:26, borderRadius:7, background:'rgba(0,212,160,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🌐</div>
+              <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Net Worth</div>
+            </div>
+            <div style={{ fontSize:28, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--grn)' }}>{fmtL(combinedINR)}</div>
+            <div style={{ fontSize:10, color:'var(--dim)', marginTop:5 }}>
+              🇮🇳{fmtL(invested)} + 🇺🇸{fmtL(usInrEquiv)}
+              {fxPos.length>0?` + 💱${fmtL(fxCurrentINR)}`:''}
+            </div>
+            {usdInr && <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>₹{usdInr.toFixed(1)} USD/INR</div>}
+          </div>
+        </Link>
+
+        {/* US Stocks */}
+        <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none' }}>
+          {hasUSHoldings ? (
+            <div style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.14),rgba(23,64,245,0.05))','rgba(79,111,250,0.30)'), height:'100%' }}>
+              <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+                <div style={{ width:26, height:26, borderRadius:7, background:'rgba(79,111,250,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🇺🇸</div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>US Stocks</div>
+              </div>
+              <div style={{ fontSize:28, fontWeight:900, letterSpacing:-1, lineHeight:1 }}>{fmtL(usInrEquiv)}</div>
+              <div style={{ fontSize:10, color:'var(--dim)', marginTop:5 }}>{usHoldings.length} stocks · ${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})} invested</div>
+              {usPLPct!=null && (
+                <div style={{ fontSize:13, fontWeight:800, marginTop:4, color:usPLPct>=0?'var(--grn)':'var(--red)' }}>
+                  {usPLPct>=0?'▲':'▼'} {usPLPct>=0?'+':''}{usPLPct.toFixed(1)}%
+                </div>
+              )}
+            </div>
+          ) : (
+            <div style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.07),rgba(23,64,245,0.02))','rgba(79,111,250,0.2)'), height:'100%', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', textAlign:'center', gap:8 }}>
+              <div style={{ fontSize:22 }}>🇺🇸</div>
+              <div style={{ fontSize:12, fontWeight:700 }}>US Portfolio</div>
+              <div style={{ fontSize:11, color:'var(--dim)' }}>Add US stocks →</div>
+            </div>
+          )}
+        </Link>
       </div>
 
       {/* ETF & MF breakdown */}
@@ -594,79 +635,35 @@ export default function DashboardPage() {
       )}
 
 
-      {/* Multi-asset summary */}
-      {(hasUSHoldings || fxPos.length > 0 || cmPos.length > 0) && (() => {
-        type AssetBlock = { key:string; icon:string; label:string; invested:string; investedSub:string; pl:number|null; plPct:number|null; count:number; unit:string; href:string; accent:string; accentBdr:string };
-        const blocks: AssetBlock[] = ([
-          hasUSHoldings && {
-            key:'us', icon:'🇺🇸', label:'US Stocks',
-            invested: fmtL(usInrEquiv || usInvestedUSD * 84),
-            investedSub: usInvestedUSD > 0 ? `$${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '',
-            pl: usPL, plPct: usPLPct, count: usHoldings.length, unit: 'stocks',
-            href:'/dashboard/us-portfolio',
-            accent:'rgba(79,111,250,0.15)', accentBdr:'rgba(79,111,250,0.3)',
-          },
-          fxPos.length > 0 && {
-            key:'fx', icon:'💱', label:'Forex',
-            invested: fmtL(fxInvestedINR),
-            investedSub: `${fxPos.length} currencies`,
-            pl: fxPL, plPct: fxPLPct, count: fxPos.length, unit: 'positions',
-            href:'/dashboard/forex',
-            accent:'rgba(0,212,160,0.08)', accentBdr:'rgba(0,212,160,0.25)',
-          },
-          cmPos.length > 0 && {
-            key:'cm', icon:'🥇', label:'Commodities',
-            invested: fmtL(cmInvestedINR),
-            investedSub: `${cmPos.length} positions`,
-            pl: cmPL, plPct: cmPLPct, count: cmPos.length, unit: 'positions',
-            href:'/dashboard/commodities',
-            accent:'rgba(255,184,0,0.08)', accentBdr:'rgba(255,184,0,0.25)',
-          },
-        ] as (AssetBlock | false)[]).filter((b): b is AssetBlock => !!b);
-
-        return (
-          <div style={{ marginBottom:20 }}>
-            {/* Combined net worth strip */}
-            <div style={{ marginBottom:12, background:'linear-gradient(135deg,rgba(0,212,160,0.13),rgba(23,64,245,0.08),rgba(139,92,246,0.06))', border:'1px solid rgba(0,212,160,0.3)', borderRadius:16, padding:'18px 22px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
-              <div>
-                <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
-                  <div style={{ width:7, height:7, borderRadius:'50%', background:'var(--grn)' }}/>
-                  <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', textTransform:'uppercase', letterSpacing:1 }}>Combined Net Worth (INR)</div>
-                </div>
-                <div style={{ fontSize:30, fontWeight:900, letterSpacing:-1, color:'var(--grn)' }}>{fmtL(combinedINR)}</div>
-                <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>
-                  🇮🇳 {fmtL(invested)} · 🇺🇸 {fmtL(usInrEquiv)}
-                  {fxPos.length > 0 ? ` · 💱 ${fmtL(fxCurrentINR)}` : ''}
-                  {cmPos.length > 0 ? ` · 🥇 ${fmtL(cmCurrentINR)}` : ''}
+      {/* Forex + Commodities mini strip (only if positions exist) */}
+      {(fxPos.length > 0 || cmPos.length > 0) && (
+        <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
+          {fxPos.length > 0 && (
+            <Link href="/dashboard/forex" style={{ textDecoration:'none', flex:1, minWidth:200 }}>
+              <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.09),rgba(0,212,160,0.02))', border:'1px solid rgba(0,212,160,0.24)', borderRadius:14, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
+                <span style={{ fontSize:20 }}>💱</span>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', textTransform:'uppercase', letterSpacing:0.5 }}>Forex</div>
+                  <div style={{ fontSize:16, fontWeight:800 }}>{fmtL(fxCurrentINR)}</div>
+                  <div style={{ fontSize:10, color:fxPL>=0?'var(--grn)':'var(--red)', fontWeight:700 }}>{fxPL>=0?'+':''}{fmtL(Math.abs(fxPL))} ({fxPLPct.toFixed(1)}%)</div>
                 </div>
               </div>
-              {usdInr && <div style={{ fontSize:13, fontWeight:700, color:'var(--grn)', background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', borderRadius:10, padding:'6px 14px' }}>₹{usdInr.toFixed(2)}<span style={{ fontSize:10, color:'var(--dim)', fontWeight:400, marginLeft:4 }}>USD/INR</span></div>}
-            </div>
-
-            {/* Per-asset blocks */}
-            <div className={`g${blocks.length === 1 ? '2' : blocks.length === 2 ? '2' : '3'}`} style={{ display:'grid', gap:12 }}>
-              {blocks.map(b => (
-                <Link key={b.key} href={b.href} style={{ textDecoration:'none' }}>
-                  <div style={{ background:b.accent, border:`1px solid ${b.accentBdr}`, borderRadius:14, padding:'14px 16px', height:'100%' }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:8 }}>
-                      <span style={{ fontSize:18 }}>{b.icon}</span>
-                      <span style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5 }}>{b.label}</span>
-                    </div>
-                    <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5 }}>{b.invested}</div>
-                    <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{b.investedSub} · {b.count} {b.unit}</div>
-                    {b.pl != null && (
-                      <div style={{ fontSize:13, fontWeight:700, marginTop:6, color: b.pl >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-                        {b.pl >= 0 ? '+' : ''}{fmtL(Math.abs(b.pl))} ({b.plPct != null ? `${b.plPct >= 0 ? '+' : ''}${b.plPct.toFixed(1)}%` : '—'})
-                      </div>
-                    )}
-                    <div style={{ fontSize:10, color:'var(--dim)', marginTop:6 }}>Tap to manage →</div>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+            </Link>
+          )}
+          {cmPos.length > 0 && (
+            <Link href="/dashboard/commodities" style={{ textDecoration:'none', flex:1, minWidth:200 }}>
+              <div style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.09),rgba(255,184,0,0.02))', border:'1px solid rgba(255,184,0,0.24)', borderRadius:14, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
+                <span style={{ fontSize:20 }}>🥇</span>
+                <div>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--ylw)', textTransform:'uppercase', letterSpacing:0.5 }}>Commodities</div>
+                  <div style={{ fontSize:16, fontWeight:800 }}>{fmtL(cmCurrentINR)}</div>
+                  <div style={{ fontSize:10, color:cmPL>=0?'var(--grn)':'var(--red)', fontWeight:700 }}>{cmPL>=0?'+':''}{fmtL(Math.abs(cmPL))} ({cmPLPct.toFixed(1)}%)</div>
+                </div>
+              </div>
+            </Link>
+          )}
+        </div>
+      )}
 
       {/* Analytics: treemap heatmap + cap donut */}
       <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>

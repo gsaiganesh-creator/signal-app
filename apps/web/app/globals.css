@@ -163,6 +163,7 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .dash-mobile-nav { display: none; }
 
 /* Responsive grid helpers — column template only; keep gap/margin inline */
+.g6 { grid-template-columns: repeat(6, 1fr); }
 .g4 { grid-template-columns: repeat(4, 1fr); }
 .g3 { grid-template-columns: repeat(3, 1fr); }
 .g3-earnings { grid-template-columns: repeat(3, 1fr); }
@@ -220,6 +221,7 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .dash-mobile-nav a.active { color: var(--bluL); }
   .dash-mobile-nav a span.icon { font-size: 18px; line-height: 1; }
   main { padding-bottom: calc(80px + env(safe-area-inset-bottom)) !important; }
+  .g6 { grid-template-columns: repeat(3, 1fr); }
   .g4 { grid-template-columns: 1fr 1fr; }
   .g3 { grid-template-columns: 1fr 1fr; }
   .g3-earnings { grid-template-columns: 1fr 1fr; }
@@ -258,6 +260,7 @@ button:active:not(:disabled) { transform: scale(0.97); }
 /* ---- Phone (≤ 480px) ---- */
 @media (max-width: 480px) {
   .pricing-grid { grid-template-columns: 1fr; }
+  .g6 { grid-template-columns: repeat(2, 1fr); }
   .g4 { grid-template-columns: 1fr 1fr; }
   .g3 { grid-template-columns: 1fr; }
   .g3-earnings { grid-template-columns: 1fr; }

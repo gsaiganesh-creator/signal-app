@@ -7,8 +7,32 @@ import * as XLSX from 'xlsx';
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
+const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
 const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' };
+const cCard = (grad: string, bdr: string): React.CSSProperties => ({
+  background:grad, border:`1px solid ${bdr}`, borderRadius:16, padding:'18px 20px',
+  backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)',
+});
+
+interface MLSignal { label:'BUY'|'HOLD'|'SELL'|'N/A'; color:string; bg:string; bdr:string;
+  rsi14:Num; ema20:Num; ema50:Num; ema200:Num; macd:Num; bb_pct:Num;
+  vol_ratio:Num; upside_to_target:Num; short_pct_float:Num; signals:string[] }
+
+function scoreSig(signals: string[]): MLSignal['label'] {
+  const s = signals.join(' ').toLowerCase();
+  const buyN = (s.match(/bullish|buy|momentum|oversold|above.*ema|positive.*macd|analyst.*target|upside/g)||[]).length;
+  const selN = (s.match(/bearish|sell|overbought|below.*ema|negative.*macd|exit|short interest/g)||[]).length;
+  if (buyN > selN + 1) return 'BUY';
+  if (selN > buyN + 1) return 'SELL';
+  if (buyN > 0 || selN > 0) return 'HOLD';
+  return 'N/A';
+}
+function mlBadge(label: MLSignal['label']): Pick<MLSignal,'color'|'bg'|'bdr'> {
+  if (label==='BUY')  return { color:'var(--grn)', bg:'rgba(0,212,160,0.12)',  bdr:'rgba(0,212,160,0.35)' };
+  if (label==='SELL') return { color:'var(--red)', bg:'rgba(255,59,92,0.10)',  bdr:'rgba(255,59,92,0.32)' };
+  if (label==='HOLD') return { color:'var(--ylw)', bg:'rgba(255,184,0,0.10)',  bdr:'rgba(255,184,0,0.32)' };
+  return { color:'var(--dim)', bg:'rgba(122,139,170,0.08)', bdr:'rgba(122,139,170,0.2)' };
+}
 
 interface USHolding { id: string; symbol: string; exchange: string; qty: number; avg_price: number; portfolio_id: string; portfolio_name?: string; }
 type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
@@ -179,6 +203,9 @@ export default function USPortfolioPage() {
   const [confirmDeletePortId, setConfirmDeletePortId] = useState<string|null>(null);
   const [deletingPort, setDeletingPort] = useState(false);
   const [showNewPortInput, setShowNewPortInput] = useState(false);
+  const [mlSignals, setMlSignals] = useState<Record<string, MLSignal>>({});
+  const [mlLoading, setMlLoading] = useState(false);
+  const [mlExpanded, setMlExpanded] = useState(false);
 
   // Close port dropdown on outside click/scroll
   useEffect(() => {
@@ -395,6 +422,31 @@ export default function USPortfolioPage() {
     setDetailLoad(false);
   }
 
+  const fetchAllSignals = useCallback(async (holdings: USHolding[]) => {
+    const syms = [...new Set(holdings.map(h => h.symbol))];
+    if (!syms.length) return;
+    setMlLoading(true);
+    const results: Record<string, MLSignal> = {};
+    await Promise.all(syms.map(async sym => {
+      try {
+        const res = await fetch(`/api/stock-detail?symbol=${sym}&exchange=NYSE`, { signal: AbortSignal.timeout(12000) });
+        if (!res.ok) return;
+        const d: StockDetail = await res.json();
+        const label = scoreSig(d.signals ?? []);
+        const badge = mlBadge(label);
+        results[sym] = { label, ...badge,
+          rsi14: d.rsi14, ema20: d.ema20, ema50: d.ema50, ema200: d.ema200,
+          macd: d.macd, bb_pct: d.bb_pct, vol_ratio: d.vol_ratio,
+          upside_to_target: d.upside_to_target, short_pct_float: d.short_pct_float,
+          signals: d.signals ?? [] };
+      } catch {}
+    }));
+    setMlSignals(results);
+    setMlLoading(false);
+  }, []);
+
+  useEffect(() => { if (allHoldings.length) fetchAllSignals(allHoldings); }, [allHoldings, fetchAllSignals]);
+
   // Group by portfolio for by-portfolio view
   const byPortfolio = portfolios.map(p => ({
     portfolio: p,
@@ -601,28 +653,86 @@ export default function USPortfolioPage() {
             { label:'Unrealised P&L', val: totalPLUSD != null ? `${totalPLUSD >= 0 ? '+' : '-'}$${Math.abs(totalPLUSD).toLocaleString('en-US',{maximumFractionDigits:0})}` : '—',
               sub: totalPLPct != null ? `${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(2)}%` : '', color: totalPLUSD != null ? (totalPLUSD >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' },
             { label:"Today's P&L",   val: `${dayPL >= 0 ? '+' : '-'}$${Math.abs(dayPL).toLocaleString('en-US',{maximumFractionDigits:0})}`, sub:'1-day change', color: dayPL >= 0 ? 'var(--grn)' : 'var(--red)' },
-          ].map(m => (
-            <div key={m.label} style={card}>
-              <div style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:6 }}>{m.label}</div>
-              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
-              {m.sub && <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>{m.sub}</div>}
+          ].map((m, i) => {
+            const grads = [
+              ['linear-gradient(135deg,rgba(79,111,250,0.12),rgba(23,64,245,0.04))','rgba(79,111,250,0.28)'],
+              ['linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,212,160,0.02))','rgba(0,212,160,0.25)'],
+              [m.color==='var(--grn)'?'linear-gradient(135deg,rgba(0,212,160,0.12),rgba(0,212,160,0.03))':'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.02))', m.color==='var(--grn)'?'rgba(0,212,160,0.28)':'rgba(255,59,92,0.25)'],
+              ['linear-gradient(135deg,rgba(255,92,26,0.09),rgba(255,184,0,0.04))','rgba(255,92,26,0.24)'],
+            ];
+            return (
+              <div key={m.label} style={cCard(grads[i][0], grads[i][1])}>
+                <div style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:6 }}>{m.label}</div>
+                <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
+                {m.sub && <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>{m.sub}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ML What-it-analyzes panel */}
+      {merged.length > 0 && (
+        <div style={{ ...card, marginBottom:12, background:'linear-gradient(135deg,rgba(79,111,250,0.07),rgba(139,92,246,0.04))', borderColor:'rgba(79,111,250,0.22)' }}>
+          <button onClick={() => setMlExpanded(v => !v)}
+            style={{ width:'100%', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'space-between', padding:0 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+              <div style={{ width:30, height:30, borderRadius:9, background:'rgba(79,111,250,0.16)', border:'1px solid rgba(79,111,250,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🤖</div>
+              <div style={{ textAlign:'left' }}>
+                <div style={{ fontSize:13, fontWeight:800, color:'var(--txt)' }}>ML Signal Engine — US Stocks</div>
+                <div style={{ fontSize:11, color:'var(--dim)' }}>
+                  {mlLoading ? '⏳ Analyzing your holdings…' : `Analyzing ${Object.keys(mlSignals).length} stocks across 9 parameters · Click row for full breakdown`}
+                </div>
+              </div>
             </div>
-          ))}
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              {!mlLoading && Object.keys(mlSignals).length > 0 && (
+                <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
+              )}
+              <span style={{ fontSize:11, color:'var(--dim)' }}>{mlExpanded ? '▲ Hide' : '▼ What does ML look at?'}</span>
+            </div>
+          </button>
+          {mlExpanded && (
+            <div style={{ marginTop:16, display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(230px,1fr))', gap:10 }}>
+              {[
+                { icon:'📊', param:'RSI (14)', desc:'Relative Strength Index — measures momentum. Below 35 = oversold (buy signal), above 70 = overbought (caution). Neutral 35–70.' },
+                { icon:'📈', param:'EMA 20 / 50 / 200', desc:'Exponential Moving Averages. Price above EMA200 = long-term bull. EMA20 > EMA50 = uptrend. Price below all EMAs = downtrend warning.' },
+                { icon:'⚡', param:'MACD', desc:'Momentum oscillator. Positive MACD = bullish momentum building. Negative = bearish. Used to confirm trend direction from EMAs.' },
+                { icon:'🎯', param:'Bollinger Bands %', desc:'BB% shows where price sits within the bands. Near 0% = lower band (oversold), near 100% = upper band (overbought), ~50% = neutral.' },
+                { icon:'📦', param:'Volume Ratio', desc:'Today\'s volume vs 20-day average. >1.5x average = institutional interest or news catalyst. Low volume moves are less reliable.' },
+                { icon:'🏦', param:'Analyst Consensus', desc:'Wall Street price targets from 10–30+ analysts. Upside to target >15% weighted as bullish. Consensus "Buy/Strong Buy" adds signal.' },
+                { icon:'🩳', param:'Short Interest %', desc:'% of float sold short. >10% float shorted = heavy bearish conviction. Can also signal short-squeeze opportunity in a catalyst.' },
+                { icon:'📅', param:'Earnings Risk', desc:'Days to next earnings. Earnings within 7 days flagged as binary risk — stock can gap 10–20%. Signal reduces confidence near events.' },
+                { icon:'💹', param:'Fundamentals', desc:'P/E, Forward P/E, EV/EBITDA, Revenue growth, Net Margin, ROE, Debt/Equity — contextual factors used with technicals for US stocks.' },
+              ].map(m => (
+                <div key={m.param} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:11, padding:'12px 14px' }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:5 }}>
+                    <span style={{ fontSize:16 }}>{m.icon}</span>
+                    <span style={{ fontSize:11, fontWeight:800, color:'var(--txt)' }}>{m.param}</span>
+                  </div>
+                  <div style={{ fontSize:11, color:'var(--dim)', lineHeight:1.6 }}>{m.desc}</div>
+                </div>
+              ))}
+              <div style={{ gridColumn:'1/-1', fontSize:11, color:'var(--dim2)', borderTop:'1px solid var(--card-bdr)', paddingTop:10 }}>
+                ⚠️ NOT SEC REGISTERED · Signals are algorithmic estimates based on public market data. Not investment advice. DYOR. Click any stock row for full parameter breakdown.
+              </div>
+            </div>
+          )}
         </div>
       )}
 
       {/* Holdings table */}
       {merged.length > 0 ? (
-        <div style={{ ...card, marginBottom:20 }}>
+        <div style={{ ...card, marginBottom:20, borderColor:'rgba(79,111,250,0.18)', background:'linear-gradient(160deg,rgba(79,111,250,0.04),var(--card-bg))' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, flexWrap:'wrap', gap:8 }}>
-            <div style={{ fontSize:13, fontWeight:700 }}>Holdings</div>
+            <div style={{ fontSize:13, fontWeight:700 }}>Holdings {mlLoading && <span style={{ fontSize:11, color:'var(--dim)', fontWeight:400 }}>· fetching ML signals…</span>}</div>
             <div style={{ display:'flex', gap:8 }}></div>
           </div>
           <div style={{ overflowX:'auto' }}>
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead>
                 <tr>
-                  {['Stock','Portfolio','Shares','Avg Cost','CMP','P&L $','P&L %',''].map((h, i) => (
+                  {['Stock','Portfolio','Shares','Avg Cost','CMP','P&L $','P&L %','ML Signal',''].map((h, i) => (
                     <th key={i} className={i === 1 ? 'mob-hide' : ''} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'5px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap' }}>{h}</th>
                   ))}
                 </tr>
@@ -635,9 +745,10 @@ export default function USPortfolioPage() {
                   const pl = (cmp != null && h.avg_price > 0.01) ? (cmp - h.avg_price) * h.qty : null;
                   const plPct = (pl != null && h.avg_price > 0.01) ? (cmp! - h.avg_price) / h.avg_price * 100 : null;
                   const plPos = pl == null || pl >= 0;
+                  const ms = mlSignals[h.symbol];
                   return (
                     <tr key={h.id} onClick={() => selectHolding(h)} style={{ cursor:'pointer', transition:'background 0.1s' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.03)')}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(79,111,250,0.05)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.4)' }}>
                         <div style={{ fontSize:13, fontWeight:700 }}>{h.symbol}</div>
@@ -661,6 +772,22 @@ export default function USPortfolioPage() {
                       </td>
                       <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.4)', whiteSpace:'nowrap', fontSize:13, fontWeight:700, color: plPos ? 'var(--grn)' : 'var(--red)' }}>
                         {plPct != null ? `${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}%` : '—'}
+                      </td>
+                      <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.4)', whiteSpace:'nowrap' }}>
+                        {ms ? (
+                          <div>
+                            <span style={{ display:'inline-block', padding:'2px 9px', borderRadius:20, fontSize:11, fontWeight:800, background:ms.bg, color:ms.color, border:`1px solid ${ms.bdr}` }}>
+                              {ms.label}
+                            </span>
+                            {ms.rsi14 != null && (
+                              <div style={{ fontSize:10, color:'var(--dim)', marginTop:3 }}>
+                                RSI {ms.rsi14.toFixed(0)} · {ms.ema20 && ms.ema50 ? (ms.ema20>ms.ema50?'↑ Up':'↓ Down') : '—'}
+                              </div>
+                            )}
+                          </div>
+                        ) : mlLoading ? (
+                          <span style={{ fontSize:11, color:'var(--dim2)' }}>⏳</span>
+                        ) : <span style={{ color:'var(--dim2)', fontSize:11 }}>—</span>}
                       </td>
                       <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.4)' }}>
                         <button onClick={e => { e.stopPropagation(); handleDelete(h); }}
