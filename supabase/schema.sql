@@ -31,7 +31,7 @@ create table if not exists public.holdings (
   user_id        uuid not null references public.profiles(id) on delete cascade,
   symbol         text not null,
   exchange       text not null default 'NSE',
-  qty            integer not null check (qty > 0),
+  qty            numeric(14,6) not null check (qty > 0),
   avg_price      numeric(12, 2) not null check (avg_price > 0),
   ml_class       text,   -- Momentum | Swingable | LongTerm | ExitNow | Watch
   created_at     timestamptz not null default now(),
