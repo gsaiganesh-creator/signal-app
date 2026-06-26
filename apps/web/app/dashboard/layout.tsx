@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Sub-nav strip — below top nav, above page content */}
-        <div style={{ borderBottom:'1px solid rgba(79,111,250,0.18)', background:'linear-gradient(145deg,rgba(17,36,80,0.68),rgba(8,14,42,0.78))', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', position:'sticky', top:58, zIndex:99 }}>
+        <div style={{ borderBottom:'1px solid var(--card-bdr)', background:'var(--card-bg)', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', position:'sticky', top:58, zIndex:99 }}>
           <DashboardSubNav />
         </div>
 

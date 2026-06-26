@@ -979,7 +979,7 @@ export default function PortfolioPage() {
         {/* All Portfolios tab — default */}
         <button
           onClick={() => { setViewMode('all'); setMenuId(null); }}
-          style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:13, fontWeight: viewMode === 'all' ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: viewMode === 'all' ? '1px solid var(--grn)' : '1px solid var(--bdr)', background: viewMode === 'all' ? 'rgba(0,212,160,0.10)' : 'rgba(255,255,255,0.04)', color: viewMode === 'all' ? 'var(--grn)' : 'rgba(255,255,255,0.7)', whiteSpace:'nowrap' }}>
+          style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:13, fontWeight: viewMode === 'all' ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: viewMode === 'all' ? '1px solid var(--grn)' : '1px solid var(--tab-inactive-bdr)', background: viewMode === 'all' ? 'rgba(0,212,160,0.10)' : 'var(--tab-inactive-bg)', color: viewMode === 'all' ? 'var(--grn)' : 'var(--tab-inactive-txt)', whiteSpace:'nowrap' }}>
           📊 All Portfolios
         </button>
         {portfolios.map(p => {
@@ -1000,7 +1000,7 @@ export default function PortfolioPage() {
               ) : (
                 <>
                   <button onClick={() => { setViewMode(p.id); setActiveId(p.id); setMenuId(null); }}
-                    style={{ height:34, padding:'0 12px 0 16px', borderRadius: isActive ? '8px 0 0 8px' : '8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: isActive ? '1px solid var(--blu)' : '1px solid rgba(79,111,250,0.2)', borderRight: isActive ? 'none' : undefined, background: isActive ? 'rgba(23,64,245,0.1)' : 'rgba(255,255,255,0.04)', color: isActive ? 'var(--bluL)' : 'rgba(255,255,255,0.7)' }}>
+                    style={{ height:34, padding:'0 12px 0 16px', borderRadius: isActive ? '8px 0 0 8px' : '8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderRight: isActive ? 'none' : undefined, background: isActive ? 'rgba(23,64,245,0.1)' : 'var(--tab-inactive-bg)', color: isActive ? 'var(--bluL)' : 'var(--tab-inactive-txt)' }}>
                     📂 {p.name}
                   </button>
                   {isActive && (
@@ -1042,7 +1042,7 @@ export default function PortfolioPage() {
           </div>
         ) : (
           <button onClick={() => { setShowNewPortfolio(true); setMenuId(null); }}
-            style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', border:'1px dashed rgba(79,111,250,0.4)', background:'rgba(255,255,255,0.03)', color:'rgba(255,255,255,0.6)' }}>
+            style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', border:'1px dashed var(--tab-inactive-bdr)', background:'var(--tab-inactive-bg)', color:'var(--tab-inactive-txt)' }}>
             + New Portfolio
           </button>
         )}

@@ -10,6 +10,10 @@
   --card-bg: linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82));
   --card-bdr: rgba(79,111,250,0.22);
   --card-shadow: 0 4px 40px rgba(0,0,0,0.22),0 0 60px rgba(23,64,245,0.07),inset 0 1px 0 rgba(255,255,255,0.09);
+  --nav-inactive: rgba(255,255,255,0.62);
+  --tab-inactive-txt: rgba(255,255,255,0.70);
+  --tab-inactive-bg: rgba(255,255,255,0.04);
+  --tab-inactive-bdr: rgba(79,111,250,0.22);
 }
 
 [data-theme="light"] {
@@ -20,6 +24,10 @@
   --card-bg: linear-gradient(145deg,rgba(255,255,255,0.92),rgba(232,240,255,0.80));
   --card-bdr: rgba(79,111,250,0.18);
   --card-shadow: 0 2px 20px rgba(23,64,245,0.07),0 1px 4px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.95);
+  --nav-inactive: rgba(10,21,37,0.60);
+  --tab-inactive-txt: rgba(10,21,37,0.65);
+  --tab-inactive-bg: rgba(23,64,245,0.04);
+  --tab-inactive-bdr: rgba(79,111,250,0.25);
 }
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
