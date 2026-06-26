@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
+import * as XLSX from 'xlsx';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -46,26 +47,93 @@ const MOMENTUM_PICKS = {
   'High Growth':   [{ sym:'TSLA',desc:'EV + Energy + AI' },{ sym:'PLTR',desc:'AI data analytics' },{ sym:'COIN',desc:'Crypto exchange' },{ sym:'APP',desc:'Mobile advertising' }],
 };
 
-function parseCSV(text: string): Omit<USHolding, 'id' | 'portfolio_id' | 'portfolio_name'>[] {
-  const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
-  let headerIdx = -1, symI = -1, qtyI = -1, priceI = -1;
-  for (let i = 0; i < Math.min(lines.length, 5); i++) {
-    const row = lines[i].split(',').map(c => c.replace(/^"|"$/g,'').trim().toLowerCase());
-    const s = row.findIndex(c => ['symbol','ticker','stock'].includes(c));
-    const q = row.findIndex(c => ['qty','quantity','shares'].includes(c));
-    const p = row.findIndex(c => ['avg_price','price','cost','average_price'].includes(c));
-    if (s >= 0 && q >= 0) { headerIdx=i; symI=s; qtyI=q; priceI=p>=0?p:-1; break; }
+type USRow = Omit<USHolding, 'id' | 'portfolio_id' | 'portfolio_name'>;
+
+function parseUSRows(rows: string[][]): { result: USRow[]; debug: string } {
+  if (rows.length < 2) return { result: [], debug: 'empty' };
+
+  const SYM_NAMES   = ['symbol','ticker','stock','scrip','instrument'];
+  const QTY_NAMES   = ['qty','quantity','shares','units','net qty','net quantity'];
+  const PRICE_NAMES = [
+    'average cost basis','avg cost basis','cost basis per share',   // Fidelity
+    'average cost','avg. cost','avg cost',                          // Schwab / Merrill
+    'cost/share','cost per share','price per share',                // Webull / TD
+    'average buy price','avg buy price','avg price','avg. buy rate',// Robinhood / generic
+    'purchase price','cost price','price','cost',
+  ];
+
+  let headerIdx = -1, headers: string[] = [];
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    const r = rows[i].map(c => (c??'').toString().toLowerCase().replace(/[\s ]+/g,' ').trim());
+    if (r.some(h => SYM_NAMES.includes(h))) { headerIdx = i; headers = r; break; }
   }
-  const out: Omit<USHolding, 'id' | 'portfolio_id' | 'portfolio_name'>[] = [];
-  for (let i = (headerIdx >= 0 ? headerIdx+1 : 0); i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.replace(/^"|"$/g,'').trim());
-    const sym  = (headerIdx>=0 ? cols[symI] : cols[0])?.toUpperCase() ?? '';
-    const qty  = parseFloat((headerIdx>=0 ? cols[qtyI] : cols[1] ?? '0').replace(/,/g,''));
-    const avg  = parseFloat((headerIdx>=0 && priceI>=0 ? cols[priceI] : cols[2] ?? '0').replace(/[$,]/g,''));
-    if (!sym || sym.length > 10 || isNaN(qty) || qty <= 0) continue;
-    out.push({ symbol:sym, exchange:'NYSE', qty, avg_price: (!isNaN(avg) && avg>0) ? avg : 0.001 });
+  if (headerIdx < 0) return { result: [], debug: 'no header row with Symbol/Ticker column found' };
+
+  const col = (names: string[]) => {
+    const exact = names.map(n => headers.indexOf(n)).find(i => i >= 0);
+    if (exact !== undefined) return exact;
+    return headers.findIndex(h => {
+      const hn = h.replace(/\./g,'').replace(/\s+/g,' ').trim();
+      return names.some(n => {
+        const nn = n.replace(/\./g,'').replace(/\s+/g,' ').trim();
+        return h === n || hn === nn || h.startsWith(n) || n.startsWith(h) || hn.startsWith(nn);
+      });
+    });
+  };
+
+  const symIdx   = col(SYM_NAMES);
+  const qtyIdx   = col(QTY_NAMES);
+  const priceIdx = col(PRICE_NAMES);
+  const exchIdx  = col(['exchange','market','exch']);
+
+  if (symIdx < 0 || qtyIdx < 0) return { result: [], debug: `headers: [${headers.slice(0,8).join('|')}] — missing Symbol or Qty column` };
+
+  const VALID_US = new Set(['NYSE','NASDAQ','AMEX','ARCA','BATS']);
+  const result = rows.slice(headerIdx + 1)
+    .filter(r => r.length > Math.max(symIdx, qtyIdx) && (r[symIdx]??'').toString().trim())
+    .map(r => {
+      const sym = (r[symIdx]??'').toString().trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
+      const qty = parseFloat(((r[qtyIdx]??'0').toString()).replace(/,/g,''));
+      const avg = priceIdx >= 0 ? parseFloat(((r[priceIdx]??'0').toString()).replace(/[$,]/g,'')) : 0;
+      const rawX = exchIdx >= 0 ? (r[exchIdx]??'').toString().toUpperCase().trim() : '';
+      const exchange = VALID_US.has(rawX) ? rawX : 'NYSE';
+      if (!sym || sym.length > 10 || isNaN(qty) || qty <= 0) return null;
+      return { symbol:sym, exchange, qty, avg_price:(!isNaN(avg) && avg>0) ? avg : 0.001 } as USRow;
+    })
+    .filter(Boolean) as USRow[];
+
+  return { result, debug: `sym=${symIdx} qty=${qtyIdx} price=${priceIdx}` };
+}
+
+async function parseUSFile(file: File): Promise<{ result: USRow[]; msg: string }> {
+  try {
+    const isExcel = /\.(xlsx?|xls)$/i.test(file.name);
+    if (isExcel) {
+      const buf = await file.arrayBuffer();
+      const wb  = XLSX.read(buf, { type:'array' });
+      for (const sheetName of wb.SheetNames) {
+        const ws   = wb.Sheets[sheetName];
+        const all  = XLSX.utils.sheet_to_json(ws, { header:1, defval:'', raw:false }) as string[][];
+        const rows = all.filter(r => r.some(c => (c??'').toString().trim() !== ''));
+        if (rows.length < 2) continue;
+        const { result, debug } = parseUSRows(rows);
+        if (result.length) return { result, msg: `✅ Imported ${result.length} holdings from "${sheetName}"` };
+        if (sheetName === wb.SheetNames[wb.SheetNames.length - 1])
+          return { result:[], msg: `❌ No holdings parsed (${debug}). Check that Symbol + Qty columns exist.` };
+      }
+      return { result:[], msg:'❌ No usable sheet found in Excel file.' };
+    }
+    // CSV
+    const text = await file.text();
+    const rows = text.split('\n')
+      .map(l => l.split(',').map(c => c.replace(/^"|"$/g,'').trim()))
+      .filter(r => r.some(c => c !== ''));
+    const { result, debug } = parseUSRows(rows);
+    if (result.length) return { result, msg: `✅ Imported ${result.length} holdings` };
+    return { result:[], msg: `❌ Could not parse CSV (${debug}). Columns needed: Symbol, Qty/Shares, and optionally Cost/Price.` };
+  } catch (e) {
+    return { result:[], msg: `❌ Error: ${e instanceof Error ? e.message : String(e)}` };
   }
-  return out;
 }
 
 export default function USPortfolioPage() {
@@ -203,14 +271,19 @@ export default function USPortfolioPage() {
     setAllHoldings(prev => prev.filter(x => x.id !== h.id));
   }
 
-  async function handleCSV(e: React.ChangeEvent<HTMLInputElement>) {
+  async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file || !session || !uploadPortId) return;
-    const text = await file.text();
-    const rows = parseCSV(text);
-    if (!rows.length) { setMsg('❌ Could not parse CSV'); return; }
+    setMsg('⏳ Parsing file…');
+    const { result, msg: parseMsg } = await parseUSFile(file);
+    if (!result.length) { setMsg(parseMsg); e.target.value = ''; return; }
+    // Delete existing holdings for this portfolio before inserting
+    await fetch(`${SUPA_URL}/rest/v1/holdings?portfolio_id=eq.${uploadPortId}&exchange=in.(NYSE,NASDAQ,AMEX,ARCA)`, {
+      method:'DELETE',
+      headers: { apikey: SUPA_KEY, Authorization:`Bearer ${session.access_token}` },
+    });
     let added = 0;
-    for (const r of rows) {
+    for (const r of result) {
       const res = await fetch(`${SUPA_URL}/rest/v1/holdings`, {
         method:'POST',
         headers: { apikey: SUPA_KEY, Authorization:`Bearer ${session.access_token}`, 'Content-Type':'application/json', Prefer:'return=minimal' },
@@ -218,7 +291,7 @@ export default function USPortfolioPage() {
       });
       if (res.ok) added++;
     }
-    setMsg(`✅ Imported ${added}/${rows.length} holdings`);
+    setMsg(`${parseMsg} (${added} saved)`);
     e.target.value = '';
     await fetchHoldings();
   }
@@ -269,16 +342,23 @@ export default function USPortfolioPage() {
             {loading && ' · ⏳ refreshing…'}
           </div>
         </div>
-        <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+        <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
+          {/* Portfolio selector for import target */}
+          {portfolios.length > 1 && (
+            <select value={uploadPortId ?? ''} onChange={e => setUploadPortId(e.target.value)}
+              style={{ height:36, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 10px', fontFamily:'inherit', cursor:'pointer' }}>
+              {portfolios.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+            </select>
+          )}
           <button onClick={() => setAddOpen(true)}
             style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
             + Add Stock
           </button>
           <button onClick={() => fileRef.current?.click()}
-            style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-            📂 Import CSV
+            style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
+            📂 Import File
           </button>
-          <input type="file" ref={fileRef} accept=".csv,.txt" style={{ display:'none' }} onChange={handleCSV} />
+          <input type="file" ref={fileRef} accept=".csv,.xlsx,.xls" style={{ display:'none' }} onChange={handleFile} />
         </div>
       </div>
 
@@ -411,11 +491,12 @@ export default function USPortfolioPage() {
         <div style={{ ...card, textAlign:'center', padding:'40px 20px', marginBottom:20 }}>
           <div style={{ fontSize:28, marginBottom:10 }}>🇺🇸</div>
           <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No US holdings yet</div>
-          <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>Add stocks via the form or import a CSV from your broker</div>
-          <div style={{ display:'flex', gap:8, justifyContent:'center' }}>
+          <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>Add stocks manually or import from your broker (CSV or Excel)</div>
+          <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
             <button onClick={() => setAddOpen(true)} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Add Stock</button>
-            <button onClick={() => fileRef.current?.click()} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📂 Import CSV</button>
+            <button onClick={() => fileRef.current?.click()} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📂 Import CSV / XLSX</button>
           </div>
+          <div style={{ marginTop:12, fontSize:11, color:'var(--dim2)' }}>Supports: Schwab · Fidelity · Robinhood · Webull · TD Ameritrade · Merrill Edge · IBKR</div>
         </div>
       )}
 

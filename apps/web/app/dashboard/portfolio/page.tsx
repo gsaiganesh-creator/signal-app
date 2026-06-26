@@ -321,11 +321,11 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   const SYM_NAMES   = ['instrument','tradingsymbol','trading symbol','stock symbol','scrip name','scrip code','script name','script','scrip','symbol','ticker','security name','security','stock name','isin name'];
   const QTY_NAMES   = ['net qty','net quantity','holdingqty','total qty','total quantity','free qty','qty','quantity','shares','units'];
   const PRICE_NAMES = [
-    'avg. buy rate','avg buy rate',          // HDFC Securities
-    'avg cost price','average cost price',   // Angel One
-    'avg. cost','avg cost',                  // Zerodha Kite / Upstox
-    'average price','average cost',          // Zerodha Console / Groww
-    'avg price','avg rate','average rate',   // 5paisa / generic
+    'avg. buy rate','avg buy rate',                         // HDFC Securities
+    'avg. cost price','avg cost price','average cost price',// Angel One (with/without period)
+    'avg. cost','avg cost',                                 // Zerodha Kite / Upstox
+    'average price','average cost',                         // Zerodha Console / Groww
+    'avg price','avg rate','average rate',                  // 5paisa / generic
     'vwap','average buy price','ltp at buy',
     'buy price','purchase price','cost price','cost',
   ];
@@ -355,7 +355,14 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   const col = (names: string[]) => {
     const exact = names.map(n => headers.indexOf(n)).find(i => i >= 0);
     if (exact !== undefined) return exact;
-    return headers.findIndex(h => names.some(n => h === n || h.startsWith(n) || n.startsWith(h)));
+    // strip periods for fuzzy match — handles "avg. cost price" vs "avg cost price"
+    return headers.findIndex(h => {
+      const hn = h.replace(/\./g,'').replace(/\s+/g,' ').trim();
+      return names.some(n => {
+        const nn = n.replace(/\./g,'').replace(/\s+/g,' ').trim();
+        return h === n || hn === nn || h.startsWith(n) || n.startsWith(h) || hn.startsWith(nn) || nn.startsWith(hn);
+      });
+    });
   };
 
   if (headerIdx >= 0 && headers.length) {
