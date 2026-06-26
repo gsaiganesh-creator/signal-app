@@ -503,6 +503,16 @@ export default function PortfolioPage() {
   const [sortCol, setSortCol] = useState<'symbol'|'avg_price'|'current_price'|'pl'|'pl_pct'>('symbol');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
   const [menuId, setMenuId] = useState<string | null>(null);
+  const [menuPos, setMenuPos] = useState<{top:number;left:number}|null>(null);
+
+  // Close portfolio dropdown on outside click or scroll
+  useEffect(() => {
+    if (!menuId) return;
+    const close = () => { setMenuId(null); setMenuPos(null); };
+    document.addEventListener('click', close, true);
+    window.addEventListener('scroll', close, true);
+    return () => { document.removeEventListener('click', close, true); window.removeEventListener('scroll', close, true); };
+  }, [menuId]);
   // Cache totals per portfolio-id as user switches, for cross-portfolio summary
   const [portfolioTotals, setPortfolioTotals] = useState<Record<string, { holdings: number; invested: number }>>({});
   const [renamingId, setRenamingId] = useState<string | null>(null);
@@ -994,7 +1004,7 @@ export default function PortfolioPage() {
                     📂 {p.name}
                   </button>
                   {isActive && (
-                    <button onClick={() => setMenuId(m => m === p.id ? null : p.id)}
+                    <button onClick={e => { e.stopPropagation(); const r=e.currentTarget.getBoundingClientRect(); setMenuPos({top:r.bottom+4,left:r.left}); setMenuId(m=>m===p.id?null:p.id); }}
                       style={{ height:34, padding:'0 8px', borderRadius:'0 8px 8px 0', border:'1px solid var(--blu)', borderLeft:'1px solid rgba(23,64,245,0.3)', background:'rgba(23,64,245,0.08)', color:'var(--bluL)', cursor:'pointer', fontFamily:'inherit', fontSize:16, lineHeight:1 }}>
                       ⋯
                     </button>
@@ -1002,8 +1012,8 @@ export default function PortfolioPage() {
                 </>
               )}
               {/* Dropdown menu */}
-              {menuId === p.id && (
-                <div style={{ position:'absolute', top:'calc(100% + 4px)', left:0, zIndex:50, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.3)', minWidth:150, padding:'4px 0' }}>
+              {menuId === p.id && menuPos && (
+                <div style={{ position:'fixed', top:menuPos.top, left:menuPos.left, zIndex:9999, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.45)', minWidth:160, padding:'4px 0' }}>
                   <button onClick={() => { setRenamingId(p.id); setRenameVal(p.name); setMenuId(null); }}
                     style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
                     ✏️ Rename

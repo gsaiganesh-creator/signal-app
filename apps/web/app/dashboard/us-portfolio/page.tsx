@@ -148,7 +148,7 @@ async function parseUSFile(file: File): Promise<{ result: USRow[]; msg: string }
 }
 
 export default function USPortfolioPage() {
-  const { portfolios, session, createPortfolio } = usePortfolio();
+  const { portfolios, session, createPortfolio, renamePortfolio, deletePortfolio, refresh } = usePortfolio();
   const [allHoldings, setAllHoldings] = useState<USHolding[]>([]);
   const [prices, setPrices]           = useState<PriceMap>({});
   const [idxPrices, setIdxPrices]     = useState<PriceMap>({});
@@ -168,6 +168,22 @@ export default function USPortfolioPage() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadPortId, setUploadPortId] = useState<string | null>(null);
   const [manualUSPortIds, setManualUSPortIds] = useState<Set<string>>(new Set());
+  const [menuPortId, setMenuPortId] = useState<string|null>(null);
+  const [menuPortPos, setMenuPortPos] = useState<{top:number;left:number}|null>(null);
+  const [renamingPortId, setRenamingPortId] = useState<string|null>(null);
+  const [renamePortVal, setRenamePortVal] = useState('');
+  const [confirmDeletePortId, setConfirmDeletePortId] = useState<string|null>(null);
+  const [deletingPort, setDeletingPort] = useState(false);
+  const [showNewPortInput, setShowNewPortInput] = useState(false);
+
+  // Close port dropdown on outside click/scroll
+  useEffect(() => {
+    if (!menuPortId) return;
+    const close = () => { setMenuPortId(null); setMenuPortPos(null); };
+    document.addEventListener('click', close, true);
+    window.addEventListener('scroll', close, true);
+    return () => { document.removeEventListener('click', close, true); window.removeEventListener('scroll', close, true); };
+  }, [menuPortId]);
 
   // US portfolios = those with US holdings OR created on this page (never shows Indian portfolios)
   const allPortIds = portfolios.map(p => p.id);
@@ -328,6 +344,22 @@ export default function USPortfolioPage() {
     }
   }
 
+  async function handleRenamePort() {
+    if (!renamingPortId || !renamePortVal.trim()) { setRenamingPortId(null); return; }
+    await renamePortfolio(renamingPortId, renamePortVal.trim());
+    setRenamingPortId(null);
+  }
+
+  async function handleDeletePort(id: string) {
+    setDeletingPort(true);
+    await deletePortfolio(id);
+    setConfirmDeletePortId(null);
+    setDeletingPort(false);
+    if (activePortId === id) setActivePortId(null);
+    setManualUSPortIds(prev => { const n = new Set(prev); n.delete(id); return n; });
+    await fetchHoldings();
+  }
+
   async function selectHolding(h: USHolding) {
     setSelected(h);
     setDetail(null);
@@ -364,13 +396,6 @@ export default function USPortfolioPage() {
           </div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
-          {/* Portfolio selector for import target (US portfolios only) */}
-          {usPortfolios.length > 1 && (
-            <select value={uploadPortId ?? ''} onChange={e => setUploadPortId(e.target.value)}
-              style={{ height:36, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 10px', fontFamily:'inherit', cursor:'pointer' }}>
-              {usPortfolios.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-            </select>
-          )}
           <button onClick={() => setAddOpen(true)}
             style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
             + Add Stock
@@ -386,6 +411,104 @@ export default function USPortfolioPage() {
       {msg && (
         <div style={{ marginBottom:14, padding:'10px 14px', borderRadius:9, background: msg.startsWith('✅') ? 'rgba(0,212,160,0.08)' : 'rgba(255,59,92,0.08)', border:`1px solid ${msg.startsWith('✅') ? 'rgba(0,212,160,0.25)' : 'rgba(255,59,92,0.25)'}`, fontSize:13 }}>
           {msg} <button onClick={() => setMsg('')} style={{ background:'none', border:'none', color:'var(--dim)', cursor:'pointer', float:'right' }}>✕</button>
+        </div>
+      )}
+
+      {/* Portfolio tabs */}
+      <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
+        <button onClick={() => { setActivePortId(null); setViewMode('merged'); setMenuPortId(null); }}
+          style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:13, fontWeight: !activePortId ? 700 : 500, cursor:'pointer', fontFamily:'inherit',
+            border: !activePortId ? '1px solid var(--grn)' : '1px solid var(--bdr)',
+            background: !activePortId ? 'rgba(0,212,160,0.10)' : 'transparent',
+            color: !activePortId ? 'var(--grn)' : 'var(--dim)', whiteSpace:'nowrap' }}>
+          📊 All Portfolios
+        </button>
+        {usPortfolios.map(p => {
+          const isActive = activePortId === p.id;
+          const isRenaming = renamingPortId === p.id;
+          return (
+            <div key={p.id} style={{ position:'relative', display:'inline-flex', alignItems:'center', gap:0 }}>
+              {isRenaming ? (
+                <>
+                  <input autoFocus value={renamePortVal} onChange={e => setRenamePortVal(e.target.value)}
+                    onKeyDown={e => { if (e.key==='Enter') handleRenamePort(); if (e.key==='Escape') setRenamingPortId(null); }}
+                    style={{ height:34, borderRadius:'8px 0 0 8px', background:'var(--surf2)', border:'1px solid var(--blu)', borderRight:'none', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:140 }}/>
+                  <button onClick={handleRenamePort} style={{ height:34, padding:'0 10px', borderRadius:'0 8px 8px 0', background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>✓</button>
+                  <button onClick={() => setRenamingPortId(null)} style={{ height:34, padding:'0 8px', marginLeft:4, borderRadius:8, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => { setActivePortId(p.id); setViewMode('by-portfolio'); setMenuPortId(null); setUploadPortId(p.id); }}
+                    style={{ height:34, padding:'0 12px 0 16px', borderRadius: isActive ? '8px 0 0 8px' : '8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit',
+                      border: isActive ? '1px solid var(--blu)' : '1px solid var(--bdr)', borderRight: isActive ? 'none' : undefined,
+                      background: isActive ? 'rgba(23,64,245,0.1)' : 'transparent',
+                      color: isActive ? 'var(--bluL)' : 'var(--dim)' }}>
+                    📂 {p.name}
+                  </button>
+                  {isActive && (
+                    <button onClick={e => { e.stopPropagation(); const r=e.currentTarget.getBoundingClientRect(); setMenuPortPos({top:r.bottom+4,left:r.left}); setMenuPortId(m=>m===p.id?null:p.id); }}
+                      style={{ height:34, padding:'0 8px', borderRadius:'0 8px 8px 0', border:'1px solid var(--blu)', borderLeft:'1px solid rgba(23,64,245,0.3)', background:'rgba(23,64,245,0.08)', color:'var(--bluL)', cursor:'pointer', fontFamily:'inherit', fontSize:16, lineHeight:1 }}>
+                      ⋯
+                    </button>
+                  )}
+                </>
+              )}
+              {menuPortId === p.id && menuPortPos && (
+                <div style={{ position:'fixed', top:menuPortPos.top, left:menuPortPos.left, zIndex:9999, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.45)', minWidth:160, padding:'4px 0' }}>
+                  <button onClick={() => { setRenamingPortId(p.id); setRenamePortVal(p.name); setMenuPortId(null); }}
+                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
+                    ✏️ Rename
+                  </button>
+                  <div style={{ height:1, background:'var(--bdr)', margin:'2px 0' }}/>
+                  <button onClick={() => { setConfirmDeletePortId(p.id); setMenuPortId(null); }}
+                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--red)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
+                    🗑️ Delete portfolio
+                  </button>
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {showNewPortInput ? (
+          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+            <input autoFocus placeholder="Portfolio name…" value={newPortName} onChange={e => setNewPortName(e.target.value)}
+              onKeyDown={e => { if (e.key==='Enter') handleCreatePortfolio(); if (e.key==='Escape') { setShowNewPortInput(false); setNewPortName(''); } }}
+              style={{ height:34, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--blu)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:160 }}/>
+            <button onClick={handleCreatePortfolio} disabled={!newPortName.trim()||creatingPort}
+              style={{ height:34, padding:'0 14px', borderRadius:8, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+              {creatingPort ? '…' : 'Create'}
+            </button>
+            <button onClick={() => { setShowNewPortInput(false); setNewPortName(''); }}
+              style={{ height:34, padding:'0 10px', borderRadius:8, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+          </div>
+        ) : (
+          <button onClick={() => { setShowNewPortInput(true); setMenuPortId(null); }}
+            style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', border:'1px dashed var(--bdr)', background:'transparent', color:'var(--dim)' }}>
+            + New Portfolio
+          </button>
+        )}
+      </div>
+
+      {/* Delete portfolio confirmation */}
+      {confirmDeletePortId && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:100, display:'flex', alignItems:'center', justifyContent:'center' }}
+          onClick={e => { if (e.target===e.currentTarget) setConfirmDeletePortId(null); }}>
+          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:'28px 32px', maxWidth:400, width:'90%', boxShadow:'0 16px 48px rgba(0,0,0,0.5)' }}>
+            <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>Delete portfolio?</div>
+            <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6, marginBottom:24 }}>
+              This will permanently delete <strong style={{ color:'var(--txt)' }}>{usPortfolios.find(p=>p.id===confirmDeletePortId)?.name}</strong> and all its US holdings. Cannot be undone.
+            </div>
+            <div style={{ display:'flex', gap:10 }}>
+              <button onClick={() => setConfirmDeletePortId(null)} disabled={deletingPort}
+                style={{ flex:1, height:42, borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                Cancel
+              </button>
+              <button onClick={() => handleDeletePort(confirmDeletePortId)} disabled={deletingPort}
+                style={{ flex:1, height:42, borderRadius:10, background:'var(--red)', border:'none', color:'#fff', fontSize:14, fontWeight:700, cursor: deletingPort ? 'not-allowed' : 'pointer', fontFamily:'inherit', opacity: deletingPort ? 0.7 : 1 }}>
+                {deletingPort ? '⏳ Deleting…' : '🗑️ Yes, Delete'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
@@ -444,26 +567,7 @@ export default function USPortfolioPage() {
         <div style={{ ...card, marginBottom:20 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, flexWrap:'wrap', gap:8 }}>
             <div style={{ fontSize:13, fontWeight:700 }}>Holdings</div>
-            <div style={{ display:'flex', gap:8 }}>
-              {/* View mode toggle */}
-              {byPortfolio.length > 1 && ['merged','by-portfolio'].map(m => (
-                <button key={m} onClick={() => setViewMode(m as typeof viewMode)}
-                  style={{ height:30, padding:'0 12px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
-                    background: viewMode === m ? 'var(--blu)' : 'var(--surf2)',
-                    color: viewMode === m ? '#fff' : 'var(--dim)',
-                    border: `1px solid ${viewMode === m ? 'var(--blu)' : 'var(--bdr)'}` }}>
-                  {m === 'merged' ? '🔀 Merged' : '📂 By Portfolio'}
-                </button>
-              ))}
-              {/* Portfolio filter */}
-              {viewMode === 'by-portfolio' && (
-                <select value={activePortId ?? ''} onChange={e => setActivePortId(e.target.value || null)}
-                  style={{ ...inp, height:30, fontSize:11 }}>
-                  <option value="">All portfolios</option>
-                  {byPortfolio.map(g => <option key={g.portfolio.id} value={g.portfolio.id}>{g.portfolio.name}</option>)}
-                </select>
-              )}
-            </div>
+            <div style={{ display:'flex', gap:8 }}></div>
           </div>
           <div style={{ overflowX:'auto' }}>
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
@@ -565,29 +669,7 @@ export default function USPortfolioPage() {
         ))}
       </div>
 
-      {/* Create new US portfolio */}
-      <div style={card}>
-        <div style={{ fontSize:13, fontWeight:700, marginBottom:4 }}>Create US Portfolio</div>
-        <div style={{ fontSize:11, color:'var(--dim)', marginBottom:12 }}>Track separate broker accounts (Schwab, Webull, IBKR, etc.)</div>
-        <div style={{ display:'flex', gap:8 }}>
-          <input placeholder="e.g. Schwab US Stocks" value={newPortName} onChange={e => setNewPortName(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleCreatePortfolio()}
-            style={{ ...inp, flex:1 }} />
-          <button onClick={handleCreatePortfolio} disabled={!newPortName.trim() || creatingPort}
-            style={{ height:36, padding:'0 14px', borderRadius:8, background:'var(--grn)', border:'none', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', opacity: (!newPortName.trim() || creatingPort) ? 0.5 : 1 }}>
-            {creatingPort ? 'Creating…' : 'Create'}
-          </button>
-        </div>
-        {usPortfolios.length > 0 && (
-          <div style={{ marginTop:12, display:'flex', flexWrap:'wrap', gap:6 }}>
-            {usPortfolios.map(p => (
-              <span key={p.id} style={{ fontSize:11, padding:'3px 10px', borderRadius:12, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)' }}>
-                📂 {p.name}
-              </span>
-            ))}
-          </div>
-        )}
-      </div>
+
 
       {/* Add holding modal */}
       {addOpen && (
