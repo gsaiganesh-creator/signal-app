@@ -146,28 +146,28 @@ function buildInsights(holdings: RawHolding[]): Array<{ icon: string; text: stri
   const ins: Array<{ icon: string; text: string; accent: string }> = [];
 
   if (n > 40)
-    ins.push({ icon:'📊', accent:'var(--ylw)', text:`${n} holdings is broad-market territory. Beyond 30–35 stocks, diversification benefit plateaus while tracking difficulty compounds. Consider a quarterly consolidation — trim the weakest 10–15 by signal quality.` });
+    ins.push({ icon:'📊', accent:'var(--ylw)', text:`${n} holdings. Academic research shows diversification benefit plateaus beyond 30–35 names, while tracking complexity compounds. This is an observation about portfolio size — not a direction to trade.` });
   else if (n >= 20)
-    ins.push({ icon:'✅', accent:'var(--grn)', text:`${n} holdings sits in the professional sweet spot (20–40 names). You get meaningful diversification without over-diluting returns. Focus on quality of signals within this pool — not size.` });
+    ins.push({ icon:'✅', accent:'var(--grn)', text:`${n} holdings. This range (20–40 names) is common in professionally managed equity portfolios. Concentration and quality of each position matters as much as count.` });
   else
-    ins.push({ icon:'⚡', accent:'var(--org)', text:`${n} holdings is a concentrated portfolio. This amplifies both upside and drawdown. Each position should carry a clear thesis and hard stop-loss. Re-examine on any Exit or Dead signal.` });
+    ins.push({ icon:'⚡', accent:'var(--org)', text:`${n} holdings is a concentrated portfolio. Historically, concentrated portfolios show higher variance — both gains and drawdowns are amplified. Individual position sizing becomes more significant at this count.` });
 
   if (top1Pct > 22)
-    ins.push({ icon:'⚠️', accent:'var(--red)', text:`${sorted[0]?.symbol} is ${top1Pct.toFixed(0)}% of your capital — significant single-name concentration. A bad quarterly result or promoter event can swing your entire portfolio. Consider trimming to under 15% unless this is a deliberate structural bet.` });
+    ins.push({ icon:'⚠️', accent:'var(--red)', text:`${sorted[0]?.symbol} is ${top1Pct.toFixed(0)}% of your capital — elevated single-name concentration. Single-stock events (earnings, regulatory, promoter) can have outsized P&L impact at this weight. Institutional portfolios typically cap any single name at 10–15%.` });
   else if (top3Pct > 55)
-    ins.push({ icon:'⚠️', accent:'var(--ylw)', text:`Top 3 holdings (${sorted.slice(0,3).map(h=>h.symbol).join(', ')}) = ${top3Pct.toFixed(0)}% of deployed capital. Cluster risk is elevated. If these share a sector, add cushion elsewhere or reduce size on the weakest performer.` });
+    ins.push({ icon:'⚠️', accent:'var(--ylw)', text:`Top 3 holdings (${sorted.slice(0,3).map(h=>h.symbol).join(', ')}) = ${top3Pct.toFixed(0)}% of deployed capital. If these share a sector or macro driver, that's cluster concentration — a sector-level event could move all three simultaneously.` });
   else
-    ins.push({ icon:'✅', accent:'var(--grn)', text:`Allocation is well-balanced — largest holding ${sorted[0]?.symbol} at ${top1Pct.toFixed(0)}% stays within healthy limits. This allows the portfolio to absorb single-stock shocks without catastrophic P&L impact.` });
+    ins.push({ icon:'✅', accent:'var(--grn)', text:`Allocation spread looks reasonable — largest holding ${sorted[0]?.symbol} at ${top1Pct.toFixed(0)}%. Single-stock concentration appears within typical risk parameters.` });
 
   const largePct = total > 0 ? sorted.filter(h => capCat(h.symbol) === 'large').reduce((s, h) => s + h.avg_price * h.qty, 0) / total * 100 : 0;
   const smallPct = total > 0 ? sorted.filter(h => capCat(h.symbol) === 'small').reduce((s, h) => s + h.avg_price * h.qty, 0) / total * 100 : 0;
 
   if (smallPct > 40)
-    ins.push({ icon:'🔥', accent:'var(--org)', text:`${smallPct.toFixed(0)}% in small/micro caps. These outperform in bull phases but collapse 40–60% in corrections — and liquidity dries up fast. Ensure ≥30% in liquid large-caps as a portfolio shock absorber.` });
+    ins.push({ icon:'🔥', accent:'var(--org)', text:`${smallPct.toFixed(0)}% in small/micro caps. Small caps historically show higher beta — outperformance in bull markets, sharper drawdowns in corrections, and lower liquidity. This is a risk profile observation.` });
   else if (largePct > 70)
-    ins.push({ icon:'📘', accent:'var(--bluL)', text:`${largePct.toFixed(0)}% large-cap tilt gives stability but may lag in mid/small-cap rallies. A 15–20% tactical allocation to quality mid-caps with strong earnings momentum can lift risk-adjusted returns.` });
+    ins.push({ icon:'📘', accent:'var(--bluL)', text:`${largePct.toFixed(0)}% large-cap tilt. Large caps tend to offer lower volatility and higher liquidity. Mid and small caps historically show higher growth rates but with higher variance. Your current mix leans defensive.` });
   else
-    ins.push({ icon:'✅', accent:'var(--grn)', text:`Cap distribution looks balanced. Large-cap anchors risk while mid/small adds growth beta. Keep reviewing cap-tier signals — mid-caps cycle in and out of momentum faster than large-caps.` });
+    ins.push({ icon:'✅', accent:'var(--grn)', text:`Cap-tier distribution appears balanced across large, mid, and small. Each segment historically shows different volatility and growth characteristics — mixed allocation distributes these risks.` });
 
   return ins;
 }
@@ -177,7 +177,7 @@ function MarketOverview() {
     <div style={{ ...card, marginBottom:16 }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
         <div style={{ fontSize:13, fontWeight:700 }}>Market Overview</div>
-        <span style={{ fontSize:11, color:'var(--grn)', fontWeight:700, display:'flex', alignItems:'center', gap:5 }}><span className="live-dot"/>Live</span>
+        <span style={{ fontSize:10, color:'var(--dim)', fontWeight:600, padding:'2px 8px', background:'rgba(122,139,170,0.1)', borderRadius:6 }}>Sample · Not live</span>
       </div>
       <div className="g2" style={{ display:'grid', gap:8 }}>
         {[
@@ -206,16 +206,16 @@ function WelcomeEmpty({ name, email }: { name: string; email?: string }) {
       </div>
       <div style={{ marginBottom:24 }}>
         <div style={{ fontSize:26, fontWeight:800, letterSpacing:-0.5 }}>{greet()}, {name} 👋</div>
-        <div style={{ fontSize:13, color:'var(--dim)', marginTop:4 }}>Welcome to SIGNAL. Upload your portfolio to unlock ML signals and P&L tracking.</div>
+        <div style={{ fontSize:13, color:'var(--dim)', marginTop:4 }}>Welcome to SIGNAL. Upload your portfolio to unlock technical scan results and P&L tracking.</div>
       </div>
       <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.08),rgba(0,212,160,0.04))', border:'1px solid rgba(23,64,245,0.2)', borderRadius:16, padding:'28px 32px', marginBottom:20 }}>
         <div style={{ fontSize:19, fontWeight:800, marginBottom:6 }}>📂 Upload your portfolio to get started</div>
-        <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Add your holdings once — SIGNAL tracks P&L, signals and risk automatically.</div>
+        <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Add your holdings once — SIGNAL tracks P&L, scan results and risk metrics automatically.</div>
         <div className="g3" style={{ display:'grid', gap:16, marginBottom:28 }}>
           {[
             { n:'1', t:'Name your portfolio', d:'e.g. "Zerodha Long Term" or "Swing Trades"' },
             { n:'2', t:'Upload your holdings file', d:'Zerodha, Upstox, Groww, HDFC Sec, Angel One — auto-detected' },
-            { n:'3', t:'Get ML signals instantly', d:'Every holding classified: Momentum · Swing · Exit Now' },
+            { n:'3', t:'Run ML Technical Scan instantly', d:'RSI, EMA, volume — every holding screened. You interpret the data.' },
           ].map(s => (
             <div key={s.n} style={{ display:'flex', gap:12 }}>
               <div style={{ width:28, height:28, borderRadius:'50%', background:'var(--blu)', color:'#fff', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:900, flexShrink:0 }}>{s.n}</div>
@@ -232,9 +232,9 @@ function WelcomeEmpty({ name, email }: { name: string; email?: string }) {
       </div>
       <div className="g3" style={{ display:'grid', gap:12, marginBottom:24 }}>
         {[
-          { icon:'🤖', t:'ML Signals', d:'BUY/SELL/HOLD on every holding. RSI + EMA + ML-classified.' },
-          { icon:'📊', t:'Live P&L', d:'Unrealised gains, Momentum/Swing/Exit buckets — updated daily.' },
-          { icon:'⚠️', t:'Risk Alerts', d:'Earnings flags, FII/DII impact, sector concentration.' },
+          { icon:'🤖', t:'ML Technical Scan', d:'RSI, EMA, volume screener on every holding. Technical output — you decide.' },
+          { icon:'📊', t:'Live P&L', d:'Unrealised gains, momentum zone distribution — updated daily.' },
+          { icon:'⚠️', t:'Risk Metrics', d:'Earnings proximity flags, concentration risk, sector exposure.' },
         ].map(f => (
           <div key={f.t} style={card}>
             <div style={{ fontSize:22, marginBottom:8 }}>{f.icon}</div>
@@ -733,10 +733,10 @@ export default function DashboardPage() {
           <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
             <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,rgba(255,92,26,0.18),rgba(255,184,0,0.12))', border:'1px solid rgba(255,92,26,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, flexShrink:0 }}>🎯</div>
             <div>
-              <div style={{ fontSize:14, fontWeight:800, letterSpacing:-0.2 }}>Portfolio Analysis</div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>AI-generated · based on your current allocation</div>
+              <div style={{ fontSize:14, fontWeight:800, letterSpacing:-0.2 }}>Portfolio Composition Metrics</div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>Computed from your holdings · statistical observations only</div>
             </div>
-            <div style={{ marginLeft:'auto', fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(255,92,26,0.1)', border:'1px solid rgba(255,92,26,0.25)', color:'var(--org)' }}>ML · Live</div>
+            <div style={{ marginLeft:'auto', fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(255,92,26,0.1)', border:'1px solid rgba(255,92,26,0.25)', color:'var(--org)' }}>Screener</div>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {insights.map((ins, i) => (
@@ -746,7 +746,7 @@ export default function DashboardPage() {
               </div>
             ))}
           </div>
-          <div style={{ fontSize:10, color:'var(--dim2)', marginTop:10 }}>⚠️ NOT SEBI REGISTERED · Analysis for informational purposes only · DYOR</div>
+          <div style={{ fontSize:10, color:'var(--dim2)', marginTop:10 }}>⚠️ NOT SEBI REGISTERED · These are statistical observations on your holdings composition, not financial advice · DYOR</div>
         </div>
       )}
 
@@ -839,7 +839,7 @@ export default function DashboardPage() {
           <div style={card}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div style={{ fontSize:13, fontWeight:700 }}>FII / DII Flow</div>
-              <span style={{ fontSize:11, color:'var(--dim)' }}>Today · sample</span>
+              <span style={{ fontSize:10, color:'var(--dim)', padding:'2px 8px', background:'rgba(122,139,170,0.1)', borderRadius:6 }}>Illustration only · Not live</span>
             </div>
             {[
               { label:'FII (Foreign Inst.)', val:'-₹1,240 Cr', valC:'var(--red)', pct:35, barC:'var(--red)' },
@@ -862,7 +862,7 @@ export default function DashboardPage() {
           <div style={{ ...card, marginBottom:14 }}>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Quick Links</div>
             {[
-              { href:'/dashboard/signals',      label:'📈 Live Signals',       sub:'BUY/SELL on 4000+ stocks' },
+              { href:'/dashboard/signals',      label:'📈 ML Technical Scan',  sub:'RSI + EMA screener · NSE stocks' },
               { href:'/dashboard/portfolio',    label:'💼 Indian Portfolio',       sub:'P&L, ML signals, upload' },
               { href:'/dashboard/us-portfolio', label:'🇺🇸 US Portfolio',      sub:'Track US stocks in USD' },
               { href:'/dashboard/paper-trading',label:'🧪 Paper Trading',      sub:'Test strategies risk-free' },
@@ -895,7 +895,7 @@ export default function DashboardPage() {
 
 
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:14 }}>
-        ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · Signals for informational purposes only · Not financial advice · DYOR
+        ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · This is a technical screening tool · Scan results are computed indicators, not investment advice · DYOR
       </div>
     </>
   );
