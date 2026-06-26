@@ -71,18 +71,18 @@ const fpill = (ico: string, icoBg: string, title: string, desc: string) => (
 const MQ1 = () => (
   <>
     <div style={{ ...GC.grn, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Signal</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>RELIANCE</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹2,912 · ▲ +1.80%</div></div>
-        {sigtag('BUY','buy')}
+        {sigtag('↑ Momentum','buy')}
       </div>
       {cbar(87,'var(--grn)')}
-      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Confidence <strong style={{ color:'var(--grn)' }}>87%</strong></div>
+      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Score <strong style={{ color:'var(--grn)' }}>87%</strong></div>
     </div>
     <div style={{ ...GC.blu, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
       <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>Portfolio ML</div>
-      <div style={{ fontSize:14, fontWeight:800, marginBottom:8 }}>16 stocks classified</div>
-      {[['🚀 Momentum','var(--grn)','5'],['🔄 Swing','var(--bluL)','4'],['⚠️ Exit','var(--red)','2']].map(([l,c,n]) => (
+      <div style={{ fontSize:14, fontWeight:800, marginBottom:8 }}>16 stocks screened</div>
+      {[['🚀 Rising','var(--grn)','5'],['🔄 Building','var(--bluL)','4'],['↓ Declining','var(--red)','2']].map(([l,c,n]) => (
         <div key={l as string} style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:3 }}><span style={{ color:c as string }}>{l}</span><span>{n}</span></div>
       ))}
     </div>
@@ -90,7 +90,7 @@ const MQ1 = () => (
       <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:8 }}>Week 23 · Track Record</div>
       <div style={{ fontSize:32, fontWeight:900, color:'var(--grn)', letterSpacing:-2, marginBottom:5 }}>71.4%</div>
       {cbar(71.4,'var(--grn)')}
-      <div style={{ fontSize:10.5, color:'var(--dim)' }}>14 signals · 10 hit · 2 SL</div>
+      <div style={{ fontSize:10.5, color:'var(--dim)' }}>14 scans · 10 strong · 2 reversed</div>
     </div>
     <div style={{ ...GC.pur, padding:'16px 18px', minWidth:210, flexShrink:0 }}>
       <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>Paper Trading · Day 6</div>
@@ -104,13 +104,13 @@ const MQ1 = () => (
       </div>
     </div>
     <div style={{ ...GC.org, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Signal</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>SBIN</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹812 · ▲ +2.1%</div></div>
-        {sigtag('MOMENTUM','buy')}
+        {sigtag('↑ Momentum','buy')}
       </div>
       {cbar(78,'var(--org)')}
-      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Confidence <strong style={{ color:'var(--org)' }}>78%</strong></div>
+      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Score <strong style={{ color:'var(--org)' }}>78%</strong></div>
     </div>
     <div style={{ ...GC.ylw, padding:'16px 18px', minWidth:210, flexShrink:0 }}>
       <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:8 }}>Backtest · 1 Year</div>
@@ -124,13 +124,13 @@ const MQ1 = () => (
       </div>
     </div>
     <div style={{ ...GC.grn, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Signal</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>TATAMOTORS</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹960 · ▲ +3.5%</div></div>
-        {sigtag('BUY','buy')}
+        {sigtag('↑ Momentum','buy')}
       </div>
       {cbar(81,'var(--grn)')}
-      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Result: <strong style={{ color:'var(--grn)' }}>+8.4% · Target hit</strong></div>
+      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Result: <strong style={{ color:'var(--grn)' }}>+8.4% · Momentum held</strong></div>
     </div>
     <div style={{ ...GC.blu, padding:'16px 18px', minWidth:210, flexShrink:0 }}>
       <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:8 }}>🐦 Sentiment</div>
@@ -154,13 +154,13 @@ const MQ2 = () => (
       </div>
     </div>
     <div style={{ ...GC.org, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Signal</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>ZOMATO</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹189 · ▼ -1.4%</div></div>
-        {sigtag('EXIT','sell')}
+        {sigtag('↓ Declining','sell')}
       </div>
       {cbar(81,'var(--red)')}
-      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Confidence <strong style={{ color:'var(--red)' }}>81%</strong> · Below support</div>
+      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Score <strong style={{ color:'var(--red)' }}>81%</strong> · Below support</div>
     </div>
     <div style={{ ...GC.grn, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
       <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>ETF &amp; MF Portfolio</div>
@@ -179,18 +179,18 @@ const MQ2 = () => (
       ))}
     </div>
     <div style={{ ...GC.ylw, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Signal</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>HDFCBANK</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹1,620 · ▲ +0.6%</div></div>
-        {sigtag('HOLD','hold')}
+        {sigtag('→ Sideways','hold')}
       </div>
       {cbar(62,'var(--ylw)')}
-      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Confidence <strong style={{ color:'var(--ylw)' }}>62%</strong></div>
+      <div style={{ fontSize:10.5, color:'var(--dim)' }}>Score <strong style={{ color:'var(--ylw)' }}>62%</strong></div>
     </div>
     <div style={{ ...GC.blu, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
       <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:8 }}>Public Track Record</div>
-      <div style={{ marginBottom:7 }}><div style={{ fontSize:13, fontWeight:700, color:'var(--grn)' }}>🎯 TATAMOTORS +8.4%</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>Entry ₹960 → Target hit · 3 days</div></div>
-      <div style={{ paddingTop:7, borderTop:'1px solid rgba(255,255,255,0.08)' }}><div style={{ fontSize:13, fontWeight:700, color:'var(--grn)' }}>🚀 SBIN +5.9%</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>Entry ₹812 → Target hit · 2 days</div></div>
+      <div style={{ marginBottom:7 }}><div style={{ fontSize:13, fontWeight:700, color:'var(--grn)' }}>🎯 TATAMOTORS +8.4%</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>↑ Momentum zone · held 3 days</div></div>
+      <div style={{ paddingTop:7, borderTop:'1px solid rgba(255,255,255,0.08)' }}><div style={{ fontSize:13, fontWeight:700, color:'var(--grn)' }}>🚀 SBIN +5.9%</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>↑ Momentum zone · held 2 days</div></div>
     </div>
     <div style={{ ...GC.pur, padding:'16px 18px', minWidth:210, flexShrink:0 }}>
       <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>Algo Indicators</div>
@@ -235,7 +235,7 @@ export default function LandingPage() {
 
       {/* ── SEBI banner ──────────────────────────────────────── */}
       <div style={{ background:'rgba(255,184,0,0.07)', borderBottom:'1px solid rgba(255,184,0,0.15)', padding:'8px 24px', textAlign:'center' }}>
-        <span style={{ fontSize:11.5, color:'rgba(255,184,0,0.75)' }}>⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED.</strong> All signals are for informational &amp; educational purposes only. Not financial advice. Trade at your own risk.</span>
+        <span style={{ fontSize:11.5, color:'rgba(255,184,0,0.75)' }}>⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED.</strong> This is a technical screening tool. Scan results are computed indicators — not financial advice. You decide. DYOR.</span>
       </div>
 
       {/* ── Nav ──────────────────────────────────────────────── */}
@@ -244,7 +244,7 @@ export default function LandingPage() {
           <SignalLogo /> SIGNAL
         </Link>
         <div className="lp-nav-links">
-          {(['Signals','Portfolio','Algo Builder','Pricing','Track Record'] as const).map((l,i) => (
+          {(['Scanner','Portfolio','Algo Builder','Pricing','Track Record'] as const).map((l,i) => (
             <a key={l} href={['#signals','#portfolio','#algo','#pricing','#track'][i]} style={{ fontSize:13, fontWeight:500, color:'var(--dim)', textDecoration:'none' }}
               onMouseEnter={e=>(e.currentTarget.style.color='var(--txt)')} onMouseLeave={e=>(e.currentTarget.style.color='var(--dim)')}>
               {l}
@@ -278,7 +278,7 @@ export default function LandingPage() {
               <span style={grd('linear-gradient(135deg,var(--grn),#00FFD1)')}>with ML</span>
             </h1>
             <p style={{ fontSize:'clamp(15px,1.6vw,18px)', color:'var(--dim)', lineHeight:1.7, maxWidth:480, marginBottom:36 }}>
-              Portfolio ML classification, Random Forest buy/sell signals, no-code Algo Builder, and Paper Trading — for a fraction of what premium services charge.
+              Portfolio ML classification, Random Forest technical screener, no-code Algo Builder, and Paper Trading — for a fraction of what premium services charge.
             </p>
             <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:44 }}>
               <Link href="/sign-in" style={{ height:54, padding:'0 32px', borderRadius:15, fontSize:16, fontWeight:700, background:'linear-gradient(135deg,var(--blu),var(--bluL))', color:'#fff', boxShadow:'0 8px 40px rgba(23,64,245,0.4)', display:'flex', alignItems:'center', textDecoration:'none', transition:'transform .2s' }}>
@@ -290,7 +290,7 @@ export default function LandingPage() {
             </div>
             <div className="lp-stats-4" style={{ display:'grid' }}>
               {[
-                { v:'71.4%', s:grd('linear-gradient(135deg,var(--grn),#00FFD1)'), l:'Signal accuracy' },
+                { v:'71.4%', s:grd('linear-gradient(135deg,var(--grn),#00FFD1)'), l:'Scan accuracy' },
                 { v:'4,000+',s:{ color:'var(--bluL)' },                            l:'Stocks tracked' },
                 { v:'₹599',  s:grd('linear-gradient(135deg,var(--org),var(--ylw))'),l:'vs ₹15,000 elsewhere' },
                 { v:'6',     s:{ color:'var(--pur)' },                              l:'Brokers synced' },
@@ -305,12 +305,12 @@ export default function LandingPage() {
 
           {/* Right — floating glass cards */}
           <div className="lp-hero-cards">
-            {/* BUY signal — green — top-left */}
+            {/* Strong momentum — green — top-left */}
             <div style={{ ...GC.grn, position:'absolute', width:220, top:'2%', left:'0%', padding:'18px 20px', animation:'fl1 7s ease-in-out infinite', cursor:'default' }}>
-              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>ML Signal · NSE</div>
+              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>ML Scan · NSE</div>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
                 <div><div style={{ fontSize:17, fontWeight:900 }}>RELIANCE</div><div style={{ fontSize:11, color:'var(--dim)' }}>₹2,912 · ▲ +1.80%</div></div>
-                {sigtag('STRONG BUY','buy')}
+                {sigtag('↑ Strong Momentum','buy')}
               </div>
               {cbar(87,'var(--grn)')}
               <div style={{ fontSize:11, color:'var(--dim)' }}>Confidence <strong style={{ color:'var(--grn)' }}>87%</strong> · RSI 34</div>
@@ -319,7 +319,7 @@ export default function LandingPage() {
             {/* Portfolio ML — blue — top-right */}
             <div style={{ ...GC.blu, position:'absolute', width:210, top:'0%', right:'0%', padding:'18px 20px', animation:'fl2 9s ease-in-out infinite .8s', cursor:'default' }}>
               <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>Portfolio ML</div>
-              {[['🚀 Momentum','var(--grn)','rgba(0,212,160,0.1)','rgba(0,212,160,0.2)','5'],['🔄 Swing','var(--bluL)','rgba(79,111,250,0.1)','rgba(79,111,250,0.2)','4'],['⚠️ Exit Now','var(--red)','rgba(255,59,92,0.08)','rgba(255,59,92,0.2)','2']].map(([l,c,bg,bc,n]) => (
+              {[['🚀 Rising','var(--grn)','rgba(0,212,160,0.1)','rgba(0,212,160,0.2)','5'],['🔄 Building','var(--bluL)','rgba(79,111,250,0.1)','rgba(79,111,250,0.2)','4'],['↓ Declining','var(--red)','rgba(255,59,92,0.08)','rgba(255,59,92,0.2)','2']].map(([l,c,bg,bc,n]) => (
                 <div key={l as string} style={{ display:'flex', justifyContent:'space-between', padding:'5px 9px', background:bg as string, borderRadius:7, border:`1px solid ${bc}`, marginBottom:4 }}>
                   <span style={{ fontSize:11.5, fontWeight:700, color:c as string }}>{l}</span><span style={{ fontSize:11, color:'var(--dim)' }}>{n}</span>
                 </div>
@@ -331,7 +331,7 @@ export default function LandingPage() {
               <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:8 }}>Week 23 Scorecard</div>
               <div style={{ fontSize:34, fontWeight:900, letterSpacing:-2, color:'var(--grn)', lineHeight:1, marginBottom:4 }}>71.4%</div>
               <div style={{ height:5, background:'rgba(255,255,255,0.08)', borderRadius:3, overflow:'hidden', marginBottom:6 }}><div style={{ height:'100%', width:'71.4%', background:'linear-gradient(90deg,var(--grn),#00FFD1)', borderRadius:3 }}/></div>
-              <div style={{ fontSize:10.5, color:'var(--dim)' }}>14 signals · 10 hit · 2 SL</div>
+              <div style={{ fontSize:10.5, color:'var(--dim)' }}>14 scans · 10 strong · 2 reversed</div>
             </div>
 
             {/* Paper Trading — purple — mid-right */}
@@ -378,7 +378,7 @@ export default function LandingPage() {
       {/* ── Marquee ───────────────────────────────────────────── */}
       <section style={{ padding:'48px 0', overflow:'hidden' }}>
         <div style={{ textAlign:'center', fontSize:10.5, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--dim2)', marginBottom:20 }}>
-          Live signals · Portfolio insights · Real-time intelligence
+          Technical scans · Portfolio insights · Real-time intelligence
         </div>
         <div className="mq-wrap" style={{ overflow:'hidden', marginBottom:12 }}>
           <div className="mq-track-r"><MQ1/><MQ1/></div>
@@ -394,15 +394,15 @@ export default function LandingPage() {
       <section id="signals" style={sect('clamp(80px,10vw,140px)')}>
         <div className="lp-feat lp-reveal">
           <div>
-            {hdr('ML Signals','var(--grn)')}
+            {hdr('ML Technical Scan','var(--grn)')}
             <h2 style={{ fontSize:'clamp(28px,3.8vw,50px)', fontWeight:900, letterSpacing:-2, lineHeight:.97, marginBottom:16 }}>
-              Buy. Sell. Hold.<br/><span style={grd('linear-gradient(135deg,var(--grn),#00FFD1)')}>Know exactly why.</span>
+              Scan. Analyse. Decide.<br/><span style={grd('linear-gradient(135deg,var(--grn),#00FFD1)')}>Know exactly why.</span>
             </h2>
-            <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Every signal comes with a confidence score, Twitter/X sentiment, delivery volume %, and a full breakdown of the 15 parameters that fired it — not a human guess.</p>
+            <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Every scan result comes with a technical momentum score, Twitter/X sentiment, delivery volume %, and a full breakdown of the 15 indicators that computed it — not a human guess.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              {fpill('🤖','rgba(0,212,160,0.12)','Random Forest · 200 trees, 15 parameters','RSI, MACD, EMA, ADX, FII/DII flow, Twitter sentiment, delivery %, earnings, beta — trained on 5Y NSE/BSE data.')}
-              {fpill('⚡','rgba(79,111,250,0.12)','Updated every 2 min · instant alerts','Real-time signals during market hours with push + WhatsApp notification the moment a signal fires.')}
-              {fpill('🐦','rgba(139,92,246,0.12)','Public track record on Twitter/X','Every signal auto-posted publicly with entry, target, SL. Weekly scorecards — full accountability.')}
+              {fpill('🤖','rgba(0,212,160,0.12)','Random Forest · 200 trees, 15 indicators','RSI, MACD, EMA, ADX, FII/DII flow, Twitter sentiment, delivery %, earnings, beta — trained on 5Y NSE/BSE data.')}
+              {fpill('⚡','rgba(79,111,250,0.12)','Updated every 2 min · instant alerts','Real-time screener updates during market hours with push + WhatsApp notification when momentum zones shift.')}
+              {fpill('🐦','rgba(139,92,246,0.12)','Public track record on Twitter/X','Screener results auto-posted publicly with technical scores. Weekly accuracy scorecards — full accountability.')}
             </div>
           </div>
           <div className="lp-feat-visual">
@@ -414,7 +414,7 @@ export default function LandingPage() {
               <div style={{ fontSize:10.5, color:'var(--dim)', marginTop:5 }}>212 posts · 24h window</div>
             </div>
             <div style={{ ...GC.grn, position:'absolute', width:310, top:0, left:0, padding:'20px 22px', animation:'fl1 7s ease-in-out infinite .5s' }}>
-              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.7, marginBottom:12 }}>ML Signal · NSE</div>
+              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.7, marginBottom:12 }}>ML Scan · NSE</div>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
                 <div><div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5 }}>RELIANCE</div><div style={{ fontSize:11.5, color:'var(--dim)' }}>Reliance Industries · Large Cap</div></div>
                 <div style={{ textAlign:'right' }}><div style={{ fontSize:26, fontWeight:900, letterSpacing:-1 }}>₹2,912</div><div style={{ fontSize:12, color:'var(--grn)', fontWeight:700 }}>▲ +1.80%</div></div>
@@ -426,11 +426,11 @@ export default function LandingPage() {
               </svg>
               <div style={{ background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', borderRadius:11, padding:'11px 13px', marginBottom:9 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:7 }}>
-                  <span style={{ fontSize:11.5, fontWeight:700, color:'var(--grn)' }}>🚀 MOMENTUM</span>
-                  {sigtag('STRONG BUY','buy')}
+                  <span style={{ fontSize:11.5, fontWeight:700, color:'var(--grn)' }}>🚀 RISING</span>
+                  {sigtag('↑ Strong Momentum','buy')}
                 </div>
                 {cbar(87,'linear-gradient(90deg,var(--grn),#00FFD1)')}
-                <div style={{ fontSize:10.5, color:'var(--dim)', marginTop:5 }}>Confidence <strong style={{ color:'var(--grn)' }}>87%</strong> · 15/15 params · Updated 2 min ago</div>
+                <div style={{ fontSize:10.5, color:'var(--dim)', marginTop:5 }}>Score <strong style={{ color:'var(--grn)' }}>87%</strong> · 15/15 indicators · Updated 2 min ago</div>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7 }}>
                 {[['Delivery%','63.2%','var(--grn)'],['P/E','28.4×','var(--txt)'],['Mkt Cap','₹19.7L Cr','var(--txt)']].map(([k,v,c]) => (
@@ -443,8 +443,8 @@ export default function LandingPage() {
             </div>
             <div style={{ ...GC.pur, position:'absolute', width:180, bottom:20, right:10, padding:'14px 16px', animation:'fl4 9s ease-in-out infinite 2s' }}>
               <div style={{ fontSize:9.5, fontWeight:700, opacity:.6, marginBottom:6 }}>Live Alert</div>
-              <div style={{ fontSize:12, fontWeight:700, marginBottom:2 }}>🔔 SBIN Signal Fired</div>
-              <div style={{ fontSize:11, color:'var(--dim)' }}>Momentum · Conf 78%</div>
+              <div style={{ fontSize:12, fontWeight:700, marginBottom:2 }}>🔔 SBIN Scan Updated</div>
+              <div style={{ fontSize:11, color:'var(--dim)' }}>↑ Momentum · Score 78%</div>
             </div>
           </div>
         </div>
@@ -460,7 +460,7 @@ export default function LandingPage() {
             <h2 style={{ fontSize:'clamp(28px,3.8vw,50px)', fontWeight:900, letterSpacing:-2, lineHeight:.97, marginBottom:16 }}>
               Your holdings,<br/><span style={grd('linear-gradient(135deg,var(--bluL),var(--pur))')}>classified by ML.</span>
             </h2>
-            <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Connect your broker via secure OAuth or upload Excel. Our model instantly tags every stock — Momentum, Swing, Long Term, Exit Now — and syncs live P&amp;L every 30 seconds.</p>
+            <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Connect your broker via secure OAuth or upload Excel. Our model instantly tags every stock — Rising, Building, Holding, Declining — and syncs live P&amp;L every 30 seconds.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {fpill('🔗','rgba(79,111,250,0.12)','6 brokers + RBI Account Aggregator','mStock, Zerodha, Upstox, Angel One, HDFC Sec, Groww — or upload .xlsx. AA sync brings in MFs, FDs, NPS, EPF too.')}
               {fpill('📊','rgba(0,212,160,0.12)','Live P&L sync every 30 seconds','LTP, unrealised P&L, delivery %, institutional flow — all live during market hours.')}
@@ -479,7 +479,7 @@ export default function LandingPage() {
                 <div style={{ fontSize:10.5, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.12)', border:'1px solid rgba(0,212,160,0.3)', color:'var(--grn)' }}>ML ✓ Live</div>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
-                {[['🚀 Momentum','var(--grn)','rgba(0,212,160,0.08)','rgba(0,212,160,0.2)','5','RELIANCE, TML…'],['🔄 Swing','var(--bluL)','rgba(79,111,250,0.08)','rgba(79,111,250,0.2)','4','HDFC, BAJFIN…'],['🏛️ Long Term','var(--pur)','rgba(139,92,246,0.08)','rgba(139,92,246,0.2)','5','TCS, INFY…'],['⚠️ Exit Now','var(--red)','rgba(255,59,92,0.07)','rgba(255,59,92,0.2)','2','ZOMATO, PAYTM']].map(([l,c,bg,bc,n,s]) => (
+                {[['🚀 Rising','var(--grn)','rgba(0,212,160,0.08)','rgba(0,212,160,0.2)','5','RELIANCE, TML…'],['🔄 Building','var(--bluL)','rgba(79,111,250,0.08)','rgba(79,111,250,0.2)','4','HDFC, BAJFIN…'],['🏛️ Holding','var(--pur)','rgba(139,92,246,0.08)','rgba(139,92,246,0.2)','5','TCS, INFY…'],['↓ Declining','var(--red)','rgba(255,59,92,0.07)','rgba(255,59,92,0.2)','2','ZOMATO, PAYTM']].map(([l,c,bg,bc,n,s]) => (
                   <div key={l as string} style={{ padding:11, background:bg as string, border:`1px solid ${bc}`, borderRadius:11 }}>
                     <div style={{ fontSize:10.5, fontWeight:800, color:c as string, marginBottom:3 }}>{l}</div>
                     <div style={{ fontSize:18, fontWeight:900 }}>{n}</div>
@@ -580,7 +580,7 @@ export default function LandingPage() {
           <div className="lp-feat-visual" style={{ direction:'ltr' }}>
             <div style={{ ...GC.grn, position:'absolute', width:280, top:60, left:30, padding:'20px 22px', transform:'rotate(5deg)', animation:'fl3 9s ease-in-out infinite .7s' }}>
               <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:8 }}>Signal Log</div>
-              {[['09:31','BUY','rgba(0,212,160,0.15)','var(--grn)','RELIANCE','+₹1,632'],['14:22','SELL','rgba(255,59,92,0.12)','var(--red)','INFY','+₹2,340'],['10:05','HOLD','rgba(255,184,0,0.12)','var(--ylw)','HDFC','—']].map(([t,sig,bg,c,sym,pl]) => (
+              {[['09:31','Bought','rgba(0,212,160,0.15)','var(--grn)','RELIANCE','+₹1,632'],['14:22','Sold','rgba(255,59,92,0.12)','var(--red)','INFY','+₹2,340'],['10:05','Held','rgba(255,184,0,0.12)','var(--ylw)','HDFC','—']].map(([t,sig,bg,c,sym,pl]) => (
                 <div key={t as string} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11, marginBottom:5 }}>
                   <span style={{ color:'var(--dim2)' }}>{t}</span>
                   <span style={{ padding:'1px 7px', borderRadius:4, background:bg as string, color:c as string, fontWeight:700 }}>{sig}</span>
@@ -604,7 +604,7 @@ export default function LandingPage() {
                 ))}
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7 }}>
-                {[['7','Signals'],['5','Wins'],['₹1,08,420','Virtual']].map(([v,l]) => (
+                {[['7','Scans'],['5','Wins'],['₹1,08,420','Virtual']].map(([v,l]) => (
                   <div key={l as string} style={{ textAlign:'center', padding:8, background:'rgba(0,0,0,0.25)', borderRadius:9 }}>
                     <div style={{ fontSize:15, fontWeight:900, color: l==='Wins' ? 'var(--grn)' : 'var(--txt)' }}>{v}</div>
                     <div style={{ fontSize:9.5, color:'var(--dim)' }}>{l}</div>
@@ -657,10 +657,10 @@ export default function LandingPage() {
                 <div>
                   <div style={{ width:44, height:44, borderRadius:14, background:'rgba(79,111,250,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, marginBottom:16 }}>🐦</div>
                   <div style={{ fontSize:17, fontWeight:800, marginBottom:8 }}>Twitter / X Track Record</div>
-                  <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>Every single signal auto-posted publicly. Weekly scorecards — full P&amp;L accountability. Nothing hidden.</div>
+                  <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>Every scan result auto-posted publicly. Weekly accuracy scorecards — full accountability. Nothing hidden.</div>
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-                  {[['Week 23 Accuracy','71.4%','var(--grn)','rgba(0,212,160,0.08)','rgba(0,212,160,0.2)'],['Signals fired','14','var(--txt)','rgba(0,0,0,0.25)','rgba(255,255,255,0.07)'],['✓ Targets hit','10','var(--grn)','rgba(0,0,0,0.25)','rgba(255,255,255,0.07)']].map(([l,v,c,bg,bc]) => (
+                  {[['Week 23 Accuracy','71.4%','var(--grn)','rgba(0,212,160,0.08)','rgba(0,212,160,0.2)'],['Scans run','14','var(--txt)','rgba(0,0,0,0.25)','rgba(255,255,255,0.07)'],['↑ Strong zone','10','var(--grn)','rgba(0,0,0,0.25)','rgba(255,255,255,0.07)']].map(([l,v,c,bg,bc]) => (
                     <div key={l as string} style={{ padding:'10px 14px', background:bg as string, border:`1px solid ${bc}`, borderRadius:10, display:'flex', justifyContent:'space-between' }}>
                       <span style={{ fontSize:13 }}>{l}</span><span style={{ fontSize:14, fontWeight:900, color:c as string }}>{v}</span>
                     </div>
@@ -671,12 +671,12 @@ export default function LandingPage() {
             <div style={{ ...GC.org, padding:28, borderRadius:22, position:'relative', overflow:'hidden', transition:'transform .2s' }} onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-3px)')} onMouseLeave={e=>(e.currentTarget.style.transform='')}>
               <div style={{ width:44, height:44, borderRadius:14, background:'rgba(255,92,26,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, marginBottom:16 }}>🇺🇸</div>
               <div style={{ fontSize:17, fontWeight:800, marginBottom:8 }}>US Markets <span style={{ fontSize:11, padding:'2px 7px', borderRadius:5, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', fontWeight:600 }}>Soon</span></div>
-              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>NYSE &amp; NASDAQ signals for Indian LRS investors. ESPP &amp; RSU tracking included.</div>
+              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>NYSE &amp; NASDAQ technical scans for Indian LRS investors. ESPP &amp; RSU tracking included.</div>
             </div>
             <div style={{ ...GC.mix, padding:28, borderRadius:22, position:'relative', overflow:'hidden', transition:'transform .2s' }} onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-3px)')} onMouseLeave={e=>(e.currentTarget.style.transform='')}>
               <div style={{ width:44, height:44, borderRadius:14, background:'rgba(79,111,250,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, marginBottom:16 }}>📱</div>
               <div style={{ fontSize:17, fontWeight:800, marginBottom:8 }}>Mobile App <span style={{ fontSize:11, padding:'2px 7px', borderRadius:5, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', fontWeight:600 }}>Soon</span></div>
-              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>Full SIGNAL on iOS &amp; Android — signals, alerts, portfolio sync, paper trading in your pocket.</div>
+              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>Full SIGNAL on iOS &amp; Android — scan results, alerts, portfolio sync, paper trading in your pocket.</div>
             </div>
           </div>
         </div>
@@ -727,11 +727,11 @@ export default function LandingPage() {
               { name:'Free',    tag:'var(--dim)',  price:'₹0',  cycle:'forever · no card',
                 cardStyle:{ ...GLS, background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.08)' },
                 btnStyle:{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', color:'var(--txt)' },
-                feats:['5 stocks tracking','3 ML signals/week','NIFTY 50 prices'], nope:['No real-time alerts','No broker sync','No Algo Builder'], pro:false },
+                feats:['5 stocks tracking','3 ML scans/week','NIFTY 50 prices'], nope:['No real-time alerts','No broker sync','No Algo Builder'], pro:false },
               { name:'Starter', tag:'var(--bluL)', price:pr.s,  cycle:pr.cy,
                 cardStyle:{ ...GC.blu },
                 btnStyle:{ background:'linear-gradient(135deg,rgba(79,111,250,0.4),rgba(23,64,245,0.25))', border:'1px solid rgba(79,111,250,0.5)', color:'#fff' },
-                feats:['25 stocks · ML signals','🐦 Twitter sentiment','RF Pick of the Day','Real-time alerts','ETF & MF (20 funds)'], nope:['No broker/AA sync'], pro:false },
+                feats:['25 stocks · ML scan','🐦 Twitter sentiment','RF Screener of the Day','Real-time alerts','ETF & MF (20 funds)'], nope:['No broker/AA sync'], pro:false },
               { name:'Pro',     tag:'var(--ylw)',  price:pr.p,  cycle:pr.cy,
                 cardStyle:{ ...GLS, background:'linear-gradient(145deg,rgba(255,184,0,0.22),rgba(255,130,0,0.12),rgba(23,64,245,0.1))', borderColor:'rgba(255,184,0,0.52)' },
                 btnStyle:{ background:'linear-gradient(135deg,#FFB800,#FF8C00)', border:'none', color:'#0a0f1a' },
@@ -796,7 +796,7 @@ export default function LandingPage() {
           {/* SEBI disclaimer */}
           <div style={{ marginTop:16, padding:'14px 22px', background:'rgba(255,184,0,0.04)', border:'1px solid rgba(255,184,0,0.12)', borderRadius:14 }} className="lp-reveal">
             <p style={{ fontSize:12, color:'rgba(255,184,0,0.65)', lineHeight:1.7, margin:0 }}>
-              <strong style={{ color:'var(--ylw)' }}>⚠️ SEBI DISCLAIMER:</strong> SIGNAL is <strong style={{ color:'var(--ylw)' }}>NOT registered with SEBI</strong>. All signals, picks, and analysis are for <strong style={{ color:'var(--ylw)' }}>informational and educational purposes only</strong>. Not financial advice. Consult a SEBI-registered advisor before investing.
+              <strong style={{ color:'var(--ylw)' }}>⚠️ SEBI DISCLAIMER:</strong> SIGNAL is <strong style={{ color:'var(--ylw)' }}>NOT registered with SEBI</strong>. This is a <strong style={{ color:'var(--ylw)' }}>technical screening tool</strong>. All scan results and computed indicators are for <strong style={{ color:'var(--ylw)' }}>informational purposes only</strong> — not financial advice, not investment recommendations. Consult a SEBI-registered Research Analyst before investing.
             </p>
           </div>
         </div>
@@ -856,7 +856,7 @@ export default function LandingPage() {
           </div>
           <div style={{ display:'flex', gap:48, flexWrap:'wrap' }}>
             {[
-              { h:'Platform', links:['Portfolio Analysis','ML Signals','Algo Builder','Paper Trading'] },
+              { h:'Platform', links:['Portfolio Analysis','ML Technical Scan','Algo Builder','Paper Trading'] },
               { h:'Company',  links:['About & Founders','Track Record','Privacy Policy','SEBI Disclaimer'] },
               { h:'Connect',  links:['Twitter / X','WhatsApp','Contact'] },
             ].map(col => (
@@ -872,7 +872,7 @@ export default function LandingPage() {
         <div style={{ maxWidth:1200, margin:'24px auto 0', paddingTop:20, borderTop:'1px solid var(--bdr)', fontSize:12, color:'var(--dim2)', lineHeight:1.7 }}>
           © 2026 SIGNAL · Built by Vaasudev Amitav &amp; Sai Kumar Bethala &nbsp;·&nbsp;
           <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> &nbsp;·&nbsp;
-          All signals for educational purposes only &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; DYOR
+          Technical scan results for educational purposes only &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; DYOR
         </div>
       </footer>
 
