@@ -257,6 +257,7 @@ export default function DashboardPage() {
   const [cmPos,   setCmPos]  = useState<{ id:string; commodity:string; qty:number; unit:string; avg_price:number }[]>([]);
   const [fxPrices, setFxPrices] = useState<Record<string, PriceData>>({});
   const [cmPrices, setCmPrices] = useState<Record<string, PriceData>>({});
+  const [activeView, setActiveView] = useState<'india' | 'us'>('india');
 
   // All India NSE/BSE holdings across EVERY portfolio
   useEffect(() => {
@@ -477,19 +478,30 @@ export default function DashboardPage() {
   return (
     <>
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:12 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div>
           <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>{greet()}, {name} 👋</div>
           <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>{new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'short', year:'numeric' })}</div>
         </div>
-        <Link href="/dashboard/portfolio" style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', gap:6 }}>
-          📊 View Full P&L →
-        </Link>
+        <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+          {[['india','🇮🇳 India'],['us','🇺🇸 US']].map(([v,label]) => (
+            <button key={v} onClick={() => setActiveView(v as 'india'|'us')}
+              style={{ height:34, padding:'0 14px', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                background: activeView===v ? 'var(--blu)' : 'var(--surf2)',
+                border: `1px solid ${activeView===v ? 'var(--blu)' : 'var(--bdr)'}`,
+                color: activeView===v ? '#fff' : 'var(--dim)' }}>{label}</button>
+          ))}
+          <Link href={activeView==='us' ? '/dashboard/us-portfolio' : '/dashboard/portfolio'}
+            style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
+            📊 Full P&L →
+          </Link>
+        </div>
       </div>
 
       <OnboardingChecklist />
 
-      {/* Consolidated summary — all portfolios merged */}
+      {activeView === 'india' && (<>
+      {/* Consolidated summary — India portfolios */}
       <div className="g4" style={{ display:'grid', gap:12, marginBottom:14 }}>
         {/* Equity */}
         <div style={card}>
@@ -562,7 +574,9 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Multi-asset summary blocks */}
+      </>)}
+
+      {/* Multi-asset summary — visible in both views */}
       {(hasUSHoldings || fxPos.length > 0 || cmPos.length > 0) && (() => {
         type AssetBlock = { key:string; icon:string; label:string; invested:string; investedSub:string; pl:number|null; plPct:number|null; count:number; unit:string; href:string; accent:string; accentBdr:string };
         const blocks: AssetBlock[] = ([
@@ -633,6 +647,7 @@ export default function DashboardPage() {
         );
       })()}
 
+      {activeView === 'india' && (<>
       {/* Analytics: treemap heatmap + cap donut */}
       <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
         {/* Treemap heatmap */}
@@ -713,6 +728,48 @@ export default function DashboardPage() {
         </div>
       )}
 
+      </>)}
+
+      {/* US View — summary cards */}
+      {activeView === 'us' && hasUSHoldings && (
+        <div style={{ marginBottom:16 }}>
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(2,1fr)', gap:12, marginBottom:14 }}>
+            {[
+              { label:'US Invested', val:`$${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `₹${(usInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})} equiv` : '', color:'var(--txt)' },
+              { label:'US Current Value', val: usCurrentUSD>0 ? `$${usCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: usdInr&&usCurrentUSD>0 ? `₹${(usCurrentUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})} equiv` : '', color:'var(--txt)' },
+              { label:'Unrealised P&L', val: usPL!=null ? `${usPL>=0?'+':'-'}₹${Math.abs(usPL).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', sub: usPLPct!=null ? `${usPLPct>=0?'+':''}${usPLPct.toFixed(2)}%` : '', color: usPL!=null?(usPL>=0?'var(--grn)':'var(--red)'):'var(--txt)' },
+              { label:'Holdings', val:`${usHoldings.length} stocks`, sub: usdInr ? `USD/INR ₹${usdInr.toFixed(2)}` : '', color:'var(--txt)' },
+            ].map(m => (
+              <div key={m.label} style={card}>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:6 }}>{m.label}</div>
+                <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
+                {m.sub && <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>{m.sub}</div>}
+              </div>
+            ))}
+          </div>
+          <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+            <Link href="/dashboard/us-portfolio" style={{ height:38, padding:'0 18px', borderRadius:10, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
+              US Portfolio &rarr;
+            </Link>
+            <Link href="/dashboard/equity-comp" style={{ height:38, padding:'0 18px', borderRadius:10, background:'rgba(139,92,246,0.12)', border:'1px solid rgba(139,92,246,0.35)', color:'var(--pur)', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
+              ESPP &amp; RSU &rarr;
+            </Link>
+          </div>
+        </div>
+      )}
+      {activeView === 'us' && !hasUSHoldings && (
+        <div style={{ ...card, textAlign:'center', padding:'40px 20px', marginBottom:16 }}>
+          <div style={{ fontSize:28, marginBottom:10 }}>&#x1F1FA;&#x1F1F8;</div>
+          <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No US holdings yet</div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>Add US stocks or RSU grants to see your US portfolio here.</div>
+          <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
+            <Link href="/dashboard/us-portfolio" style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>+ Add US Stocks</Link>
+            <Link href="/dashboard/equity-comp" style={{ height:38, padding:'0 16px', borderRadius:9, background:'rgba(139,92,246,0.12)', border:'1px solid rgba(139,92,246,0.35)', color:'var(--pur)', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>Track RSU/ESPP</Link>
+          </div>
+        </div>
+      )}
+
+      {activeView === 'india' && (<>
       <div className="g-side" style={{ display:'grid', gap:16 }}>
         <div>
           <MarketOverview />
@@ -772,6 +829,8 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      </>)}
 
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:14 }}>
         ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · Signals for informational purposes only · Not financial advice · DYOR

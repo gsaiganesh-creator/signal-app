@@ -334,3 +334,56 @@ button:active:not(:disabled) { transform: scale(0.97); }
 @media (max-width: 600px) {
   .fiidii-hist { grid-template-columns: 60px 1fr 70px 1fr 70px !important; }
 }
+
+/* =====================================================
+   LANDING PAGE v3 — animations + layout
+   ===================================================== */
+@keyframes fl1 { 0%,100% { transform: translateY(0px) rotate(-2deg) } 50% { transform: translateY(-20px) rotate(1.5deg) } }
+@keyframes fl2 { 0%,100% { transform: translateY(-6px) rotate(2deg) } 50% { transform: translateY(14px) rotate(-1deg) } }
+@keyframes fl3 { 0%,100% { transform: translateY(0px) rotate(3deg) } 50% { transform: translateY(-24px) rotate(0deg) } }
+@keyframes fl4 { 0%,100% { transform: translateY(-10px) rotate(-1deg) } 50% { transform: translateY(10px) rotate(2.5deg) } }
+@keyframes fl5 { 0%,100% { transform: translateY(4px) rotate(1deg) } 50% { transform: translateY(-16px) rotate(-2deg) } }
+@keyframes fl6 { 0%,100% { transform: translateY(0px) rotate(-3deg) } 50% { transform: translateY(18px) rotate(1deg) } }
+@keyframes lp-drift1 { 0%,100% { transform: translateX(-50%) scale(1) } 50% { transform: translateX(-46%) scale(1.08) } }
+@keyframes lp-drift2 { 0%,100% { transform: scale(1) } 50% { transform: scale(1.15) } }
+@keyframes lp-drift3 { 0%,100% { transform: scale(1) } 50% { transform: scale(1.2) translate(20px,-15px) } }
+@keyframes mq-right  { from { transform: translateX(0) } to { transform: translateX(-50%) } }
+@keyframes mq-left   { from { transform: translateX(-50%) } to { transform: translateX(0) } }
+
+.mq-track-r { display: flex; gap: 14px; width: max-content; animation: mq-right 38s linear infinite; }
+.mq-track-l { display: flex; gap: 14px; width: max-content; animation: mq-left  32s linear infinite; }
+.mq-wrap:hover .mq-track-r,
+.mq-wrap:hover .mq-track-l { animation-play-state: paused; }
+
+.lp-reveal { opacity: 0; transform: translateY(28px); transition: opacity 0.7s ease, transform 0.7s ease; }
+.lp-reveal.vis { opacity: 1; transform: translateY(0); }
+
+/* Hero grid: 2-col desktop, 1-col mobile */
+.lp-hero-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 60px; align-items: center; max-width: 1300px; margin: 0 auto; width: 100%; padding: 100px 0 80px; position: relative; z-index: 2; }
+.lp-hero-cards { position: relative; height: 560px; }
+@media (max-width: 900px) { .lp-hero-grid { grid-template-columns: 1fr; padding: 60px 0 40px; } .lp-hero-cards { display: none; } }
+
+/* Feature section grid */
+.lp-feat { display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; max-width: 1200px; margin: 0 auto; }
+.lp-feat-visual { position: relative; height: 480px; }
+@media (max-width: 900px) { .lp-feat { grid-template-columns: 1fr; gap: 40px; } .lp-feat-visual { height: 340px; } }
+
+/* Bento grid */
+.lp-bento { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.lp-bento .span2 { grid-column: span 2; }
+.lp-bento .tall  { grid-row: span 2; }
+@media (max-width: 900px) { .lp-bento { grid-template-columns: 1fr 1fr; } .lp-bento .span2, .lp-bento .tall { grid-column: span 1; grid-row: span 1; } }
+@media (max-width: 600px) { .lp-bento { grid-template-columns: 1fr; } }
+
+/* Pricing grid */
+.lp-plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+@media (max-width: 1000px) { .lp-plans { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 500px)  { .lp-plans { grid-template-columns: 1fr; } }
+
+/* Summary stat strip 4-col */
+.lp-stats-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+@media (max-width: 900px) { .lp-stats-4 { grid-template-columns: repeat(2, 1fr); } }
+
+/* Nav links hide on mobile */
+.lp-nav-links { display: flex; align-items: center; gap: 24px; }
+@media (max-width: 768px) { .lp-nav-links { display: none; } }

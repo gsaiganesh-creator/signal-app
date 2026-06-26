@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import { usePortfolio } from '@/lib/portfolio-context';
 import * as XLSX from 'xlsx';
 
@@ -52,36 +53,46 @@ type USRow = Omit<USHolding, 'id' | 'portfolio_id' | 'portfolio_name'>;
 function parseUSRows(rows: string[][]): { result: USRow[]; debug: string } {
   if (rows.length < 2) return { result: [], debug: 'empty' };
 
-  const SYM_NAMES   = ['symbol','ticker','stock','scrip','instrument'];
-  const QTY_NAMES   = ['qty','quantity','shares','units','net qty','net quantity'];
+  // Words that identify a symbol column when found as any token in the header cell
+  const SYM_WORDS  = new Set(['symbol','ticker','scrip','instrument','security','equity']);
+  const QTY_NAMES  = ['qty','quantity','shares','units','net qty','net quantity','position','amount'];
   const PRICE_NAMES = [
-    'average cost basis','avg cost basis','cost basis per share',   // Fidelity
-    'average cost','avg. cost','avg cost',                          // Schwab / Merrill
-    'cost/share','cost per share','price per share',                // Webull / TD
-    'average buy price','avg buy price','avg price','avg. buy rate',// Robinhood / generic
-    'purchase price','cost price','price','cost',
+    'average cost basis','avg cost basis','cost basis per share',
+    'average cost','avg. cost','avg cost',
+    'cost/share','cost per share','price per share',
+    'average buy price','avg buy price','avg price','avg. buy rate','avg buy rate',
+    'average price','purchase price','cost price','price','cost',
   ];
 
+  // A cell is a symbol column if any space/punct-separated word matches SYM_WORDS
+  const isSymCell = (h: string) =>
+    SYM_WORDS.has(h) || h.split(/[\s/\-,()]+/).some(w => SYM_WORDS.has(w));
+
   let headerIdx = -1, headers: string[] = [];
-  for (let i = 0; i < Math.min(rows.length, 10); i++) {
-    const r = rows[i].map(c => (c??'').toString().toLowerCase().replace(/[\s ]+/g,' ').trim());
-    if (r.some(h => SYM_NAMES.includes(h))) { headerIdx = i; headers = r; break; }
+  for (let i = 0; i < Math.min(rows.length, 20); i++) {
+    const r = rows[i].map(c => (c ?? '').toString().toLowerCase().replace(/\s+/g, ' ').trim());
+    // Require >=2 non-empty cells to avoid matching metadata/description rows
+    if (r.filter(c => c).length >= 2 && r.some(h => isSymCell(h))) {
+      headerIdx = i; headers = r; break;
+    }
   }
   if (headerIdx < 0) return { result: [], debug: 'no header row with Symbol/Ticker column found' };
 
+  // Fuzzy column finder: exact -> word-boundary -> prefix
   const col = (names: string[]) => {
-    const exact = names.map(n => headers.indexOf(n)).find(i => i >= 0);
-    if (exact !== undefined) return exact;
+    const ns = new Set(names);
+    const exact = headers.findIndex(h => ns.has(h));
+    if (exact >= 0) return exact;
     return headers.findIndex(h => {
-      const hn = h.replace(/\./g,'').replace(/\s+/g,' ').trim();
+      const words = h.split(/[\s/\-,().]+/).filter(Boolean);
       return names.some(n => {
-        const nn = n.replace(/\./g,'').replace(/\s+/g,' ').trim();
-        return h === n || hn === nn || h.startsWith(n) || n.startsWith(h) || hn.startsWith(nn);
+        const nw = n.split(/[\s/\-,().]+/).filter(Boolean);
+        return words.some(w => nw.includes(w)) || h.startsWith(n) || n.startsWith(h);
       });
     });
   };
 
-  const symIdx   = col(SYM_NAMES);
+  const symIdx   = headers.findIndex(h => isSymCell(h));
   const qtyIdx   = col(QTY_NAMES);
   const priceIdx = col(PRICE_NAMES);
   const exchIdx  = col(['exchange','market','exch']);
@@ -156,9 +167,15 @@ export default function USPortfolioPage() {
   const [detailLoading,   setDetailLoad] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadPortId, setUploadPortId] = useState<string | null>(null);
+  const [manualUSPortIds, setManualUSPortIds] = useState<Set<string>>(new Set());
 
-  // US portfolios = portfolios that have any NYSE/NASDAQ holdings (or all portfolios for add target)
+  // US portfolios = those with US holdings OR created on this page (never shows Indian portfolios)
   const allPortIds = portfolios.map(p => p.id);
+  const usPortfolioIds = new Set([
+    ...allHoldings.map(h => h.portfolio_id),
+    ...Array.from(manualUSPortIds),
+  ]);
+  const usPortfolios = portfolios.filter(p => usPortfolioIds.has(p.id));
 
   // Fetch all US holdings across all portfolios
   const fetchHoldings = useCallback(async () => {
@@ -216,13 +233,13 @@ export default function USPortfolioPage() {
     else { setPrices({}); setLoading(false); }
   }, [allHoldings, fetchPrices]);
 
-  // Set default add-form portfolio
+  // Set default add-form portfolio to first US portfolio
   useEffect(() => {
-    if (!addForm.portfolio_id && portfolios.length) {
-      setAddForm(f => ({ ...f, portfolio_id: portfolios[0].id }));
-    }
-    if (!uploadPortId && portfolios.length) setUploadPortId(portfolios[0].id);
-  }, [portfolios]);
+    const first = usPortfolios[0];
+    if (!addForm.portfolio_id && first) setAddForm(f => ({ ...f, portfolio_id: first.id }));
+    if (!uploadPortId && first) setUploadPortId(first.id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [allHoldings.length, portfolios.length, manualUSPortIds.size]);
 
   // Derived metrics — all holdings merged
   const merged = allHoldings;
@@ -304,7 +321,11 @@ export default function USPortfolioPage() {
     if (result.error) { setMsg(`❌ ${result.error}`); return; }
     setNewPortName('');
     setMsg(`✅ Created "${newPortName.trim()}"`);
-    if (result.id) { setAddForm(f => ({ ...f, portfolio_id: result.id! })); setUploadPortId(result.id); }
+    if (result.id) {
+      setManualUSPortIds(prev => new Set([...prev, result.id!]));
+      setAddForm(f => ({ ...f, portfolio_id: result.id! }));
+      setUploadPortId(result.id);
+    }
   }
 
   async function selectHolding(h: USHolding) {
@@ -343,11 +364,11 @@ export default function USPortfolioPage() {
           </div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', alignItems:'center' }}>
-          {/* Portfolio selector for import target */}
-          {portfolios.length > 1 && (
+          {/* Portfolio selector for import target (US portfolios only) */}
+          {usPortfolios.length > 1 && (
             <select value={uploadPortId ?? ''} onChange={e => setUploadPortId(e.target.value)}
               style={{ height:36, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 10px', fontFamily:'inherit', cursor:'pointer' }}>
-              {portfolios.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+              {usPortfolios.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
             </select>
           )}
           <button onClick={() => setAddOpen(true)}
@@ -386,6 +407,18 @@ export default function USPortfolioPage() {
           })}
         </div>
       </div>
+      {/* RSU / ESPP quick-access link */}
+      <Link href="/dashboard/equity-comp" style={{ textDecoration:'none', display:'block', marginBottom:16 }}>
+        <div style={{ ...card, background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.25)',
+          display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', padding:'14px 18px' }}>
+          <div>
+            <div style={{ fontSize:13, fontWeight:700 }}>📊 ESPP &amp; RSU Tracker</div>
+            <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>Track RSU vesting &amp; ESPP grants · Live CMP · Gain/loss · LTCG eligibility · All brokerages</div>
+          </div>
+          <div style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:9, background:'rgba(139,92,246,0.15)',
+            border:'1px solid rgba(139,92,246,0.35)', color:'var(--pur)', whiteSpace:'nowrap', flexShrink:0, marginLeft:16 }}>Open →</div>
+        </div>
+      </Link>
 
       {/* Key metrics */}
       {merged.length > 0 && (
@@ -545,9 +578,9 @@ export default function USPortfolioPage() {
             {creatingPort ? 'Creating…' : 'Create'}
           </button>
         </div>
-        {portfolios.length > 0 && (
+        {usPortfolios.length > 0 && (
           <div style={{ marginTop:12, display:'flex', flexWrap:'wrap', gap:6 }}>
-            {portfolios.map(p => (
+            {usPortfolios.map(p => (
               <span key={p.id} style={{ fontSize:11, padding:'3px 10px', borderRadius:12, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)' }}>
                 📂 {p.name}
               </span>
@@ -566,7 +599,7 @@ export default function USPortfolioPage() {
                 <div style={{ fontSize:11, fontWeight:600, color:'var(--dim)', marginBottom:5 }}>PORTFOLIO</div>
                 <select value={addForm.portfolio_id} onChange={e => setAddForm(f => ({ ...f, portfolio_id:e.target.value }))}
                   style={{ ...inp, width:'100%' }}>
-                  {portfolios.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  {(usPortfolios.length ? usPortfolios : portfolios).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                 </select>
               </div>
               <div>
