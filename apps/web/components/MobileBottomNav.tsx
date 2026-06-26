@@ -7,7 +7,7 @@ import { useTheme } from '@/components/ThemeProvider';
 // 4 primary tabs — mirrors sidebar tab structure
 const PRIMARY_TABS = [
   { key: 'home',    href: '/dashboard',              icon: '🏠', label: 'Home'    },
-  { key: 'signals', href: '/dashboard/signals',      icon: '📈', label: 'Signals' },
+  { key: 'signals', href: '/dashboard/signals',      icon: '📈', label: 'Scan'    },
   { key: 'india',   href: '/dashboard/portfolio',    icon: '💼', label: 'India'   },
   { key: 'us',      href: '/dashboard/us-portfolio', icon: '🇺🇸', label: 'US'      },
 ];

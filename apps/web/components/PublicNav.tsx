@@ -17,7 +17,7 @@ export function PublicNav() {
     <>
       {/* SEBI banner */}
       <div style={{ background:'rgba(255,184,0,0.07)', borderBottom:'1px solid rgba(255,184,0,0.18)', padding:'7px clamp(16px,5vw,80px)', textAlign:'center' }}>
-        <span style={{ fontSize:11, color:'rgba(255,184,0,0.8)' }}>⚠️ <strong>NOT SEBI REGISTERED</strong> — All signals are for informational purposes only. Not financial advice. Trade at your own risk.</span>
+        <span style={{ fontSize:11, color:'rgba(255,184,0,0.8)' }}>⚠️ <strong>NOT SEBI REGISTERED</strong> — This is a technical screening tool. Momentum zones are computed indicators, not financial advice. You make your own decisions. DYOR.</span>
       </div>
 
       {/* Always dark nav — text always white */}

@@ -28,9 +28,9 @@ export function OnboardingChecklist() {
     { id:'signup',    label:'Create your account',      sub:'You\'re in.',                            done:true,                  href:null,                         cta:'' },
     { id:'portfolio', label:'Create a portfolio',        sub:'Name it e.g. "Zerodha Long Term"',       done:portfolios.length > 0, href:'/dashboard/portfolio',       cta:'Create →' },
     { id:'holdings',  label:'Add your first stock',      sub:'Upload CSV/Excel from your broker',      done:holdings.length > 0,   href:'/dashboard/portfolio',       cta:'Upload →' },
-    { id:'signals',   label:'Check live ML signals',     sub:'RSI + EMA scan across 100 NSE stocks',  done:visitedSignals,        href:'/dashboard/signals',         cta:'View →' },
+    { id:'signals',   label:'Run ML Technical Scan',      sub:'RSI + EMA screener across 100+ NSE stocks', done:visitedSignals,   href:'/dashboard/signals',         cta:'View →' },
     { id:'paper',     label:'Try paper trading',         sub:'Practice without real money',            done:visitedPaper,          href:'/dashboard/paper-trading',   cta:'Open →' },
-    { id:'track',     label:'Review track record',       sub:'Every past signal call — public proof',  done:visitedTrack,          href:'/dashboard/track-record',    cta:'See →' },
+    { id:'track',     label:'Review track record',       sub:'Historical screener performance — public', done:visitedTrack,        href:'/dashboard/track-record',    cta:'See →' },
   ];
 
   const doneCount = steps.filter(s => s.done).length;

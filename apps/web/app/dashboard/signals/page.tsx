@@ -95,7 +95,7 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
             <span style={{ fontSize:24, fontWeight:900 }}>₹{sig.cmp.toLocaleString('en-IN', { maximumFractionDigits:2 })}</span>
             <span style={{ fontSize:14, fontWeight:700, color:chgColor(sig.chg) }}>{sig.chg >= 0 ? '+' : ''}{sig.chg.toFixed(2)}%</span>
             <span style={{ marginLeft:'auto', padding:'4px 12px', borderRadius:7, background: sig.confidence >= 75 ? 'rgba(0,212,160,0.15)' : 'rgba(23,64,245,0.12)', border:'1px solid', borderColor: sig.confidence >= 75 ? 'rgba(0,212,160,0.3)' : 'rgba(23,64,245,0.25)', fontSize:12, fontWeight:800, color: confColor(sig.confidence) }}>
-              🤖 {sig.confidence}% confidence
+              🤖 {sig.confidence}% momentum score
             </span>
           </div>
         </div>
@@ -105,7 +105,7 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
           {/* Signal summary card — referral card style */}
           <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.08),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.2)', borderRadius:16, padding:'20px 22px', marginBottom:20, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16 }}>
             <div>
-              <div style={{ fontSize:10, fontWeight:800, color:'var(--grn)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:6 }}>ML Swing Signal · BUY</div>
+              <div style={{ fontSize:10, fontWeight:800, color:'var(--grn)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:6 }}>ML Technical Scan · Strong Momentum</div>
               <div style={{ fontSize:16, fontWeight:800, letterSpacing:-0.3, marginBottom:4 }}>Entry ₹{sig.entry_low}–{sig.entry_high}</div>
               <div style={{ fontSize:12, color:'var(--dim)' }}>Target ₹{sig.target} · SL ₹{sig.sl}</div>
             </div>
@@ -316,11 +316,11 @@ export default function SignalsPage() {
   const FILTERS = [
     { key:'all',        label:`All (${mlSignals.length})` },
     ...(hasPortfolio ? [{ key:'portfolio',  label:`💼 Indian Portfolio (${portfolioCnt})` }] : []),
-    { key:'buy',        label:`🟢 Buy (${buyCnt})` },
-    { key:'accumulate', label:`📈 Accumulate (${accumulateCnt})` },
-    { key:'hold',       label:`⏸ Hold (${holdCnt})` },
-    { key:'sell',       label:`🔴 Sell (${sellCnt})` },
-    { key:'high',       label:'🔥 High Conf (80%+)' },
+    { key:'buy',        label:`🟢 Strong Momentum (${buyCnt})` },
+    { key:'accumulate', label:`📈 Building (${accumulateCnt})` },
+    { key:'hold',       label:`⏸ Sideways (${holdCnt})` },
+    { key:'sell',       label:`🔴 Weak / Declining (${sellCnt})` },
+    { key:'high',       label:'🔥 High Score (80%+)' },
   ];
 
   const shown = mlSignals
@@ -337,36 +337,45 @@ export default function SignalsPage() {
 
   return (
     <>
-      {/* Hero — referral card style */}
-      <div className="signals-hero" style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.07),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.18)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
+      {/* Hero */}
+      <div className="signals-hero" style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.07),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.18)', borderRadius:20, padding:'28px 36px', marginBottom:16, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
         <div>
-          <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--grn)', textTransform:'uppercase', marginBottom:8 }}>ML Scanner · Live Signals</div>
+          <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--grn)', textTransform:'uppercase', marginBottom:8 }}>ML Technical Scan · NSE Screener</div>
           <div style={{ fontSize:26, fontWeight:900, letterSpacing:-0.6, lineHeight:1.2, marginBottom:8 }}>
-            Signals from real<br/>
-            <span style={{ color:'var(--grn)' }}>machine learning.</span>
+            Technical indicators from<br/>
+            <span style={{ color:'var(--grn)' }}>real machine learning.</span>
           </div>
           <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.7, maxWidth:440 }}>
-            RSI + EMA scan across 200+ NSE stocks. Confidence scored by proximity to EMA, RSI zone, and sector momentum. Updated every hour during market hours.
+            RSI + EMA scan across 200+ NSE stocks. Momentum scored by proximity to EMA, RSI zone, and sector strength. Updated every hour during market hours.
           </div>
         </div>
         <div className="signals-hero-count" style={{ textAlign:'center', flexShrink:0 }}>
           <div style={{ fontSize:52, fontWeight:900, color:'var(--grn)', lineHeight:1 }}>{mlSignals.length}</div>
-          <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>signals today</div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginTop:4 }}>scan results today</div>
           <div style={{ marginTop:8, display:'flex', alignItems:'center', gap:6, justifyContent:'center' }}>
             <span style={{ width:6, height:6, borderRadius:'50%', background: mlError ? 'var(--red)' : 'var(--grn)', display:'inline-block' }}/>
-            <span style={{ fontSize:11, color:'var(--dim)' }}>{mlError ? 'ML API offline' : 'ML API live'}</span>
+            <span style={{ fontSize:11, color:'var(--dim)' }}>{mlError ? 'Screener offline' : 'Screener live'}</span>
           </div>
         </div>
       </div>
 
-      {/* Signal count KPI row */}
+      {/* Tool disclaimer — visible, clear */}
+      <div style={{ background:'rgba(255,184,0,0.07)', border:'1px solid rgba(255,184,0,0.22)', borderRadius:12, padding:'11px 16px', marginBottom:20, display:'flex', alignItems:'flex-start', gap:10 }}>
+        <span style={{ fontSize:16, flexShrink:0 }}>🛠️</span>
+        <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.7 }}>
+          <strong style={{ color:'var(--ylw)' }}>This is a technical screening tool, not financial advice.</strong>{' '}
+          Momentum zones (Strong / Building / Sideways / Weak) are computed from RSI, EMA, and volume — they show <em>where price is technically</em>, not what you should do. You decide. No SEBI-registered analyst is involved. Not a recommendation. DYOR.
+        </div>
+      </div>
+
+      {/* Momentum zone KPI row */}
       {!mlLoading && mlSignals.length > 0 && (
         <div className="g4" style={{ display:'grid', gap:12, marginBottom:20 }}>
           {[
-            { label:'BUY',        cnt:buyCnt,        grad:'linear-gradient(135deg,rgba(0,212,160,0.13),rgba(0,212,160,0.03))',  bdr:'rgba(0,212,160,0.30)',  color:'var(--grn)' },
-            { label:'ACCUMULATE', cnt:accumulateCnt, grad:'linear-gradient(135deg,rgba(79,111,250,0.12),rgba(79,111,250,0.03))', bdr:'rgba(79,111,250,0.28)', color:'var(--bluL)' },
-            { label:'HOLD',       cnt:holdCnt,       grad:'linear-gradient(135deg,rgba(255,184,0,0.10),rgba(255,184,0,0.02))',   bdr:'rgba(255,184,0,0.27)',  color:'var(--ylw)' },
-            { label:'SELL',       cnt:sellCnt,       grad:'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.02))',   bdr:'rgba(255,59,92,0.25)',  color:'var(--red)' },
+            { label:'Strong Momentum', cnt:buyCnt,        grad:'linear-gradient(135deg,rgba(0,212,160,0.13),rgba(0,212,160,0.03))',  bdr:'rgba(0,212,160,0.30)',  color:'var(--grn)' },
+            { label:'Building',        cnt:accumulateCnt, grad:'linear-gradient(135deg,rgba(79,111,250,0.12),rgba(79,111,250,0.03))', bdr:'rgba(79,111,250,0.28)', color:'var(--bluL)' },
+            { label:'Sideways',        cnt:holdCnt,       grad:'linear-gradient(135deg,rgba(255,184,0,0.10),rgba(255,184,0,0.02))',   bdr:'rgba(255,184,0,0.27)',  color:'var(--ylw)' },
+            { label:'Weak / Declining',cnt:sellCnt,       grad:'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.02))',   bdr:'rgba(255,59,92,0.25)',  color:'var(--red)' },
           ].map(m => (
             <div key={m.label} style={{ background:m.grad, border:`1px solid ${m.bdr}`, borderRadius:16, padding:'16px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
               <div style={{ fontSize:9.5, fontWeight:800, color:m.color, letterSpacing:1.5, textTransform:'uppercase', marginBottom:6 }}>{m.label}</div>
@@ -469,10 +478,10 @@ export default function SignalsPage() {
                     {(() => {
                       const cat = sigCategory(sig);
                       const cfg = {
-                        buy:        { label:'BUY',        bg:'rgba(0,212,160,0.12)',  color:'var(--grn)',  border:'rgba(0,212,160,0.25)'  },
-                        accumulate: { label:'ACCUMULATE', bg:'rgba(79,111,250,0.12)', color:'var(--bluL)', border:'rgba(79,111,250,0.25)' },
-                        hold:       { label:'HOLD',       bg:'rgba(255,184,0,0.12)',  color:'var(--ylw)',  border:'rgba(255,184,0,0.25)'  },
-                        sell:       { label:'SELL',       bg:'rgba(255,59,92,0.12)',  color:'var(--red)',  border:'rgba(255,59,92,0.25)'  },
+                        buy:        { label:'Strong Momentum', bg:'rgba(0,212,160,0.12)',  color:'var(--grn)',  border:'rgba(0,212,160,0.25)'  },
+                        accumulate: { label:'Building',        bg:'rgba(79,111,250,0.12)', color:'var(--bluL)', border:'rgba(79,111,250,0.25)' },
+                        hold:       { label:'Sideways',        bg:'rgba(255,184,0,0.12)',  color:'var(--ylw)',  border:'rgba(255,184,0,0.25)'  },
+                        sell:       { label:'Weak / Declining',bg:'rgba(255,59,92,0.12)',  color:'var(--red)',  border:'rgba(255,59,92,0.25)'  },
                       }[cat];
                       return <span style={{ fontSize:9, fontWeight:700, padding:'2px 8px', borderRadius:4, background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}` }}>{cfg.label}</span>;
                     })()}
@@ -501,7 +510,7 @@ export default function SignalsPage() {
                     </div>
                     <span style={{ fontSize:11, fontWeight:700, color:confColor(sig.confidence) }}>{sig.confidence}%</span>
                   </div>
-                  <div style={{ fontSize:10, color:'var(--dim)', marginTop:3 }}>RR {rr}×</div>
+                  <div style={{ fontSize:10, color:'var(--dim)', marginTop:3 }}>Score · R/R {rr}×</div>
                 </div>
               </div>
             );
@@ -512,16 +521,16 @@ export default function SignalsPage() {
       {!mlLoading && !mlError && shown.length === 0 && (
         <div style={{ textAlign:'center', padding:'48px 24px', background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14 }}>
           <div style={{ fontSize:36, marginBottom:12 }}>🔍</div>
-          <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No signals match this filter</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginBottom:16 }}>Try switching to <strong>All</strong> or <strong>In Indian Portfolio</strong> — the scan refreshes every hour.</div>
+          <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>No scan results match this filter</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginBottom:16 }}>Try switching to <strong>All</strong> or <strong>In Indian Portfolio</strong> — the screener refreshes every hour.</div>
           <button onClick={() => { setFilter('all'); setSearch(''); }} style={{ height:36, padding:'0 20px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-            Show All Signals
+            Show All Results
           </button>
         </div>
       )}
 
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:20, textAlign:'center' }}>
-        ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · ML signals are for educational purposes only · Not financial advice · DYOR
+        ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · This is a technical screening tool · Momentum zones are computed indicators, not advice · DYOR
       </div>
 
       {/* Detail drawer */}

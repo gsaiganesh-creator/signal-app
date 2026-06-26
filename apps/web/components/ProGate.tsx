@@ -4,7 +4,7 @@ import { usePlan } from '@/lib/use-plan';
 import type { PlanFeature } from '@/lib/use-plan';
 
 const FEATURE_LABELS: Record<PlanFeature, { name: string; tier: string; desc: string }> = {
-  'signals-unlimited':   { name: 'Unlimited Signals',     tier: 'Starter+', desc: 'Get unlimited ML scan results daily' },
+  'signals-unlimited':   { name: 'Unlimited Scan Results', tier: 'Starter+', desc: 'Get unlimited ML Technical Scan results daily' },
   'us-portfolio-multi':  { name: 'Multiple US Portfolios', tier: 'Pro',      desc: 'Track multiple broker accounts' },
   'algo-builder':        { name: 'Algo Builder',           tier: 'Pro',      desc: 'Build and save custom trading strategies' },
   'backtest':            { name: 'Backtest Engine',        tier: 'Pro',      desc: 'Run strategies against historical data' },

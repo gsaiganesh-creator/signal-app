@@ -14,7 +14,7 @@ const cCard = (grad: string, bdr: string): React.CSSProperties => ({
   backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)',
 });
 
-interface MLSignal { label:'BUY'|'HOLD'|'SELL'|'N/A'; color:string; bg:string; bdr:string;
+interface MLSignal { label:'Strong Momentum'|'Sideways'|'Weak / Declining'|'N/A'; color:string; bg:string; bdr:string;
   rsi14:Num; ema20:Num; ema50:Num; ema200:Num; macd:Num; bb_pct:Num;
   vol_ratio:Num; upside_to_target:Num; short_pct_float:Num; signals:string[] }
 
@@ -22,15 +22,15 @@ function scoreSig(signals: string[]): MLSignal['label'] {
   const s = signals.join(' ').toLowerCase();
   const buyN = (s.match(/bullish|buy|momentum|oversold|above.*ema|positive.*macd|analyst.*target|upside/g)||[]).length;
   const selN = (s.match(/bearish|sell|overbought|below.*ema|negative.*macd|exit|short interest/g)||[]).length;
-  if (buyN > selN + 1) return 'BUY';
-  if (selN > buyN + 1) return 'SELL';
-  if (buyN > 0 || selN > 0) return 'HOLD';
+  if (buyN > selN + 1) return 'Strong Momentum';
+  if (selN > buyN + 1) return 'Weak / Declining';
+  if (buyN > 0 || selN > 0) return 'Sideways';
   return 'N/A';
 }
 function mlBadge(label: MLSignal['label']): Pick<MLSignal,'color'|'bg'|'bdr'> {
-  if (label==='BUY')  return { color:'var(--grn)', bg:'rgba(0,212,160,0.12)',  bdr:'rgba(0,212,160,0.35)' };
-  if (label==='SELL') return { color:'var(--red)', bg:'rgba(255,59,92,0.10)',  bdr:'rgba(255,59,92,0.32)' };
-  if (label==='HOLD') return { color:'var(--ylw)', bg:'rgba(255,184,0,0.10)',  bdr:'rgba(255,184,0,0.32)' };
+  if (label==='Strong Momentum')   return { color:'var(--grn)', bg:'rgba(0,212,160,0.12)',  bdr:'rgba(0,212,160,0.35)' };
+  if (label==='Weak / Declining')  return { color:'var(--red)', bg:'rgba(255,59,92,0.10)',  bdr:'rgba(255,59,92,0.32)' };
+  if (label==='Sideways')          return { color:'var(--ylw)', bg:'rgba(255,184,0,0.10)',  bdr:'rgba(255,184,0,0.32)' };
   return { color:'var(--dim)', bg:'rgba(122,139,170,0.08)', bdr:'rgba(122,139,170,0.2)' };
 }
 
@@ -679,9 +679,9 @@ export default function USPortfolioPage() {
             <div style={{ display:'flex', alignItems:'center', gap:10 }}>
               <div style={{ width:30, height:30, borderRadius:9, background:'rgba(79,111,250,0.16)', border:'1px solid rgba(79,111,250,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🤖</div>
               <div style={{ textAlign:'left' }}>
-                <div style={{ fontSize:13, fontWeight:800, color:'var(--txt)' }}>ML Signal Engine — US Stocks</div>
+                <div style={{ fontSize:13, fontWeight:800, color:'var(--txt)' }}>ML Technical Scan — US Stocks</div>
                 <div style={{ fontSize:11, color:'var(--dim)' }}>
-                  {mlLoading ? '⏳ Analyzing your holdings…' : `Analyzing ${Object.keys(mlSignals).length} stocks across 9 parameters · Click row for full breakdown`}
+                  {mlLoading ? '⏳ Scanning your holdings…' : `Scanning ${Object.keys(mlSignals).length} stocks across 9 technical parameters · Click row for full breakdown`}
                 </div>
               </div>
             </div>
@@ -732,7 +732,7 @@ export default function USPortfolioPage() {
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead>
                 <tr>
-                  {['Stock','Portfolio','Shares','Avg Cost','CMP','P&L $','P&L %','ML Signal',''].map((h, i) => (
+                  {['Stock','Portfolio','Shares','Avg Cost','CMP','P&L $','P&L %','Momentum Zone',''].map((h, i) => (
                     <th key={i} className={i === 1 ? 'mob-hide' : ''} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'5px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap' }}>{h}</th>
                   ))}
                 </tr>
