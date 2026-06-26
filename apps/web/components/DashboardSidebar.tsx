@@ -84,7 +84,7 @@ export function DashboardSidebar() {
                 background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                 borderBottom: isActive ? '2px solid var(--blu)' : '2px solid transparent',
                 marginBottom: -1,
-                color: isActive ? 'var(--bluL)' : 'var(--dim)',
+                color: isActive ? 'var(--bluL)' : 'rgba(255,255,255,0.55)',
                 transition: 'color 0.15s',
               }}
             >
@@ -99,7 +99,7 @@ export function DashboardSidebar() {
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 8px' }}>
         {currentTab.links.map(link => {
           const active = pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href));
-          const color  = link.danger ? 'var(--red)' : active ? 'var(--bluL)' : 'var(--dim)';
+          const color  = link.danger ? 'var(--red)' : active ? 'var(--bluL)' : 'rgba(255,255,255,0.6)';
           const bg     = link.danger ? 'transparent' : active ? 'rgba(23,64,245,0.1)' : 'transparent';
           return (
             <Link

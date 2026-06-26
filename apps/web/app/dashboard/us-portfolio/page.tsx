@@ -180,18 +180,14 @@ export default function USPortfolioPage() {
   useEffect(() => {
     if (!menuPortId) return;
     const close = () => { setMenuPortId(null); setMenuPortPos(null); };
-    document.addEventListener('click', close, true);
-    window.addEventListener('scroll', close, true);
-    return () => { document.removeEventListener('click', close, true); window.removeEventListener('scroll', close, true); };
+    document.addEventListener('click', close);
+    window.addEventListener('scroll', close);
+    return () => { document.removeEventListener('click', close); window.removeEventListener('scroll', close); };
   }, [menuPortId]);
 
-  // US portfolios = those with US holdings OR created on this page (never shows Indian portfolios)
+  // Show ALL portfolios in US page — user picks which one to import into
   const allPortIds = portfolios.map(p => p.id);
-  const usPortfolioIds = new Set([
-    ...allHoldings.map(h => h.portfolio_id),
-    ...Array.from(manualUSPortIds),
-  ]);
-  const usPortfolios = portfolios.filter(p => usPortfolioIds.has(p.id));
+  const usPortfolios = portfolios;
 
   // Fetch all US holdings across all portfolios
   const fetchHoldings = useCallback(async () => {
@@ -199,7 +195,7 @@ export default function USPortfolioPage() {
     try {
       const ids = allPortIds.join(',');
       const res = await fetch(
-        `${SUPA_URL}/rest/v1/holdings?select=id,symbol,exchange,qty,avg_price,portfolio_id&portfolio_id=in.(${ids})&exchange=in.(NYSE,NASDAQ)&order=symbol`,
+        `${SUPA_URL}/rest/v1/holdings?select=id,symbol,exchange,qty,avg_price,portfolio_id&portfolio_id=in.(${ids})&exchange=in.(NYSE,NASDAQ,AMEX,ARCA,BATS)&order=symbol`,
         { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` } }
       );
       if (!res.ok) return;
@@ -457,9 +453,9 @@ export default function USPortfolioPage() {
       <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
         <button onClick={() => { setActivePortId(null); setViewMode('merged'); setMenuPortId(null); }}
           style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:13, fontWeight: !activePortId ? 700 : 500, cursor:'pointer', fontFamily:'inherit',
-            border: !activePortId ? '1px solid var(--grn)' : '1px solid var(--bdr)',
-            background: !activePortId ? 'rgba(0,212,160,0.10)' : 'transparent',
-            color: !activePortId ? 'var(--grn)' : 'var(--dim)', whiteSpace:'nowrap' }}>
+            border: !activePortId ? '1px solid var(--grn)' : '1px solid rgba(79,111,250,0.2)',
+            background: !activePortId ? 'rgba(0,212,160,0.10)' : 'rgba(255,255,255,0.04)',
+            color: !activePortId ? 'var(--grn)' : 'rgba(255,255,255,0.7)', whiteSpace:'nowrap' }}>
           📊 All Portfolios
         </button>
         {usPortfolios.map(p => {
@@ -479,9 +475,9 @@ export default function USPortfolioPage() {
                 <>
                   <button onClick={() => { setActivePortId(p.id); setViewMode('by-portfolio'); setMenuPortId(null); setUploadPortId(p.id); }}
                     style={{ height:34, padding:'0 12px 0 16px', borderRadius: isActive ? '8px 0 0 8px' : '8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit',
-                      border: isActive ? '1px solid var(--blu)' : '1px solid var(--bdr)', borderRight: isActive ? 'none' : undefined,
-                      background: isActive ? 'rgba(23,64,245,0.1)' : 'transparent',
-                      color: isActive ? 'var(--bluL)' : 'var(--dim)' }}>
+                      border: isActive ? '1px solid var(--blu)' : '1px solid rgba(79,111,250,0.2)', borderRight: isActive ? 'none' : undefined,
+                      background: isActive ? 'rgba(23,64,245,0.1)' : 'rgba(255,255,255,0.04)',
+                      color: isActive ? 'var(--bluL)' : 'rgba(255,255,255,0.7)' }}>
                     📂 {p.name}
                   </button>
                   {isActive && (
@@ -493,7 +489,7 @@ export default function USPortfolioPage() {
                 </>
               )}
               {menuPortId === p.id && menuPortPos && (
-                <div style={{ position:'fixed', top:menuPortPos.top, left:menuPortPos.left, zIndex:9999, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.45)', minWidth:160, padding:'4px 0' }}>
+                <div onClick={e => e.stopPropagation()} style={{ position:'fixed', top:menuPortPos.top, left:menuPortPos.left, zIndex:9999, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.45)', minWidth:160, padding:'4px 0', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)' }}>
                   <button onClick={() => { setRenamingPortId(p.id); setRenamePortVal(p.name); setMenuPortId(null); }}
                     style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
                     ✏️ Rename
@@ -522,7 +518,7 @@ export default function USPortfolioPage() {
           </div>
         ) : (
           <button onClick={() => { setShowNewPortInput(true); setMenuPortId(null); }}
-            style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', border:'1px dashed var(--bdr)', background:'transparent', color:'var(--dim)' }}>
+            style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', border:'1px dashed rgba(79,111,250,0.4)', background:'rgba(255,255,255,0.03)', color:'rgba(255,255,255,0.6)' }}>
             + New Portfolio
           </button>
         )}
