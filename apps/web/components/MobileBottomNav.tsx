@@ -22,7 +22,8 @@ const MORE_SECTIONS = [
       { href: '/dashboard/forex',       icon: '💱', label: 'Forex'          },
       { href: '/dashboard/commodities', icon: '🥇', label: 'Commodities'    },
       { href: '/dashboard/earnings',    icon: '📅', label: 'Earnings'       },
-      { href: '/dashboard/etf-mf',      icon: '🏦', label: 'ETF & MF'      },
+      { href: '/dashboard/equity-comp',   icon: '📊', label: 'ESPP & RSU'    },
+      { href: '/dashboard/etf-mf',       icon: '🏦', label: 'ETF & MF'      },
     ],
   },
   {
