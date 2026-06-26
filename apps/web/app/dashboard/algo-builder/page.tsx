@@ -80,15 +80,26 @@ export default function AlgoBuilderPage() {
     <div style={{ position:'relative' }}>
     <ProGate feature="algo-builder">
     <>
-      {/* Hero card — referral style */}
+      {/* SEBI / Legal disclaimer */}
+      <div style={{ background:'rgba(255,184,0,0.06)', border:'1px solid rgba(255,184,0,0.25)', borderRadius:12, padding:'14px 20px', marginBottom:20, display:'flex', gap:12, alignItems:'flex-start' }}>
+        <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>⚠️</span>
+        <div style={{ fontSize:12, color:'rgba(255,184,0,0.85)', lineHeight:1.7 }}>
+          <strong style={{ color:'var(--ylw)' }}>Educational &amp; paper trading use only.</strong>{' '}
+          Code generated here is for research, backtesting, and virtual paper trading. SIGNAL is not an order execution service and does not place trades on your behalf.
+          For live deployment, you are responsible for your broker&apos;s algo approval process and all SEBI regulations applicable to algorithmic trading.
+          {' '}<strong style={{ color:'var(--ylw)' }}>Not SEBI registered · Not investment advice · DYOR.</strong>
+        </div>
+      </div>
+
+      {/* Hero card */}
       <div style={{ background:'linear-gradient(135deg,rgba(139,92,246,0.08),rgba(23,64,245,0.04))', border:'1px solid rgba(139,92,246,0.2)', borderRadius:20, padding:'28px 36px', marginBottom:24, display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:24 }}>
         <div>
           <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--pur)', textTransform:'uppercase', marginBottom:8 }}>Algo Builder · Pro</div>
           <div style={{ fontSize:26, fontWeight:900, letterSpacing:-0.6, lineHeight:1.2, marginBottom:8 }}>
-            Build it once.<br/><span style={{ color:'var(--pur)' }}>Trade it forever.</span>
+            Build it once.<br/><span style={{ color:'var(--pur)' }}>Test it thoroughly.</span>
           </div>
           <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.7, maxWidth:440 }}>
-            Pick your strategy type, configure indicators, set SL/Target — SIGNAL generates the logic, backtests on 10 years of NSE data, and deploys it to paper trade automatically.
+            Pick your strategy type, configure indicators, set SL/Target — SIGNAL generates the Python code, backtests on 10 years of NSE data, and lets you paper trade it risk-free.
           </div>
         </div>
         <div style={{ textAlign:'center', flexShrink:0 }}>
@@ -101,7 +112,7 @@ export default function AlgoBuilderPage() {
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:22, flexWrap:'wrap', gap:12 }}>
         <div>
           <div style={{ fontSize:18, fontWeight:800, letterSpacing:-0.4 }}>Strategy Builder</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:2 }}>Configure → backtest → paper trade → deploy.</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginTop:2 }}>Configure → backtest → paper trade → download code.</div>
         </div>
         <button style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>📂 My Strategies (3)</button>
       </div>

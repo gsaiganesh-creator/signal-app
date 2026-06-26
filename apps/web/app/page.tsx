@@ -507,7 +507,7 @@ export default function LandingPage() {
             <h2 style={{ fontSize:'clamp(28px,3.8vw,50px)', fontWeight:900, letterSpacing:-2, lineHeight:.97, marginBottom:16 }}>
               Build your strategy.<br/><span style={grd('linear-gradient(135deg,var(--org),var(--ylw))')}>No code needed.</span>
             </h2>
-            <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Pick a strategy, select indicators, set entry/exit conditions. SIGNAL generates production-ready Python with full 1-year backtest results — then paper-trade it before going live.</p>
+            <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Pick a strategy, select indicators, set entry/exit conditions. SIGNAL generates Python code with full 1-year backtest results — then paper-trade it to validate. Your code. Your broker. Your decision.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {fpill('🛠️','rgba(255,92,26,0.12)','Visual no-code builder','Momentum, Trend Following, Mean Reversion, Breakout — pick type, drag in indicators, set rules in minutes.')}
               {fpill('🧪','rgba(255,184,0,0.12)','1-year backtesting on real NSE data','Sharpe ratio, win rate, max drawdown, full returns — calculated on actual historical data before you risk a rupee.')}
@@ -574,7 +574,7 @@ export default function LandingPage() {
             <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Deploy your algo with ₹1,00,000 virtual capital on real NSE/BSE live feeds. Watch signals fire, track virtual P&amp;L, tweak any parameter — then go live when you&apos;re confident.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {fpill('🎮','rgba(139,92,246,0.12)','Real data, zero real money','Live NSE/BSE market feed with ₹1,00,000 virtual capital. Adjust any strategy parameter anytime.')}
-              {fpill('🚀','rgba(0,212,160,0.12)','Go live when you\'re ready','After consistent results, SIGNAL generates a step-by-step deploy guide to run your strategy on your real broker via API.')}
+              {fpill('🚀','rgba(0,212,160,0.12)','Download and deploy yourself','After consistent paper-trade results, SIGNAL generates code you download and run via your own broker API. You control the execution.')}
             </div>
           </div>
           <div className="lp-feat-visual" style={{ direction:'ltr' }}>
@@ -635,7 +635,7 @@ export default function LandingPage() {
               <div style={{ position:'absolute', width:200, height:200, bottom:-60, right:-60, background:'radial-gradient(circle,rgba(139,92,246,0.2),transparent 70%)', filter:'blur(60px)', borderRadius:'50%', pointerEvents:'none' }}/>
               <div style={{ width:44, height:44, borderRadius:14, background:'rgba(139,92,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, marginBottom:16 }}>🧪</div>
               <div style={{ fontSize:17, fontWeight:800, marginBottom:8 }}>Paper Trading</div>
-              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65, marginBottom:20 }}>Live market data, virtual capital, zero real-money risk. Test, tweak, then deploy.</div>
+              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65, marginBottom:20 }}>Live market data, virtual capital, zero real-money risk. Test and tweak before you decide to use the code yourself.</div>
               <div style={{ background:'rgba(0,0,0,0.3)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:12, padding:14 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}><div style={{ width:6, height:6, borderRadius:'50%', background:'var(--pur)', animation:'blink 2s infinite' }}/><span style={{ fontSize:11, fontWeight:700, color:'var(--pur)' }}>Running · Day 6</span></div>
                 <div style={{ display:'flex', justifyContent:'space-between', marginBottom:5 }}><span style={{ fontSize:12, color:'var(--dim)' }}>Virtual P&amp;L</span><span style={{ fontSize:13, fontWeight:800, color:'var(--grn)' }}>+₹8,420</span></div>
@@ -724,22 +724,22 @@ export default function LandingPage() {
           {/* Plan cards */}
           <div className="lp-plans lp-reveal">
             {([
-              { name:'Free',    tag:'var(--dim)',  price:'₹0',  cycle:'forever · no card',
+              { name:'Free',    tag:'var(--dim)',  price:'₹0',  cycle:'forever · no card', href:'/sign-in',
                 cardStyle:{ ...GLS, background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.08)' },
                 btnStyle:{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', color:'var(--txt)' },
                 feats:['5 stocks tracking','3 ML scans/week','NIFTY 50 prices'], nope:['No real-time alerts','No broker sync','No Algo Builder'], pro:false },
-              { name:'Starter', tag:'var(--bluL)', price:pr.s,  cycle:pr.cy,
+              { name:'Starter', tag:'var(--bluL)', price:pr.s,  cycle:pr.cy, href:'/sign-in?plan=starter',
                 cardStyle:{ ...GC.blu },
                 btnStyle:{ background:'linear-gradient(135deg,rgba(79,111,250,0.4),rgba(23,64,245,0.25))', border:'1px solid rgba(79,111,250,0.5)', color:'#fff' },
                 feats:['25 stocks · ML scan','🐦 Twitter sentiment','RF Screener of the Day','Real-time alerts','ETF & MF (20 funds)'], nope:['No broker/AA sync'], pro:false },
-              { name:'Pro',     tag:'var(--ylw)',  price:pr.p,  cycle:pr.cy,
+              { name:'Pro',     tag:'var(--ylw)',  price:pr.p,  cycle:pr.cy, href:'/sign-in?plan=pro',
                 cardStyle:{ ...GLS, background:'linear-gradient(145deg,rgba(255,184,0,0.22),rgba(255,130,0,0.12),rgba(23,64,245,0.1))', borderColor:'rgba(255,184,0,0.52)' },
                 btnStyle:{ background:'linear-gradient(135deg,#FFB800,#FF8C00)', border:'none', color:'#0a0f1a' },
                 feats:['Unlimited stocks · NSE/BSE','AA sync · stocks, MF, FD, NPS','Live broker sync · 6 brokers','Full Algo Builder + code gen','Paper Trading (unlimited)','WhatsApp + push alerts'], nope:[], pro:true },
-              { name:'Elite',   tag:'var(--pur)',  price:pr.e,  cycle:pr.cy,
+              { name:'Elite',   tag:'var(--pur)',  price:pr.e,  cycle:pr.cy, href:'/sign-in?plan=elite',
                 cardStyle:{ ...GC.pur },
                 btnStyle:{ background:'linear-gradient(135deg,rgba(139,92,246,0.45),rgba(100,40,200,0.3))', border:'1px solid rgba(139,92,246,0.5)', color:'#fff' },
-                feats:['Everything in Pro','Auto-execute orders','Custom ML model','US markets early access','Priority 24/7 support','Dedicated AI portfolio mgr'], nope:[], pro:false },
+                feats:['Everything in Pro','API access (500 req/day)','Custom ML model','US markets early access','Priority 24/7 support','Dedicated AI portfolio mgr'], nope:[], pro:false },
             ] as const).map(plan => (
               <div key={plan.name} className={`lp-plan-card${plan.pro ? ' lp-plan-pro' : ''}`}
                 style={{ ...plan.cardStyle, padding:'28px 24px', borderRadius:22, position:'relative', transform: plan.pro ? 'scale(1.04)' : 'none' }}>
@@ -769,10 +769,10 @@ export default function LandingPage() {
                   ))}
                 </ul>
                 {/* CTA */}
-                <button style={{ width:'100%', height:46, borderRadius:13, fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.3, ...plan.btnStyle,
+                <Link href={plan.href} style={{ width:'100%', height:46, borderRadius:13, fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.3, textDecoration:'none', display:'flex', alignItems:'center', justifyContent:'center', ...plan.btnStyle,
                   boxShadow: plan.pro ? '0 6px 32px rgba(255,184,0,0.35)' : 'none' }}>
                   {plan.pro ? 'Start Pro →' : `Get ${plan.name} →`}
-                </button>
+                </Link>
               </div>
             ))}
           </div>
