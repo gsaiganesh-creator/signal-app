@@ -8,9 +8,9 @@ export interface Database {
   public: {
     Tables: {
       profiles: {
-        Row:    { id: string; email: string | null; full_name: string | null; avatar_url: string | null; plan: Plan; broker: string | null; created_at: string; updated_at: string };
-        Insert: { id: string; email?: string | null; full_name?: string | null; avatar_url?: string | null; plan?: Plan; broker?: string | null };
-        Update: { email?: string | null; full_name?: string | null; avatar_url?: string | null; plan?: Plan; broker?: string | null };
+        Row:    { id: string; email: string | null; full_name: string | null; avatar_url: string | null; plan: Plan; plan_expires_at: string | null; broker: string | null; created_at: string; updated_at: string };
+        Insert: { id: string; email?: string | null; full_name?: string | null; avatar_url?: string | null; plan?: Plan; plan_expires_at?: string | null; broker?: string | null };
+        Update: { email?: string | null; full_name?: string | null; avatar_url?: string | null; plan?: Plan; plan_expires_at?: string | null; broker?: string | null };
         Relationships: [];
       };
       portfolios: {

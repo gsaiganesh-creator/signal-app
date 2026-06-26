@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
+import { ProGate } from '@/components/ProGate';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -356,6 +357,7 @@ export default function EquityCompPage() {
   );
 
   return (
+    <ProGate feature="equity-comp">
     <div style={{ maxWidth:1100, margin:'0 auto' }}>
       <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.pdf"
         style={{ display:'none' }} onChange={handleFileChange} />
@@ -698,5 +700,6 @@ export default function EquityCompPage() {
         </>
       )}
     </div>
+    </ProGate>
   );
 }
