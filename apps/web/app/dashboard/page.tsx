@@ -66,7 +66,11 @@ function greet() {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
-const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
+const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
+const colorCard = (grad: string, bdr: string): React.CSSProperties => ({
+  background: grad, border:`1px solid ${bdr}`, borderRadius:16, padding:'18px 20px',
+  backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)',
+});
 
 const LARGE_CAP = new Set([
   'RELIANCE','INFY','TCS','HDFCBANK','ICICIBANK','SBIN','WIPRO','HINDUNILVR','ITC',
@@ -499,45 +503,65 @@ export default function DashboardPage() {
       {/* Consolidated summary — India portfolios */}
       <div className="g4" style={{ display:'grid', gap:12, marginBottom:14 }}>
         {/* Equity */}
-        <div style={card}>
-          <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, marginBottom:6, textTransform:'uppercase' }}>Equity Stocks</div>
-          <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, lineHeight:1 }}>{equityH.length}</div>
-          <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>{fmtL(equityInvested)} invested</div>
+        <div style={colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)')}>
+          <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+            <div style={{ width:26, height:26, borderRadius:7, background:'rgba(79,111,250,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>📈</div>
+            <div style={{ fontSize:10, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>Equity Stocks</div>
+          </div>
+          <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{equityH.length}</div>
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{fmtL(equityInvested)} invested</div>
           {hasPrices && equityInvested > 0 && (
-            <div style={{ fontSize:12, fontWeight:700, marginTop:3, color: equityPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-              {equityPL >= 0 ? '+' : ''}{equityPLPct.toFixed(1)}%
+            <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: equityPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+              {equityPL >= 0 ? '▲' : '▼'} {equityPL >= 0 ? '+' : ''}{equityPLPct.toFixed(1)}%
             </div>
           )}
         </div>
         {/* ETF & MF */}
-        <div style={{ ...card, borderColor: etfH.length > 0 ? 'rgba(139,92,246,0.3)' : 'var(--bdr)' }}>
-          <div style={{ fontSize:10, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, marginBottom:6, textTransform:'uppercase' }}>ETF & MF</div>
-          <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, lineHeight:1 }}>{etfH.length}</div>
-          <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>{etfInvested > 0 ? fmtL(etfInvested) : '—'} invested</div>
+        <div style={colorCard('linear-gradient(135deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))','rgba(139,92,246,0.3)')}>
+          <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+            <div style={{ width:26, height:26, borderRadius:7, background:'rgba(139,92,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🏦</div>
+            <div style={{ fontSize:10, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, textTransform:'uppercase' }}>ETF & MF</div>
+          </div>
+          <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{etfH.length}</div>
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{etfInvested > 0 ? fmtL(etfInvested) : '—'} invested</div>
           {hasPrices && etfInvested > 0 && (
-            <div style={{ fontSize:12, fontWeight:700, marginTop:3, color: etfPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-              {etfPL >= 0 ? '+' : ''}{etfPLPct.toFixed(1)}%
+            <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: etfPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+              {etfPL >= 0 ? '▲' : '▼'} {etfPL >= 0 ? '+' : ''}{etfPLPct.toFixed(1)}%
             </div>
           )}
         </div>
         {/* Total Invested */}
-        <div style={card}>
-          <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, marginBottom:6, textTransform:'uppercase' }}>Total Invested</div>
-          <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, lineHeight:1 }}>{fmtL(invested)}</div>
-          <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>
+        <div style={colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)')}>
+          <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+            <div style={{ width:26, height:26, borderRadius:7, background:'rgba(0,212,160,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>💼</div>
+            <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Total Invested</div>
+          </div>
+          <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{fmtL(invested)}</div>
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
             {portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''} · India
           </div>
         </div>
         {/* Combined Return */}
-        <div style={card}>
-          <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, marginBottom:6, textTransform:'uppercase' }}>Combined Return</div>
-          <div style={{ fontSize:28, fontWeight:900, letterSpacing:-0.8, lineHeight:1, color: hasPrices ? (totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
-            {hasPrices ? `${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(1)}%` : '—'}
-          </div>
-          <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>
-            {hasPrices && totalPL !== 0 ? `${totalPL >= 0 ? '+' : ''}${fmtL(Math.abs(totalPL))}` : pricesLoading ? 'loading…' : '—'}
-          </div>
-        </div>
+        {(() => {
+          const up = !hasPrices || totalPLPct >= 0;
+          return (
+            <div style={colorCard(
+              up ? 'linear-gradient(135deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))' : 'linear-gradient(135deg,rgba(255,59,92,0.12),rgba(255,59,92,0.03))',
+              up ? 'rgba(0,212,160,0.3)' : 'rgba(255,59,92,0.28)'
+            )}>
+              <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+                <div style={{ width:26, height:26, borderRadius:7, background:up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.14)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>{up?'🚀':'📉'}</div>
+                <div style={{ fontSize:10, fontWeight:700, color:up?'var(--grn)':'var(--red)', letterSpacing:0.5, textTransform:'uppercase' }}>Combined Return</div>
+              </div>
+              <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color: hasPrices ? (totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
+                {hasPrices ? `${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(1)}%` : '—'}
+              </div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
+                {hasPrices && totalPL !== 0 ? `${totalPL >= 0 ? '+' : ''}${fmtL(Math.abs(totalPL))}` : pricesLoading ? 'loading…' : '—'}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ETF & MF breakdown */}
@@ -603,17 +627,20 @@ export default function DashboardPage() {
         return (
           <div style={{ marginBottom:20 }}>
             {/* Combined net worth strip */}
-            <div style={{ ...card, marginBottom:12, background:'linear-gradient(135deg,rgba(23,64,245,0.06),rgba(0,212,160,0.03))', border:'1px solid rgba(79,111,250,0.2)', padding:'14px 20px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap' }}>
+            <div style={{ marginBottom:12, background:'linear-gradient(135deg,rgba(0,212,160,0.13),rgba(23,64,245,0.08),rgba(139,92,246,0.06))', border:'1px solid rgba(0,212,160,0.3)', borderRadius:16, padding:'18px 22px', display:'flex', alignItems:'center', justifyContent:'space-between', gap:12, flexWrap:'wrap', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
               <div>
-                <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1 }}>Combined Net Worth (INR)</div>
-                <div style={{ fontSize:24, fontWeight:900, letterSpacing:-1, color:'var(--grn)', marginTop:4 }}>{fmtL(combinedINR)}</div>
-                <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
-                  India {fmtL(invested)} · US {fmtL(usInrEquiv)}
-                  {fxPos.length > 0 ? ` · Forex ${fmtL(fxCurrentINR)}` : ''}
-                  {cmPos.length > 0 ? ` · Cmdy ${fmtL(cmCurrentINR)}` : ''}
+                <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:6 }}>
+                  <div style={{ width:7, height:7, borderRadius:'50%', background:'var(--grn)' }}/>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', textTransform:'uppercase', letterSpacing:1 }}>Combined Net Worth (INR)</div>
+                </div>
+                <div style={{ fontSize:30, fontWeight:900, letterSpacing:-1, color:'var(--grn)' }}>{fmtL(combinedINR)}</div>
+                <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>
+                  🇮🇳 {fmtL(invested)} · 🇺🇸 {fmtL(usInrEquiv)}
+                  {fxPos.length > 0 ? ` · 💱 ${fmtL(fxCurrentINR)}` : ''}
+                  {cmPos.length > 0 ? ` · 🥇 ${fmtL(cmCurrentINR)}` : ''}
                 </div>
               </div>
-              {usdInr && <div style={{ fontSize:12, color:'var(--dim)', background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:8, padding:'4px 10px' }}>USD/INR ₹{usdInr.toFixed(2)}</div>}
+              {usdInr && <div style={{ fontSize:13, fontWeight:700, color:'var(--grn)', background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', borderRadius:10, padding:'6px 14px' }}>₹{usdInr.toFixed(2)}<span style={{ fontSize:10, color:'var(--dim)', fontWeight:400, marginLeft:4 }}>USD/INR</span></div>}
             </div>
 
             {/* Per-asset blocks */}
@@ -644,14 +671,18 @@ export default function DashboardPage() {
       {/* Analytics: treemap heatmap + cap donut */}
       <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
         {/* Treemap heatmap */}
-        <div style={{ ...card, padding:'16px' }}>
+        <div style={{ ...card, padding:'16px', borderColor:'rgba(0,212,160,0.2)', background:'linear-gradient(160deg,rgba(0,212,160,0.05),var(--card-bg))' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <div>
-              <div style={{ fontSize:13, fontWeight:700 }}>Portfolio Heatmap</div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
-                Tile size = portfolio weight · Color = daily change% · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => prices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ width:30, height:30, borderRadius:9, background:'rgba(0,212,160,0.14)', border:'1px solid rgba(0,212,160,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🔥</div>
+              <div>
+                <div style={{ fontSize:13, fontWeight:800 }}>Portfolio Heatmap</div>
+                <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>
+                  Size = weight · Color = daily Δ · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => prices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
+                </div>
               </div>
             </div>
+            <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
           </div>
           <TreemapHeatmap
             height={420}
@@ -701,13 +732,14 @@ export default function DashboardPage() {
 
       {/* Analyst commentary */}
       {insights.length > 0 && (
-        <div style={{ ...card, marginBottom:16 }}>
-          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
-            <div style={{ width:28, height:28, borderRadius:8, background:'rgba(23,64,245,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15, flexShrink:0 }}>🎯</div>
+        <div style={{ ...card, marginBottom:16, borderColor:'rgba(255,92,26,0.22)', background:'linear-gradient(135deg,rgba(255,92,26,0.05),var(--card-bg))' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
+            <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,rgba(255,92,26,0.18),rgba(255,184,0,0.12))', border:'1px solid rgba(255,92,26,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, flexShrink:0 }}>🎯</div>
             <div>
-              <div style={{ fontSize:13, fontWeight:700 }}>Portfolio Analysis</div>
+              <div style={{ fontSize:14, fontWeight:800, letterSpacing:-0.2 }}>Portfolio Analysis</div>
               <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>AI-generated · based on your current allocation</div>
             </div>
+            <div style={{ marginLeft:'auto', fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(255,92,26,0.1)', border:'1px solid rgba(255,92,26,0.25)', color:'var(--org)' }}>ML · Live</div>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
             {insights.map((ins, i) => (
@@ -722,9 +754,12 @@ export default function DashboardPage() {
       )}
 
       {/* US Portfolio summary — always visible */}
-      <div style={{ ...card, marginBottom:16 }}>
+      <div style={{ ...card, marginBottom:16, borderColor:'rgba(79,111,250,0.22)', background:'linear-gradient(135deg,rgba(79,111,250,0.06),var(--card-bg))' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-          <div style={{ fontSize:14, fontWeight:800, letterSpacing:-0.3 }}>🇺🇸 US Portfolio</div>
+          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+            <div style={{ width:30, height:30, borderRadius:9, background:'rgba(79,111,250,0.14)', border:'1px solid rgba(79,111,250,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🇺🇸</div>
+            <div style={{ fontSize:14, fontWeight:800, letterSpacing:-0.3 }}>US Portfolio</div>
+          </div>
           <Link href="/dashboard/us-portfolio" style={{ fontSize:11, color:'var(--bluL)', fontWeight:600, textDecoration:'none' }}>
             {hasUSHoldings ? 'View full →' : 'Set up →'}
           </Link>
