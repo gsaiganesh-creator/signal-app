@@ -540,22 +540,20 @@ export default function USPortfolioPage() {
               ) : (
                 <>
                   <button onClick={() => { setActivePortId(p.id); setViewMode('by-portfolio'); setMenuPortId(null); setUploadPortId(p.id); }}
-                    style={{ height:34, padding:'0 12px 0 16px', borderRadius: isActive ? '8px 0 0 8px' : '8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit',
-                      border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderRight: isActive ? 'none' : undefined,
+                    style={{ height:34, padding:'0 12px 0 16px', borderRadius:'8px 0 0 8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit',
+                      border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderRight:'none',
                       background: isActive ? 'rgba(23,64,245,0.1)' : 'var(--tab-inactive-bg)',
                       color: isActive ? 'var(--bluL)' : 'var(--tab-inactive-txt)' }}>
                     📂 {p.name}
                   </button>
-                  {isActive && (
-                    <button onClick={e => { e.stopPropagation(); const r=e.currentTarget.getBoundingClientRect(); setMenuPortPos({top:r.bottom+4,left:r.left}); setMenuPortId(m=>m===p.id?null:p.id); }}
-                      style={{ height:34, padding:'0 8px', borderRadius:'0 8px 8px 0', border:'1px solid var(--blu)', borderLeft:'1px solid rgba(23,64,245,0.3)', background:'rgba(23,64,245,0.08)', color:'var(--bluL)', cursor:'pointer', fontFamily:'inherit', fontSize:16, lineHeight:1 }}>
-                      ⋯
-                    </button>
-                  )}
+                  <button onClick={e => { e.stopPropagation(); const r=e.currentTarget.getBoundingClientRect(); setMenuPortPos({top:r.bottom+4,left:r.left}); setMenuPortId(m=>m===p.id?null:p.id); }}
+                    style={{ height:34, padding:'0 8px', borderRadius:'0 8px 8px 0', border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderLeft:'1px solid rgba(79,111,250,0.15)', background: isActive ? 'rgba(23,64,245,0.08)' : 'var(--tab-inactive-bg)', color: isActive ? 'var(--bluL)' : 'var(--dim)', cursor:'pointer', fontFamily:'inherit', fontSize:16, lineHeight:1 }}>
+                    ⋯
+                  </button>
                 </>
               )}
               {menuPortId === p.id && menuPortPos && (
-                <div onClick={e => e.stopPropagation()} style={{ position:'fixed', top:menuPortPos.top, left:menuPortPos.left, zIndex:9999, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.45)', minWidth:160, padding:'4px 0', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)' }}>
+                <div onClick={e => e.stopPropagation()} style={{ position:'fixed', top:menuPortPos.top, left:menuPortPos.left, zIndex:9999, background:'var(--surf2)', border:'1px solid var(--blu)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.5),0 0 0 1px rgba(79,111,250,0.3)', minWidth:160, padding:'4px 0', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)' }}>
                   <button onClick={() => { setRenamingPortId(p.id); setRenamePortVal(p.name); setMenuPortId(null); }}
                     style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
                     ✏️ Rename
