@@ -66,7 +66,7 @@ function greet() {
   return h < 12 ? 'Good morning' : h < 17 ? 'Good afternoon' : 'Good evening';
 }
 
-const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' };
+const card: React.CSSProperties = { background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', boxShadow:'0 4px 32px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.06)' };
 
 const LARGE_CAP = new Set([
   'RELIANCE','INFY','TCS','HDFCBANK','ICICIBANK','SBIN','WIPRO','HINDUNILVR','ITC',
@@ -182,7 +182,7 @@ function MarketOverview() {
           { name:'BANK NIFTY', val:'53,240', chg:'-88 (-0.17%)',  up:false },
           { name:'NIFTY IT',   val:'38,120', chg:'+420 (+1.12%)', up:true  },
         ].map(m => (
-          <div key={m.name} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:10, padding:'10px 13px' }}>
+          <div key={m.name} style={{ background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'10px 13px' }}>
             <div style={{ fontSize:11, color:'var(--dim)', marginBottom:2 }}>{m.name}</div>
             <div style={{ fontSize:17, fontWeight:900, letterSpacing:-0.5 }}>{m.val}</div>
             <div style={{ fontSize:11, fontWeight:700, marginTop:2, color: m.up ? 'var(--grn)' : 'var(--red)' }}>{m.up ? '▲' : '▼'} {m.chg}</div>
@@ -358,7 +358,7 @@ export default function DashboardPage() {
       <div>
         <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>
           {[0,1,2].map(i => (
-            <div key={i} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' }}>
+            <div key={i} style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px' }}>
               <div style={{ width:80, height:11, background:'var(--surf2)', borderRadius:4, marginBottom:12 }}/>
               <div style={{ width:120, height:28, background:'var(--surf2)', borderRadius:6 }}/>
             </div>
@@ -483,12 +483,12 @@ export default function DashboardPage() {
         </div>
         <div style={{ display:'flex', gap:6, alignItems:'center' }}>
           <Link href="/dashboard/portfolio"
-            style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
+            style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
             🇮🇳 India P&L →
           </Link>
           {hasUSHoldings && (
             <Link href="/dashboard/us-portfolio"
-              style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
+              style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
               🇺🇸 US P&L →
             </Link>
           )}
@@ -613,7 +613,7 @@ export default function DashboardPage() {
                   {cmPos.length > 0 ? ` · Cmdy ${fmtL(cmCurrentINR)}` : ''}
                 </div>
               </div>
-              {usdInr && <div style={{ fontSize:12, color:'var(--dim)', background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:8, padding:'4px 10px' }}>USD/INR ₹{usdInr.toFixed(2)}</div>}
+              {usdInr && <div style={{ fontSize:12, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, padding:'4px 10px' }}>USD/INR ₹{usdInr.toFixed(2)}</div>}
             </div>
 
             {/* Per-asset blocks */}

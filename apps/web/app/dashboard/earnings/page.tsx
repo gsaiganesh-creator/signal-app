@@ -68,7 +68,7 @@ export default function EarningsCalendarPage() {
       </div>
 
       {hasPortfolio && filteredDays.length === 0 && (
-        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'24px', marginBottom:20, textAlign:'center', color:'var(--dim)' }}>
+        <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'24px', marginBottom:20, textAlign:'center', color:'var(--dim)' }}>
           No earnings this week for stocks in your portfolio.
         </div>
       )}
@@ -76,7 +76,7 @@ export default function EarningsCalendarPage() {
       {/* Calendar grid */}
       <div className="g3-earnings" style={{ display:'grid', gap:14, marginBottom:24 }}>
         {filteredDays.map(day => (
-          <div key={day.date} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, overflow:'hidden' }}>
+          <div key={day.date} style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, overflow:'hidden' }}>
             <div style={{ padding:'12px 16px', background:'var(--surf2)', borderBottom:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
               <div style={{ fontSize:13, fontWeight:800 }}>{day.date}</div>
               <span style={{ fontSize:11, color:'var(--dim)' }}>{day.count}</span>
@@ -95,7 +95,7 @@ export default function EarningsCalendarPage() {
             ))}
           </div>
         ))}
-        <div style={{ background:'rgba(255,255,255,0.01)', border:'1px solid var(--bdr)', borderRadius:14, overflow:'hidden' }}>
+        <div style={{ background:'rgba(255,255,255,0.01)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, overflow:'hidden' }}>
           <div style={{ padding:'12px 16px', background:'rgba(255,255,255,0.02)', borderBottom:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'space-between' }}>
             <div style={{ fontSize:13, fontWeight:800, color:'var(--dim)' }}>Next Week</div>
             <span style={{ fontSize:11, color:'var(--dim)' }}>12+ results</span>

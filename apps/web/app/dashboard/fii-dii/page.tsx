@@ -68,7 +68,7 @@ export default function FIIDIIPage() {
           <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>FII / DII Flow</div>
           <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>Institutional money movement — India&apos;s biggest market driver · Source: NSE</div>
         </div>
-        {lastUpdated && <div style={{ fontSize:11, color:'var(--dim)', padding:'4px 10px', borderRadius:6, background:'var(--surf2)', border:'1px solid var(--bdr)' }}>Updated {lastUpdated}</div>}
+        {lastUpdated && <div style={{ fontSize:11, color:'var(--dim)', padding:'4px 10px', borderRadius:6, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)' }}>Updated {lastUpdated}</div>}
       </div>
 
       {loading && (
@@ -143,7 +143,7 @@ export default function FIIDIIPage() {
           )}
 
           {/* History table */}
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:20 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:20 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div style={{ fontSize:14, fontWeight:700 }}>Recent Trading Days</div>
               <span style={{ fontSize:11, color:'var(--dim)' }}>{rows.length} days tracked</span>
@@ -187,7 +187,7 @@ export default function FIIDIIPage() {
       )}
 
       {!loading && !today && !error && (
-        <div style={{ textAlign:'center', padding:'48px 24px', background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14 }}>
+        <div style={{ textAlign:'center', padding:'48px 24px', background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14 }}>
           <div style={{ fontSize:36, marginBottom:10 }}>📭</div>
           <div style={{ fontSize:14, fontWeight:700 }}>No data yet</div>
           <div style={{ fontSize:13, color:'var(--dim)', marginTop:6 }}>NSE API may be down or the market is closed. Try again during trading hours.</div>

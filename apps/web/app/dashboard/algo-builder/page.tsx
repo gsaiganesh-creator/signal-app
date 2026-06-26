@@ -111,7 +111,7 @@ export default function AlgoBuilderPage() {
           <div style={{ fontSize:18, fontWeight:800, letterSpacing:-0.4 }}>Strategy Builder</div>
           <div style={{ fontSize:13, color:'var(--dim)', marginTop:2 }}>Configure → backtest → paper trade → deploy.</div>
         </div>
-        <button style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>📂 My Strategies (3)</button>
+        <button style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>📂 My Strategies (3)</button>
       </div>
 
       {/* Step progress */}
@@ -132,7 +132,7 @@ export default function AlgoBuilderPage() {
       <div className="algo-main-grid">
         <div>
           {/* Step 1 */}
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:20, marginBottom:16 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:20, marginBottom:16 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div style={{ fontSize:14, fontWeight:700 }}>Step 1 — Strategy Type</div>
               {step > 1 && <span style={{ fontSize:11, fontWeight:700, color:'var(--grn)', padding:'3px 10px', borderRadius:6, background:'rgba(0,212,160,0.1)' }}>✓ {STRATS[stratIdx].name} selected</span>}
@@ -153,7 +153,7 @@ export default function AlgoBuilderPage() {
           </div>
 
           {/* Step 2 */}
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:20, marginBottom:16 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:20, marginBottom:16 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
               <div style={{ fontSize:14, fontWeight:700 }}>Step 2 — Stock Universe &amp; Indicators</div>
               {step > 2 && <span style={{ fontSize:11, fontWeight:700, color:'var(--grn)', padding:'3px 10px', borderRadius:6, background:'rgba(0,212,160,0.1)' }}>✓ {checked.length} indicators selected</span>}
@@ -184,7 +184,7 @@ export default function AlgoBuilderPage() {
           </div>
 
           {/* Step 3 */}
-          <div style={{ background:'var(--surf)', border:`1px solid ${step===3 ? 'rgba(23,64,245,0.3)' : 'var(--bdr)'}`, borderRadius:14, padding:20, marginBottom:16 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:`1px solid ${step===3 ? 'rgba(23,64,245,0.3)' : 'var(--bdr)'}`, borderRadius:14, padding:20, marginBottom:16 }}>
             <div style={{ fontSize:14, fontWeight:700, marginBottom:8 }}>Step 3 — Entry &amp; Exit Conditions</div>
             <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.55, marginBottom:16 }}>Define when SIGNAL should trigger a BUY or SELL. All conditions must be true simultaneously.</div>
             <div style={{ fontSize:12, fontWeight:700, color:'var(--grn)', marginBottom:8 }}>🟢 BUY when ALL of these are true:</div>
@@ -225,7 +225,7 @@ export default function AlgoBuilderPage() {
                 <div key={p.label}>
                   <label style={{ fontSize:11, fontWeight:600, color:'var(--dim)', display:'block', marginBottom:6 }}>{p.label}</label>
                   <input type="number" value={p.state} onChange={e => p.setState(e.target.value)} step="0.5" min="0.5" max="20"
-                    style={{ height:36, padding:'0 12px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:14, fontWeight:700, fontFamily:'inherit', outline:'none', width:'100%' }}/>
+                    style={{ height:36, padding:'0 12px', borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:14, fontWeight:700, fontFamily:'inherit', outline:'none', width:'100%' }}/>
                   <div style={{ fontSize:18, fontWeight:900, marginTop:4, color:'var(--txt)' }}>{p.state}%</div>
                 </div>
               ))}
@@ -233,18 +233,18 @@ export default function AlgoBuilderPage() {
           </div>
 
           {/* Step 4 */}
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:20 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:20 }}>
             <div style={{ fontSize:14, fontWeight:700, marginBottom:16 }}>Step 4 — Backtest &amp; Deploy</div>
             <div className="bt-stats-grid">
               {BT.map(b => (
-                <div key={b.lbl} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:11, padding:'12px 14px', textAlign:'center' }}>
+                <div key={b.lbl} style={{ background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:11, padding:'12px 14px', textAlign:'center' }}>
                   <div style={{ fontSize:20, fontWeight:900, color:b.c }}>{b.val}</div>
                   <div style={{ fontSize:10.5, color:'var(--dim)', marginTop:3 }}>{b.lbl}</div>
                 </div>
               ))}
             </div>
             <button onClick={() => setShowCode(!showCode)}
-              style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginBottom:12 }}>
+              style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginBottom:12 }}>
               {showCode ? '▲ Hide Code' : '▼ View Generated Code'}
             </button>
             {showCode && (
@@ -263,7 +263,7 @@ export default function AlgoBuilderPage() {
 
         {/* Right panel */}
         <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:18 }}>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Your Strategy</div>
             <div style={{ fontSize:12, color:'var(--dim)', marginBottom:2 }}>Type</div>
             <div style={{ fontSize:14, fontWeight:700, marginBottom:10 }}>{STRATS[stratIdx].icon} {STRATS[stratIdx].name}</div>
@@ -279,11 +279,11 @@ export default function AlgoBuilderPage() {
             </div>
           </div>
 
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:18 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:18 }}>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Actions</div>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               <Link href="/paper-trading" style={{ height:46, borderRadius:12, background:'linear-gradient(135deg,var(--pur),#6D3EC1)', border:'none', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>🧪 Paper Trade This</Link>
-              <button style={{ height:46, borderRadius:12, background:'transparent', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>💾 Save Strategy</button>
+              <button style={{ height:46, borderRadius:12, background:'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>💾 Save Strategy</button>
               <button onClick={() => setShowCode(!showCode)} style={{ height:46, borderRadius:12, background:'rgba(23,64,245,0.1)', border:'1px solid rgba(23,64,245,0.3)', color:'var(--bluL)', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>{'</>'} Generate Code</button>
             </div>
           </div>

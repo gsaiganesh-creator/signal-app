@@ -485,8 +485,8 @@ async function parseFile(file: File): Promise<{ result: ParsedRow[]; debug: stri
   }
 }
 
-const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' };
-const inp: React.CSSProperties = { height:40, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:'100%' };
+const card: React.CSSProperties = { background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', boxShadow:'0 4px 32px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.06)' };
+const inp: React.CSSProperties = { height:40, borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:'100%' };
 
 export default function PortfolioPage() {
   const { portfolios, activeId, activePortfolio, holdings: rawHoldings, setActiveId, createPortfolio, renamePortfolio, deletePortfolio, refresh: refreshContext, session } = usePortfolio();
@@ -859,7 +859,7 @@ export default function PortfolioPage() {
 
         <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:16, maxWidth:680, marginBottom:24 }}>
           {/* Step 1 — Create Portfolio */}
-          <div style={{ background:'var(--surf)', border:`1px solid ${portfolioCreated ? 'rgba(0,212,160,0.4)' : 'var(--bdr)'}`, borderRadius:16, padding:'24px' }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:`1px solid ${portfolioCreated ? 'rgba(0,212,160,0.4)' : 'var(--bdr)'}`, borderRadius:16, padding:'24px' }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
               <div style={{ width:26, height:26, borderRadius:'50%', background: portfolioCreated ? 'var(--grn)' : 'var(--blu)', color:'#fff', fontSize:12, fontWeight:900, display:'flex', alignItems:'center', justifyContent:'center' }}>
                 {portfolioCreated ? '✓' : '1'}
@@ -887,7 +887,7 @@ export default function PortfolioPage() {
           </div>
 
           {/* Step 2 — Upload */}
-          <div style={{ background:'var(--surf)', border:`1px solid ${!portfolioCreated ? 'rgba(255,255,255,0.04)' : 'var(--bdr)'}`, borderRadius:16, padding:'24px', opacity: portfolioCreated ? 1 : 0.45 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:`1px solid ${!portfolioCreated ? 'rgba(255,255,255,0.04)' : 'var(--bdr)'}`, borderRadius:16, padding:'24px', opacity: portfolioCreated ? 1 : 0.45 }}>
             <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:14 }}>
               <div style={{ width:26, height:26, borderRadius:'50%', background:'var(--blu)', color:'#fff', fontSize:12, fontWeight:900, display:'flex', alignItems:'center', justifyContent:'center' }}>2</div>
               <div style={{ fontSize:13, fontWeight:700 }}>Upload your holdings</div>
@@ -916,7 +916,7 @@ export default function PortfolioPage() {
         )}
 
         {/* Broker format guide */}
-        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'14px 18px', maxWidth:680, fontSize:12 }}>
+        <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'14px 18px', maxWidth:680, fontSize:12 }}>
           <div style={{ fontWeight:700, color:'var(--dim)', marginBottom:8 }}>Supported broker exports (auto-detected)</div>
           {[
             ['Zerodha Kite', 'Holdings → ⋮ → Download CSV'],
@@ -961,7 +961,7 @@ export default function PortfolioPage() {
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={() => fileRef.current?.click()} disabled={syncing || !activeId}
-            style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: syncing ? 0.6 : 1 }}>
+            style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: syncing ? 0.6 : 1 }}>
             {syncing ? '⏳ Importing…' : '📤 Upload (CSV / Excel)'}
           </button>
           <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.txt,.pdf" style={{ display:'none' }} onChange={handleFile}/>
@@ -970,7 +970,7 @@ export default function PortfolioPage() {
             + Add Stock
           </button>
           <button onClick={() => enrichHoldings(rawHoldings)} disabled={loading}
-            style={{ height:36, padding:'0 12px', borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>🔄</button>
+            style={{ height:36, padding:'0 12px', borderRadius:9, background:'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>🔄</button>
         </div>
       </div>
 
@@ -995,7 +995,7 @@ export default function PortfolioPage() {
                   <button onClick={handleRename}
                     style={{ height:34, padding:'0 10px', borderRadius:'0 8px 8px 0', background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>✓</button>
                   <button onClick={() => setRenamingId(null)}
-                    style={{ height:34, padding:'0 8px', marginLeft:4, borderRadius:8, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+                    style={{ height:34, padding:'0 8px', marginLeft:4, borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
                 </>
               ) : (
                 <>
@@ -1013,7 +1013,7 @@ export default function PortfolioPage() {
               )}
               {/* Dropdown menu */}
               {menuId === p.id && menuPos && (
-                <div style={{ position:'fixed', top:menuPos.top, left:menuPos.left, zIndex:9999, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.45)', minWidth:160, padding:'4px 0' }}>
+                <div style={{ position:'fixed', top:menuPos.top, left:menuPos.left, zIndex:9999, background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.45)', minWidth:160, padding:'4px 0' }}>
                   <button onClick={() => { setRenamingId(p.id); setRenameVal(p.name); setMenuId(null); }}
                     style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
                     ✏️ Rename
@@ -1038,7 +1038,7 @@ export default function PortfolioPage() {
               {creatingPortfolio ? '…' : 'Create'}
             </button>
             <button onClick={() => { setShowNewPortfolio(false); setNewPortfolioName(''); }}
-              style={{ height:34, padding:'0 10px', borderRadius:8, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+              style={{ height:34, padding:'0 10px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
           </div>
         ) : (
           <button onClick={() => { setShowNewPortfolio(true); setMenuId(null); }}
@@ -1052,7 +1052,7 @@ export default function PortfolioPage() {
       {confirmDeleteId && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:100, display:'flex', alignItems:'center', justifyContent:'center' }}
           onClick={e => { if (e.target === e.currentTarget) setConfirmDeleteId(null); }}>
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:'28px 32px', maxWidth:400, width:'90%', boxShadow:'0 16px 48px rgba(0,0,0,0.5)' }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:'28px 32px', maxWidth:400, width:'90%', boxShadow:'0 16px 48px rgba(0,0,0,0.5)' }}>
             <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>Delete portfolio?</div>
             <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6, marginBottom:24 }}>
               This will permanently delete <strong style={{ color:'var(--txt)' }}>
@@ -1061,7 +1061,7 @@ export default function PortfolioPage() {
             </div>
             <div style={{ display:'flex', gap:10 }}>
               <button onClick={() => setConfirmDeleteId(null)} disabled={deletingPortfolio}
-                style={{ flex:1, height:42, borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                style={{ flex:1, height:42, borderRadius:10, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
                 Cancel
               </button>
               <button onClick={() => handleDeletePortfolio(confirmDeleteId)} disabled={deletingPortfolio}
@@ -1241,7 +1241,7 @@ export default function PortfolioPage() {
               {syncing ? '⏳ Importing…' : '📤 Upload Holdings (CSV / Excel / PDF)'}
             </button>
             <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>or use <strong style={{ color:'var(--txt)' }}>+ Add Stock</strong> above to add manually</div>
-            <div style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:12, padding:'16px 20px', display:'inline-block', textAlign:'left', maxWidth:440 }}>
+            <div style={{ background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'16px 20px', display:'inline-block', textAlign:'left', maxWidth:440 }}>
               <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:10 }}>Supported formats</div>
               {[
                 ['MStock DP PDF', 'Download Holdings → DP Holding Statement (PDF)'],
@@ -1435,7 +1435,7 @@ export default function PortfolioPage() {
           <div onClick={() => setSelectedStock(null)}
             style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
             <div onClick={e => e.stopPropagation()}
-              style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, width:'min(470px,95vw)', boxShadow:'0 24px 80px rgba(0,0,0,0.6)', maxHeight:'92vh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
+              style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, width:'min(470px,95vw)', boxShadow:'0 24px 80px rgba(0,0,0,0.6)', maxHeight:'92vh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
 
               {/* ─── HEADER ─── */}
               <div style={{ padding:'18px 18px 14px', borderBottom:'1px solid var(--bdr)', flexShrink:0 }}>
@@ -1447,7 +1447,7 @@ export default function PortfolioPage() {
                     </div>
                   </div>
                   <button onClick={() => setSelectedStock(null)}
-                    style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--dim)', fontSize:15, flexShrink:0 }}>✕</button>
+                    style={{ background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--dim)', fontSize:15, flexShrink:0 }}>✕</button>
                 </div>
 
                 {/* Live price row */}
@@ -1483,7 +1483,7 @@ export default function PortfolioPage() {
                       { label:'Invested', val:fmtL(invested), sub:`${h.qty} units`, subC:'var(--dim)' },
                       { label:'Current Value', val: current != null ? fmtL(current) : '—', sub:'', subC:'var(--dim)' },
                     ].map(m => (
-                      <div key={m.label} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:9, padding:'9px 11px' }}>
+                      <div key={m.label} style={{ background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, padding:'9px 11px' }}>
                         <div style={{ fontSize:9, color:'var(--dim)', fontWeight:700, letterSpacing:0.5, marginBottom:3 }}>{m.label.toUpperCase()}</div>
                         <div style={{ fontSize:14, fontWeight:800 }}>{m.val}</div>
                         {m.sub && <div style={{ fontSize:10, color:m.subC, marginTop:1 }}>{m.sub}</div>}
@@ -1546,7 +1546,7 @@ export default function PortfolioPage() {
                         { label:'52W Low', val: d.low_52w != null ? fmtRs(d.low_52w) : '—', color:'var(--txt)' },
                         { label:'From 52H', val: d.from_52h != null ? `${d.from_52h.toFixed(1)}%` : '—', color: d.from_52h != null ? (d.from_52h > -8 ? 'var(--grn)' : d.from_52h < -25 ? 'var(--red)' : 'var(--ylw)') : 'var(--dim)' },
                       ].map(ind => (
-                        <div key={ind.label} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:9, padding:'9px 11px' }}>
+                        <div key={ind.label} style={{ background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, padding:'9px 11px' }}>
                           <div style={{ fontSize:9, color:'var(--dim)', fontWeight:600, marginBottom:3, letterSpacing:0.3 }}>{ind.label}</div>
                           <div style={{ fontSize:14, fontWeight:800, color:ind.color }}>{ind.val}</div>
                         </div>
@@ -1588,7 +1588,7 @@ export default function PortfolioPage() {
                         </div>
                         <div style={{ position:'relative', height:6, background:'rgba(255,255,255,0.07)', borderRadius:3 }}>
                           <div style={{ position:'absolute', inset:0, background:'linear-gradient(to right,var(--red),rgba(255,255,255,0.08) 50%,var(--grn))', borderRadius:3, opacity:0.4 }}/>
-                          <div style={{ position:'absolute', top:'50%', left:`${Math.min(95,Math.max(5,d.bb_pct))}%`, transform:'translate(-50%,-50%)', width:12, height:12, borderRadius:'50%', background:'var(--surf)', border:'2px solid #4F6FFA', boxShadow:'0 0 0 2px var(--surf)' }}/>
+                          <div style={{ position:'absolute', top:'50%', left:`${Math.min(95,Math.max(5,d.bb_pct))}%`, transform:'translate(-50%,-50%)', width:12, height:12, borderRadius:'50%', background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'2px solid #4F6FFA', boxShadow:'0 0 0 2px var(--surf)' }}/>
                         </div>
                       </div>
                     )}
@@ -1613,7 +1613,7 @@ export default function PortfolioPage() {
                 </div>
                 <div style={{ display:'flex', gap:7 }}>
                   <button onClick={e => { e.stopPropagation(); setEditingCostId(h.id); setEditCostVal(String(h.avg_price)); setSelectedStock(null); }}
-                    style={{ flex:1, height:38, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                    style={{ flex:1, height:38, borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
                     ✏️ Edit Cost
                   </button>
                   <button onClick={e => { e.stopPropagation(); handleDelete(h.id); setSelectedStock(null); }}

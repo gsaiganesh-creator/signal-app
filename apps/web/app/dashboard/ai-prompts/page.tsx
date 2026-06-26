@@ -88,7 +88,7 @@ const PROMPTS: Prompt[] = [
 
 const CATEGORIES = ['All', ...Array.from(new Set(PROMPTS.map(p => p.category)))];
 
-const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' };
+const card: React.CSSProperties = { background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', boxShadow:'0 4px 32px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.06)' };
 
 export default function AIPromptsPage() {
   const [cat,    setCat   ] = useState('All');
@@ -136,7 +136,7 @@ export default function AIPromptsPage() {
           placeholder="Search prompts…"
           value={search}
           onChange={e => setSearch(e.target.value)}
-          style={{ height:38, borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', padding:'0 14px', fontSize:13, fontFamily:'inherit', outline:'none', minWidth:180, flex:1 }}
+          style={{ height:38, borderRadius:10, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', padding:'0 14px', fontSize:13, fontFamily:'inherit', outline:'none', minWidth:180, flex:1 }}
         />
         <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
           {CATEGORIES.map(c => (
@@ -160,7 +160,7 @@ export default function AIPromptsPage() {
                 <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:4 }}>
                   <span style={{ fontSize:18 }}>{p.icon}</span>
                   <span style={{ fontSize:14, fontWeight:800 }}>{p.title}</span>
-                  <span style={{ fontSize:10, fontWeight:700, color:'var(--dim)', background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:6, padding:'2px 7px' }}>
+                  <span style={{ fontSize:10, fontWeight:700, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:6, padding:'2px 7px' }}>
                     {p.category}
                   </span>
                 </div>
@@ -177,14 +177,14 @@ export default function AIPromptsPage() {
             </div>
 
             {/* Prompt text */}
-            <div style={{ background:'var(--surf2)', borderRadius:10, padding:'12px 14px', fontSize:12.5, lineHeight:1.7, color:'var(--txt)', fontFamily:'inherit', border:'1px solid var(--bdr)' }}>
+            <div style={{ background:'var(--surf2)', borderRadius:10, padding:'12px 14px', fontSize:12.5, lineHeight:1.7, color:'var(--txt)', fontFamily:'inherit', border:'1px solid rgba(255,255,255,0.08)' }}>
               {p.prompt}
             </div>
 
             {/* Tags */}
             <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
               {p.tags.map(t => (
-                <span key={t} style={{ fontSize:10.5, fontWeight:600, color:'var(--dim)', background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:20, padding:'2px 9px' }}>
+                <span key={t} style={{ fontSize:10.5, fontWeight:600, color:'var(--dim)', background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:'2px 9px' }}>
                   {t}
                 </span>
               ))}

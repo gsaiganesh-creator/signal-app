@@ -68,10 +68,10 @@ export function DashboardSidebar() {
   const currentTab = TABS.find(t => t.key === activeTab)!;
 
   return (
-    <aside className="dash-sidebar" style={{ background: 'var(--surf)', borderRight: '1px solid var(--bdr)', display: 'flex', flexDirection: 'column', gap: 0, padding: 0 }}>
+    <aside className="dash-sidebar" style={{ background: 'linear-gradient(180deg,rgba(10,18,36,0.92),rgba(6,11,24,0.90))', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', borderRight: '1px solid rgba(255,255,255,0.07)', display: 'flex', flexDirection: 'column', gap: 0, padding: 0 }}>
 
       {/* Tab strip */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: '1px solid var(--bdr)', padding: '8px 6px 0' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '8px 6px 0' }}>
         {TABS.map(tab => {
           const isActive = activeTab === tab.key;
           return (
@@ -126,7 +126,7 @@ export function DashboardSidebar() {
 
       {/* Upgrade nudge — only when not in account tab */}
       {activeTab !== 'account' && (
-        <div style={{ padding: '10px 12px 14px', borderTop: '1px solid var(--bdr)' }}>
+        <div style={{ padding: '10px 12px 14px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
           <Link href="/dashboard/upgrade" style={{
             display: 'flex', alignItems: 'center', gap: 8,
             padding: '10px 12px', borderRadius: 10,

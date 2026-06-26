@@ -113,7 +113,7 @@ export default function TrackRecordPage() {
           { label:'Best Trade',     val:`+${bestRet}%`,           sub:bestCall ? bestCall.stock : '—',           color:'var(--grn)' },
           { label:'Total Calls',    val:`${CALLS.length}`,        sub:`${CALLS.filter(c=>c.status==='Running').length} running now`, color:'var(--txt)' },
         ].map(s => (
-          <div key={s.label} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:13, padding:'16px 18px' }}>
+          <div key={s.label} style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:13, padding:'16px 18px' }}>
             <div style={{ fontSize:11, color:'var(--dim)', marginBottom:6, textTransform:'uppercase', letterSpacing:0.5, fontWeight:700 }}>{s.label}</div>
             <div style={{ fontSize:24, fontWeight:900, color:s.color, letterSpacing:-0.5 }}>{s.val}</div>
             <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>{s.sub}</div>
@@ -122,7 +122,7 @@ export default function TrackRecordPage() {
       </div>
 
       {/* Monthly win rate bar chart */}
-      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:20, marginBottom:24 }}>
+      <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:20, marginBottom:24 }}>
         <div style={{ fontSize:13, fontWeight:700, marginBottom:16 }}>Monthly Win Rate</div>
         <div style={{ display:'flex', alignItems:'flex-end', gap:16 }}>
           {monthStats.map(m => {
@@ -155,7 +155,7 @@ export default function TrackRecordPage() {
 
       {/* ── All Calls table ── */}
       {tab === 'calls' && (
-        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, overflow:'hidden' }}>
+        <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, overflow:'hidden' }}>
           <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
             <thead>
               <tr style={{ background:'var(--surf2)' }}>
@@ -202,7 +202,7 @@ export default function TrackRecordPage() {
       {tab === 'sectors' && (
         <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
           {topSectors.map(s => (
-            <div key={s.sector} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'14px 18px', display:'flex', alignItems:'center', gap:16 }}>
+            <div key={s.sector} style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:12, padding:'14px 18px', display:'flex', alignItems:'center', gap:16 }}>
               <div style={{ width:110, fontSize:13, fontWeight:700, flexShrink:0 }}>{s.sector.replace('_',' ')}</div>
               <div style={{ flex:1, height:10, background:'var(--surf2)', borderRadius:5, overflow:'hidden' }}>
                 <div style={{ height:'100%', width:`${s.pct}%`, background: s.pct >= 70 ? 'var(--grn)' : s.pct >= 50 ? 'rgba(255,184,0,0.8)' : 'var(--red)', borderRadius:5, transition:'width 0.5s' }}/>
@@ -219,7 +219,7 @@ export default function TrackRecordPage() {
       {/* ── Methodology ── */}
       {tab === 'method' && (
         <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:20 }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:20 }}>
             <div style={{ fontSize:14, fontWeight:700, marginBottom:12 }}>How signals are selected</div>
             {[
               { icon:'📊', title:'RSI Filter — 42 to 62',      desc:'Excludes overbought (>62) and deeply oversold (<42) stocks. Sweet spot: momentum building, not extended.' },

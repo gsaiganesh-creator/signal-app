@@ -7,8 +7,8 @@ import * as XLSX from 'xlsx';
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' };
-const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' };
+const card: React.CSSProperties = { background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', boxShadow:'0 4px 32px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.06)' };
+const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' };
 
 interface USHolding { id: string; symbol: string; exchange: string; qty: number; avg_price: number; portfolio_id: string; portfolio_name?: string; }
 type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
@@ -415,7 +415,7 @@ export default function USPortfolioPage() {
             + Add Stock
           </button>
           <button onClick={() => fileRef.current?.click()}
-            style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
+            style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
             📂 Import File
           </button>
           <input type="file" ref={fileRef} accept=".csv,.xlsx,.xls" style={{ display:'none' }} onChange={handleFile} />
@@ -448,7 +448,7 @@ export default function USPortfolioPage() {
                     onKeyDown={e => { if (e.key==='Enter') handleRenamePort(); if (e.key==='Escape') setRenamingPortId(null); }}
                     style={{ height:34, borderRadius:'8px 0 0 8px', background:'var(--surf2)', border:'1px solid var(--blu)', borderRight:'none', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:140 }}/>
                   <button onClick={handleRenamePort} style={{ height:34, padding:'0 10px', borderRadius:'0 8px 8px 0', background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>✓</button>
-                  <button onClick={() => setRenamingPortId(null)} style={{ height:34, padding:'0 8px', marginLeft:4, borderRadius:8, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+                  <button onClick={() => setRenamingPortId(null)} style={{ height:34, padding:'0 8px', marginLeft:4, borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
                 </>
               ) : (
                 <>
@@ -468,7 +468,7 @@ export default function USPortfolioPage() {
                 </>
               )}
               {menuPortId === p.id && menuPortPos && (
-                <div style={{ position:'fixed', top:menuPortPos.top, left:menuPortPos.left, zIndex:9999, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.45)', minWidth:160, padding:'4px 0' }}>
+                <div style={{ position:'fixed', top:menuPortPos.top, left:menuPortPos.left, zIndex:9999, background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.45)', minWidth:160, padding:'4px 0' }}>
                   <button onClick={() => { setRenamingPortId(p.id); setRenamePortVal(p.name); setMenuPortId(null); }}
                     style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
                     ✏️ Rename
@@ -493,7 +493,7 @@ export default function USPortfolioPage() {
               {creatingPort ? '…' : 'Create'}
             </button>
             <button onClick={() => { setShowNewPortInput(false); setNewPortName(''); }}
-              style={{ height:34, padding:'0 10px', borderRadius:8, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+              style={{ height:34, padding:'0 10px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
           </div>
         ) : (
           <button onClick={() => { setShowNewPortInput(true); setMenuPortId(null); }}
@@ -507,14 +507,14 @@ export default function USPortfolioPage() {
       {confirmDeletePortId && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:100, display:'flex', alignItems:'center', justifyContent:'center' }}
           onClick={e => { if (e.target===e.currentTarget) setConfirmDeletePortId(null); }}>
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:'28px 32px', maxWidth:400, width:'90%', boxShadow:'0 16px 48px rgba(0,0,0,0.5)' }}>
+          <div style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:16, padding:'28px 32px', maxWidth:400, width:'90%', boxShadow:'0 16px 48px rgba(0,0,0,0.5)' }}>
             <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>Delete portfolio?</div>
             <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6, marginBottom:24 }}>
               This will permanently delete <strong style={{ color:'var(--txt)' }}>{usPortfolios.find(p=>p.id===confirmDeletePortId)?.name}</strong> and all its US holdings. Cannot be undone.
             </div>
             <div style={{ display:'flex', gap:10 }}>
               <button onClick={() => setConfirmDeletePortId(null)} disabled={deletingPort}
-                style={{ flex:1, height:42, borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                style={{ flex:1, height:42, borderRadius:10, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
                 Cancel
               </button>
               <button onClick={() => handleDeletePort(confirmDeletePortId)} disabled={deletingPort}
@@ -660,7 +660,7 @@ export default function USPortfolioPage() {
               </div>
               <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
                 <button onClick={() => setAddOpen(true)} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Add Stock</button>
-                <button onClick={() => fileRef.current?.click()} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📂 Import CSV / XLSX</button>
+                <button onClick={() => fileRef.current?.click()} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📂 Import CSV / XLSX</button>
               </div>
               <div style={{ marginTop:12, fontSize:11, color:'var(--dim2)' }}>Schwab · Fidelity · Robinhood · Webull · TD Ameritrade · Merrill Edge · IBKR</div>
             </>
@@ -681,7 +681,7 @@ export default function USPortfolioPage() {
                 const chg = p?.change_pct ?? null;
                 const isPos = chg == null || chg >= 0;
                 return (
-                  <div key={pick.sym} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:10, padding:'10px 12px', borderLeft:`3px solid ${isPos ? 'var(--grn)' : 'var(--red)'}` }}>
+                  <div key={pick.sym} style={{ background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:10, padding:'10px 12px', borderLeft:`3px solid ${isPos ? 'var(--grn)' : 'var(--red)'}` }}>
                     <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                       <div style={{ fontSize:13, fontWeight:800 }}>{pick.sym}</div>
                       {chg != null && <div style={{ fontSize:11, fontWeight:700, color: isPos ? 'var(--grn)' : 'var(--red)' }}>{chg >= 0 ? '+' : ''}{chg.toFixed(2)}%</div>}
@@ -705,7 +705,7 @@ export default function USPortfolioPage() {
       {/* Add holding modal */}
       {addOpen && (
         <div onClick={() => setAddOpen(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:24, width:'min(400px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.45)' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:18, padding:24, width:'min(400px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.45)' }}>
             <div style={{ fontSize:17, fontWeight:800, marginBottom:18 }}>Add US Stock</div>
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
               <div>
@@ -738,7 +738,7 @@ export default function USPortfolioPage() {
                   Add Stock
                 </button>
                 <button onClick={() => setAddOpen(false)}
-                  style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+                  style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
                   Cancel
                 </button>
               </div>
@@ -764,7 +764,7 @@ export default function USPortfolioPage() {
 
         function Stat({ label, val, sub, color }: { label:string; val:string; sub?:string; color?:string }) {
           return (
-            <div style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:9, padding:'9px 12px' }}>
+            <div style={{ background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:9, padding:'9px 12px' }}>
               <div style={{ fontSize:9, color:'var(--dim)', fontWeight:700, letterSpacing:0.4, marginBottom:3 }}>{label.toUpperCase()}</div>
               <div style={{ fontSize:13, fontWeight:800, color: color ?? 'var(--txt)' }}>{val}</div>
               {sub && <div style={{ fontSize:9.5, color:'var(--dim)', marginTop:1 }}>{sub}</div>}
@@ -787,7 +787,7 @@ export default function USPortfolioPage() {
           <div onClick={() => { setSelected(null); setDetail(null); }}
             style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16, overflowY:'auto' }}>
             <div onClick={e => e.stopPropagation()}
-              style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:24, width:'min(560px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.5)', maxHeight:'92vh', overflowY:'auto' }}>
+              style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:20, padding:24, width:'min(560px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.5)', maxHeight:'92vh', overflowY:'auto' }}>
 
               {/* Header */}
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
@@ -798,7 +798,7 @@ export default function USPortfolioPage() {
                   </div>
                 </div>
                 <button onClick={() => { setSelected(null); setDetail(null); }}
-                  style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:8, width:32, height:32, cursor:'pointer', color:'var(--dim)', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
+                  style={{ background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', borderRadius:8, width:32, height:32, cursor:'pointer', color:'var(--dim)', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
               </div>
 
               {/* Price row */}
@@ -941,7 +941,7 @@ export default function USPortfolioPage() {
                       <Section title="Signals" />
                       <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
                         {d.signals.map((s, i) => (
-                          <div key={i} style={{ fontSize:12, padding:'7px 12px', background:'var(--surf2)', borderRadius:8, border:'1px solid var(--bdr)',
+                          <div key={i} style={{ fontSize:12, padding:'7px 12px', background:'var(--surf2)', borderRadius:8, border:'1px solid rgba(255,255,255,0.08)',
                             color: s.startsWith('⚠') ? 'var(--ylw)' : s.includes('bullish') || s.includes('ABOVE') || s.includes('upside') ? 'var(--grn)' : s.includes('bearish') || s.includes('BELOW') || s.includes('elevated') ? 'var(--red)' : 'var(--txt)' }}>
                             {s}
                           </div>

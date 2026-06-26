@@ -14,7 +14,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh' }}>
 
         {/* Top Nav — 3-col grid: logo | tabs (centered) | controls */}
-        <nav style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:58, padding:'0 clamp(12px,3vw,32px)', background:'var(--surf)', borderBottom:'1px solid var(--bdr)', position:'sticky', top:0, zIndex:100, overflow:'visible' }}>
+        <nav style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:58, padding:'0 clamp(12px,3vw,32px)', background:'linear-gradient(145deg,rgba(10,18,36,0.88),rgba(6,11,24,0.85))', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', borderBottom:'1px solid rgba(255,255,255,0.08)', position:'sticky', top:0, zIndex:100, overflow:'visible' }}>
           <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, fontSize:18, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)', flexShrink:0, justifySelf:'start' }}>
             <svg width="22" height="22" viewBox="0 0 26 26" fill="none">
               <rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/>
@@ -29,7 +29,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
           <div className="dash-right" style={{ marginLeft: 0, justifySelf:'end' }}>
             <ThemeToggle />
-            <div className="dash-bell" style={{ width:34, height:34, borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', flexShrink:0 }}>
+            <div className="dash-bell" style={{ width:34, height:34, borderRadius:9, background:'transparent', border:'1px solid rgba(255,255,255,0.08)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', flexShrink:0 }}>
               <span style={{ fontSize:14 }}>🔔</span>
               <div style={{ position:'absolute', top:6, right:6, width:7, height:7, borderRadius:'50%', background:'var(--red)', border:'1.5px solid var(--surf)' }}/>
             </div>
@@ -39,7 +39,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
 
         {/* Sub-nav strip — below top nav, above page content */}
-        <div style={{ borderBottom:'1px solid var(--bdr)', background:'var(--surf)', position:'sticky', top:58, zIndex:99 }}>
+        <div style={{ borderBottom:'1px solid rgba(255,255,255,0.07)', background:'linear-gradient(145deg,rgba(10,18,36,0.86),rgba(6,11,24,0.82))', backdropFilter:'blur(16px)', WebkitBackdropFilter:'blur(16px)', position:'sticky', top:58, zIndex:99 }}>
           <DashboardSubNav />
         </div>
 

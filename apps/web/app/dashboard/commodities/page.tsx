@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 
-const card: React.CSSProperties = { background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' };
-const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' };
+const card: React.CSSProperties = { background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', boxShadow:'0 4px 32px rgba(0,0,0,0.28),inset 0 1px 0 rgba(255,255,255,0.06)' };
+const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' };
 
 // Commodity tickers — Yahoo Finance
 // Gold futures: GC=F (USD/troy oz), Silver: SI=F, Crude: CL=F, NG: NG=F, Copper: HG=F
@@ -167,7 +167,7 @@ export default function CommoditiesPage() {
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <button onClick={fetchPrices} disabled={loading}
-            style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: loading ? 0.6 : 1 }}>
+            style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: loading ? 0.6 : 1 }}>
             {loading ? '⏳' : '🔄'} Refresh
           </button>
           <button onClick={() => setShowAdd(true)}
@@ -306,7 +306,7 @@ export default function CommoditiesPage() {
       {/* Add Modal */}
       {showAdd && (
         <div onClick={() => setShowAdd(false)} style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:18, padding:24, width:'min(420px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.45)' }}>
+          <div onClick={e => e.stopPropagation()} style={{ background:'linear-gradient(145deg,rgba(13,25,42,0.96),rgba(6,11,24,0.92))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:18, padding:24, width:'min(420px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.45)' }}>
             <div style={{ fontSize:17, fontWeight:800, marginBottom:18 }}>Add Commodity Position</div>
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
               <div>
@@ -347,7 +347,7 @@ export default function CommoditiesPage() {
                   Add Position
                 </button>
                 <button onClick={() => setShowAdd(false)}
-                  style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+                  style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid rgba(255,255,255,0.08)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
                   Cancel
                 </button>
               </div>
