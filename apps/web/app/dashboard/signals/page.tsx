@@ -43,6 +43,42 @@ async function fetchTA(symbol: string): Promise<TADetail | null> {
   } catch { return null; }
 }
 
+// ── Scan logging ─────────────────────────────────────────────────────────────
+const ZONE_FROM_CAT: Record<string, string> = {
+  buy:        'Strong Momentum',
+  accumulate: 'Building',
+  hold:       'Sideways',
+  sell:       'Weak / Declining',
+};
+
+function scoreSig(s: MLSignal): 'buy' | 'accumulate' | 'hold' | 'sell' {
+  const sig = (s.signal ?? '').toUpperCase();
+  if (sig.includes('SELL') || sig.includes('BEARISH')) return 'sell';
+  if (s.rsi > 72 && s.chg < 0) return 'sell';
+  if (s.confidence >= 72) return 'buy';
+  if (s.confidence >= 58) return 'accumulate';
+  if (s.rsi > 65) return 'hold';
+  return 'accumulate';
+}
+
+async function logScansAsync(sigs: MLSignal[]) {
+  try {
+    const entries = sigs.map(s => ({
+      symbol:     s.symbol.replace('.NS', '').replace('.BO', ''),
+      exchange:   'NSE',
+      scan_score: ZONE_FROM_CAT[scoreSig(s)],
+      price_at:   s.cmp,
+      rsi14:      s.rsi,
+      confidence: s.confidence,
+    }));
+    await fetch('/api/scan-log', {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ entries }),
+    });
+  } catch { /* fire-and-forget — never block UI */ }
+}
+
 // ── Colour helpers ────────────────────────────────────────────────────────────
 function confColor(c: number) {
   if (c >= 80) return 'var(--grn)';
@@ -289,6 +325,7 @@ export default function SignalsPage() {
     if (sigs.length === 0) setMlError(true);
     setMlSignals(sigs);
     setMlLoading(false);
+    if (sigs.length > 0) void logScansAsync(sigs);
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -297,21 +334,10 @@ export default function SignalsPage() {
   const hasPortfolio = portfolioSymbols.length > 0;
   const portfolioCnt = mlSignals.filter(s => portfolioSymbols.includes(s.symbol.replace('.NS',''))).length;
 
-  // Derive signal category from confidence + RSI
-  function sigCategory(s: MLSignal): 'buy' | 'accumulate' | 'hold' | 'sell' {
-    const sig = (s.signal ?? '').toUpperCase();
-    if (sig.includes('SELL') || sig.includes('BEARISH')) return 'sell';
-    if (s.rsi > 72 && s.chg < 0) return 'sell';
-    if (s.confidence >= 72) return 'buy';
-    if (s.confidence >= 58) return 'accumulate';
-    if (s.rsi > 65) return 'hold';
-    return 'accumulate';
-  }
-
-  const buyCnt        = mlSignals.filter(s => sigCategory(s) === 'buy').length;
-  const accumulateCnt = mlSignals.filter(s => sigCategory(s) === 'accumulate').length;
-  const holdCnt       = mlSignals.filter(s => sigCategory(s) === 'hold').length;
-  const sellCnt       = mlSignals.filter(s => sigCategory(s) === 'sell').length;
+  const buyCnt        = mlSignals.filter(s => scoreSig(s) === 'buy').length;
+  const accumulateCnt = mlSignals.filter(s => scoreSig(s) === 'accumulate').length;
+  const holdCnt       = mlSignals.filter(s => scoreSig(s) === 'hold').length;
+  const sellCnt       = mlSignals.filter(s => scoreSig(s) === 'sell').length;
 
   const FILTERS = [
     { key:'all',        label:`All (${mlSignals.length})` },
@@ -326,10 +352,10 @@ export default function SignalsPage() {
   const shown = mlSignals
     .filter(s => {
       if (filter === 'portfolio')  return portfolioSymbols.includes(s.symbol.replace('.NS',''));
-      if (filter === 'buy')        return sigCategory(s) === 'buy';
-      if (filter === 'accumulate') return sigCategory(s) === 'accumulate';
-      if (filter === 'hold')       return sigCategory(s) === 'hold';
-      if (filter === 'sell')       return sigCategory(s) === 'sell';
+      if (filter === 'buy')        return scoreSig(s) === 'buy';
+      if (filter === 'accumulate') return scoreSig(s) === 'accumulate';
+      if (filter === 'hold')       return scoreSig(s) === 'hold';
+      if (filter === 'sell')       return scoreSig(s) === 'sell';
       if (filter === 'high')       return s.confidence >= 80;
       return true;
     })
@@ -476,7 +502,7 @@ export default function SignalsPage() {
                     <span style={{ fontSize:15, fontWeight:800 }}>{sig.symbol.replace('.NS','')}</span>
                     {inPortfolio && <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)' }}>IN PORTFOLIO</span>}
                     {(() => {
-                      const cat = sigCategory(sig);
+                      const cat = scoreSig(sig);
                       const cfg = {
                         buy:        { label:'Strong Momentum', bg:'rgba(0,212,160,0.12)',  color:'var(--grn)',  border:'rgba(0,212,160,0.25)'  },
                         accumulate: { label:'Building',        bg:'rgba(79,111,250,0.12)', color:'var(--bluL)', border:'rgba(79,111,250,0.25)' },
