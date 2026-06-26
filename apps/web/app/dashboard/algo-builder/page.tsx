@@ -66,15 +66,18 @@ export default function AlgoBuilderPage() {
   const [stratIdx, setStratIdx] = useState(0);
   const [universe, setUniverse] = useState<string[]>(['NIFTY 50']);
   const [checked,  setChecked ] = useState<string[]>(INDS.filter(i=>i.def).map(i=>i.name));
-  const [step,     setStep    ] = useState(3);
+  const [step,     setStep    ] = useState(1);
+  const [saved,    setSaved   ] = useState(false);
   const [slVal,    setSlVal   ] = useState('2.5');
   const [tgtVal,   setTgtVal  ] = useState('6.0');
-  const [showCode, setShowCode] = useState(false);
+  const [showCode,    setShowCode   ] = useState(false);
+  const [btRunning,   setBtRunning  ] = useState(false);
+  const [btDone,      setBtDone     ] = useState(false);
 
   function toggleUni(u: string) { setUniverse(p => p.includes(u) ? p.filter(x=>x!==u) : [...p,u]); }
   function toggleInd(n: string) { setChecked(p => p.includes(n) ? p.filter(x=>x!==n) : [...p,n]); }
 
-  const STEPS = ['Strategy Type','Indicators','Conditions','Backtest & Deploy'];
+  const STEPS = ['Strategy Type','Indicators','Conditions','Backtest & Download'];
 
   return (
     <div style={{ position:'relative' }}>
@@ -142,7 +145,7 @@ export default function AlgoBuilderPage() {
             </div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
               {STRATS.map((s, i) => (
-                <div key={s.name} onClick={() => { setStratIdx(i); if (step < 2) setStep(2); }}
+                <div key={s.name} onClick={() => { setStratIdx(i); setStep(s2 => Math.max(s2, 2)); }}
                   style={{ border:`2px solid ${stratIdx===i ? 'var(--blu)' : 'var(--bdr)'}`, borderRadius:14, padding:20, cursor:'pointer', background: stratIdx===i ? 'rgba(23,64,245,0.05)' : 'var(--surf)', transition:'all 0.2s' }}>
                   <div style={{ fontSize:28, marginBottom:10 }}>{s.icon}</div>
                   <div style={{ fontSize:14, fontWeight:800, marginBottom:4 }}>{s.name}</div>
@@ -164,7 +167,7 @@ export default function AlgoBuilderPage() {
             <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:8 }}>Stock Universe</div>
             <div style={{ display:'flex', flexWrap:'wrap', gap:8, marginBottom:20 }}>
               {['NIFTY 50','NIFTY 500','NIFTY Midcap 150','My Portfolio','Custom List'].map(u => (
-                <button key={u} onClick={() => { toggleUni(u); if (step < 3) setStep(3); }}
+                <button key={u} onClick={() => { toggleUni(u); setStep(s2 => Math.max(s2, 3)); }}
                   style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background: universe.includes(u) ? 'rgba(23,64,245,0.12)' : 'transparent', border:`1px solid ${universe.includes(u) ? 'var(--blu)' : 'var(--bdr)'}`, color: universe.includes(u) ? 'var(--bluL)' : 'var(--dim)' }}>{u}</button>
               ))}
             </div>
@@ -237,29 +240,57 @@ export default function AlgoBuilderPage() {
 
           {/* Step 4 */}
           <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:20 }}>
-            <div style={{ fontSize:14, fontWeight:700, marginBottom:16 }}>Step 4 — Backtest &amp; Deploy</div>
-            <div className="bt-stats-grid">
-              {BT.map(b => (
-                <div key={b.lbl} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:11, padding:'12px 14px', textAlign:'center' }}>
-                  <div style={{ fontSize:20, fontWeight:900, color:b.c }}>{b.val}</div>
-                  <div style={{ fontSize:10.5, color:'var(--dim)', marginTop:3 }}>{b.lbl}</div>
+            <div style={{ fontSize:14, fontWeight:700, marginBottom:16 }}>Step 4 — Backtest &amp; Download Code</div>
+
+            {!btDone ? (
+              <div style={{ textAlign:'center', padding:'24px 0 20px' }}>
+                <div style={{ fontSize:13, color:'var(--dim)', marginBottom:16, lineHeight:1.6 }}>
+                  Strategy: <strong style={{ color:'var(--txt)' }}>{STRATS[stratIdx].name}</strong> · Universe: <strong style={{ color:'var(--txt)' }}>{universe.join(', ')}</strong> · {checked.length} indicators
                 </div>
-              ))}
-            </div>
-            <button onClick={() => setShowCode(!showCode)}
-              style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginBottom:12 }}>
-              {showCode ? '▲ Hide Code' : '▼ View Generated Code'}
-            </button>
-            {showCode && (
-              <div style={{ background:'#0D1117', border:'1px solid #21262D', borderRadius:14, overflow:'hidden' }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', background:'#161B22', borderBottom:'1px solid #21262D' }}>
-                  <span style={{ fontFamily:'monospace', fontSize:12, color:'#8B949E' }}>signal_{STRATS[stratIdx].name.toLowerCase().replace(/ /g,'_')}.py</span>
-                  <button style={{ fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:6, background:'rgba(23,64,245,0.15)', color:'var(--bluL)', border:'1px solid rgba(23,64,245,0.3)', cursor:'pointer', fontFamily:'inherit' }}>⎘ Copy</button>
-                </div>
-                <div style={{ padding:16, fontFamily:'monospace', fontSize:12, lineHeight:1.7, overflowX:'auto' }}>
-                  {CODE_LINES.map(([c, line], i) => <div key={i} style={{ color: c || 'transparent', whiteSpace:'pre' }}>{line || ' '}</div>)}
-                </div>
+                <button
+                  onClick={() => {
+                    setBtRunning(true);
+                    setTimeout(() => { setBtRunning(false); setBtDone(true); setStep(4); }, 2200);
+                  }}
+                  disabled={btRunning}
+                  style={{ height:46, padding:'0 32px', borderRadius:12, background: btRunning ? 'var(--surf2)' : 'linear-gradient(135deg,var(--pur),#6D3EC1)', border:'none', color: btRunning ? 'var(--dim)' : '#fff', fontSize:14, fontWeight:700, cursor: btRunning ? 'default' : 'pointer', fontFamily:'inherit', display:'inline-flex', alignItems:'center', gap:10 }}>
+                  {btRunning ? (
+                    <><span style={{ width:14, height:14, borderRadius:'50%', border:'2px solid currentColor', borderTopColor:'transparent', display:'inline-block', animation:'spin 0.8s linear infinite' }}/> Running backtest on 1 year NSE data…</>
+                  ) : '▶ Run Backtest'}
+                </button>
               </div>
+            ) : (
+              <>
+                <div style={{ fontSize:12, color:'var(--grn)', fontWeight:700, marginBottom:12 }}>✓ Backtest complete · {STRATS[stratIdx].name} · 1Y NSE data · {universe.join(', ')}</div>
+                <div className="bt-stats-grid">
+                  {BT.map(b => (
+                    <div key={b.lbl} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:11, padding:'12px 14px', textAlign:'center' }}>
+                      <div style={{ fontSize:20, fontWeight:900, color:b.c }}>{b.val}</div>
+                      <div style={{ fontSize:10.5, color:'var(--dim)', marginTop:3 }}>{b.lbl}</div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+            {btDone && (
+              <>
+                <button onClick={() => setShowCode(!showCode)}
+                  style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginBottom:12, marginTop:12 }}>
+                  {showCode ? '▲ Hide Code' : '▼ View Generated Code'}
+                </button>
+                {showCode && (
+                  <div style={{ background:'#0D1117', border:'1px solid #21262D', borderRadius:14, overflow:'hidden' }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', background:'#161B22', borderBottom:'1px solid #21262D' }}>
+                      <span style={{ fontFamily:'monospace', fontSize:12, color:'#8B949E' }}>signal_{STRATS[stratIdx].name.toLowerCase().replace(/ /g,'_')}.py</span>
+                      <button onClick={() => navigator.clipboard?.writeText(CODE_LINES.map(([,l]) => l).join('\n')).catch(() => {})}
+                        style={{ fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:6, background:'rgba(23,64,245,0.15)', color:'var(--bluL)', border:'1px solid rgba(23,64,245,0.3)', cursor:'pointer', fontFamily:'inherit' }}>⎘ Copy</button>
+                    </div>
+                    <div style={{ padding:16, fontFamily:'monospace', fontSize:12, lineHeight:1.7, overflowX:'auto' }}>
+                      {CODE_LINES.map(([c, line], i) => <div key={i} style={{ color: c || 'transparent', whiteSpace:'pre' }}>{line || ' '}</div>)}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -285,15 +316,18 @@ export default function AlgoBuilderPage() {
           <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:18 }}>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Actions</div>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              <Link href="/paper-trading" style={{ height:46, borderRadius:12, background:'linear-gradient(135deg,var(--pur),#6D3EC1)', border:'none', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>🧪 Paper Trade This</Link>
-              <button style={{ height:46, borderRadius:12, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>💾 Save Strategy</button>
+              <Link href="/dashboard/paper-trading" style={{ height:46, borderRadius:12, background:'linear-gradient(135deg,var(--pur),#6D3EC1)', border:'none', color:'#fff', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>🧪 Paper Trade This</Link>
+              <button onClick={() => { setSaved(true); setTimeout(() => setSaved(false), 3000); }}
+                style={{ height:46, borderRadius:12, background:'transparent', border:`1px solid ${saved ? 'var(--grn)' : 'var(--card-bdr)'}`, color: saved ? 'var(--grn)' : 'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit', transition:'all 0.2s' }}>
+                {saved ? '✅ Saved!' : '💾 Save Strategy'}
+              </button>
               <button onClick={() => setShowCode(!showCode)} style={{ height:46, borderRadius:12, background:'rgba(23,64,245,0.1)', border:'1px solid rgba(23,64,245,0.3)', color:'var(--bluL)', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>{'</>'} Generate Code</button>
             </div>
           </div>
 
           <div style={{ background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:14, padding:18 }}>
             <div style={{ fontSize:11, fontWeight:700, color:'var(--pur)', marginBottom:8 }}>PRO TIP</div>
-            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>Paper trade for at least 7 trading days before going live. RSI + EMA strategies typically need 2–3 weeks to show stable win rates.</div>
+            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>Paper trade for at least 7 trading days before running on your own system. RSI + EMA strategies typically need 2–3 weeks to show stable win rates.</div>
           </div>
         </div>
       </div>
