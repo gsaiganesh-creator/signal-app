@@ -289,7 +289,7 @@ export default function USPortfolioPage() {
       const res = await fetch(`${SUPA_URL}/rest/v1/holdings`, {
         method:'POST',
         headers: { apikey: SUPA_KEY, Authorization:`Bearer ${session.access_token}`, 'Content-Type':'application/json', Prefer:'return=representation' },
-        body: JSON.stringify({ symbol: sym, exchange:'NYSE', qty, avg_price: avg, portfolio_id: addForm.portfolio_id }),
+        body: JSON.stringify({ symbol: sym, exchange:'NYSE', qty, avg_price: avg, portfolio_id: addForm.portfolio_id, user_id: session.user.id }),
       });
       if (!res.ok) { const t=await res.text(); setMsg(`❌ ${t}`); return; }
       setMsg(`✅ Added ${sym}`);
@@ -323,22 +323,24 @@ export default function USPortfolioPage() {
       return;
     }
     setMsg(`⏳ Saving ${result.length} holdings…`);
-    // Delete existing holdings for this portfolio before inserting
-    await fetch(`${SUPA_URL}/rest/v1/holdings?portfolio_id=eq.${uploadPortId}&exchange=in.(NYSE,NASDAQ,AMEX,ARCA)`, {
+    // Delete existing US holdings for this portfolio before re-importing
+    await fetch(`${SUPA_URL}/rest/v1/holdings?portfolio_id=eq.${uploadPortId}&exchange=in.(NYSE,NASDAQ,AMEX,ARCA,BATS)`, {
       method:'DELETE',
       headers: { apikey: SUPA_KEY, Authorization:`Bearer ${session.access_token}` },
     });
-    let added = 0;
-    for (const r of result) {
-      const res = await fetch(`${SUPA_URL}/rest/v1/holdings`, {
-        method:'POST',
-        headers: { apikey: SUPA_KEY, Authorization:`Bearer ${session.access_token}`, 'Content-Type':'application/json', Prefer:'return=minimal' },
-        body: JSON.stringify({ ...r, portfolio_id: uploadPortId }),
-      });
-      if (res.ok) added++;
+    const body = result.map(r => ({ ...r, portfolio_id: uploadPortId, user_id: session.user.id }));
+    const res = await fetch(`${SUPA_URL}/rest/v1/holdings`, {
+      method:'POST',
+      headers: { apikey: SUPA_KEY, Authorization:`Bearer ${session.access_token}`, 'Content-Type':'application/json', Prefer:'return=minimal' },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const errText = await res.text();
+      setMsg(`❌ Save failed: ${errText}`);
+      return;
     }
     const portName = usPortfolios.find(p => p.id === uploadPortId)?.name ?? 'portfolio';
-    setMsg(`${parseMsg.replace('✅','✅')} → ${added}/${result.length} saved to "${portName}"`);
+    setMsg(`✅ ${result.length} holdings saved to "${portName}"`);
     await fetchHoldings();
   }
 
