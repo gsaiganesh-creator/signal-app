@@ -686,63 +686,116 @@ export default function LandingPage() {
 
       {/* ── Pricing ──────────────────────────────────────────── */}
       <section id="pricing" style={sect('clamp(60px,8vw,100px)')}>
-        <div style={{ maxWidth:1100, margin:'0 auto' }}>
+        <div style={{ maxWidth:1160, margin:'0 auto' }}>
+
+          {/* Header */}
           <div style={{ textAlign:'center', marginBottom:52 }} className="lp-reveal">
-            <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--dim2)', marginBottom:12 }}>Pricing</div>
-            <h2 style={{ fontSize:'clamp(28px,4vw,52px)', fontWeight:900, letterSpacing:-2, marginBottom:12 }}>One plan beats<br/>every premium service.</h2>
+            <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(139,92,246,0.08)', border:'1px solid rgba(139,92,246,0.25)', borderRadius:30, padding:'6px 16px', marginBottom:16 }}>
+              <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--pur)' }}/>
+              <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:'uppercase', color:'var(--pur)' }}>Pricing</span>
+            </div>
+            <h2 style={{ fontSize:'clamp(28px,4vw,54px)', fontWeight:900, letterSpacing:-2, lineHeight:1.05, marginBottom:14 }}>
+              One plan beats<br/><span style={grd('linear-gradient(135deg,var(--pur),var(--bluL),var(--grn))')}>every premium service.</span>
+            </h2>
             <p style={{ fontSize:15, color:'var(--dim)', maxWidth:460, margin:'0 auto', lineHeight:1.7 }}>Transparent pricing. Cancel anytime. Public accuracy record — verify before you pay.</p>
           </div>
 
-          {/* Period toggle */}
-          <div style={{ display:'flex', gap:8, marginBottom:24, flexWrap:'wrap', justifyContent:'center' }} className="lp-reveal">
-            {([['mo','Monthly'],['qtr','Quarterly','Save 10%'],['half','Half-Yearly','Save 17%'],['yr','Annual','Save 25%']] as [string,string,string?][]).map(([k,label,badge]) => (
-              <button key={k} onClick={() => setPeriod(k as 'mo'|'qtr'|'half'|'yr')}
-                style={{ height:38, padding:'0 16px', borderRadius:9, fontSize:13, fontWeight:600, background:period===k?'var(--blu)':'transparent', border:`1px solid ${period===k?'var(--blu)':'var(--bdr)'}`, color:period===k?'#fff':'var(--dim)', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
-                {label}
-                {badge && <span style={{ fontSize:10, fontWeight:700, padding:'2px 6px', borderRadius:4, background:period===k?'rgba(255,255,255,0.2)':'rgba(0,212,160,0.2)', color:period===k?'#fff':'var(--grn)' }}>{badge}</span>}
-              </button>
-            ))}
+          {/* Period toggle — glassy tabs */}
+          <div style={{ display:'flex', gap:8, marginBottom:32, flexWrap:'wrap', justifyContent:'center' }} className="lp-reveal">
+            <div style={{ display:'flex', gap:6, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16, padding:5, backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', flexWrap:'wrap' }}>
+              {([['mo','Monthly'],['qtr','Quarterly','Save 10%'],['half','Half-Yearly','Save 17%'],['yr','Annual','Save 25%']] as [string,string,string?][]).map(([k,label,badge]) => (
+                <button key={k} onClick={() => setPeriod(k as 'mo'|'qtr'|'half'|'yr')}
+                  style={{ height:38, padding:'0 18px', borderRadius:11, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:8, transition:'all 0.2s ease',
+                    background: period===k ? 'linear-gradient(135deg,rgba(79,111,250,0.55),rgba(23,64,245,0.35))' : 'transparent',
+                    border: period===k ? '1px solid rgba(79,111,250,0.65)' : '1px solid transparent',
+                    color: period===k ? '#fff' : 'var(--dim)',
+                    boxShadow: period===k ? '0 4px 20px rgba(23,64,245,0.35),inset 0 1px 0 rgba(255,255,255,0.18)' : 'none',
+                  }}>
+                  {label}
+                  {badge && <span style={{ fontSize:10, fontWeight:800, padding:'2px 8px', borderRadius:10,
+                    background: period===k ? 'rgba(0,212,160,0.25)' : 'rgba(0,212,160,0.12)',
+                    color:'var(--grn)', border:'1px solid rgba(0,212,160,0.3)' }}>{badge}</span>}
+                </button>
+              ))}
+            </div>
           </div>
-          {pr.note && <div style={{ textAlign:'center', fontSize:13, color:'var(--grn)', marginBottom:20, fontWeight:600 }}>{pr.note}</div>}
+          {pr.note && <div style={{ textAlign:'center', fontSize:13, color:'var(--grn)', marginBottom:24, fontWeight:600 }}>{pr.note}</div>}
 
+          {/* Plan cards */}
           <div className="lp-plans lp-reveal">
-            {[
-              { name:'Free',    nameC:'var(--dim)',  price:'₹0',   cycle:'forever · no card', feats:['5 stocks tracking','3 ML signals/week','NIFTY 50 prices'], nope:['No real-time alerts','No broker sync','No Algo Builder'], feat:false },
-              { name:'Starter', nameC:'var(--bluL)', price:pr.s,   cycle:pr.cy, feats:['25 stocks · ML signals','🐦 Twitter sentiment','RF Pick of the Day','Real-time alerts','ETF & MF (20 funds)'], nope:['No broker/AA sync'], feat:false },
-              { name:'Pro',     nameC:'var(--ylw)',  price:pr.p,   cycle:pr.cy, feats:['Unlimited stocks · NSE/BSE','AA sync · stocks, MF, FD, NPS','Live broker sync · 6 brokers','Full Algo Builder + code gen','Paper Trading (unlimited)','WhatsApp + push alerts'], nope:[], feat:true },
-              { name:'Elite',   nameC:'var(--pur)',  price:pr.e,   cycle:pr.cy, feats:['Everything in Pro','Auto-execute orders','Custom ML model','US markets early access','Priority 24/7 support','Dedicated AI portfolio mgr'], nope:[], feat:false },
-            ].map(plan => (
-              <div key={plan.name} style={{ background:plan.feat?'linear-gradient(145deg,#0D1E45,#0E1628)':'var(--surf)', border:`1px solid ${plan.feat?'rgba(23,64,245,0.5)':'var(--bdr)'}`, boxShadow:plan.feat?'0 0 60px rgba(23,64,245,0.12)':'none', borderRadius:20, padding:28, position:'relative' }}>
-                {plan.feat && <div style={{ position:'absolute', top:-1, left:'50%', transform:'translateX(-50%)', background:'var(--blu)', color:'#fff', fontSize:10, fontWeight:700, padding:'4px 14px', borderRadius:'0 0 10px 10px' }}>BEST VALUE</div>}
-                <div style={{ fontSize:11, fontWeight:700, textTransform:'uppercase', letterSpacing:1, color:plan.nameC, marginBottom:8 }}>{plan.name}</div>
-                <div style={{ fontSize:44, fontWeight:900, letterSpacing:-2, lineHeight:1, color:plan.nameC, marginBottom:4 }}>{plan.price}</div>
-                <div style={{ fontSize:12, color:'var(--dim)', marginBottom:22 }}>{plan.cycle}</div>
-                <ul style={{ listStyle:'none', display:'flex', flexDirection:'column', gap:9, marginBottom:24 }}>
-                  {plan.feats.map(f => <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'#C4D0E8', lineHeight:1.4 }}><span style={{ color:'var(--grn)', fontWeight:700, flexShrink:0 }}>✓</span>{f}</li>)}
-                  {plan.nope.map(f => <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:8, fontSize:13, color:'var(--dim)', lineHeight:1.4 }}><span style={{ color:'var(--dim2)', flexShrink:0 }}>–</span>{f}</li>)}
+            {([
+              { name:'Free',    tag:'var(--dim)',  price:'₹0',  cycle:'forever · no card',
+                cardStyle:{ ...GLS, background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.08)' },
+                btnStyle:{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', color:'var(--txt)' },
+                feats:['5 stocks tracking','3 ML signals/week','NIFTY 50 prices'], nope:['No real-time alerts','No broker sync','No Algo Builder'], pro:false },
+              { name:'Starter', tag:'var(--bluL)', price:pr.s,  cycle:pr.cy,
+                cardStyle:{ ...GC.blu },
+                btnStyle:{ background:'linear-gradient(135deg,rgba(79,111,250,0.4),rgba(23,64,245,0.25))', border:'1px solid rgba(79,111,250,0.5)', color:'#fff' },
+                feats:['25 stocks · ML signals','🐦 Twitter sentiment','RF Pick of the Day','Real-time alerts','ETF & MF (20 funds)'], nope:['No broker/AA sync'], pro:false },
+              { name:'Pro',     tag:'var(--ylw)',  price:pr.p,  cycle:pr.cy,
+                cardStyle:{ ...GLS, background:'linear-gradient(145deg,rgba(255,184,0,0.22),rgba(255,130,0,0.12),rgba(23,64,245,0.1))', borderColor:'rgba(255,184,0,0.52)' },
+                btnStyle:{ background:'linear-gradient(135deg,#FFB800,#FF8C00)', border:'none', color:'#0a0f1a' },
+                feats:['Unlimited stocks · NSE/BSE','AA sync · stocks, MF, FD, NPS','Live broker sync · 6 brokers','Full Algo Builder + code gen','Paper Trading (unlimited)','WhatsApp + push alerts'], nope:[], pro:true },
+              { name:'Elite',   tag:'var(--pur)',  price:pr.e,  cycle:pr.cy,
+                cardStyle:{ ...GC.pur },
+                btnStyle:{ background:'linear-gradient(135deg,rgba(139,92,246,0.45),rgba(100,40,200,0.3))', border:'1px solid rgba(139,92,246,0.5)', color:'#fff' },
+                feats:['Everything in Pro','Auto-execute orders','Custom ML model','US markets early access','Priority 24/7 support','Dedicated AI portfolio mgr'], nope:[], pro:false },
+            ] as const).map(plan => (
+              <div key={plan.name} className={`lp-plan-card${plan.pro ? ' lp-plan-pro' : ''}`}
+                style={{ ...plan.cardStyle, padding:'28px 24px', borderRadius:22, position:'relative', transform: plan.pro ? 'scale(1.04)' : 'none' }}>
+                {plan.pro && (
+                  <div style={{ position:'absolute', top:-14, left:'50%', transform:'translateX(-50%)', background:'linear-gradient(135deg,#FFB800,#FF8C00)', color:'#0a0f1a', fontSize:10, fontWeight:900, padding:'5px 18px', borderRadius:20, letterSpacing:1.5, whiteSpace:'nowrap', boxShadow:'0 4px 20px rgba(255,184,0,0.5)' }}>
+                    ★ BEST VALUE
+                  </div>
+                )}
+                {/* Name + price */}
+                <div style={{ fontSize:10.5, fontWeight:800, textTransform:'uppercase', letterSpacing:2, color:plan.tag, marginBottom:12, marginTop: plan.pro ? 10 : 0 }}>{plan.name}</div>
+                <div style={{ fontSize:46, fontWeight:900, letterSpacing:-2.5, lineHeight:1, color:plan.tag, marginBottom:4 }}>{plan.price}</div>
+                <div style={{ fontSize:11.5, color:'rgba(255,255,255,0.45)', marginBottom:24 }}>{plan.cycle}</div>
+                {/* Divider */}
+                <div style={{ height:1, background:'rgba(255,255,255,0.07)', marginBottom:20 }}/>
+                {/* Features */}
+                <ul style={{ listStyle:'none', display:'flex', flexDirection:'column', gap:10, marginBottom:26 }}>
+                  {plan.feats.map(f => (
+                    <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:9, fontSize:12.5, color:'rgba(255,255,255,0.82)', lineHeight:1.45 }}>
+                      <span style={{ width:16, height:16, borderRadius:'50%', background: plan.pro ? 'rgba(255,184,0,0.2)' : 'rgba(0,212,160,0.18)', border: `1px solid ${plan.pro ? 'rgba(255,184,0,0.4)' : 'rgba(0,212,160,0.35)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, flexShrink:0, marginTop:1, color: plan.pro ? 'var(--ylw)' : 'var(--grn)', fontWeight:900 }}>✓</span>
+                      {f}
+                    </li>
+                  ))}
+                  {plan.nope.map(f => (
+                    <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:9, fontSize:12.5, color:'rgba(255,255,255,0.28)', lineHeight:1.45 }}>
+                      <span style={{ flexShrink:0, marginTop:1 }}>–</span>{f}
+                    </li>
+                  ))}
                 </ul>
-                <button style={{ width:'100%', height:46, borderRadius:12, fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background:plan.feat?'linear-gradient(135deg,var(--blu),var(--bluL))':'transparent', border:plan.feat?'none':'1px solid var(--bdr)', color:plan.feat?'#fff':'var(--txt)' }}>
-                  {plan.feat ? 'Start Pro →' : `Get ${plan.name} →`}
+                {/* CTA */}
+                <button style={{ width:'100%', height:46, borderRadius:13, fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit', letterSpacing:0.3, ...plan.btnStyle,
+                  boxShadow: plan.pro ? '0 6px 32px rgba(255,184,0,0.35)' : 'none' }}>
+                  {plan.pro ? 'Start Pro →' : `Get ${plan.name} →`}
                 </button>
               </div>
             ))}
           </div>
 
-          {/* Coupon */}
-          <div style={{ marginTop:28, padding:'20px 22px', background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14 }} className="lp-reveal">
-            <div style={{ fontSize:15, fontWeight:700, marginBottom:4 }}>🎟️ Have a coupon code?</div>
-            <div style={{ fontSize:13, color:'var(--dim)', marginBottom:10 }}>Apply a discount on any paid plan.</div>
-            <div style={{ display:'flex', gap:10, maxWidth:420 }}>
-              <input value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="e.g. SIGNAL20"
-                style={{ flex:1, height:44, borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, padding:'0 14px', fontFamily:'inherit', outline:'none', textTransform:'uppercase', letterSpacing:1 }}
-                onFocus={e => e.target.style.borderColor='var(--blu)'} onBlur={e => e.target.style.borderColor='var(--bdr)'}/>
-              <button onClick={applyCoupon} style={{ height:44, padding:'0 20px', borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Apply</button>
+          {/* Coupon — glassy card */}
+          <div style={{ marginTop:32, ...GLS, background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.1)', padding:'24px 28px', borderRadius:20 }} className="lp-reveal">
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:4 }}>
+              <div style={{ width:32, height:32, borderRadius:10, background:'rgba(255,184,0,0.15)', border:'1px solid rgba(255,184,0,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16 }}>🎟️</div>
+              <div style={{ fontSize:15, fontWeight:700 }}>Have a coupon code?</div>
             </div>
-            {couponMsg && <div style={{ fontSize:13, marginTop:8, color:couponMsg.ok?'var(--grn)':'var(--red)' }}>{couponMsg.text}</div>}
+            <div style={{ fontSize:13, color:'var(--dim)', marginBottom:14, marginLeft:42 }}>Apply a discount on any paid plan.</div>
+            <div style={{ display:'flex', gap:10, maxWidth:460 }}>
+              <input value={coupon} onChange={e => setCoupon(e.target.value)} placeholder="e.g. SIGNAL20"
+                style={{ flex:1, height:46, borderRadius:12, background:'rgba(255,255,255,0.05)', border:'1px solid rgba(255,255,255,0.1)', color:'var(--txt)', fontSize:13, fontWeight:700, padding:'0 16px', fontFamily:'inherit', outline:'none', textTransform:'uppercase', letterSpacing:1.5, backdropFilter:'blur(12px)' }}
+                onFocus={e => e.target.style.borderColor='rgba(79,111,250,0.6)'} onBlur={e => e.target.style.borderColor='rgba(255,255,255,0.1)'}/>
+              <button onClick={applyCoupon} style={{ height:46, padding:'0 24px', borderRadius:12, background:'linear-gradient(135deg,rgba(79,111,250,0.4),rgba(23,64,245,0.25))', border:'1px solid rgba(79,111,250,0.5)', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', boxShadow:'0 4px 20px rgba(23,64,245,0.25)' }}>Apply</button>
+            </div>
+            {couponMsg && <div style={{ fontSize:13, marginTop:10, fontWeight:600, color:couponMsg.ok?'var(--grn)':'var(--red)' }}>{couponMsg.text}</div>}
           </div>
 
-          <div style={{ marginTop:24, padding:'16px 22px', background:'rgba(255,184,0,0.04)', border:'1px solid rgba(255,184,0,0.14)', borderRadius:14 }} className="lp-reveal">
-            <p style={{ fontSize:12, color:'rgba(255,184,0,0.7)', lineHeight:1.7 }}>
+          {/* SEBI disclaimer */}
+          <div style={{ marginTop:16, padding:'14px 22px', background:'rgba(255,184,0,0.04)', border:'1px solid rgba(255,184,0,0.12)', borderRadius:14 }} className="lp-reveal">
+            <p style={{ fontSize:12, color:'rgba(255,184,0,0.65)', lineHeight:1.7, margin:0 }}>
               <strong style={{ color:'var(--ylw)' }}>⚠️ SEBI DISCLAIMER:</strong> SIGNAL is <strong style={{ color:'var(--ylw)' }}>NOT registered with SEBI</strong>. All signals, picks, and analysis are for <strong style={{ color:'var(--ylw)' }}>informational and educational purposes only</strong>. Not financial advice. Consult a SEBI-registered advisor before investing.
             </p>
           </div>
@@ -751,23 +804,45 @@ export default function LandingPage() {
 
       {/* ── CTA ──────────────────────────────────────────────── */}
       <section style={sect('clamp(60px,8vw,100px)')}>
-        <div style={{ maxWidth:1100, margin:'0 auto', background:'linear-gradient(135deg,rgba(23,64,245,0.12),rgba(139,92,246,0.08),rgba(255,92,26,0.06))', border:'1px solid rgba(255,255,255,0.08)', borderRadius:30, padding:'clamp(48px,6vw,80px)', textAlign:'center', position:'relative', overflow:'hidden' }} className="lp-reveal">
-          <div style={{ position:'absolute', width:500, height:500, top:-200, left:'50%', transform:'translateX(-50%)', background:'radial-gradient(circle,rgba(23,64,245,0.15),transparent 70%)', filter:'blur(80px)', pointerEvents:'none' }}/>
-          <div style={{ position:'relative', zIndex:2 }}>
-            <div style={{ fontSize:10.5, fontWeight:700, letterSpacing:2.5, textTransform:'uppercase', color:'var(--dim2)', marginBottom:16 }}>Get Started Today</div>
-            <h2 style={{ fontSize:'clamp(30px,5vw,64px)', fontWeight:900, letterSpacing:-2.5, lineHeight:.95, marginBottom:16 }}>
-              Stop paying for<br/><span style={grd('linear-gradient(135deg,var(--org),var(--ylw))')}>unverified calls.</span>
-            </h2>
-            <p style={{ fontSize:16, color:'var(--dim)', maxWidth:480, margin:'0 auto 40px', lineHeight:1.7 }}>Free to start. Public track record every week. Verify the accuracy before you spend a single rupee.</p>
-            <div style={{ display:'flex', gap:12, justifyContent:'center', flexWrap:'wrap', marginBottom:20 }}>
-              <Link href="/sign-in" style={{ height:54, padding:'0 32px', borderRadius:15, fontSize:16, fontWeight:700, background:'linear-gradient(135deg,var(--blu),var(--bluL))', color:'#fff', boxShadow:'0 8px 40px rgba(23,64,245,0.4)', display:'flex', alignItems:'center', textDecoration:'none' }}>
-                Start Free — No Card Needed →
-              </Link>
-              <button style={{ height:54, padding:'0 28px', borderRadius:15, fontSize:16, fontWeight:700, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)', color:'var(--txt)', cursor:'pointer', fontFamily:'inherit' }}>
-                View Track Record
-              </button>
+        <div style={{ maxWidth:1100, margin:'0 auto' }} className="lp-reveal">
+          {/* Glassy CTA container */}
+          <div style={{ ...GLS, background:'linear-gradient(145deg,rgba(23,64,245,0.18),rgba(139,92,246,0.12),rgba(255,92,26,0.08))', borderColor:'rgba(255,255,255,0.12)', borderRadius:32, padding:'clamp(52px,7vw,90px) clamp(24px,6vw,80px)', textAlign:'center', position:'relative', overflow:'hidden' }}>
+            {/* Radial orbs */}
+            <div style={{ position:'absolute', width:600, height:600, top:-220, left:'50%', transform:'translateX(-50%)', background:'radial-gradient(circle,rgba(23,64,245,0.2),transparent 65%)', filter:'blur(90px)', pointerEvents:'none', animation:'lp-drift1 8s ease-in-out infinite' }}/>
+            <div style={{ position:'absolute', width:400, height:400, bottom:-160, left:'10%', background:'radial-gradient(circle,rgba(139,92,246,0.18),transparent 65%)', filter:'blur(70px)', pointerEvents:'none', animation:'lp-drift2 11s ease-in-out infinite' }}/>
+            <div style={{ position:'absolute', width:350, height:350, bottom:-120, right:'8%', background:'radial-gradient(circle,rgba(255,92,26,0.14),transparent 65%)', filter:'blur(60px)', pointerEvents:'none', animation:'lp-drift3 9s ease-in-out infinite' }}/>
+            {/* Content */}
+            <div style={{ position:'relative', zIndex:2 }}>
+              <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', borderRadius:30, padding:'6px 16px', marginBottom:20 }}>
+                <div style={{ width:6, height:6, borderRadius:'50%', background:'var(--grn)', animation:'blink 2s ease-in-out infinite' }}/>
+                <span style={{ fontSize:11, fontWeight:700, letterSpacing:2, textTransform:'uppercase', color:'rgba(255,255,255,0.7)' }}>Get Started Today</span>
+              </div>
+              <h2 style={{ fontSize:'clamp(32px,5.5vw,68px)', fontWeight:900, letterSpacing:-2.5, lineHeight:.92, marginBottom:20 }}>
+                Stop paying for<br/>
+                <span style={grd('linear-gradient(135deg,var(--org) 0%,var(--ylw) 50%,var(--org) 100%)')}>unverified calls.</span>
+              </h2>
+              <p style={{ fontSize:16, color:'rgba(255,255,255,0.55)', maxWidth:480, margin:'0 auto 44px', lineHeight:1.75 }}>
+                Free to start. Public track record every week. Verify the accuracy before you spend a single rupee.
+              </p>
+              {/* CTA buttons */}
+              <div style={{ display:'flex', gap:14, justifyContent:'center', flexWrap:'wrap', marginBottom:24 }}>
+                <Link href="/sign-in" style={{ height:56, padding:'0 36px', borderRadius:16, fontSize:16, fontWeight:800, background:'linear-gradient(135deg,var(--blu),var(--bluL))', color:'#fff', boxShadow:'0 10px 48px rgba(23,64,245,0.5),inset 0 1px 0 rgba(255,255,255,0.2)', display:'flex', alignItems:'center', textDecoration:'none', letterSpacing:0.3 }}>
+                  Start Free — No Card Needed →
+                </Link>
+                <Link href="/dashboard/track-record" style={{ height:56, padding:'0 32px', borderRadius:16, fontSize:16, fontWeight:700, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.14)', color:'rgba(255,255,255,0.85)', backdropFilter:'blur(12px)', WebkitBackdropFilter:'blur(12px)', display:'flex', alignItems:'center', textDecoration:'none', boxShadow:'inset 0 1px 0 rgba(255,255,255,0.08)' }}>
+                  View Track Record
+                </Link>
+              </div>
+              {/* Trust strip */}
+              <div style={{ display:'flex', gap:20, justifyContent:'center', flexWrap:'wrap' }}>
+                {['NSE · BSE','4,000+ stocks','71.4% accuracy','Live on Twitter/X'].map(t => (
+                  <span key={t} style={{ fontSize:12, color:'rgba(255,255,255,0.35)', display:'flex', alignItems:'center', gap:6 }}>
+                    <span style={{ width:3, height:3, borderRadius:'50%', background:'rgba(255,255,255,0.25)', display:'inline-block' }}/>
+                    {t}
+                  </span>
+                ))}
+              </div>
             </div>
-            <div style={{ fontSize:12, color:'var(--dim2)' }}>NSE · BSE · 4,000+ stocks · 71.4% accuracy · Posted live on Twitter/X</div>
           </div>
         </div>
       </section>

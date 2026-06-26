@@ -376,9 +376,20 @@ button:active:not(:disabled) { transform: scale(0.97); }
 @media (max-width: 600px) { .lp-bento { grid-template-columns: 1fr; } }
 
 /* Pricing grid */
-.lp-plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+.lp-plans { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; align-items: start; }
 @media (max-width: 1000px) { .lp-plans { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 500px)  { .lp-plans { grid-template-columns: 1fr; } }
+
+/* PRO card animated border glow */
+@keyframes lp-plan-glow {
+  0%,100% { box-shadow: 0 12px 80px rgba(255,184,0,0.28), 0 0 0 1px rgba(255,184,0,0.45), inset 0 1px 0 rgba(255,255,255,0.15); }
+  50%     { box-shadow: 0 16px 100px rgba(255,184,0,0.42), 0 0 0 1px rgba(255,184,0,0.65), inset 0 1px 0 rgba(255,255,255,0.22); }
+}
+.lp-plan-pro { animation: lp-plan-glow 3s ease-in-out infinite; }
+
+/* Pricing card hover lift */
+.lp-plan-card { transition: transform 0.22s ease, box-shadow 0.22s ease; cursor: default; }
+.lp-plan-card:hover { transform: translateY(-6px); }
 
 /* Summary stat strip 4-col */
 .lp-stats-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
