@@ -231,7 +231,7 @@ export default function LandingPage() {
   const sect = (pad = '100px'): React.CSSProperties => ({ padding:`${pad} clamp(20px,6vw,100px)` });
 
   return (
-    <div data-theme="dark" style={{ background:'var(--bg)', color:'var(--txt)', minHeight:'100vh', overflowX:'hidden', fontFamily:'Inter,system-ui,sans-serif' }}>
+    <div style={{ background:'var(--bg)', color:'var(--txt)', minHeight:'100vh', overflowX:'hidden', fontFamily:'Inter,system-ui,sans-serif' }}>
 
       {/* ── SEBI banner ──────────────────────────────────────── */}
       <div style={{ background:'rgba(255,184,0,0.07)', borderBottom:'1px solid rgba(255,184,0,0.15)', padding:'8px 24px', textAlign:'center' }}>
