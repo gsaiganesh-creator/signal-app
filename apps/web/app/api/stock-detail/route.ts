@@ -49,6 +49,47 @@ function atr(highs: number[], lows: number[], closes: number[], period = 14): nu
   return trs.slice(-period).reduce((a, b) => a + b, 0) / period;
 }
 
+// Supertrend (period=10, multiplier=3) — Wilder smoothed ATR
+function supertrend(
+  highs: number[], lows: number[], closes: number[],
+  period = 10, mult = 3,
+): { value: number; direction: 1 | -1 } | null {
+  if (highs.length < period + 2) return null;
+  // Compute true ranges
+  const trs: number[] = [0];
+  for (let i = 1; i < closes.length; i++) {
+    trs.push(Math.max(highs[i] - lows[i], Math.abs(highs[i] - closes[i-1]), Math.abs(lows[i] - closes[i-1])));
+  }
+  // Wilder smoothed ATR
+  const atrArr: number[] = new Array(closes.length).fill(0);
+  let seed = 0;
+  for (let i = 1; i <= period; i++) seed += trs[i];
+  atrArr[period] = seed / period;
+  for (let i = period + 1; i < closes.length; i++) {
+    atrArr[i] = (atrArr[i-1] * (period - 1) + trs[i]) / period;
+  }
+  // Supertrend bands
+  const upper: number[] = new Array(closes.length).fill(0);
+  const lower: number[] = new Array(closes.length).fill(0);
+  const dir:   number[] = new Array(closes.length).fill(1);
+  for (let i = period; i < closes.length; i++) {
+    const hl2 = (highs[i] + lows[i]) / 2;
+    let rawUp = hl2 + mult * atrArr[i];
+    let rawLo = hl2 - mult * atrArr[i];
+    // Band tightening
+    upper[i] = (i > period && rawUp < upper[i-1]) || closes[i-1] > upper[i-1] ? rawUp : upper[i-1];
+    lower[i] = (i > period && rawLo > lower[i-1]) || closes[i-1] < lower[i-1] ? rawLo : lower[i-1];
+    // Direction
+    if (i === period) { dir[i] = 1; continue; }
+    if (closes[i] > upper[i-1])       dir[i] = 1;
+    else if (closes[i] < lower[i-1])  dir[i] = -1;
+    else                               dir[i] = dir[i-1];
+  }
+  const last = closes.length - 1;
+  const d = dir[last] as 1 | -1;
+  return { value: +(d === 1 ? lower[last] : upper[last]).toFixed(2), direction: d };
+}
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type Num = number | null;
@@ -178,6 +219,7 @@ export async function GET(request: Request) {
     const bbPct   = (bb && price) ? +Math.max(0, Math.min(100, (price - bb.lower) / (bb.upper - bb.lower) * 100)).toFixed(1) : null;
     const atr14   = (highs.length >= 15 && lows.length >= 15)
                   ? +(atr(highs, lows, closes, 14)!).toFixed(2) : null;
+    const st      = (highs.length >= 12) ? supertrend(highs, lows, closes, 10, 3) : null;
 
     // Derived levels
     const stopLoss  = (bb && price) ? +Math.max(bb.lower, price * 0.95).toFixed(2) : null;
@@ -267,6 +309,15 @@ export async function GET(request: Request) {
 
     // ─── Signal strings ───────────────────────────────────────────────────────
     const signals: string[] = [];
+    // Supertrend first — strongest directional signal
+    if (st) {
+      const cur = isUS ? '$' : '₹';
+      signals.push(
+        st.direction === 1
+          ? `SUPERTREND BUY · Price above ${cur}${st.value} support line — uptrend confirmed`
+          : `SUPERTREND SELL · Price below ${cur}${st.value} resistance line — downtrend active`,
+      );
+    }
     if (price && ema200v) signals.push(price >= ema200v ? 'ABOVE 200 EMA · Long-term bullish' : 'BELOW 200 EMA · Long-term bearish — caution');
     if (price && ema50v)  signals.push(price >= ema50v  ? 'ABOVE 50 EMA · Medium-term trend positive' : 'BELOW 50 EMA · Medium-term momentum weak');
     if (rsi14 != null) {
@@ -304,6 +355,8 @@ export async function GET(request: Request) {
       vol_ratio: volR,
       stop_loss: stopLoss, target1, target2,
       entry_low: entryLow, entry_high: entryHigh,
+      supertrend_value: st?.value ?? null,
+      supertrend_dir:   st?.direction ?? null,
       signals,
       ...(fund ?? {}),
     }, { headers: { 'Cache-Control': 'public, max-age=120, stale-while-revalidate=60' } });

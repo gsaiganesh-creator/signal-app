@@ -79,8 +79,8 @@ async function fetchTA(symbol: string): Promise<TADetail | null> {
 // ── US helpers ────────────────────────────────────────────────────────────────
 function scoreUSZone(signals: string[]): USSignal['zone'] {
   const s = signals.join(' ').toLowerCase();
-  const buy = (s.match(/bullish|above.*ema|positive.*macd|oversold|momentum|analyst.*target|upside/g) || []).length;
-  const sel = (s.match(/bearish|below.*ema|negative.*macd|overbought|exit|short interest/g) || []).length;
+  const buy = (s.match(/supertrend buy|bullish|above.*ema|positive.*macd|oversold|momentum|analyst.*target|upside/g) || []).length;
+  const sel = (s.match(/supertrend sell|bearish|below.*ema|negative.*macd|overbought|exit|short interest/g) || []).length;
   if (buy > sel + 1) return 'Strong Momentum';
   if (sel > buy + 1) return 'Weak / Declining';
   if (buy > 0 || sel > 0) return 'Building';
