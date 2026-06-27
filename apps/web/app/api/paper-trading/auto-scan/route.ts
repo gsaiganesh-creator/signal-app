@@ -80,7 +80,14 @@ function matchesEntry(d: StockDetail, s: StrategyRow): boolean {
       // RSI > 50 (momentum) + near 52W high + volume surge
       return rsi14 != null && rsi14 > 50 && (from_52h ?? -100) > -8 && (vol_ratio ?? 0) > 1.3;
 
+    case 'custom_ema20':
+      return rsiOk && price > (ema20 ?? 0);
+    case 'custom_ema50':
+      return rsiOk && price > (ema50 ?? 0);
+    case 'custom_ema200':
+      return rsiOk && price > (ema200 ?? 0);
     default:
+      // custom_none or any unknown: RSI range only
       return rsiOk;
   }
 }

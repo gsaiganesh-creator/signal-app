@@ -88,10 +88,21 @@ const INP: React.CSSProperties = {
 function AlgoPickerModal({ token, userId, existing, onDone, onClose }: {
   token: string; userId: string; existing: string[]; onDone(): void; onClose(): void;
 }) {
-  const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [capital, setCap]       = useState('100000');
-  const [busy, setBusy]         = useState(false);
-  const [err, setErr]           = useState('');
+  const [selected,      setSelected] = useState<Set<string>>(new Set());
+  const [capital,       setCap]      = useState('100000');
+  const [busy,          setBusy]     = useState(false);
+  const [err,           setErr]      = useState('');
+
+  // Custom strategy fields
+  const [customName,    setCName]    = useState('');
+  const [customRsiL,    setCRsiL]    = useState('35');
+  const [customRsiH,    setCRsiH]    = useState('65');
+  const [customSl,      setCSl]      = useState('2.5');
+  const [customTgt,     setCTgt]     = useState('6');
+  const [customEma,     setCEma]     = useState<'none'|'ema20'|'ema50'|'ema200'>('ema20');
+
+  const customSelected = selected.has('custom');
+  const totalSelected  = selected.size;
 
   function toggle(id: string) {
     setSelected(prev => {
@@ -102,11 +113,15 @@ function AlgoPickerModal({ token, userId, existing, onDone, onClose }: {
   }
 
   async function activate() {
-    if (selected.size === 0) { setErr('Select at least one strategy'); return; }
+    if (totalSelected === 0) { setErr('Select at least one strategy'); return; }
+    if (customSelected && !customName.trim()) { setErr('Enter a name for your custom strategy'); return; }
     setBusy(true); setErr('');
-    const toCreate = ALGO_PRESETS.filter(a => selected.has(a.id));
-    const results = await Promise.all(toCreate.map(a =>
-      fetch(`${SUPA}/rest/v1/paper_strategies`, {
+
+    const ops: Promise<Response>[] = [];
+
+    // Pre-built algos
+    ALGO_PRESETS.filter(a => selected.has(a.id)).forEach(a =>
+      ops.push(fetch(`${SUPA}/rest/v1/paper_strategies`, {
         method: 'POST',
         headers: { ...authHeader(token), Prefer: 'return=minimal' },
         body: JSON.stringify({
@@ -114,26 +129,50 @@ function AlgoPickerModal({ token, userId, existing, onDone, onClose }: {
           capital: +capital, rsi_low: a.rsi_low, rsi_high: a.rsi_high,
           sl_pct: a.sl_pct, target_pct: a.target_pct,
         }),
-      })
-    ));
+      }))
+    );
+
+    // Custom strategy
+    if (customSelected) {
+      ops.push(fetch(`${SUPA}/rest/v1/paper_strategies`, {
+        method: 'POST',
+        headers: { ...authHeader(token), Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          name: customName.trim(), user_id: userId, algo_type: `custom_${customEma}`,
+          capital: +capital,
+          rsi_low: +customRsiL, rsi_high: +customRsiH,
+          sl_pct: +customSl, target_pct: +customTgt,
+        }),
+      }));
+    }
+
+    const results = await Promise.all(ops);
     setBusy(false);
     if (results.every(r => r.ok)) onDone();
     else setErr('Some strategies failed to create. Check Supabase.');
   }
 
+  const EMA_LABELS: Record<string, string> = {
+    none: 'No EMA filter',
+    ema20: 'Price > EMA 20 (short-term)',
+    ema50: 'Price > EMA 50 (medium-term)',
+    ema200: 'Price > EMA 200 (long-term uptrend only)',
+  };
+
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.7)', padding:16 }}>
-      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:28, width:'min(680px,95vw)', maxHeight:'90vh', overflowY:'auto' }}>
+      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:28, width:'min(720px,95vw)', maxHeight:'92vh', overflowY:'auto' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
           <div style={{ fontSize:18, fontWeight:900 }}>Select Strategies</div>
           <button onClick={onClose} style={{ background:'none', border:'none', color:'var(--dim)', fontSize:20, cursor:'pointer', fontFamily:'inherit', lineHeight:1 }}>×</button>
         </div>
         <div style={{ fontSize:12, color:'var(--dim)', marginBottom:20 }}>Pick one or more — each runs independently with its own trade log and equity curve.</div>
 
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12, marginBottom:20 }}>
+        {/* Pre-built algo cards */}
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12, marginBottom:12 }}>
           {ALGO_PRESETS.map(a => {
-            const active   = selected.has(a.id);
-            const running  = existing.includes(a.id);
+            const active  = selected.has(a.id);
+            const running = existing.includes(a.id);
             return (
               <div key={a.id} onClick={() => !running && toggle(a.id)}
                 style={{ padding:16, borderRadius:14, cursor: running ? 'default' : 'pointer', opacity: running ? 0.5 : 1,
@@ -155,26 +194,80 @@ function AlgoPickerModal({ token, userId, existing, onDone, onClose }: {
                 </div>
                 <div style={{ fontSize:11, color:'var(--dim)', lineHeight:1.5, marginBottom:8 }}>{a.desc}</div>
                 <div style={{ display:'flex', gap:12, fontSize:10, color:'var(--dim)' }}>
-                  <span>SL {a.sl_pct}%</span>
-                  <span>T1 {a.target_pct}%</span>
-                  <span>RSI {a.rsi_low}–{a.rsi_high}</span>
+                  <span>SL {a.sl_pct}%</span><span>T1 {a.target_pct}%</span><span>RSI {a.rsi_low}–{a.rsi_high}</span>
                 </div>
               </div>
             );
           })}
+
+          {/* Custom strategy card */}
+          <div onClick={() => toggle('custom')}
+            style={{ padding:16, borderRadius:14, cursor:'pointer',
+              background: customSelected ? 'rgba(255,184,0,0.07)' : 'var(--surf2)',
+              border:`1.5px dashed ${customSelected ? 'var(--ylw)' : 'var(--bdr)'}`,
+              transition:'border-color 0.15s,background 0.15s' }}>
+            <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+              <span style={{ fontSize:22 }}>⚙️</span>
+              <div style={{ flex:1 }}>
+                <div style={{ fontSize:13, fontWeight:800 }}>Custom Strategy</div>
+                <div style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>Your own rules</div>
+              </div>
+              <div style={{ width:18, height:18, borderRadius:5, border:`2px solid ${customSelected ? 'var(--ylw)' : 'var(--bdr)'}`, background: customSelected ? 'var(--ylw)' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                {customSelected && <span style={{ color:'#000', fontSize:11, lineHeight:1 }}>✓</span>}
+              </div>
+            </div>
+            <div style={{ fontSize:11, color:'var(--dim)', lineHeight:1.5 }}>Set your own RSI range, EMA filter, SL and target. Auto-scanner applies your rules each morning.</div>
+          </div>
         </div>
 
-        <div style={{ marginBottom:16 }}>
-          <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:6 }}>Virtual capital per strategy (₹)</label>
-          <input style={{ ...INP, width:200 }} type="number" value={capital} onChange={e => setCap(e.target.value)} />
+        {/* Custom strategy form — shown only when custom selected */}
+        {customSelected && (
+          <div style={{ padding:20, borderRadius:14, background:'rgba(255,184,0,0.05)', border:'1px solid rgba(255,184,0,0.2)', marginBottom:16 }}>
+            <div style={{ fontSize:13, fontWeight:800, color:'var(--ylw)', marginBottom:14 }}>⚙️ Configure Custom Strategy</div>
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12, marginBottom:12 }}>
+              <div style={{ gridColumn:'1/-1' }}>
+                <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:5 }}>Strategy name</label>
+                <input style={INP} value={customName} placeholder="e.g. My RSI + EMA200 Setup" onChange={e => setCName(e.target.value)} />
+              </div>
+              {[
+                { lbl:'RSI Low (buy below)',  val:customRsiL, set:setCRsiL, ph:'35' },
+                { lbl:'RSI High (sell above)', val:customRsiH, set:setCRsiH, ph:'65' },
+                { lbl:'Stop Loss %',           val:customSl,   set:setCSl,   ph:'2.5' },
+                { lbl:'Target %',              val:customTgt,  set:setCTgt,  ph:'6' },
+              ].map(f => (
+                <div key={f.lbl}>
+                  <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:5 }}>{f.lbl}</label>
+                  <input style={INP} type="number" value={f.val} placeholder={f.ph} onChange={e => f.set(e.target.value)} />
+                </div>
+              ))}
+              <div style={{ gridColumn:'1/-1' }}>
+                <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:8 }}>EMA trend filter</label>
+                <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                  {(['none','ema20','ema50','ema200'] as const).map(v => (
+                    <button key={v} onClick={() => setCEma(v)}
+                      style={{ padding:'6px 14px', borderRadius:8, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit', border:`1.5px solid ${customEma===v ? 'var(--ylw)' : 'var(--bdr)'}`, background: customEma===v ? 'rgba(255,184,0,0.12)' : 'var(--surf2)', color: customEma===v ? 'var(--ylw)' : 'var(--dim)' }}>
+                      {EMA_LABELS[v]}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div style={{ display:'flex', gap:12, alignItems:'center', marginBottom:16 }}>
+          <div>
+            <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:6 }}>Virtual capital per strategy (₹)</label>
+            <input style={{ ...INP, width:200 }} type="number" value={capital} onChange={e => setCap(e.target.value)} />
+          </div>
         </div>
 
         {err && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{err}</div>}
         <div style={{ display:'flex', gap:10 }}>
           <button onClick={onClose} style={{ flex:1, height:42, borderRadius:10, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
-          <button onClick={activate} disabled={busy || selected.size === 0}
-            style={{ flex:2, height:42, borderRadius:10, background: selected.size > 0 ? 'var(--grn)' : 'var(--surf2)', border:'none', color: selected.size > 0 ? '#000' : 'var(--dim)', fontSize:13, fontWeight:800, cursor: selected.size > 0 ? 'pointer' : 'default', fontFamily:'inherit', transition:'background 0.15s' }}>
-            {busy ? 'Activating…' : selected.size > 0 ? `▶ Activate ${selected.size} Strateg${selected.size > 1 ? 'ies' : 'y'}` : 'Select strategies above'}
+          <button onClick={activate} disabled={busy || totalSelected === 0}
+            style={{ flex:2, height:42, borderRadius:10, background: totalSelected > 0 ? 'var(--grn)' : 'var(--surf2)', border:'none', color: totalSelected > 0 ? '#000' : 'var(--dim)', fontSize:13, fontWeight:800, cursor: totalSelected > 0 ? 'pointer' : 'default', fontFamily:'inherit', transition:'background 0.15s' }}>
+            {busy ? 'Activating…' : totalSelected > 0 ? `▶ Activate ${totalSelected} Strateg${totalSelected > 1 ? 'ies' : 'y'}` : 'Select strategies above'}
           </button>
         </div>
       </div>
@@ -353,7 +446,25 @@ export default function PaperTradingPage() {
 
   const [showNew, setShowNew]       = useState(false);
   const [showTrade, setShowTrade]   = useState(false);
+  const [duplicating, setDupl]      = useState(false);
   const activeAlgoTypes = strategies.map(s => s.algo_type ?? 'custom');
+
+  async function duplicateStrategy() {
+    if (!st || !user) return;
+    setDupl(true);
+    await fetch(`${SUPA}/rest/v1/paper_strategies`, {
+      method: 'POST',
+      headers: { ...authHeader(token), Prefer: 'return=minimal' },
+      body: JSON.stringify({
+        name: `${st.name} (Copy)`, user_id: user.id,
+        algo_type: st.algo_type ?? 'custom',
+        capital: st.capital, rsi_low: st.rsi_low, rsi_high: st.rsi_high,
+        sl_pct: st.sl_pct, target_pct: st.target_pct,
+      }),
+    });
+    setDupl(false);
+    await loadStrategies();
+  }
   const [closingTrade, setClosing]  = useState<Trade | null>(null);
   const [savingParams, setSaving]   = useState(false);
 
@@ -670,9 +781,13 @@ export default function PaperTradingPage() {
                 style={{ height:46, borderRadius:12, background:'linear-gradient(135deg,var(--grn),#00A87D)', border:'none', color:'#001A12', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
                 🧪 Add Paper Trade
               </button>
-              <Link href="/dashboard/algo-builder"
+              <button onClick={duplicateStrategy} disabled={duplicating}
+                style={{ height:42, borderRadius:12, background:'rgba(255,184,0,0.08)', border:'1px solid rgba(255,184,0,0.25)', color:'var(--ylw)', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                {duplicating ? 'Duplicating…' : '⧉ Duplicate Strategy'}
+              </button>
+              <Link href="/dashboard/algorithms"
                 style={{ height:42, borderRadius:12, background:'rgba(139,92,246,0.1)', border:'1px solid rgba(139,92,246,0.3)', color:'var(--pur)', fontSize:14, fontWeight:700, display:'flex', alignItems:'center', justifyContent:'center', textDecoration:'none' }}>
-                ⚙️ Edit in Algo Builder
+                ⚙️ View Algo Library
               </Link>
               <button onClick={stopStrategy}
                 style={{ height:42, borderRadius:12, background:'transparent', border:'1px solid rgba(255,59,92,0.3)', color:'var(--red)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
