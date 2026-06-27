@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
 
 // Razorpay window type
@@ -52,10 +52,19 @@ function loadRazorpay(): Promise<boolean> {
 
 export default function UpgradePage() {
   const { user, session } = usePortfolio();
-  const [billing, setBilling] = useState<'monthly'|'annual'>('monthly');
-  const [loading, setLoading] = useState<string | null>(null);
-  const [success, setSuccess] = useState<string | null>(null);
-  const [error, setError]     = useState('');
+  const [billing,      setBilling]      = useState<'monthly'|'annual'>('monthly');
+  const [loading,      setLoading]      = useState<string | null>(null);
+  const [success,      setSuccess]      = useState<string | null>(null);
+  const [error,        setError]        = useState('');
+  const [welcomeDisc,  setWelcomeDisc]  = useState(0);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+    fetch('/api/referral', { headers: { Authorization: `Bearer ${session.access_token}` } })
+      .then(r => r.ok ? r.json() as Promise<{ welcome_discount: number }> : null)
+      .then(d => { if (d?.welcome_discount) setWelcomeDisc(d.welcome_discount); })
+      .catch(() => {});
+  }, [session?.access_token]);
 
   async function handleUpgrade(plan: typeof PLANS[number]) {
     if (plan.isFree || !user) return;
@@ -66,10 +75,11 @@ export default function UpgradePage() {
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: plan.id, billing }),
+        body: JSON.stringify({ plan: plan.id, billing, user_token: session?.access_token }),
       });
       const order = await orderRes.json() as {
-        order_id: string; amount: number; currency: string; key_id: string; error?: string;
+        order_id: string; amount: number; currency: string; key_id: string;
+        welcome_disc_pct?: number; original_amount?: number; error?: string;
       };
 
       if (order.error || !order.order_id) {
@@ -158,6 +168,19 @@ export default function UpgradePage() {
       {error && (
         <div style={{ background:'rgba(255,59,92,0.08)', border:'1px solid rgba(255,59,92,0.3)', borderRadius:12, padding:'14px 20px', marginBottom:20, fontSize:13, color:'var(--red)' }}>
           ⚠️ {error}
+        </div>
+      )}
+
+      {/* Welcome discount banner — shown to referred users */}
+      {welcomeDisc > 0 && (
+        <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.1),rgba(23,64,245,0.07))', border:'1px solid rgba(0,212,160,0.35)', borderRadius:14, padding:'16px 22px', marginBottom:22, display:'flex', alignItems:'center', gap:14 }}>
+          <div style={{ fontSize:28, flexShrink:0 }}>🎁</div>
+          <div>
+            <div style={{ fontSize:15, fontWeight:800, marginBottom:3 }}>You have a <span style={{ color:'var(--grn)' }}>{welcomeDisc}% welcome discount!</span></div>
+            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>
+              A friend invited you to SIGNAL — your first subscription is {welcomeDisc}% off. Applied automatically at checkout. One-time use.
+            </div>
+          </div>
         </div>
       )}
 

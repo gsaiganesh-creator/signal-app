@@ -21,6 +21,7 @@ export default function RefPage() {
         <circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/>
       </svg>
       <div style={{ fontSize:15, fontWeight:600 }}>You were invited to SIGNAL</div>
+      <div style={{ fontSize:13, color:'#00D4A0', fontWeight:700, marginTop:4 }}>🎁 5% off your first subscription</div>
       <div style={{ fontSize:12, color:'#4A5C7A' }}>Taking you to sign up…</div>
     </div>
   );

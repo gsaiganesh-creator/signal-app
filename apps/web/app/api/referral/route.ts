@@ -3,7 +3,8 @@
 //
 //   ALTER TABLE public.profiles
 //     ADD COLUMN IF NOT EXISTS referral_code TEXT UNIQUE,
-//     ADD COLUMN IF NOT EXISTS referral_discount_pct INTEGER DEFAULT 0;
+//     ADD COLUMN IF NOT EXISTS referral_discount_pct INTEGER DEFAULT 0,
+//     ADD COLUMN IF NOT EXISTS welcome_discount_pct INTEGER DEFAULT 0;
 //
 //   CREATE TABLE IF NOT EXISTS public.referrals (
 //     id          uuid primary key default gen_random_uuid(),
@@ -61,10 +62,10 @@ export async function GET(req: Request) {
 
   // Get or create referral_code in profiles
   const profRes = await fetch(
-    `${SUPA_URL}/rest/v1/profiles?id=eq.${me.id}&select=referral_code,referral_discount_pct`,
+    `${SUPA_URL}/rest/v1/profiles?id=eq.${me.id}&select=referral_code,referral_discount_pct,welcome_discount_pct`,
     { headers: supaHeaders(token) },
   );
-  const profiles = await profRes.json() as Array<{ referral_code: string | null; referral_discount_pct: number }>;
+  const profiles = await profRes.json() as Array<{ referral_code: string | null; referral_discount_pct: number; welcome_discount_pct: number }>;
   const profile  = profiles[0];
 
   let code = profile?.referral_code;
@@ -93,11 +94,12 @@ export async function GET(req: Request) {
   const discountPct  = discountFromPaidCount(paidCount);
 
   return Response.json({
-    referral_code:    code,
-    referral_link:    `${appUrl}/ref/${code}`,
-    total_referrals:  referrals.length,
-    paid_referrals:   paidCount,
-    discount_pct:     discountPct,
+    referral_code:      code,
+    referral_link:      `${appUrl}/ref/${code}`,
+    total_referrals:    referrals.length,
+    paid_referrals:     paidCount,
+    discount_pct:       discountPct,
+    welcome_discount:   profile?.welcome_discount_pct ?? 0,
     referrals,
   });
 }
@@ -145,5 +147,14 @@ export async function POST(req: Request) {
     body:    JSON.stringify({ referrer_id: referrer.id, referred_id: referred.id, status: 'pending' }),
   });
 
-  return Response.json({ ok: insRes.ok, referrer_id: referrer.id });
+  // Give referred user a 5% welcome discount on their first subscription
+  if (insRes.ok) {
+    await fetch(`${SUPA_URL}/rest/v1/profiles?id=eq.${referred.id}`, {
+      method:  'PATCH',
+      headers: { ...supaHeaders(), Prefer: 'return=minimal' },
+      body:    JSON.stringify({ welcome_discount_pct: 5 }),
+    });
+  }
+
+  return Response.json({ ok: insRes.ok, referrer_id: referrer.id, welcome_discount: 5 });
 }

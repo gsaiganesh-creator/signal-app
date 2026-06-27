@@ -74,10 +74,11 @@ export async function POST(req: Request) {
         Prefer: 'return=minimal',
       },
       body: JSON.stringify({
-        plan:             plan?.toLowerCase() ?? 'starter',
-        plan_billing:     billing ?? 'monthly',
-        plan_expires_at:  expires,
-        plan_payment_id:  payment_id,
+        plan:                 plan?.toLowerCase() ?? 'starter',
+        plan_billing:         billing ?? 'monthly',
+        plan_expires_at:      expires,
+        plan_payment_id:      payment_id,
+        welcome_discount_pct: 0,  // one-time — clear after first use
       }),
     });
 

@@ -3,6 +3,9 @@
 
 export const runtime = 'nodejs';
 
+const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
 const PLANS: Record<string, { monthly: number; annual: number; name: string }> = {
   starter: { monthly: 29900,  annual: 287040,  name: 'Starter' },  // ₹299/mo | ₹2392/yr (-20%)
   pro:     { monthly: 79900,  annual: 767040,  name: 'Pro'     },  // ₹799/mo | ₹6392/yr (-20%)
@@ -17,7 +20,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Payment gateway not configured' }, { status: 503 });
   }
 
-  let body: { plan?: string; billing?: string };
+  let body: { plan?: string; billing?: string; user_token?: string };
   try { body = await req.json(); }
   catch { return Response.json({ error: 'Invalid request body' }, { status: 400 }); }
 
@@ -29,7 +32,30 @@ export async function POST(req: Request) {
     return Response.json({ error: `Unknown plan: ${plan}` }, { status: 400 });
   }
 
-  const amount = planDef[billing];
+  // Check for welcome discount (referred user 5% off first purchase)
+  let welcomeDisc = 0;
+  if (body.user_token && SUPA_URL && SUPA_KEY) {
+    try {
+      const meRes = await fetch(`${SUPA_URL}/auth/v1/user`, {
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${body.user_token}` },
+      });
+      if (meRes.ok) {
+        const me = await meRes.json() as { id: string };
+        const profRes = await fetch(
+          `${SUPA_URL}/rest/v1/profiles?id=eq.${me.id}&select=welcome_discount_pct`,
+          { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${SUPA_KEY}` } },
+        );
+        if (profRes.ok) {
+          const rows = await profRes.json() as Array<{ welcome_discount_pct: number }>;
+          welcomeDisc = rows[0]?.welcome_discount_pct ?? 0;
+        }
+      }
+    } catch { /* non-critical — proceed without discount */ }
+  }
+
+  const baseAmount    = planDef[billing];
+  const discountAmt   = welcomeDisc > 0 ? Math.round(baseAmount * welcomeDisc / 100) : 0;
+  const amount        = baseAmount - discountAmt;
 
   try {
     const res = await fetch('https://api.razorpay.com/v1/orders', {
@@ -53,13 +79,15 @@ export async function POST(req: Request) {
 
     const order = await res.json() as { id: string; amount: number; currency: string };
     return Response.json({
-      order_id: order.id,
-      amount:   order.amount,
-      currency: order.currency,
+      order_id:        order.id,
+      amount:          order.amount,
+      currency:        order.currency,
       plan,
       billing,
-      plan_name: planDef.name,
-      key_id: keyId,
+      plan_name:       planDef.name,
+      key_id:          keyId,
+      welcome_disc_pct: welcomeDisc,
+      original_amount: baseAmount,
     });
 
   } catch (e) {

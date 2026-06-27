@@ -48,11 +48,11 @@ export default function ReferPage() {
     setTimeout(() => setCopied(false), 3000);
   }
 
-  const SHORT_MSG = `Try SIGNAL — free NSE/BSE technical screener with ML scan accuracy. Sign up free: ${refLink}`;
-  const LONG_MSG  = `Hey! I've been using SIGNAL for NSE/BSE stock scans — RSI + EMA momentum zones, public accuracy track record. Completely free to start.\n\nSign up with my link: ${refLink}`;
+  const SHORT_MSG = `Try SIGNAL — free NSE/BSE technical screener. Use my link and get 5% off your first plan: ${refLink}`;
+  const LONG_MSG  = `Hey! I've been using SIGNAL for NSE/BSE stock scans — RSI + EMA momentum zones, public accuracy track record. Free to start, and if you sign up with my link you get 5% off your first subscription.\n\nSign up here: ${refLink}`;
 
   function shareX() {
-    const text = encodeURIComponent(`Try SIGNAL — ML-powered NSE/BSE technical screener. Free to start, public accuracy track record. Sign up 👇`);
+    const text = encodeURIComponent(`Try SIGNAL — ML-powered NSE/BSE technical screener. Free to start. Use my link & get 5% off your first plan 👇`);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(refLink)}`, '_blank');
   }
 
