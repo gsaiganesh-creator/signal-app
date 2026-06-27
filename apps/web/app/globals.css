@@ -422,6 +422,6 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .lp-nav-links { display: flex; align-items: center; gap: 24px; }
 @media (max-width: 768px) { .lp-nav-links { display: none; } }
 
-/* Hide CTA button on mobile nav — prevents header compression */
+/* Hide CTA button on mobile nav — hero section already has the main CTA */
 .lp-cta-desktop { display: flex; }
-@media (max-width: 480px) { .lp-cta-desktop { display: none; } }
+@media (max-width: 768px) { .lp-cta-desktop { display: none; } }
