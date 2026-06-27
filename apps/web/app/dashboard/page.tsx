@@ -172,32 +172,153 @@ function buildInsights(holdings: RawHolding[]): Array<{ icon: string; text: stri
   return ins;
 }
 
+const MKT_INDICES = [
+  { name:'NIFTY 50',   ticker:'^NSEI'   },
+  { name:'SENSEX',     ticker:'^BSESN'  },
+  { name:'BANK NIFTY', ticker:'^NSEBANK'},
+  { name:'NIFTY IT',   ticker:'^CNXIT'  },
+];
+
 function MarketOverview() {
+  const [data, setData]       = useState<Record<string, { price: number | null; change_pct: number | null }>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const tickers = MKT_INDICES.map(i => i.ticker).join(',');
+    fetch(`/api/prices?symbols=${encodeURIComponent(tickers)}`)
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
   return (
     <div style={{ ...card, marginBottom:16 }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
         <div style={{ fontSize:13, fontWeight:700 }}>Market Overview</div>
-        <span style={{ fontSize:10, color:'var(--dim)', fontWeight:600, padding:'2px 8px', background:'rgba(122,139,170,0.1)', borderRadius:6 }}>Sample · Not live</span>
+        {loading
+          ? <span style={{ fontSize:11, color:'var(--dim)' }}>loading…</span>
+          : <span style={{ fontSize:11, color:'var(--grn)', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span>}
       </div>
       <div className="g2" style={{ display:'grid', gap:8 }}>
-        {[
-          { name:'NIFTY 50',   val:'24,812', chg:'+112 (+0.45%)', up:true  },
-          { name:'SENSEX',     val:'81,540', chg:'+384 (+0.47%)', up:true  },
-          { name:'BANK NIFTY', val:'53,240', chg:'-88 (-0.17%)',  up:false },
-          { name:'NIFTY IT',   val:'38,120', chg:'+420 (+1.12%)', up:true  },
-        ].map(m => (
-          <div key={m.name} className="hover-lift" style={{
-            background: m.up ? 'linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,212,160,0.03))' : 'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.03))',
-            border: `1px solid ${m.up ? 'rgba(0,212,160,0.28)' : 'rgba(255,59,92,0.25)'}`,
-            borderLeft: `3px solid ${m.up ? 'var(--grn)' : 'var(--red)'}`,
-            borderRadius:10, padding:'10px 13px',
-          }}>
-            <div style={{ fontSize:11, color:'var(--dim)', marginBottom:2 }}>{m.name}</div>
-            <div style={{ fontSize:17, fontWeight:900, letterSpacing:-0.5 }}>{m.val}</div>
-            <div style={{ fontSize:11, fontWeight:700, marginTop:2, color: m.up ? 'var(--grn)' : 'var(--red)' }}>{m.up ? '▲' : '▼'} {m.chg}</div>
-          </div>
-        ))}
+        {MKT_INDICES.map(m => {
+          const d   = data[m.ticker];
+          const chg = d?.change_pct ?? null;
+          const up  = chg == null ? true : chg >= 0;
+          return (
+            <div key={m.name} className="hover-lift" style={{
+              background: up ? 'linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,212,160,0.03))' : 'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.03))',
+              border: `1px solid ${up ? 'rgba(0,212,160,0.28)' : 'rgba(255,59,92,0.25)'}`,
+              borderLeft: `3px solid ${up ? 'var(--grn)' : 'var(--red)'}`,
+              borderRadius:10, padding:'10px 13px',
+            }}>
+              <div style={{ fontSize:11, color:'var(--dim)', marginBottom:2 }}>{m.name}</div>
+              {loading
+                ? <div style={{ width:80, height:22, borderRadius:5, background:'var(--surf2)', marginBottom:4 }}/>
+                : <div style={{ fontSize:17, fontWeight:900, letterSpacing:-0.5 }}>{d?.price != null ? d.price.toLocaleString('en-IN',{maximumFractionDigits:0}) : '—'}</div>}
+              <div style={{ fontSize:11, fontWeight:700, marginTop:2, color: up ? 'var(--grn)' : 'var(--red)' }}>
+                {!loading && (chg != null ? `${up?'▲':'▼'} ${chg>=0?'+':''}${chg.toFixed(2)}%` : '—')}
+              </div>
+            </div>
+          );
+        })}
       </div>
+    </div>
+  );
+}
+
+function HomeFIIDII() {
+  const [today, setToday] = useState<{ fii_net: number; dii_net: number; date: string } | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/fii-dii')
+      .then(r => r.json())
+      .then((d: { rows?: { date: string; fii_net: number; dii_net: number }[] }) => {
+        setToday(d.rows?.[0] ?? null);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  function cr(n: number) { return `${n>=0?'+':'-'}₹${Math.abs(n).toLocaleString('en-IN',{maximumFractionDigits:0})} Cr`; }
+  const maxAbs = today ? Math.max(Math.abs(today.fii_net), Math.abs(today.dii_net), 1) : 1;
+  const rows = today
+    ? [
+        { label:'FII (Foreign Inst.)', net:today.fii_net },
+        { label:'DII (Domestic Inst.)', net:today.dii_net },
+      ]
+    : [];
+
+  return (
+    <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
+        <div style={{ fontSize:13, fontWeight:700 }}>FII / DII Flow</div>
+        {loading
+          ? <span style={{ fontSize:11, color:'var(--dim)' }}>loading…</span>
+          : today
+            ? <span style={{ fontSize:11, color:'var(--grn)', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span>
+            : <span style={{ fontSize:10, color:'var(--dim)', padding:'2px 8px', background:'var(--surf2)', borderRadius:6 }}>NSE unavailable</span>}
+      </div>
+      {loading && <div style={{ height:60, background:'var(--surf2)', borderRadius:8, marginBottom:10 }}/>}
+      {!loading && rows.map(f => (
+        <div key={f.label} style={{ marginBottom:10 }}>
+          <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:5 }}>
+            <span style={{ fontWeight:600 }}>{f.label}</span>
+            <span style={{ fontWeight:800, color: f.net>=0 ? 'var(--grn)' : 'var(--red)' }}>{cr(f.net)}</span>
+          </div>
+          <div style={{ height:5, background:'rgba(255,255,255,0.07)', borderRadius:3, overflow:'hidden' }}>
+            <div style={{ height:'100%', width:`${Math.round(Math.abs(f.net)/maxAbs*100)}%`, background: f.net>=0 ? 'var(--grn)' : 'var(--red)', borderRadius:3 }}/>
+          </div>
+        </div>
+      ))}
+      {!loading && !today && (
+        <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', padding:'8px 0' }}>NSE data unavailable — check back after 6 PM IST</div>
+      )}
+      <Link href="/dashboard/fii-dii" style={{ display:'block', marginTop:10, fontSize:12, color:'var(--bluL)', fontWeight:600 }}>Full FII/DII data →</Link>
+    </div>
+  );
+}
+
+const SIDEBAR_SECTORS = [
+  { name:'IT',      ticker:'^CNXIT'    },
+  { name:'Auto',    ticker:'^CNXAUTO'  },
+  { name:'Banking', ticker:'^NSEBANK'  },
+  { name:'Metal',   ticker:'^CNXMETAL' },
+];
+
+function HomeSectorPerf() {
+  const [data, setData] = useState<Record<string, { change_pct: number | null }>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const t = SIDEBAR_SECTORS.map(s => s.ticker).join(',');
+    fetch(`/api/prices?symbols=${encodeURIComponent(t)}`)
+      .then(r => r.json())
+      .then(d => { setData(d); setLoading(false); })
+      .catch(() => setLoading(false));
+  }, []);
+
+  return (
+    <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)', marginBottom:14 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+        <div style={{ fontSize:13, fontWeight:700 }}>Sector Performance</div>
+        {!loading && <span style={{ fontSize:11, color:'var(--grn)', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span>}
+      </div>
+      {SIDEBAR_SECTORS.map(s => {
+        const chg = data[s.ticker]?.change_pct ?? null;
+        const up  = chg == null ? null : chg >= 0;
+        return (
+          <div key={s.name} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'5px 0', borderBottom:'1px solid rgba(28,46,74,0.3)' }}>
+            <span style={{ color:'var(--dim)' }}>{s.name}</span>
+            {loading
+              ? <span style={{ width:40, height:12, background:'var(--surf2)', borderRadius:3, display:'inline-block' }}/>
+              : <span style={{ fontWeight:700, color: up === null ? 'var(--dim)' : up ? 'var(--grn)' : 'var(--red)' }}>
+                  {chg != null ? `${chg>=0?'+':''}${chg.toFixed(2)}%` : '—'}
+                </span>}
+          </div>
+        );
+      })}
+      <Link href="/dashboard/sectors" style={{ display:'block', marginTop:10, fontSize:12, color:'var(--bluL)', fontWeight:600 }}>Full heatmap →</Link>
     </div>
   );
 }
@@ -847,27 +968,7 @@ export default function DashboardPage() {
       <div className="g-side" style={{ display:'grid', gap:16 }}>
         <div>
           <MarketOverview />
-          <div style={card}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-              <div style={{ fontSize:13, fontWeight:700 }}>FII / DII Flow</div>
-              <span style={{ fontSize:10, color:'var(--dim)', padding:'2px 8px', background:'rgba(122,139,170,0.1)', borderRadius:6 }}>Illustration only · Not live</span>
-            </div>
-            {[
-              { label:'FII (Foreign Inst.)', val:'-₹1,240 Cr', valC:'var(--red)', pct:35, barC:'var(--red)' },
-              { label:'DII (Domestic Inst.)', val:'+₹2,180 Cr', valC:'var(--grn)', pct:68, barC:'var(--grn)' },
-            ].map(f => (
-              <div key={f.label} style={{ marginBottom:10 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:5 }}>
-                  <span style={{ fontWeight:600 }}>{f.label}</span>
-                  <span style={{ fontWeight:800, color:f.valC }}>{f.val}</span>
-                </div>
-                <div style={{ height:5, background:'rgba(255,255,255,0.07)', borderRadius:3, overflow:'hidden' }}>
-                  <div style={{ height:'100%', width:`${f.pct}%`, background:f.barC, borderRadius:3 }}/>
-                </div>
-              </div>
-            ))}
-            <Link href="/dashboard/fii-dii" style={{ display:'block', marginTop:10, fontSize:12, color:'var(--bluL)', fontWeight:600 }}>Full FII/DII data →</Link>
-          </div>
+          <HomeFIIDII />
         </div>
         <div>
           <div style={{ ...card, marginBottom:14 }}>
@@ -889,21 +990,7 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <div style={{ ...card, marginBottom:14 }}>
-            <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Sector Performance</div>
-            {[
-              { name:'IT',      val:'+4.1%', c:'var(--grn)' },
-              { name:'Auto',    val:'+2.8%', c:'var(--grn)' },
-              { name:'Banking', val:'-0.8%', c:'var(--red)' },
-              { name:'Metal',   val:'-2.1%', c:'var(--red)' },
-            ].map(s => (
-              <div key={s.name} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'5px 0', borderBottom:'1px solid rgba(28,46,74,0.3)' }}>
-                <span style={{ color:'var(--dim)' }}>{s.name}</span>
-                <span style={{ fontWeight:700, color:s.c }}>{s.val}</span>
-              </div>
-            ))}
-            <Link href="/dashboard/sectors" style={{ display:'block', marginTop:10, fontSize:12, color:'var(--bluL)', fontWeight:600 }}>Full heatmap →</Link>
-          </div>
+          <HomeSectorPerf />
         </div>
       </div>
 
