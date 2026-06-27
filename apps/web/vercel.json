@@ -2,5 +2,11 @@
   "framework": "nextjs",
   "installCommand": "cd ../.. && npm install",
   "buildCommand": "npm run build",
-  "outputDirectory": ".next"
+  "outputDirectory": ".next",
+  "crons": [
+    {
+      "path": "/api/scan-log/backfill",
+      "schedule": "0 12 * * *"
+    }
+  ]
 }
