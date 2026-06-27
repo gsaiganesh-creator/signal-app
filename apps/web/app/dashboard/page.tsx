@@ -186,7 +186,12 @@ function MarketOverview() {
           { name:'BANK NIFTY', val:'53,240', chg:'-88 (-0.17%)',  up:false },
           { name:'NIFTY IT',   val:'38,120', chg:'+420 (+1.12%)', up:true  },
         ].map(m => (
-          <div key={m.name} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:10, padding:'10px 13px' }}>
+          <div key={m.name} className="hover-lift" style={{
+            background: m.up ? 'linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,212,160,0.03))' : 'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.03))',
+            border: `1px solid ${m.up ? 'rgba(0,212,160,0.28)' : 'rgba(255,59,92,0.25)'}`,
+            borderLeft: `3px solid ${m.up ? 'var(--grn)' : 'var(--red)'}`,
+            borderRadius:10, padding:'10px 13px',
+          }}>
             <div style={{ fontSize:11, color:'var(--dim)', marginBottom:2 }}>{m.name}</div>
             <div style={{ fontSize:17, fontWeight:900, letterSpacing:-0.5 }}>{m.val}</div>
             <div style={{ fontSize:11, fontWeight:700, marginTop:2, color: m.up ? 'var(--grn)' : 'var(--red)' }}>{m.up ? '▲' : '▼'} {m.chg}</div>
@@ -769,13 +774,19 @@ export default function DashboardPage() {
                 { label:'Current', val: usCurrentUSD>0 ? `$${usCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: usdInr&&usCurrentUSD>0 ? `≈ ₹${(usCurrentUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
                 { label:'P&L', val: usPL!=null ? `${usPL>=0?'+':'-'}₹${Math.abs(usPL).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', sub: usPLPct!=null ? `${usPLPct>=0?'+':''}${usPLPct.toFixed(2)}%` : '', color: usPL!=null?(usPL>=0?'var(--grn)':'var(--red)'):'var(--txt)' },
                 { label:'Holdings', val:`${usHoldings.length} stocks`, sub: usdInr ? `USD/INR ₹${usdInr.toFixed(2)}` : '', color:'var(--txt)' },
-              ].map(m => (
-                <div key={m.label} style={{ background:'rgba(255,255,255,0.04)', border:'1px solid rgba(79,111,250,0.15)', borderRadius:10, padding:'10px 13px' }}>
-                  <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:4 }}>{m.label}</div>
-                  <div style={{ fontSize:16, fontWeight:900, letterSpacing:-0.3, color:m.color }}>{m.val}</div>
-                  {m.sub && <div style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>{m.sub}</div>}
-                </div>
-              ))}
+              ].map(m => {
+                const isGrn = m.color === 'var(--grn)';
+                const isRed = m.color === 'var(--red)';
+                const bg  = isGrn ? 'linear-gradient(135deg,rgba(0,212,160,0.10),transparent)' : isRed ? 'linear-gradient(135deg,rgba(255,59,92,0.09),transparent)' : 'linear-gradient(135deg,rgba(79,111,250,0.08),transparent)';
+                const bdr = isGrn ? 'rgba(0,212,160,0.28)' : isRed ? 'rgba(255,59,92,0.25)' : 'rgba(79,111,250,0.2)';
+                return (
+                  <div key={m.label} style={{ background:bg, border:`1px solid ${bdr}`, borderRadius:10, padding:'10px 13px' }}>
+                    <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:4 }}>{m.label}</div>
+                    <div style={{ fontSize:16, fontWeight:900, letterSpacing:-0.3, color:m.color }}>{m.val}</div>
+                    {m.sub && <div style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>{m.sub}</div>}
+                  </div>
+                );
+              })}
             </div>
             <div style={{ overflowX:'auto', marginBottom:12 }}>
               <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
@@ -861,19 +872,22 @@ export default function DashboardPage() {
         <div>
           <div style={{ ...card, marginBottom:14 }}>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Quick Links</div>
-            {[
-              { href:'/dashboard/signals',      label:'📈 ML Technical Scan',  sub:'RSI + EMA screener · NSE stocks' },
-              { href:'/dashboard/portfolio',    label:'💼 Indian Portfolio',       sub:'P&L, ML signals, upload' },
-              { href:'/dashboard/us-portfolio', label:'🇺🇸 US Portfolio',      sub:'Track US stocks in USD' },
-              { href:'/dashboard/paper-trading',label:'🧪 Paper Trading',      sub:'Test strategies risk-free' },
-              { href:'/dashboard/sectors',      label:'🔥 Sector Heatmap',     sub:'Which sectors are hot' },
-              { href:'/dashboard/fii-dii',      label:'🌍 FII / DII Flow',     sub:'Institutional activity' },
-            ].map(l => (
-              <Link key={l.href} href={l.href} style={{ display:'flex', flexDirection:'column', padding:'10px 0', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
-                <span style={{ fontSize:13, fontWeight:600, color:'var(--txt)' }}>{l.label}</span>
-                <span style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>{l.sub}</span>
-              </Link>
-            ))}
+            <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
+              {[
+                { href:'/dashboard/signals',       icon:'📈', label:'ML Scan',          sub:'RSI + EMA screener',   grad:'rgba(23,64,245,0.10)',  bdr:'rgba(23,64,245,0.28)' },
+                { href:'/dashboard/portfolio',     icon:'💼', label:'India Portfolio',   sub:'P&L · signals',        grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
+                { href:'/dashboard/us-portfolio',  icon:'🇺🇸', label:'US Portfolio',    sub:'USD stocks',            grad:'rgba(79,111,250,0.09)', bdr:'rgba(79,111,250,0.28)' },
+                { href:'/dashboard/paper-trading', icon:'🧪', label:'Paper Trading',     sub:'Risk-free strategies', grad:'rgba(139,92,246,0.09)', bdr:'rgba(139,92,246,0.28)' },
+                { href:'/dashboard/sectors',       icon:'🔥', label:'Sector Heatmap',    sub:'Hot sectors',          grad:'rgba(255,92,26,0.09)',  bdr:'rgba(255,92,26,0.28)' },
+                { href:'/dashboard/fii-dii',       icon:'🌍', label:'FII / DII Flow',    sub:'Institutional flow',   grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
+              ].map(l => (
+                <Link key={l.href} href={l.href} className="hover-lift" style={{ display:'flex', flexDirection:'column', gap:2, padding:'12px 13px', background:`linear-gradient(135deg,${l.grad},transparent)`, border:`1px solid ${l.bdr}`, borderRadius:11, textDecoration:'none' }}>
+                  <span style={{ fontSize:18 }}>{l.icon}</span>
+                  <span style={{ fontSize:12, fontWeight:700, color:'var(--txt)', marginTop:3 }}>{l.label}</span>
+                  <span style={{ fontSize:10, color:'var(--dim)' }}>{l.sub}</span>
+                </Link>
+              ))}
+            </div>
           </div>
           <div style={{ ...card, marginBottom:14 }}>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:10 }}>Sector Performance</div>

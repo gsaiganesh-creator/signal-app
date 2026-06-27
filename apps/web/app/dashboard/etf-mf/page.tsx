@@ -34,6 +34,18 @@ const CAT_COLORS: Record<string, string> = {
   'Large Cap':'rgba(23,64,245,0.1)','Small Cap':'rgba(255,59,92,0.1)',
   'Mid Cap':'rgba(139,92,246,0.1)', 'ELSS':'rgba(255,184,0,0.12)',
 };
+const CAT_BDR: Record<string, string> = {
+  'Index':'rgba(23,64,245,0.38)',   'Midcap':'rgba(139,92,246,0.38)',
+  'Sectoral':'rgba(255,92,26,0.38)','Gold':'rgba(255,184,0,0.45)',
+  'Debt':'rgba(0,212,160,0.35)',    'Flexi Cap':'rgba(0,212,160,0.35)',
+  'Large Cap':'rgba(23,64,245,0.35)','Small Cap':'rgba(255,59,92,0.38)',
+  'Mid Cap':'rgba(139,92,246,0.35)','ELSS':'rgba(255,184,0,0.38)',
+};
+const CAT_ACCENT: Record<string, string> = {
+  'Index':'var(--bluL)','Midcap':'var(--pur)','Sectoral':'var(--org)',
+  'Gold':'var(--ylw)','Debt':'var(--grn)','Flexi Cap':'var(--grn)',
+  'Large Cap':'var(--bluL)','Small Cap':'var(--red)','Mid Cap':'var(--pur)','ELSS':'var(--ylw)',
+};
 
 // ─── My Holdings (localStorage) ──────────────────────────────────────────────
 interface Holding {
@@ -156,16 +168,16 @@ export default function ETFMFPage() {
               const live = etfPrices[e.sym];
               const chgPos = (live?.chg ?? 0) >= 0;
               return (
-                <div key={e.sym} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:18 }}>
+                <div key={e.sym} className="hover-lift" style={{ background:`linear-gradient(145deg,${CAT_COLORS[e.cat] ?? 'rgba(23,64,245,0.1)'},var(--card-bg))`, border:`1px solid ${CAT_BDR[e.cat] ?? 'var(--card-bdr)'}`, borderTop:`2px solid ${CAT_BDR[e.cat] ?? 'var(--bluL)'}`, borderRadius:14, padding:18 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
-                    <div style={{ width:42, height:42, borderRadius:12, background: CAT_COLORS[e.cat] ?? 'rgba(23,64,245,0.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:900, flexShrink:0 }}>
+                    <div style={{ width:42, height:42, borderRadius:12, background: CAT_COLORS[e.cat] ?? 'rgba(23,64,245,0.1)', border:`1px solid ${CAT_BDR[e.cat] ?? 'var(--card-bdr)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:900, flexShrink:0, color: CAT_ACCENT[e.cat] ?? 'var(--txt)' }}>
                       {e.name.slice(0,3).toUpperCase()}
                     </div>
                     <div style={{ flex:1, minWidth:0 }}>
                       <div style={{ fontSize:14, fontWeight:800 }}>{e.name}</div>
                       <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{e.full}</div>
                     </div>
-                    <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:6, background: CAT_COLORS[e.cat] ?? 'rgba(23,64,245,0.1)', color:'var(--txt)', flexShrink:0 }}>{e.cat}</span>
+                    <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:6, background: CAT_COLORS[e.cat] ?? 'rgba(23,64,245,0.1)', border:`1px solid ${CAT_BDR[e.cat] ?? 'var(--card-bdr)'}`, color: CAT_ACCENT[e.cat] ?? 'var(--txt)', flexShrink:0 }}>{e.cat}</span>
                   </div>
                   <div style={{ display:'flex', justifyContent:'space-between', marginBottom:10 }}>
                     <div>
@@ -206,7 +218,7 @@ export default function ETFMFPage() {
                 <div style={{ fontSize:13, fontWeight:700, color:'var(--dim)', marginBottom:10, textTransform:'uppercase', letterSpacing:0.5 }}>{cat}</div>
                 <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
                   {funds.map(m => (
-                    <div key={m.name} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:13, padding:'16px 18px', display:'flex', alignItems:'flex-start', gap:14 }}>
+                    <div key={m.name} className="hover-lift" style={{ background:`linear-gradient(145deg,${CAT_COLORS[m.cat] ?? 'rgba(23,64,245,0.08)'},var(--card-bg))`, border:`1px solid ${CAT_BDR[m.cat] ?? 'var(--card-bdr)'}`, borderLeft:`3px solid ${CAT_BDR[m.cat] ?? 'var(--bluL)'}`, borderRadius:13, padding:'16px 18px', display:'flex', alignItems:'flex-start', gap:14 }}>
                       <div style={{ width:44, height:44, borderRadius:12, background: CAT_COLORS[m.cat] ?? 'rgba(23,64,245,0.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:12, fontWeight:900, flexShrink:0 }}>
                         {m.amc.slice(0,3).toUpperCase()}
                       </div>

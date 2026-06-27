@@ -261,6 +261,14 @@ const CATEGORIES = ['All', ...Array.from(new Set(ALGOS.map(a => a.category)))];
 
 const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'20px' };
 
+const CAT_STYLE: Record<string, { grad:string; bdr:string; accent:string }> = {
+  'Momentum':        { grad:'linear-gradient(145deg,rgba(23,64,245,0.10),var(--card-bg))',  bdr:'rgba(23,64,245,0.30)',  accent:'var(--bluL)' },
+  'Trend Following': { grad:'linear-gradient(145deg,rgba(0,212,160,0.09),var(--card-bg))',  bdr:'rgba(0,212,160,0.28)',  accent:'var(--grn)' },
+  'Mean Reversion':  { grad:'linear-gradient(145deg,rgba(139,92,246,0.09),var(--card-bg))', bdr:'rgba(139,92,246,0.30)', accent:'var(--pur)' },
+  'Intraday':        { grad:'linear-gradient(145deg,rgba(255,92,26,0.09),var(--card-bg))',  bdr:'rgba(255,92,26,0.30)',  accent:'var(--org)' },
+  'Volatility':      { grad:'linear-gradient(145deg,rgba(255,184,0,0.09),var(--card-bg))',  bdr:'rgba(255,184,0,0.30)',  accent:'var(--ylw)' },
+};
+
 export default function AlgorithmsPage() {
   const [tab,      setTab    ] = useState<'library'|'deploy'>('library');
   const [cat,      setCat    ] = useState('All');
@@ -329,15 +337,15 @@ export default function AlgorithmsPage() {
       {/* Stats bar */}
       <div className="g4" style={{ display:'grid', gap:10, marginBottom:20 }}>
         {[
-          { label:'Algorithms', value: ALGOS.length.toString(), icon:'⚙️' },
-          { label:'Avg Win Rate', value:'55%', icon:'🎯' },
-          { label:'Avg CAGR', value:'+34.9%', icon:'📈' },
-          { label:'Avg Max DD', value:'-14%', icon:'🛡️' },
+          { label:'Algorithms',   value: ALGOS.length.toString(), icon:'⚙️', grad:'linear-gradient(135deg,rgba(79,111,250,0.10),var(--card-bg))',  bdr:'rgba(79,111,250,0.28)', vc:'var(--bluL)' },
+          { label:'Avg Win Rate', value:'55%',    icon:'🎯',  grad:'linear-gradient(135deg,rgba(0,212,160,0.09),var(--card-bg))',  bdr:'rgba(0,212,160,0.28)',  vc:'var(--grn)' },
+          { label:'Avg CAGR',     value:'+34.9%', icon:'📈',  grad:'linear-gradient(135deg,rgba(0,212,160,0.10),var(--card-bg))',  bdr:'rgba(0,212,160,0.28)',  vc:'var(--grn)' },
+          { label:'Avg Max DD',   value:'-14%',   icon:'🛡️', grad:'linear-gradient(135deg,rgba(255,59,92,0.09),var(--card-bg))',  bdr:'rgba(255,59,92,0.25)',  vc:'var(--red)' },
         ].map(s => (
-          <div key={s.label} style={{ ...card, padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
+          <div key={s.label} style={{ background:s.grad, border:`1px solid ${s.bdr}`, borderRadius:14, padding:'14px 16px', display:'flex', alignItems:'center', gap:12 }}>
             <span style={{ fontSize:20 }}>{s.icon}</span>
             <div>
-              <div style={{ fontSize:18, fontWeight:900 }}>{s.value}</div>
+              <div style={{ fontSize:18, fontWeight:900, color:s.vc }}>{s.value}</div>
               <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>{s.label}</div>
             </div>
           </div>
@@ -368,7 +376,7 @@ export default function AlgorithmsPage() {
           const locked  = !isPro;
           const isOpen  = expanded === a.id;
           return (
-            <div key={a.id} style={{ ...card, border: a.pro ? '1px solid rgba(255,184,0,0.2)' : '1px solid var(--bdr)' }}>
+            <div key={a.id} className="hover-lift" style={{ background: CAT_STYLE[a.category]?.grad ?? card.background, border: a.pro ? '1px solid rgba(255,184,0,0.35)' : `1px solid ${CAT_STYLE[a.category]?.bdr ?? 'var(--card-bdr)'}`, borderLeft:`3px solid ${a.pro ? '#FFB800' : (CAT_STYLE[a.category]?.accent ?? 'var(--bluL)')}`, borderRadius:14, padding:'20px' }}>
 
               {/* Title row — always visible */}
               <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom: locked ? 0 : 14 }}>
@@ -376,7 +384,7 @@ export default function AlgorithmsPage() {
                 <div style={{ flex:1, minWidth:0, display:'flex', alignItems:'center', gap:8, flexWrap:'wrap' }}>
                   <span style={{ fontSize:15, fontWeight:800 }}>{a.name}</span>
                   {a.pro && <span style={{ fontSize:10, fontWeight:800, color:'#FFB800', background:'rgba(255,184,0,0.1)', border:'1px solid rgba(255,184,0,0.25)', borderRadius:20, padding:'2px 8px' }}>PRO</span>}
-                  <span style={{ fontSize:10, fontWeight:700, color:'var(--dim)', background:'var(--surf2)', borderRadius:20, padding:'2px 8px' }}>{a.category}</span>
+                  <span style={{ fontSize:10, fontWeight:700, color: CAT_STYLE[a.category]?.accent ?? 'var(--dim)', background: CAT_STYLE[a.category]?.grad ?? 'var(--surf2)', border:`1px solid ${CAT_STYLE[a.category]?.bdr ?? 'var(--bdr)'}`, borderRadius:20, padding:'2px 8px' }}>{a.category}</span>
                   <span style={{ fontSize:10, color:'var(--dim)' }}>{a.timeframe}</span>
                 </div>
                 {locked && (
