@@ -25,7 +25,7 @@ function encrypt(text: string): string {
   return `${iv.toString('hex')}:${tag.toString('hex')}:${encrypted.toString('hex')}`;
 }
 
-export function decrypt(encoded: string): string {
+function decrypt(encoded: string): string {
   const [ivHex, tagHex, dataHex] = encoded.split(':');
   const key = Buffer.from(process.env.PLAID_TOKEN_ENCRYPTION_KEY!, 'hex');
   const decipher = createDecipheriv('aes-256-gcm', key, Buffer.from(ivHex, 'hex'));
