@@ -312,7 +312,8 @@ export default function PaperTradingPage() {
     const r = await fetch(`${SUPA}/rest/v1/paper_strategies?select=*&active=eq.true&order=created_at.asc`, {
       headers: authHeader(token),
     });
-    const data = await r.json() as Strategy[];
+    const raw = await r.json();
+    const data: Strategy[] = Array.isArray(raw) ? raw : [];
     setStrategies(data);
     if (data[si]) {
       setRsiL(data[si].rsi_low); setRsiH(data[si].rsi_high);
@@ -327,8 +328,8 @@ export default function PaperTradingPage() {
     const r = await fetch(`${SUPA}/rest/v1/paper_trades?strategy_id=eq.${st.id}&order=entry_at.desc`, {
       headers: authHeader(token),
     });
-    const data = await r.json() as Trade[];
-    setTrades(data);
+    const rawT = await r.json();
+    setTrades(Array.isArray(rawT) ? rawT : []);
   }, [token, st]);
 
   useEffect(() => { loadStrategies(); }, [loadStrategies]);
