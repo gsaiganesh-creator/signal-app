@@ -278,7 +278,9 @@ export default function USPortfolioPage() {
       if (!res.ok) return;
       const rows: GrantRow[] = await res.json();
       setGrants(rows);
-      const syms = [...new Set(rows.map(r => r.symbol))].filter(Boolean);
+      // Only fetch prices for valid tickers (not garbage CSV data)
+      const TICKER = /^[A-Z]{1,6}$/;
+      const syms = [...new Set(rows.map(r => (r.symbol||'').trim().toUpperCase()).filter(s => TICKER.test(s)))];
       if (syms.length) {
         const pr = await fetch(`/api/prices?symbols=${encodeURIComponent(syms.join(','))}`);
         if (pr.ok) setGrantPrices(await pr.json());
@@ -473,15 +475,19 @@ export default function USPortfolioPage() {
   const sumHasPrices   = merged.some(h => prices[h.symbol]?.price != null);
 
   // RSU/ESPP totals
-  const rsuInvestedUSD = grants.reduce((s, g) => s + (g.shares * (g.grant_price || 0)), 0);
-  const rsuCurrentUSD  = grants.reduce((s, g) => {
-    const p = grantPrices[g.symbol]?.price;
+  // Only count grants with valid ticker symbols (1-6 uppercase letters, e.g. QCOM, MSFT)
+  const TICKER_RE = /^[A-Z]{1,6}$/;
+  const validGrants = grants.filter(g => TICKER_RE.test((g.symbol || '').trim().toUpperCase()));
+  const rsuInvestedUSD = validGrants.reduce((s, g) => s + (g.shares * (g.grant_price || 0)), 0);
+  const rsuCurrentUSD  = validGrants.reduce((s, g) => {
+    const p = grantPrices[g.symbol?.toUpperCase()]?.price;
     return s + (p != null ? g.shares * p : g.shares * (g.grant_price || 0));
   }, 0);
-  const rsuPL       = rsuCurrentUSD - rsuInvestedUSD;
-  const rsuHasPrices = grants.some(g => grantPrices[g.symbol]?.price != null);
-  const rsuCount    = grants.length;
-  const rsuSymbols  = [...new Set(grants.map(g => g.symbol))];
+  const rsuPL        = rsuCurrentUSD - rsuInvestedUSD;
+  const rsuHasPrices = validGrants.some(g => grantPrices[g.symbol?.toUpperCase()]?.price != null);
+  const rsuCount     = grants.length;
+  const validCount   = validGrants.length;
+  const rsuSymbols   = [...new Set(validGrants.map(g => g.symbol.trim().toUpperCase()))].slice(0, 6);
 
   // Combined totals (stocks + RSU)
   const combinedInvested = sumInvestedUSD + rsuInvestedUSD;
@@ -657,7 +663,9 @@ export default function USPortfolioPage() {
           <div>
             <div style={{ fontSize:13, fontWeight:700 }}>📊 ESPP &amp; RSU Grants</div>
             <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
-              {rsuCount > 0 ? `${rsuCount} grant${rsuCount !== 1 ? 's' : ''} · ${rsuSymbols.join(', ')}` : 'No grants added yet · Import broker file to see live value'}
+              {validCount > 0
+                ? `${validCount} grant${validCount !== 1 ? 's' : ''} · ${rsuSymbols.join(', ')}${rsuSymbols.length < validGrants.filter((g,i,a)=>a.findIndex(x=>x.symbol===g.symbol)===i).length ? ' …' : ''}`
+                : rsuCount > 0 ? `${rsuCount} entries — check symbols in ESPP & RSU Tracker` : 'No grants added yet · Import broker file to see live value'}
             </div>
           </div>
           <Link href="/dashboard/equity-comp" style={{ textDecoration:'none', fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:9, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.35)', color:'var(--pur)', whiteSpace:'nowrap', flexShrink:0, marginLeft:16 }}>
@@ -670,7 +678,7 @@ export default function USPortfolioPage() {
               { label:'RSU Invested', val:`$${rsuInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `≈ ₹${(rsuInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--pur)' },
               { label:'RSU Current', val: rsuHasPrices ? `$${rsuCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: (rsuHasPrices&&usdInr) ? `≈ ₹${(rsuCurrentUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
               { label:'RSU P&L', val: rsuHasPrices ? `${rsuPL>=0?'+':'-'}$${Math.abs(rsuPL).toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: rsuHasPrices&&rsuInvestedUSD>0 ? `${((rsuPL/rsuInvestedUSD)*100).toFixed(2)}%` : '', color: rsuHasPrices?(rsuPL>=0?'var(--grn)':'var(--red)'):'var(--txt)' },
-              { label:'Combined Total', val: `$${combinedCurrent.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `≈ ₹${(combinedCurrent*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : 'Stocks + RSU', color:'var(--txt)' },
+              { label:'Combined Total', val: `$${combinedCurrent.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: `P&L ${combinedPL>=0?'+':'-'}$${Math.abs(combinedPL).toLocaleString('en-US',{maximumFractionDigits:0})} · Stocks + RSU`, color:'var(--txt)' },
             ].map(m => (
               <div key={m.label} style={{ background:'rgba(139,92,246,0.08)', borderRadius:10, padding:'10px 12px', border:'1px solid rgba(139,92,246,0.18)' }}>
                 <div style={{ fontSize:9.5, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:4 }}>{m.label}</div>
