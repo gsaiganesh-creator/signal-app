@@ -13,7 +13,17 @@ interface Strategy {
   capital: number; rsi_low: number; rsi_high: number;
   sl_pct: number; target_pct: number;
   started_at: string; trial_days: number; active: boolean;
+  algo_type?: string;
 }
+
+const ALGO_PRESETS = [
+  { id:'rsi_ema',      icon:'📈', name:'RSI + EMA Crossover',     category:'Momentum',       rsi_low:35, rsi_high:65, sl_pct:2.5, target_pct:6,  desc:'Buy when RSI crosses 35 + price above EMA20. Classic swing entry.' },
+  { id:'dual_ema',     icon:'🎯', name:'Dual EMA Trend Follower',  category:'Trend Following', rsi_low:40, rsi_high:70, sl_pct:3,   target_pct:8,  desc:'EMA9 × EMA21 crossover. Rides medium-term trends for 2–6 weeks.' },
+  { id:'mean_rev',     icon:'🔄', name:'Mean Reversion BB',        category:'Mean Reversion', rsi_low:30, rsi_high:70, sl_pct:2,   target_pct:4,  desc:'Buy at lower Bollinger Band, sell at upper. Best in range-bound markets.' },
+  { id:'vwap',         icon:'⚡', name:'VWAP Intraday Scalper',    category:'Intraday',       rsi_low:40, rsi_high:60, sl_pct:1,   target_pct:2,  desc:'Trade breakouts above/below VWAP with tight SL. Short holding period.' },
+  { id:'sector_rot',   icon:'🌐', name:'Sector Rotation Engine',   category:'Macro/Rotation', rsi_low:45, rsi_high:65, sl_pct:4,   target_pct:10, desc:'Rotate into leading sectors monthly based on relative strength.' },
+  { id:'breakout',     icon:'🚀', name:'Breakout Momentum',        category:'Breakout',       rsi_low:50, rsi_high:80, sl_pct:3,   target_pct:8,  desc:'Buy 52W high breakouts with volume surge. High win rate in bull markets.' },
+] as const;
 
 interface Trade {
   id: string; strategy_id: string;
@@ -75,48 +85,96 @@ const INP: React.CSSProperties = {
   padding:'0 12px', fontFamily:'inherit', outline:'none', boxSizing:'border-box',
 };
 
-function NewStrategyModal({ token, userId, onDone, onClose }: { token: string; userId: string; onDone(): void; onClose(): void }) {
-  const [name, setName] = useState('');
-  const [capital, setCap] = useState('100000');
-  const [sl, setSl] = useState('2.5');
-  const [tgt, setTgt] = useState('6.0');
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState('');
+function AlgoPickerModal({ token, userId, existing, onDone, onClose }: {
+  token: string; userId: string; existing: string[]; onDone(): void; onClose(): void;
+}) {
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [capital, setCap]       = useState('100000');
+  const [busy, setBusy]         = useState(false);
+  const [err, setErr]           = useState('');
 
-  async function create() {
-    if (!name.trim()) { setErr('Enter a strategy name'); return; }
-    setBusy(true); setErr('');
-    const r = await fetch(`${SUPA}/rest/v1/paper_strategies`, {
-      method: 'POST',
-      headers: { ...authHeader(token), Prefer: 'return=minimal' },
-      body: JSON.stringify({ name: name.trim(), user_id: userId, capital: +capital, sl_pct: +sl, target_pct: +tgt }),
+  function toggle(id: string) {
+    setSelected(prev => {
+      const n = new Set(prev);
+      n.has(id) ? n.delete(id) : n.add(id);
+      return n;
     });
+  }
+
+  async function activate() {
+    if (selected.size === 0) { setErr('Select at least one strategy'); return; }
+    setBusy(true); setErr('');
+    const toCreate = ALGO_PRESETS.filter(a => selected.has(a.id));
+    const results = await Promise.all(toCreate.map(a =>
+      fetch(`${SUPA}/rest/v1/paper_strategies`, {
+        method: 'POST',
+        headers: { ...authHeader(token), Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          name: a.name, user_id: userId, algo_type: a.id,
+          capital: +capital, rsi_low: a.rsi_low, rsi_high: a.rsi_high,
+          sl_pct: a.sl_pct, target_pct: a.target_pct,
+        }),
+      })
+    ));
     setBusy(false);
-    if (r.ok) onDone();
-    else setErr('Failed to create. Check Supabase connection.');
+    if (results.every(r => r.ok)) onDone();
+    else setErr('Some strategies failed to create. Check Supabase.');
   }
 
   return (
-    <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.6)' }}>
-      <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:18, padding:28, width:'min(420px,90vw)' }}>
-        <div style={{ fontSize:16, fontWeight:800, marginBottom:20 }}>New Paper Strategy</div>
-        {[
-          { lbl:'Strategy name', val:name, set:(v: string) => setName(v), type:'text', ph:'e.g. RSI Momentum' },
-          { lbl:'Virtual capital (₹)', val:capital, set:(v: string) => setCap(v), type:'number', ph:'100000' },
-          { lbl:'Stop-loss %', val:sl, set:(v: string) => setSl(v), type:'number', ph:'2.5' },
-          { lbl:'Target %', val:tgt, set:(v: string) => setTgt(v), type:'number', ph:'6.0' },
-        ].map(f => (
-          <div key={f.lbl} style={{ marginBottom:14 }}>
-            <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:5 }}>{f.lbl}</label>
-            <input style={INP} type={f.type} value={f.val} placeholder={f.ph}
-              onChange={e => f.set(e.target.value)} />
-          </div>
-        ))}
+    <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.7)', padding:16 }}>
+      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:28, width:'min(680px,95vw)', maxHeight:'90vh', overflowY:'auto' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
+          <div style={{ fontSize:18, fontWeight:900 }}>Select Strategies</div>
+          <button onClick={onClose} style={{ background:'none', border:'none', color:'var(--dim)', fontSize:20, cursor:'pointer', fontFamily:'inherit', lineHeight:1 }}>×</button>
+        </div>
+        <div style={{ fontSize:12, color:'var(--dim)', marginBottom:20 }}>Pick one or more — each runs independently with its own trade log and equity curve.</div>
+
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(280px,1fr))', gap:12, marginBottom:20 }}>
+          {ALGO_PRESETS.map(a => {
+            const active   = selected.has(a.id);
+            const running  = existing.includes(a.id);
+            return (
+              <div key={a.id} onClick={() => !running && toggle(a.id)}
+                style={{ padding:16, borderRadius:14, cursor: running ? 'default' : 'pointer', opacity: running ? 0.5 : 1,
+                  background: active ? 'rgba(23,64,245,0.08)' : 'var(--surf2)',
+                  border:`1.5px solid ${active ? 'var(--blu)' : 'var(--bdr)'}`,
+                  transition:'border-color 0.15s,background 0.15s' }}>
+                <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:8 }}>
+                  <span style={{ fontSize:22 }}>{a.icon}</span>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:800 }}>{a.name}</div>
+                    <div style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>{a.category}</div>
+                  </div>
+                  {running
+                    ? <span style={{ fontSize:10, padding:'2px 8px', borderRadius:10, background:'rgba(0,212,160,0.12)', color:'var(--grn)', fontWeight:700 }}>ACTIVE</span>
+                    : <div style={{ width:18, height:18, borderRadius:5, border:`2px solid ${active ? 'var(--blu)' : 'var(--bdr)'}`, background: active ? 'var(--blu)' : 'transparent', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 }}>
+                        {active && <span style={{ color:'#fff', fontSize:11, lineHeight:1 }}>✓</span>}
+                      </div>
+                  }
+                </div>
+                <div style={{ fontSize:11, color:'var(--dim)', lineHeight:1.5, marginBottom:8 }}>{a.desc}</div>
+                <div style={{ display:'flex', gap:12, fontSize:10, color:'var(--dim)' }}>
+                  <span>SL {a.sl_pct}%</span>
+                  <span>T1 {a.target_pct}%</span>
+                  <span>RSI {a.rsi_low}–{a.rsi_high}</span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div style={{ marginBottom:16 }}>
+          <label style={{ fontSize:11, color:'var(--dim)', display:'block', marginBottom:6 }}>Virtual capital per strategy (₹)</label>
+          <input style={{ ...INP, width:200 }} type="number" value={capital} onChange={e => setCap(e.target.value)} />
+        </div>
+
         {err && <div style={{ fontSize:12, color:'var(--red)', marginBottom:12 }}>{err}</div>}
-        <div style={{ display:'flex', gap:10, marginTop:4 }}>
-          <button onClick={onClose} style={{ flex:1, height:40, borderRadius:9, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
-          <button onClick={create} disabled={busy} style={{ flex:2, height:40, borderRadius:9, background:'var(--grn)', border:'none', color:'#000', fontSize:13, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
-            {busy ? 'Creating…' : 'Create Strategy'}
+        <div style={{ display:'flex', gap:10 }}>
+          <button onClick={onClose} style={{ flex:1, height:42, borderRadius:10, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+          <button onClick={activate} disabled={busy || selected.size === 0}
+            style={{ flex:2, height:42, borderRadius:10, background: selected.size > 0 ? 'var(--grn)' : 'var(--surf2)', border:'none', color: selected.size > 0 ? '#000' : 'var(--dim)', fontSize:13, fontWeight:800, cursor: selected.size > 0 ? 'pointer' : 'default', fontFamily:'inherit', transition:'background 0.15s' }}>
+            {busy ? 'Activating…' : selected.size > 0 ? `▶ Activate ${selected.size} Strateg${selected.size > 1 ? 'ies' : 'y'}` : 'Select strategies above'}
           </button>
         </div>
       </div>
@@ -295,6 +353,7 @@ export default function PaperTradingPage() {
 
   const [showNew, setShowNew]       = useState(false);
   const [showTrade, setShowTrade]   = useState(false);
+  const activeAlgoTypes = strategies.map(s => s.algo_type ?? 'custom');
   const [closingTrade, setClosing]  = useState<Trade | null>(null);
   const [savingParams, setSaving]   = useState(false);
 
@@ -393,17 +452,17 @@ export default function PaperTradingPage() {
             <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>Test strategies risk-free · Virtual capital · No real orders</div>
           </div>
         </div>
-        <div style={{ textAlign:'center', padding:'64px 24px', background:'var(--card-bg)', border:'1px dashed var(--bdr)', borderRadius:16 }}>
-          <div style={{ fontSize:48, marginBottom:16 }}>🧪</div>
-          <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>No strategies yet</div>
-          <div style={{ fontSize:13, color:'var(--dim)', maxWidth:360, margin:'0 auto 24px' }}>
-            Create a paper strategy and trade with ₹1,00,000 virtual capital. Win rate, P&L and equity curve tracked in real-time.
+        <div style={{ textAlign:'center', padding:'40px 24px 24px', background:'var(--card-bg)', border:'1px dashed var(--bdr)', borderRadius:16, marginBottom:24 }}>
+          <div style={{ fontSize:44, marginBottom:12 }}>🧪</div>
+          <div style={{ fontSize:18, fontWeight:800, marginBottom:6 }}>Choose your strategies</div>
+          <div style={{ fontSize:13, color:'var(--dim)', maxWidth:400, margin:'0 auto 24px', lineHeight:1.6 }}>
+            Pick from 6 battle-tested algorithms. Each runs independently with ₹1,00,000 virtual capital, its own trade log and equity curve.
           </div>
-          <button onClick={() => setShowNew(true)} style={{ height:44, padding:'0 32px', borderRadius:12, background:'var(--grn)', border:'none', color:'#000', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
-            + Create First Strategy
+          <button onClick={() => setShowNew(true)} style={{ height:46, padding:'0 32px', borderRadius:12, background:'linear-gradient(135deg,var(--blu),var(--pur))', border:'none', color:'#fff', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
+            ▶ Select Strategies
           </button>
         </div>
-        {showNew && <NewStrategyModal token={token} userId={user.id} onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
+        {showNew && <AlgoPickerModal token={token} userId={user.id} existing={activeAlgoTypes} onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
       </div>
     );
   }
@@ -419,21 +478,27 @@ export default function PaperTradingPage() {
         </div>
         <div style={{ display:'flex', gap:8 }}>
           {st && <button onClick={() => setShowTrade(true)} style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--grn)', border:'none', color:'#000', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Paper Trade</button>}
-          <button onClick={() => setShowNew(true)} style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>+ Strategy</button>
+          <button onClick={() => setShowNew(true)} style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>+ Add Strategy</button>
         </div>
       </div>
 
       {/* Strategy selector tabs */}
       <div style={{ display:'flex', gap:10, marginBottom:24, flexWrap:'wrap', overflowX:'auto', paddingBottom:4 }}>
-        {strategies.map((s, i) => (
-          <div key={s.id} onClick={() => setSi(i)}
-            style={{ padding:'10px 18px', borderRadius:12, cursor:'pointer', flexShrink:0, background: si===i ? 'rgba(139,92,246,0.08)' : 'var(--surf)', border:`1px solid ${si===i ? 'var(--pur)' : 'var(--bdr)'}` }}>
-            <div style={{ fontSize:13, fontWeight:700, color: si===i ? 'var(--pur)' : 'var(--txt)' }}>{s.name}</div>
-            <div style={{ fontSize:11, color: totalPL >= 0 ? 'var(--grn)' : 'var(--red)', marginTop:2 }}>
-              {si===i ? `${totalPL >= 0 ? '+' : ''}${retPct}% · ${winRate}% win` : `Active · Day ${daysSince(s.started_at)}`}
+        {strategies.map((s, i) => {
+          const preset = ALGO_PRESETS.find(a => a.id === s.algo_type);
+          return (
+            <div key={s.id} onClick={() => setSi(i)}
+              style={{ padding:'10px 18px', borderRadius:12, cursor:'pointer', flexShrink:0, background: si===i ? 'rgba(139,92,246,0.08)' : 'var(--surf)', border:`1px solid ${si===i ? 'var(--pur)' : 'var(--bdr)'}` }}>
+              <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                {preset && <span style={{ fontSize:14 }}>{preset.icon}</span>}
+                <div style={{ fontSize:13, fontWeight:700, color: si===i ? 'var(--pur)' : 'var(--txt)' }}>{s.name}</div>
+              </div>
+              <div style={{ fontSize:11, color: totalPL >= 0 ? 'var(--grn)' : 'var(--red)', marginTop:2 }}>
+                {si===i ? `${totalPL >= 0 ? '+' : ''}${retPct}% · ${winRate}% win` : `Active · Day ${daysSince(s.started_at)}`}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <button onClick={() => setShowNew(true)} style={{ padding:'10px 18px', borderRadius:12, background:'var(--card-bg)', border:'1px dashed var(--bdr)', cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
           <div style={{ fontSize:13, fontWeight:700, color:'var(--dim)' }}>+ New</div>
           <div style={{ fontSize:11, color:'var(--dim)' }}>Add strategy</div>
@@ -585,7 +650,7 @@ export default function PaperTradingPage() {
             <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:18, marginBottom:14 }}>
               <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>Strategy Summary</div>
               {[
-                ['Name',       st.name],
+                ['Algorithm',  (() => { const p = ALGO_PRESETS.find(a => a.id === st.algo_type); return p ? `${p.icon} ${p.category}` : 'Custom'; })()],
                 ['Capital',    fmtINR(capital) + ' virtual'],
                 ['SL',         `${st.sl_pct}%`],
                 ['Target',     `${st.target_pct}%`],
@@ -619,7 +684,7 @@ export default function PaperTradingPage() {
       )}
 
       {/* Modals */}
-      {showNew     && <NewStrategyModal token={token} userId={user.id}  onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
+      {showNew     && <AlgoPickerModal token={token} userId={user.id} existing={activeAlgoTypes} onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
       {showTrade   && st && <NewTradeModal strategy={st} token={token} userId={user.id} onDone={async () => { setShowTrade(false); await loadTrades(); }} onClose={() => setShowTrade(false)} />}
       {closingTrade && <CloseTradeModal trade={closingTrade} token={token} onDone={async () => { setClosing(null); await loadTrades(); }} onClose={() => setClosing(null)} />}
     </div>
