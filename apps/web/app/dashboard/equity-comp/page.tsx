@@ -23,7 +23,7 @@ interface Grant {
 interface ParsedRow {
   type: EquityType; symbol: string; company: string; employer: string;
   shares: number; grantPrice: number; vestDate: string;
-  brokerage: string; notes: string; selected: boolean;
+  brokerage: string; notes: string; selected: boolean; duplicate?: boolean;
 }
 interface LiveData {
   price: number; change_pct: number;
@@ -275,7 +275,19 @@ export default function EquityCompPage() {
     if (fileRef.current) fileRef.current.value = '';
     if (errors.length) setImportMsg(`⚠ ${errors.join(' · ')}`);
     if (!allRows.length) return;
-    setImportRows(allRows); setImportModal(true);
+    // Mark rows that already exist in DB (same type+symbol+shares+grantPrice+vestDate)
+    const existingKeys = new Set(grants.map(g =>
+      `${g.type}|${g.symbol.toUpperCase()}|${g.shares}|${g.grantPrice}|${g.vestDate}`
+    ));
+    let dupeCount = 0;
+    const tagged = allRows.map(r => {
+      const key = `${r.type}|${r.symbol.toUpperCase()}|${r.shares}|${r.grantPrice}|${r.vestDate}`;
+      const isDupe = existingKeys.has(key);
+      if (isDupe) dupeCount++;
+      return { ...r, selected: !isDupe, duplicate: isDupe };
+    });
+    if (dupeCount > 0) setImportMsg(`⚠ ${dupeCount} duplicate${dupeCount > 1 ? 's' : ''} found — already in your grants, auto-deselected.`);
+    setImportRows(tagged); setImportModal(true);
   }
 
   async function handleImportConfirm() {
@@ -596,8 +608,8 @@ export default function EquityCompPage() {
               {importRows.map((r,i) => (
                 <div key={i} style={{ display:'grid', gridTemplateColumns:'28px 56px 1fr 76px 76px 100px 1fr', gap:10, alignItems:'center',
                   padding:'10px', borderRadius:10, opacity:r.selected?1:0.45,
-                  background:r.selected?'var(--surf2)':'var(--surf)',
-                  border:`1px solid ${r.selected?'var(--card-bdr)':'transparent'}` }}>
+                  background: r.duplicate ? 'rgba(255,59,92,0.05)' : r.selected ? 'var(--surf2)' : 'var(--surf)',
+                  border:`1px solid ${r.duplicate ? 'rgba(255,59,92,0.25)' : r.selected ? 'var(--card-bdr)' : 'transparent'}` }}>
                   <input type="checkbox" checked={r.selected} style={{ width:16, height:16, cursor:'pointer', accentColor:'var(--blu)' }}
                     onChange={()=>setImportRows(rows=>rows.map((x,j)=>j===i?{...x,selected:!x.selected}:x))}/>
                   <span style={{ fontSize:11, fontWeight:700, padding:'2px 7px', borderRadius:6, textAlign:'center',
@@ -606,7 +618,10 @@ export default function EquityCompPage() {
                     {r.type}
                   </span>
                   <div>
-                    <div style={{ fontSize:13, fontWeight:700 }}>{r.symbol}</div>
+                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                      <div style={{ fontSize:13, fontWeight:700 }}>{r.symbol}</div>
+                      {r.duplicate && <span style={{ fontSize:9, fontWeight:800, padding:'1px 5px', borderRadius:4, background:'rgba(255,59,92,0.15)', color:'var(--red)', border:'1px solid rgba(255,59,92,0.3)', letterSpacing:0.5 }}>DUPLICATE</span>}
+                    </div>
                     {r.company&&<div style={{ fontSize:11, color:'var(--dim)' }}>{r.company}</div>}
                   </div>
                   <div style={{ fontSize:13, fontWeight:600 }}>{r.shares.toLocaleString()}</div>
