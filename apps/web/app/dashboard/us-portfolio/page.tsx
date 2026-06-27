@@ -263,6 +263,31 @@ export default function USPortfolioPage() {
     else { setPrices({}); setLoading(false); }
   }, [allHoldings, fetchPrices]);
 
+  // ── RSU / ESPP grants ────────────────────────────────────────────────────────
+  interface GrantRow { symbol: string; shares: number; grant_price: number; type: string; }
+  const [grants, setGrants] = useState<GrantRow[]>([]);
+  const [grantPrices, setGrantPrices] = useState<PriceMap>({});
+
+  const fetchGrants = useCallback(async () => {
+    if (!session) return;
+    try {
+      const res = await fetch(
+        `${SUPA_URL}/rest/v1/equity_grants?user_id=eq.${session.user.id}&select=symbol,shares,grant_price,type`,
+        { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` } }
+      );
+      if (!res.ok) return;
+      const rows: GrantRow[] = await res.json();
+      setGrants(rows);
+      const syms = [...new Set(rows.map(r => r.symbol))].filter(Boolean);
+      if (syms.length) {
+        const pr = await fetch(`/api/prices?symbols=${encodeURIComponent(syms.join(','))}`);
+        if (pr.ok) setGrantPrices(await pr.json());
+      }
+    } catch { /* ignore */ }
+  }, [session]);
+
+  useEffect(() => { fetchGrants(); }, [fetchGrants]);
+
   // Set default add-form portfolio to first US portfolio
   useEffect(() => {
     const first = usPortfolios[0];
@@ -447,6 +472,22 @@ export default function USPortfolioPage() {
   const sumPLPct       = sumInvestedUSD > 0 ? (sumPL / sumInvestedUSD) * 100 : 0;
   const sumHasPrices   = merged.some(h => prices[h.symbol]?.price != null);
 
+  // RSU/ESPP totals
+  const rsuInvestedUSD = grants.reduce((s, g) => s + (g.shares * (g.grant_price || 0)), 0);
+  const rsuCurrentUSD  = grants.reduce((s, g) => {
+    const p = grantPrices[g.symbol]?.price;
+    return s + (p != null ? g.shares * p : g.shares * (g.grant_price || 0));
+  }, 0);
+  const rsuPL       = rsuCurrentUSD - rsuInvestedUSD;
+  const rsuHasPrices = grants.some(g => grantPrices[g.symbol]?.price != null);
+  const rsuCount    = grants.length;
+  const rsuSymbols  = [...new Set(grants.map(g => g.symbol))];
+
+  // Combined totals (stocks + RSU)
+  const combinedInvested = sumInvestedUSD + rsuInvestedUSD;
+  const combinedCurrent  = sumCurrentUSD  + rsuCurrentUSD;
+  const combinedPL       = combinedCurrent - combinedInvested;
+
   return (
     <div style={{ maxWidth:1200 }}>
       {/* Header */}
@@ -610,18 +651,36 @@ export default function USPortfolioPage() {
           })}
         </div>
       </div>
-      {/* RSU / ESPP quick-access link */}
-      <Link href="/dashboard/equity-comp" style={{ textDecoration:'none', display:'block', marginBottom:16 }}>
-        <div style={{ ...card, background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.25)',
-          display:'flex', alignItems:'center', justifyContent:'space-between', cursor:'pointer', padding:'14px 18px' }}>
+      {/* RSU / ESPP summary card */}
+      <div style={{ ...card, background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.25)', marginBottom:16, padding:'16px 20px' }}>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: rsuCount > 0 ? 14 : 0 }}>
           <div>
-            <div style={{ fontSize:13, fontWeight:700 }}>📊 ESPP &amp; RSU Tracker</div>
-            <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>Track RSU vesting &amp; ESPP grants · Live CMP · Gain/loss · LTCG eligibility · All brokerages</div>
+            <div style={{ fontSize:13, fontWeight:700 }}>📊 ESPP &amp; RSU Grants</div>
+            <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
+              {rsuCount > 0 ? `${rsuCount} grant${rsuCount !== 1 ? 's' : ''} · ${rsuSymbols.join(', ')}` : 'No grants added yet · Import broker file to see live value'}
+            </div>
           </div>
-          <div style={{ fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:9, background:'rgba(139,92,246,0.15)',
-            border:'1px solid rgba(139,92,246,0.35)', color:'var(--pur)', whiteSpace:'nowrap', flexShrink:0, marginLeft:16 }}>Open →</div>
+          <Link href="/dashboard/equity-comp" style={{ textDecoration:'none', fontSize:12, fontWeight:700, padding:'5px 14px', borderRadius:9, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.35)', color:'var(--pur)', whiteSpace:'nowrap', flexShrink:0, marginLeft:16 }}>
+            {rsuCount > 0 ? 'Manage →' : 'Add Grants →'}
+          </Link>
         </div>
-      </Link>
+        {rsuCount > 0 && (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+            {[
+              { label:'RSU Invested', val:`$${rsuInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `≈ ₹${(rsuInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--pur)' },
+              { label:'RSU Current', val: rsuHasPrices ? `$${rsuCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: (rsuHasPrices&&usdInr) ? `≈ ₹${(rsuCurrentUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
+              { label:'RSU P&L', val: rsuHasPrices ? `${rsuPL>=0?'+':'-'}$${Math.abs(rsuPL).toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: rsuHasPrices&&rsuInvestedUSD>0 ? `${((rsuPL/rsuInvestedUSD)*100).toFixed(2)}%` : '', color: rsuHasPrices?(rsuPL>=0?'var(--grn)':'var(--red)'):'var(--txt)' },
+              { label:'Combined Total', val: `$${combinedCurrent.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `≈ ₹${(combinedCurrent*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : 'Stocks + RSU', color:'var(--txt)' },
+            ].map(m => (
+              <div key={m.label} style={{ background:'rgba(139,92,246,0.08)', borderRadius:10, padding:'10px 12px', border:'1px solid rgba(139,92,246,0.18)' }}>
+                <div style={{ fontSize:9.5, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:4 }}>{m.label}</div>
+                <div style={{ fontSize:16, fontWeight:900, color:m.color }}>{m.val}</div>
+                {m.sub && <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{m.sub}</div>}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Key metrics */}
       {merged.length > 0 && (
