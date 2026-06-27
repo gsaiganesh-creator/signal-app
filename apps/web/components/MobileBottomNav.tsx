@@ -40,9 +40,10 @@ const MORE_SECTIONS = [
   {
     label: 'Account',
     links: [
-      { href: '/dashboard/upgrade', icon: '⚡', label: 'Upgrade Plan' },
-      { href: '/dashboard/refer',   icon: '🎁', label: 'Refer & Earn' },
-      { href: '/sign-out',          icon: '🚪', label: 'Sign Out'     },
+      { href: '/dashboard/upgrade', icon: '⚡', label: 'Upgrade Plan'   },
+      { href: '/dashboard/brokers', icon: '🔗', label: 'Connect Broker' },
+      { href: '/dashboard/refer',   icon: '🎁', label: 'Refer & Earn'   },
+      { href: '/sign-out',          icon: '🚪', label: 'Sign Out'       },
     ],
   },
 ];

@@ -726,7 +726,22 @@ export default function USPortfolioPage() {
             <div style={{ fontSize:13, fontWeight:700 }}>Holdings {mlLoading && <span style={{ fontSize:11, color:'var(--dim)', fontWeight:400 }}>· fetching ML signals…</span>}</div>
             <div style={{ display:'flex', gap:8 }}></div>
           </div>
-          <div style={{ overflowX:'auto' }}>
+          {/* Empty state for a specific portfolio with no stocks (other portfolios have stocks) */}
+          {displayHoldings.length === 0 && viewMode === 'by-portfolio' && activePortId && (
+            <div style={{ textAlign:'center', padding:'30px 20px', borderTop:'1px solid var(--bdr)' }}>
+              <div style={{ fontSize:22, marginBottom:8 }}>📂</div>
+              <div style={{ fontSize:14, fontWeight:700, marginBottom:6 }}>
+                No stocks in {usPortfolios.find(p => p.id === activePortId)?.name ?? 'this portfolio'}
+              </div>
+              <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>Add stocks manually or import a broker file.</div>
+              <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
+                <button onClick={() => setAddOpen(true)} style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Add Stock</button>
+                <button onClick={() => fileRef.current?.click()} style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📂 Import CSV / XLSX</button>
+                <Link href="/dashboard/brokers" style={{ height:36, padding:'0 16px', borderRadius:9, background:'rgba(23,64,245,0.1)', border:'1px solid rgba(23,64,245,0.3)', color:'var(--bluL)', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}>🔗 Connect Broker (Plaid)</Link>
+              </div>
+            </div>
+          )}
+          <div style={{ overflowX:'auto', display: displayHoldings.length === 0 ? 'none' : 'block' }}>
             <table style={{ width:'100%', borderCollapse:'collapse' }}>
               <thead>
                 <tr>
@@ -821,8 +836,9 @@ export default function USPortfolioPage() {
               <div style={{ display:'flex', gap:8, justifyContent:'center', flexWrap:'wrap' }}>
                 <button onClick={() => setAddOpen(true)} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Add Stock</button>
                 <button onClick={() => fileRef.current?.click()} style={{ height:38, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📂 Import CSV / XLSX</button>
+                <Link href="/dashboard/brokers" style={{ height:38, padding:'0 16px', borderRadius:9, background:'linear-gradient(135deg,rgba(23,64,245,0.15),rgba(79,111,250,0.1))', border:'1px solid rgba(23,64,245,0.35)', color:'var(--bluL)', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}>🔗 Connect Broker (Plaid)</Link>
               </div>
-              <div style={{ marginTop:12, fontSize:11, color:'var(--dim2)' }}>Schwab · Fidelity · Robinhood · Webull · TD Ameritrade · Merrill Edge · IBKR</div>
+              <div style={{ marginTop:12, fontSize:11, color:'var(--dim2)' }}>Schwab · Fidelity · Robinhood · Webull · TD Ameritrade · Merrill Edge · IBKR · E*TRADE</div>
             </>
           )}
         </div>

@@ -327,6 +327,15 @@ export default function EquityCompPage() {
     await fetchGrants();
   }
 
+  async function deleteAllGrants() {
+    if (!session || !grants.length) return;
+    if (!confirm(`Delete ALL ${grants.length} grant${grants.length !== 1 ? 's' : ''}? This cannot be undone.`)) return;
+    await fetch(`${SUPA_URL}/rest/v1/equity_grants?user_id=eq.${session.user.id}`, {
+      method:'DELETE', headers:{ apikey:SUPA_KEY, Authorization:`Bearer ${session.access_token}` },
+    });
+    await fetchGrants();
+  }
+
   const totalValue   = grants.reduce((s,g)=>s+((live[g.symbol]?.price??g.grantPrice)*g.shares),0);
   const totalCost    = grants.reduce((s,g)=>s+(g.grantPrice*g.shares),0);
   const totalGain    = totalValue-totalCost;
@@ -370,8 +379,14 @@ export default function EquityCompPage() {
             Corporate equity · live value &amp; unrealised gain · ML signals · synced to cloud
           </div>
         </div>
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+        <div style={{ display:'flex', gap:8, alignItems:'center', flexWrap:'wrap' }}>
           {(liveLoad||parseLoading) && <span style={{ fontSize:11, color:'var(--dim)' }}>{parseLoading?'Parsing…':'Refreshing…'}</span>}
+          {grants.length > 0 && (
+            <button onClick={deleteAllGrants}
+              style={{ height:38, padding:'0 14px', borderRadius:10, background:'rgba(255,59,92,0.08)', border:'1px solid rgba(255,59,92,0.28)', color:'var(--red)', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+              🗑️ Delete All
+            </button>
+          )}
           <button onClick={()=>fileRef.current?.click()}
             style={{ height:38, padding:'0 16px', borderRadius:10, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:6 }}>
             📂 Import from Broker

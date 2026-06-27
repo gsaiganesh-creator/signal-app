@@ -49,6 +49,18 @@ export interface Database {
         Update: { signal?: SignalType; entry_price?: number | null; exit_price?: number | null; qty?: number | null; pl?: number | null; status?: TradeStatus };
         Relationships: [];
       };
+      broker_connections: {
+        Row:    { id: string; user_id: string; broker_name: string; plaid_access_token: string; plaid_item_id: string; institution_name: string | null; last_synced_at: string | null; created_at: string };
+        Insert: { id?: string; user_id: string; broker_name: string; plaid_access_token: string; plaid_item_id: string; institution_name?: string | null; last_synced_at?: string | null };
+        Update: { broker_name?: string; plaid_access_token?: string; institution_name?: string | null; last_synced_at?: string | null };
+        Relationships: [];
+      };
+      plaid_holdings: {
+        Row:    { id: string; user_id: string; broker_connection_id: string; symbol: string; name: string | null; qty: number; cost_basis: number | null; institution_price: number | null; institution_value: number | null; security_type: string; vested_qty: number | null; unvested_qty: number | null; account_name: string | null; account_type: string | null; synced_at: string };
+        Insert: { id?: string; user_id: string; broker_connection_id: string; symbol: string; name?: string | null; qty: number; cost_basis?: number | null; institution_price?: number | null; institution_value?: number | null; security_type?: string; vested_qty?: number | null; unvested_qty?: number | null; account_name?: string | null; account_type?: string | null; synced_at?: string };
+        Update: { symbol?: string; name?: string | null; qty?: number; cost_basis?: number | null; institution_price?: number | null; institution_value?: number | null; security_type?: string; vested_qty?: number | null; unvested_qty?: number | null; account_name?: string | null; account_type?: string | null; synced_at?: string };
+        Relationships: [];
+      };
     };
     Views: Record<string, never>;
     Functions: Record<string, never>;

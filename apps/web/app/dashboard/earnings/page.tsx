@@ -49,8 +49,8 @@ function quarterLabel(): string {
 }
 
 // Distribute stocks across Mon-Fri pseudo-randomly (stable by sym hash)
-function distribute(stocks: typeof WEEK_STOCKS, dates: Date[]) {
-  const buckets: { date: Date; items: typeof WEEK_STOCKS }[] = dates.map(d => ({ date: d, items: [] }));
+function distribute<T extends { sym: string }>(stocks: T[], dates: Date[]): { date: Date; items: T[] }[] {
+  const buckets: { date: Date; items: T[] }[] = dates.map(d => ({ date: d, items: [] }));
   stocks.forEach((s, i) => { buckets[i % 5].items.push(s); });
   return buckets.filter(b => b.items.length > 0);
 }
