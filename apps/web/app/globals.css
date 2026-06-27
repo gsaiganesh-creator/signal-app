@@ -421,3 +421,7 @@ button:active:not(:disabled) { transform: scale(0.97); }
 /* Nav links hide on mobile */
 .lp-nav-links { display: flex; align-items: center; gap: 24px; }
 @media (max-width: 768px) { .lp-nav-links { display: none; } }
+
+/* Hide CTA button on mobile nav — prevents header compression */
+.lp-cta-desktop { display: flex; }
+@media (max-width: 480px) { .lp-cta-desktop { display: none; } }

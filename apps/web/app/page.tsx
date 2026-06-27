@@ -254,7 +254,7 @@ export default function LandingPage() {
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
           <ThemeToggle />
           <Link href="/sign-in" style={{ height:36, padding:'0 16px', borderRadius:9, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', color:'var(--txt)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', textDecoration:'none' }}>Sign In</Link>
-          <Link href="/sign-in" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none', whiteSpace:'nowrap' }}>Get Started Free →</Link>
+          <Link href="/sign-in" className="lp-cta-desktop" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none', whiteSpace:'nowrap' }}>Get Started Free →</Link>
         </div>
       </nav>
 
@@ -702,7 +702,7 @@ export default function LandingPage() {
 
           {/* Period toggle — glassy tabs */}
           <div style={{ display:'flex', gap:8, marginBottom:32, flexWrap:'wrap', justifyContent:'center' }} className="lp-reveal">
-            <div style={{ display:'flex', gap:6, background:'rgba(255,255,255,0.03)', border:'1px solid rgba(255,255,255,0.07)', borderRadius:16, padding:5, backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', flexWrap:'wrap' }}>
+            <div style={{ display:'flex', gap:6, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:5, backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', flexWrap:'wrap' }}>
               {([['mo','Monthly'],['qtr','Quarterly','Save 10%'],['half','Half-Yearly','Save 17%'],['yr','Annual','Save 25%']] as [string,string,string?][]).map(([k,label,badge]) => (
                 <button key={k} onClick={() => setPeriod(k as 'mo'|'qtr'|'half'|'yr')}
                   style={{ height:38, padding:'0 18px', borderRadius:11, fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', gap:8, transition:'all 0.2s ease',
@@ -725,8 +725,8 @@ export default function LandingPage() {
           <div className="lp-plans lp-reveal">
             {([
               { name:'Free',    tag:'var(--dim)',  price:'₹0',  cycle:'forever · no card', href:'/sign-in',
-                cardStyle:{ ...GLS, background:'rgba(255,255,255,0.03)', borderColor:'rgba(255,255,255,0.08)' },
-                btnStyle:{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.12)', color:'var(--txt)' },
+                cardStyle:{ ...GLS, background:'var(--surf)', borderColor:'var(--bdr)' },
+                btnStyle:{ background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)' },
                 feats:['5 stocks tracking','3 ML scans/week','NIFTY 50 prices'], nope:['No real-time alerts','No broker sync','No Algo Builder'], pro:false },
               { name:'Starter', tag:'var(--bluL)', price:pr.s,  cycle:pr.cy, href:'/sign-in?plan=starter',
                 cardStyle:{ ...GC.blu },
@@ -751,19 +751,19 @@ export default function LandingPage() {
                 {/* Name + price */}
                 <div style={{ fontSize:10.5, fontWeight:800, textTransform:'uppercase', letterSpacing:2, color:plan.tag, marginBottom:12, marginTop: plan.pro ? 10 : 0 }}>{plan.name}</div>
                 <div style={{ fontSize:46, fontWeight:900, letterSpacing:-2.5, lineHeight:1, color:plan.tag, marginBottom:4 }}>{plan.price}</div>
-                <div style={{ fontSize:11.5, color:'rgba(255,255,255,0.45)', marginBottom:24 }}>{plan.cycle}</div>
+                <div style={{ fontSize:11.5, color:'var(--dim)', marginBottom:24 }}>{plan.cycle}</div>
                 {/* Divider */}
-                <div style={{ height:1, background:'rgba(255,255,255,0.07)', marginBottom:20 }}/>
+                <div style={{ height:1, background:'var(--bdr)', marginBottom:20 }}/>
                 {/* Features */}
                 <ul style={{ listStyle:'none', display:'flex', flexDirection:'column', gap:10, marginBottom:26 }}>
                   {plan.feats.map(f => (
-                    <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:9, fontSize:12.5, color:'rgba(255,255,255,0.82)', lineHeight:1.45 }}>
+                    <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:9, fontSize:12.5, color:'var(--txt)', lineHeight:1.45 }}>
                       <span style={{ width:16, height:16, borderRadius:'50%', background: plan.pro ? 'rgba(255,184,0,0.2)' : 'rgba(0,212,160,0.18)', border: `1px solid ${plan.pro ? 'rgba(255,184,0,0.4)' : 'rgba(0,212,160,0.35)'}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, flexShrink:0, marginTop:1, color: plan.pro ? 'var(--ylw)' : 'var(--grn)', fontWeight:900 }}>✓</span>
                       {f}
                     </li>
                   ))}
                   {plan.nope.map(f => (
-                    <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:9, fontSize:12.5, color:'rgba(255,255,255,0.28)', lineHeight:1.45 }}>
+                    <li key={f} style={{ display:'flex', alignItems:'flex-start', gap:9, fontSize:12.5, color:'var(--dim)', lineHeight:1.45 }}>
                       <span style={{ flexShrink:0, marginTop:1 }}>–</span>{f}
                     </li>
                   ))}
