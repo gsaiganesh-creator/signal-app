@@ -7,6 +7,8 @@
     "packages/*"
   ],
   "scripts": {
+    "build": "npm run build --workspace=apps/web",
+    "start": "npm run start --workspace=apps/web",
     "mobile": "npm run start --workspace=apps/signal-mobile",
     "web": "npm run dev --workspace=apps/web",
     "api": "cd apps/api && uvicorn main:app --reload --port 8000"
