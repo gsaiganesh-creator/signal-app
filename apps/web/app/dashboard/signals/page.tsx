@@ -47,6 +47,8 @@ interface USDetail {
 }
 interface USSignal extends USDetail {
   zone: 'Strong Momentum' | 'Building' | 'Sideways' | 'Weak / Declining' | 'N/A';
+  supertrend_value: Num;
+  supertrend_dir:   1 | -1 | null;
 }
 
 // ── Curated US scan universe ──────────────────────────────────────────────────
@@ -79,8 +81,8 @@ async function fetchTA(symbol: string): Promise<TADetail | null> {
 // ── US helpers ────────────────────────────────────────────────────────────────
 function scoreUSZone(signals: string[]): USSignal['zone'] {
   const s = signals.join(' ').toLowerCase();
-  const buy = (s.match(/supertrend buy|bullish|above.*ema|positive.*macd|oversold|momentum|analyst.*target|upside/g) || []).length;
-  const sel = (s.match(/supertrend sell|bearish|below.*ema|negative.*macd|overbought|exit|short interest/g) || []).length;
+  const buy = (s.match(/bullish|above.*ema|positive.*macd|oversold|momentum|analyst.*target|upside/g) || []).length;
+  const sel = (s.match(/bearish|below.*ema|negative.*macd|overbought|exit|short interest/g) || []).length;
   if (buy > sel + 1) return 'Strong Momentum';
   if (sel > buy + 1) return 'Weak / Declining';
   if (buy > 0 || sel > 0) return 'Building';
@@ -443,14 +445,19 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
           )}
 
           {/* Price targets */}
-          {(sig.stop_loss != null || sig.target1 != null) && (
+          {(sig.stop_loss != null || sig.target1 != null || sig.supertrend_value != null) && (
             <>
-              <Section title="Price Targets" />
+              <Section title="Price Levels" />
               <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
                 {[
-                  { l:'🔴 Stop Loss', v: sig.stop_loss ? `$${sig.stop_loss}` : '—', c:'var(--red)' },
-                  { l:'🎯 Target 1',  v: sig.target1   ? `$${sig.target1}` : '—',  c:'var(--grn)' },
-                  { l:'🎯 Target 2',  v: sig.target2   ? `$${sig.target2}` : '—',  c:'var(--grn)' },
+                  { l:'🔴 Stop Loss',  v: sig.stop_loss        ? `$${sig.stop_loss}` : '—', c:'var(--red)' },
+                  ...(sig.supertrend_value != null ? [{
+                    l: sig.supertrend_dir === 1 ? '🟢 Supertrend Support' : '🔴 Supertrend Resistance',
+                    v: `$${sig.supertrend_value}`,
+                    c: sig.supertrend_dir === 1 ? 'var(--grn)' : 'var(--red)',
+                  }] : []),
+                  { l:'🎯 Target 1',   v: sig.target1          ? `$${sig.target1}` : '—',   c:'var(--grn)' },
+                  { l:'🎯 Target 2',   v: sig.target2          ? `$${sig.target2}` : '—',   c:'var(--grn)' },
                 ].map(row => (
                   <div key={row.l} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--bdr)' }}>
                     <span style={{ fontSize:12, color:'var(--dim)' }}>{row.l}</span>

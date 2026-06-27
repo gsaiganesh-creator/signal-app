@@ -310,14 +310,8 @@ export async function GET(request: Request) {
     // ─── Signal strings ───────────────────────────────────────────────────────
     const signals: string[] = [];
     // Supertrend first — strongest directional signal
-    if (st) {
-      const cur = isUS ? '$' : '₹';
-      signals.push(
-        st.direction === 1
-          ? `SUPERTREND BUY · Price above ${cur}${st.value} support line — uptrend confirmed`
-          : `SUPERTREND SELL · Price below ${cur}${st.value} resistance line — downtrend active`,
-      );
-    }
+    // Supertrend direction NOT added to signals[] — redundant with EMA+MACD for scoring.
+    // supertrend_value exposed separately as a dynamic trailing stop reference in UI.
     if (price && ema200v) signals.push(price >= ema200v ? 'ABOVE 200 EMA · Long-term bullish' : 'BELOW 200 EMA · Long-term bearish — caution');
     if (price && ema50v)  signals.push(price >= ema50v  ? 'ABOVE 50 EMA · Medium-term trend positive' : 'BELOW 50 EMA · Medium-term momentum weak');
     if (rsi14 != null) {

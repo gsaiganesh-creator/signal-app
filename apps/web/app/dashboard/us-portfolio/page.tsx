@@ -20,8 +20,8 @@ interface MLSignal { label:'Strong Momentum'|'Sideways'|'Weak / Declining'|'N/A'
 
 function scoreSig(signals: string[]): MLSignal['label'] {
   const s = signals.join(' ').toLowerCase();
-  const buyN = (s.match(/supertrend buy|bullish|buy|momentum|oversold|above.*ema|positive.*macd|analyst.*target|upside/g)||[]).length;
-  const selN = (s.match(/supertrend sell|bearish|sell|overbought|below.*ema|negative.*macd|exit|short interest/g)||[]).length;
+  const buyN = (s.match(/bullish|buy|momentum|oversold|above.*ema|positive.*macd|analyst.*target|upside/g)||[]).length;
+  const selN = (s.match(/bearish|sell|overbought|below.*ema|negative.*macd|exit|short interest/g)||[]).length;
   if (buyN > selN + 1) return 'Strong Momentum';
   if (selN > buyN + 1) return 'Weak / Declining';
   if (buyN > 0 || selN > 0) return 'Sideways';
