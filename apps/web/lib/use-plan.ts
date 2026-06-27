@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { createClient } from './supabase/client';
 import type { Plan } from './supabase/types';
 
-const FOUNDERS = ['gsaiganesh@gmail.com', 'bskumar.obiee@gmail.com'];
+const FOUNDERS = ['gsaiganesh@gmail.com', 'gsai0905@gmail.com', 'bskumar.obiee@gmail.com'];
 
 export type PlanFeature =
   | 'signals-unlimited'
