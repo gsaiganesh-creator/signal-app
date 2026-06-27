@@ -85,6 +85,50 @@ export async function POST(req: Request) {
       return Response.json({ verified: true, plan_updated: false, plan, billing, expires });
     }
 
+    // ── 3. Update referral status + referrer discount ───────────────────────────
+    try {
+      // Mark this user's referral as paid (if they were referred)
+      const refUpd = await fetch(
+        `${SUPABASE_URL}/rest/v1/referrals?referred_id=eq.${encodeURIComponent(userId)}&status=eq.pending`,
+        {
+          method: 'PATCH',
+          headers: {
+            apikey: SUPABASE_ANON_KEY,
+            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+            Prefer: 'return=representation',
+          },
+          body: JSON.stringify({ status: 'paid', paid_at: new Date().toISOString() }),
+        },
+      );
+      if (refUpd.ok) {
+        const updated = await refUpd.json() as Array<{ referrer_id: string }>;
+        if (updated.length > 0) {
+          const referrerId = updated[0].referrer_id;
+          // Count total paid referrals for this referrer
+          const cntRes = await fetch(
+            `${SUPABASE_URL}/rest/v1/referrals?referrer_id=eq.${referrerId}&status=eq.paid&select=id`,
+            { headers: { apikey: SUPABASE_ANON_KEY, Authorization: `Bearer ${SUPABASE_ANON_KEY}` } },
+          );
+          if (cntRes.ok) {
+            const rows = await cntRes.json() as unknown[];
+            const paid = rows.length;
+            const disc = paid >= 5 ? 80 : paid >= 4 ? 40 : paid >= 3 ? 20 : paid >= 2 ? 10 : 5;
+            await fetch(`${SUPABASE_URL}/rest/v1/profiles?id=eq.${referrerId}`, {
+              method: 'PATCH',
+              headers: {
+                apikey: SUPABASE_ANON_KEY,
+                Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
+                'Content-Type': 'application/json',
+                Prefer: 'return=minimal',
+              },
+              body: JSON.stringify({ referral_discount_pct: disc }),
+            });
+          }
+        }
+      }
+    } catch { /* referral update is non-critical — don't fail the payment */ }
+
     return Response.json({ verified: true, plan_updated: true, plan, billing, expires });
   } catch (e) {
     // Payment is verified even if DB update fails — log and return

@@ -25,10 +25,20 @@ function Handler() {
     if (!code) { router.replace('/sign-in?error=no_code'); return; }
 
     supabase.auth.exchangeCodeForSession(code)
-      .then(({ error: err }) => {
+      .then(async ({ data, error: err }) => {
         if (err) {
           router.replace(`/sign-in?error=${encodeURIComponent(err.message)}`);
         } else {
+          // Record referral if one was stored before sign-in
+          const refCode = localStorage.getItem('signal_ref_code');
+          if (refCode && data.session?.access_token) {
+            localStorage.removeItem('signal_ref_code');
+            fetch('/api/referral', {
+              method:  'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body:    JSON.stringify({ ref_code: refCode, user_token: data.session.access_token }),
+            }).catch(() => {});
+          }
           // Hard reload — not router.replace — so the server sees fresh cookies
           // and middleware grants access on first try (eliminates double-login)
           window.location.href = next;
