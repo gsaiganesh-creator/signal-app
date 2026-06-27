@@ -254,7 +254,7 @@ export default function LandingPage() {
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
           <ThemeToggle />
           <Link href="/sign-in" style={{ height:36, padding:'0 16px', borderRadius:9, background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.1)', color:'var(--txt)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', textDecoration:'none' }}>Sign In</Link>
-          <Link href="/sign-in" className="lp-cta-desktop" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none', whiteSpace:'nowrap' }}>Get Started Free →</Link>
+          <Link href="/sign-in" className="lp-cta-desktop" style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, alignItems:'center', textDecoration:'none', whiteSpace:'nowrap' }}>Get Started Free →</Link>
         </div>
       </nav>
 
