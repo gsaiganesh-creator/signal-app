@@ -48,14 +48,36 @@ export default function ReferPage() {
     setTimeout(() => setCopied(false), 3000);
   }
 
+  const SHORT_MSG = `Try SIGNAL — free NSE/BSE technical screener with ML scan accuracy. Sign up free: ${refLink}`;
+  const LONG_MSG  = `Hey! I've been using SIGNAL for NSE/BSE stock scans — RSI + EMA momentum zones, public accuracy track record. Completely free to start.\n\nSign up with my link: ${refLink}`;
+
   function shareX() {
-    const text = encodeURIComponent('I use SIGNAL for ML-powered technical scans — 71.4% scan accuracy, fully public track record. Sign up with my link and start free 👇');
+    const text = encodeURIComponent(`Try SIGNAL — ML-powered NSE/BSE technical screener. Free to start, public accuracy track record. Sign up 👇`);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(refLink)}`, '_blank');
   }
 
   function shareWA() {
-    const msg = encodeURIComponent('Hey! I use SIGNAL for NSE/BSE technical screener — ML-powered, 71.4% scan accuracy. Sign up free with my link: ' + refLink);
-    window.open(`https://wa.me/?text=${msg}`, '_blank');
+    window.open(`https://wa.me/?text=${encodeURIComponent(LONG_MSG)}`, '_blank');
+  }
+
+  function shareTelegram() {
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('Try SIGNAL — free NSE/BSE technical screener with ML scan accuracy.')}`, '_blank');
+  }
+
+  function shareSMS() {
+    window.open(`sms:?body=${encodeURIComponent(SHORT_MSG)}`, '_blank');
+  }
+
+  function shareEmail() {
+    const subject = encodeURIComponent('Try SIGNAL — free stock screener I use');
+    const body    = encodeURIComponent(`${LONG_MSG}\n\nDisclosure: I get a discount if you sign up using this link.`);
+    window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
+  }
+
+  function shareNative() {
+    if (navigator.share) {
+      navigator.share({ title:'SIGNAL', text: SHORT_MSG, url: refLink }).catch(() => {});
+    }
   }
 
   if (!user) return (
@@ -193,18 +215,23 @@ export default function ReferPage() {
           </button>
         </div>
         <div style={{ display:'flex', gap:8, marginTop:12, flexWrap:'wrap' }}>
-          <button onClick={shareX} disabled={!refLink}
-            style={{ height:36, padding:'0 16px', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background:'#000', border:'1px solid #333', color:'#fff', display:'flex', alignItems:'center', gap:6 }}>
-            𝕏 Share on Twitter
-          </button>
-          <button onClick={shareWA} disabled={!refLink}
-            style={{ height:36, padding:'0 16px', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background:'rgba(37,211,102,0.12)', border:'1px solid rgba(37,211,102,0.3)', color:'#25D366', display:'flex', alignItems:'center', gap:6 }}>
-            💬 Share on WhatsApp
-          </button>
-          <button onClick={() => refLink && window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(refLink)}`, '_blank')}
-            style={{ height:36, padding:'0 16px', borderRadius:9, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit', background:'rgba(23,64,245,0.1)', border:'1px solid rgba(23,64,245,0.25)', color:'var(--bluL)', display:'flex', alignItems:'center', gap:6 }}>
-            in Share on LinkedIn
-          </button>
+          {[
+            { label:'𝕏 Twitter',    fn: shareX,       bg:'#000',                      border:'#333',                         color:'#fff'       },
+            { label:'💬 WhatsApp',  fn: shareWA,      bg:'rgba(37,211,102,0.12)',      border:'rgba(37,211,102,0.3)',          color:'#25D366'    },
+            { label:'✈️ Telegram',  fn: shareTelegram,bg:'rgba(40,168,234,0.12)',      border:'rgba(40,168,234,0.3)',          color:'#29A8EA'    },
+            { label:'📱 SMS',       fn: shareSMS,     bg:'rgba(0,212,160,0.10)',        border:'rgba(0,212,160,0.25)',          color:'var(--grn)' },
+            { label:'📧 Email',     fn: shareEmail,   bg:'rgba(255,184,0,0.10)',        border:'rgba(255,184,0,0.25)',          color:'var(--ylw)' },
+            { label:'in LinkedIn',  fn: () => refLink && window.open(`https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(refLink)}`, '_blank'),
+                                              bg:'rgba(23,64,245,0.10)',        border:'rgba(23,64,245,0.25)',          color:'var(--bluL)' },
+            ...(typeof navigator !== 'undefined' && 'share' in navigator
+              ? [{ label:'⬆️ Share', fn: shareNative, bg:'var(--surf2)',               border:'var(--card-bdr)',               color:'var(--txt)' }]
+              : []),
+          ].map(btn => (
+            <button key={btn.label} onClick={btn.fn} disabled={!refLink}
+              style={{ height:36, padding:'0 14px', borderRadius:9, fontSize:12, fontWeight:700, cursor: refLink ? 'pointer' : 'default', fontFamily:'inherit', background:btn.bg, border:`1px solid ${btn.border}`, color:btn.color, display:'flex', alignItems:'center', gap:5, opacity: refLink ? 1 : 0.4 }}>
+              {btn.label}
+            </button>
+          ))}
         </div>
       </div>
 
