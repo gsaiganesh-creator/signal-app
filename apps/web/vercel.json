@@ -7,6 +7,10 @@
     {
       "path": "/api/scan-log/backfill",
       "schedule": "0 12 * * *"
+    },
+    {
+      "path": "/api/paper-trading/auto-scan",
+      "schedule": "0 4 * * 1-5"
     }
   ]
 }
