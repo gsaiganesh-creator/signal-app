@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { usePortfolio } from '@/lib/portfolio-context';
+import { usePlan } from '@/lib/use-plan';
 
 const SUPA  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const ANON  = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -281,7 +282,7 @@ const ProGate = () => (
 );
 
 export default function PaperTradingPage() {
-  const isPro = false;
+  const { isPro } = usePlan();
   useEffect(() => { localStorage.setItem('signal_visited_paper', '1'); }, []);
 
   const { session, user } = usePortfolio();

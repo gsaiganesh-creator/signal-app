@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { usePlan } from '@/lib/use-plan';
 
 interface Algorithm {
   id: string;
@@ -267,7 +268,7 @@ export default function AlgorithmsPage() {
   const [copied,   setCopied ] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
 
-  const isPro = false;
+  const { isPro } = usePlan();
 
   const filtered = ALGOS.filter(a => cat === 'All' || a.category === cat);
 
