@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
@@ -1008,25 +1009,26 @@ export default function PortfolioPage() {
                     style={{ height:34, padding:'0 12px 0 16px', borderRadius:'8px 0 0 8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderRight:'none', background: isActive ? 'rgba(23,64,245,0.1)' : 'var(--tab-inactive-bg)', color: isActive ? 'var(--bluL)' : 'var(--tab-inactive-txt)' }}>
                     📂 {p.name}
                   </button>
-                  <button onClick={e => { e.stopPropagation(); setMenuId(m=>m===p.id?null:p.id); }}
+                  <button onClick={e => { e.stopPropagation(); const r=e.currentTarget.getBoundingClientRect(); setMenuPos({top:r.bottom+4,left:r.left}); setMenuId(m=>m===p.id?null:p.id); }}
                     style={{ height:34, padding:'0 8px', borderRadius:'0 8px 8px 0', border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderLeft:'1px solid rgba(79,111,250,0.15)', background: isActive ? 'rgba(23,64,245,0.08)' : 'var(--tab-inactive-bg)', color: isActive ? 'var(--bluL)' : 'var(--dim)', cursor:'pointer', fontFamily:'inherit', fontSize:16, lineHeight:1 }}>
                     ⋯
                   </button>
                 </>
               )}
-              {/* Dropdown menu */}
-              {menuId === p.id && (
-                <div onClick={e => e.stopPropagation()} style={{ position:'absolute', top:'calc(100% + 4px)', left:0, zIndex:9999, background:'var(--surf2)', border:'1px solid var(--blu)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.5),0 0 0 1px rgba(79,111,250,0.3)', minWidth:160, padding:'4px 0' }}>
+              {/* Dropdown menu — portal to body to escape parent overflow/transform clipping */}
+              {menuId === p.id && menuPos && typeof document !== 'undefined' && createPortal(
+                <div onClick={e => e.stopPropagation()} style={{ position:'fixed', top:menuPos.top, left:menuPos.left, zIndex:99999, background:'#0E1628', border:'1px solid #1740F5', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.6),0 0 0 1px rgba(23,64,245,0.4)', minWidth:160, padding:'4px 0' }}>
                   <button onClick={() => { setRenamingId(p.id); setRenameVal(p.name); setMenuId(null); }}
-                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
+                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'#fff', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
                     ✏️ Rename
                   </button>
-                  <div style={{ height:1, background:'var(--bdr)', margin:'2px 0' }}/>
+                  <div style={{ height:1, background:'#1C2E4A', margin:'2px 0' }}/>
                   <button onClick={() => { setConfirmDeleteId(p.id); setMenuId(null); }}
-                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--red)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
+                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'#FF3B5C', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
                     🗑️ Delete portfolio
                   </button>
-                </div>
+                </div>,
+                document.body
               )}
             </div>
           );

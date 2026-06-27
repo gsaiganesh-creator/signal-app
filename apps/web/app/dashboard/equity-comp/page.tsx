@@ -260,15 +260,22 @@ export default function EquityCompPage() {
   }, [grants, fetchLive]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
     setParseLoading(true); setImportMsg('');
-    const { rows, error } = await parseGrantFile(file);
+    const allRows: ParsedRow[] = [];
+    const errors: string[] = [];
+    for (const file of files) {
+      const { rows, error } = await parseGrantFile(file);
+      if (error) errors.push(`${file.name}: ${error}`);
+      else if (!rows.length) errors.push(`${file.name}: no grants found`);
+      else allRows.push(...rows);
+    }
     setParseLoading(false);
     if (fileRef.current) fileRef.current.value = '';
-    if (error) { setImportMsg(`❌ ${error}`); return; }
-    if (!rows.length) { setImportMsg('❌ No grants found. Check: Symbol, Shares/Qty, Price/FMV, Vest Date columns.'); return; }
-    setImportRows(rows); setImportModal(true);
+    if (errors.length) setImportMsg(`⚠ ${errors.join(' · ')}`);
+    if (!allRows.length) return;
+    setImportRows(allRows); setImportModal(true);
   }
 
   async function handleImportConfirm() {
@@ -368,7 +375,7 @@ export default function EquityCompPage() {
   return (
     <ProGate feature="equity-comp">
     <div style={{ maxWidth:1100, margin:'0 auto' }}>
-      <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.pdf"
+      <input ref={fileRef} type="file" accept=".csv,.xlsx,.xls,.pdf" multiple
         style={{ display:'none' }} onChange={handleFileChange} />
 
       {/* Header */}

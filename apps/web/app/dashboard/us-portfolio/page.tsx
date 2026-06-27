@@ -64,13 +64,6 @@ const INDICES = [
   { name:'Dow Jones', sym:'^DJI' }, { name:'VIX', sym:'^VIX' },
 ];
 
-// Curated momentum/swing picks by sector
-const MOMENTUM_PICKS = {
-  'AI & Tech':     [{ sym:'NVDA',desc:'AI chip leader' },{ sym:'MSFT',desc:'Azure + Copilot' },{ sym:'META',desc:'Ad revenue + AI' },{ sym:'GOOGL',desc:'Search + Gemini' },{ sym:'AMZN',desc:'Cloud + AI infra' }],
-  'Financials':    [{ sym:'JPM',desc:'Banking giant' },{ sym:'V',desc:'Payments network' },{ sym:'GS',desc:'Investment bank' },{ sym:'BRK-B',desc:'Buffett holding co.' }],
-  'Momentum ETFs': [{ sym:'QQQ',desc:'Nasdaq-100 ETF' },{ sym:'SPY',desc:'S&P 500 ETF' },{ sym:'SOXX',desc:'Semiconductor ETF' },{ sym:'ARKK',desc:'Innovation ETF' }],
-  'High Growth':   [{ sym:'TSLA',desc:'EV + Energy + AI' },{ sym:'PLTR',desc:'AI data analytics' },{ sym:'COIN',desc:'Crypto exchange' },{ sym:'APP',desc:'Mobile advertising' }],
-};
 
 type USRow = Omit<USHolding, 'id' | 'portfolio_id' | 'portfolio_name'>;
 
@@ -172,11 +165,10 @@ async function parseUSFile(file: File): Promise<{ result: USRow[]; msg: string }
 }
 
 export default function USPortfolioPage() {
-  const { portfolios, session, createPortfolio, renamePortfolio, deletePortfolio, refresh } = usePortfolio();
+  const { portfolios, session, createPortfolio, renamePortfolio, deletePortfolio } = usePortfolio();
   const [allHoldings, setAllHoldings] = useState<USHolding[]>([]);
   const [prices, setPrices]           = useState<PriceMap>({});
   const [idxPrices, setIdxPrices]     = useState<PriceMap>({});
-  const [momentumPrices, setMomentumPrices] = useState<PriceMap>({});
   const [usdInr, setUsdInr]           = useState<number | null>(null);
   const [loading, setLoading]         = useState(false);
   const [msg, setMsg]                 = useState('');
@@ -197,7 +189,6 @@ export default function USPortfolioPage() {
     catch { return new Set(); }
   });
   const [menuPortId, setMenuPortId] = useState<string|null>(null);
-  const [menuPortPos, setMenuPortPos] = useState<{top:number;left:number}|null>(null);
   const [renamingPortId, setRenamingPortId] = useState<string|null>(null);
   const [renamePortVal, setRenamePortVal] = useState('');
   const [confirmDeletePortId, setConfirmDeletePortId] = useState<string|null>(null);
@@ -210,7 +201,7 @@ export default function USPortfolioPage() {
   // Close port dropdown on outside click/scroll
   useEffect(() => {
     if (!menuPortId) return;
-    const close = () => { setMenuPortId(null); setMenuPortPos(null); };
+    const close = () => { setMenuPortId(null); };
     document.addEventListener('click', close);
     window.addEventListener('scroll', close);
     return () => { document.removeEventListener('click', close); window.removeEventListener('scroll', close); };
@@ -265,15 +256,7 @@ export default function USPortfolioPage() {
     } catch { /* ignore */ }
   }, []);
 
-  const fetchMomentum = useCallback(async () => {
-    const all = Object.values(MOMENTUM_PICKS).flat().map(s => s.sym);
-    try {
-      const res = await fetch(`/api/prices?symbols=${encodeURIComponent(all.join(','))}`);
-      if (res.ok) setMomentumPrices(await res.json());
-    } catch { /* ignore */ }
-  }, []);
-
-  useEffect(() => { fetchIndices(); fetchMomentum(); }, [fetchIndices, fetchMomentum]);
+  useEffect(() => { fetchIndices(); }, [fetchIndices]);
   useEffect(() => {
     const syms = [...new Set(allHoldings.map(h => h.symbol))];
     if (syms.length) fetchPrices(syms);
@@ -463,8 +446,6 @@ export default function USPortfolioPage() {
   const sumPL          = sumCurrentUSD - sumInvestedUSD;
   const sumPLPct       = sumInvestedUSD > 0 ? (sumPL / sumInvestedUSD) * 100 : 0;
   const sumHasPrices   = merged.some(h => prices[h.symbol]?.price != null);
-
-  const allMomentumSyms = Object.values(MOMENTUM_PICKS).flat().map(s => s.sym);
 
   return (
     <div style={{ maxWidth:1200 }}>
@@ -844,37 +825,6 @@ export default function USPortfolioPage() {
         </div>
       )}
 
-      {/* Momentum & Swing Picks */}
-      <div style={{ ...card, marginBottom:20 }}>
-        <div style={{ fontSize:13, fontWeight:700, marginBottom:4 }}>Momentum & Sector Picks</div>
-        <div style={{ fontSize:11, color:'var(--dim)', marginBottom:16 }}>Popular US stocks to watch — not SEBI/SEC advice · DYOR</div>
-        {Object.entries(MOMENTUM_PICKS).map(([sector, picks]) => (
-          <div key={sector} style={{ marginBottom:20 }}>
-            <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>{sector}</div>
-            <div className="g4" style={{ display:'grid', gap:8 }}>
-              {picks.map(pick => {
-                const p = momentumPrices[pick.sym];
-                const chg = p?.change_pct ?? null;
-                const isPos = chg == null || chg >= 0;
-                return (
-                  <div key={pick.sym} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:10, padding:'10px 12px', borderLeft:`3px solid ${isPos ? 'var(--grn)' : 'var(--red)'}` }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-                      <div style={{ fontSize:13, fontWeight:800 }}>{pick.sym}</div>
-                      {chg != null && <div style={{ fontSize:11, fontWeight:700, color: isPos ? 'var(--grn)' : 'var(--red)' }}>{chg >= 0 ? '+' : ''}{chg.toFixed(2)}%</div>}
-                    </div>
-                    <div style={{ fontSize:14, fontWeight:900, marginTop:3 }}>{p?.price != null ? `$${p.price.toFixed(2)}` : '—'}</div>
-                    <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>{pick.desc}</div>
-                    <button onClick={() => { setAddForm(f => ({ ...f, symbol: pick.sym })); setAddOpen(true); }}
-                      style={{ marginTop:7, width:'100%', height:26, borderRadius:6, background:'rgba(79,111,250,0.12)', border:'1px solid rgba(79,111,250,0.3)', color:'var(--bluL)', fontSize:10, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-                      + Add to Portfolio
-                    </button>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        ))}
-      </div>
 
 
 
