@@ -470,9 +470,6 @@ export default function USPortfolioPage() {
   // Summary totals across all US holdings
   const sumInvestedUSD = merged.reduce((s, h) => s + (h.avg_price > 0.01 ? h.avg_price * h.qty : 0), 0);
   const sumCurrentUSD  = merged.reduce((s, h) => { const p = prices[h.symbol]?.price; return s + (p != null ? p * h.qty : (h.avg_price > 0.01 ? h.avg_price * h.qty : 0)); }, 0);
-  const sumPL          = sumCurrentUSD - sumInvestedUSD;
-  const sumPLPct       = sumInvestedUSD > 0 ? (sumPL / sumInvestedUSD) * 100 : 0;
-  const sumHasPrices   = merged.some(h => prices[h.symbol]?.price != null);
 
   // RSU/ESPP totals
   // Only count grants with valid ticker symbols (1-6 uppercase letters, e.g. QCOM, MSFT)
@@ -519,23 +516,6 @@ export default function USPortfolioPage() {
         </div>
       </div>
 
-      {/* Summary cards */}
-      {merged.length > 0 && (
-        <div className="g4" style={{ display:'grid', gap:12, marginBottom:20 }}>
-          {[
-            { label:'Total Invested', val:`$${sumInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `≈ ₹${(sumInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
-            { label:'Current Value',  val: sumHasPrices ? `$${sumCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: (sumHasPrices&&usdInr) ? `≈ ₹${(sumCurrentUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
-            { label:'Unrealised P&L', val: sumHasPrices ? `${sumPL>=0?'+':'-'}$${Math.abs(sumPL).toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: sumHasPrices ? `${sumPLPct>=0?'+':''}${sumPLPct.toFixed(2)}%` : '', color: sumHasPrices?(sumPL>=0?'var(--grn)':'var(--red)'):'var(--txt)' },
-            { label:'Holdings',       val:`${merged.length} stocks`, sub: usdInr ? `USD/INR ₹${usdInr.toFixed(2)}` : '', color:'var(--txt)' },
-          ].map(m => (
-            <div key={m.label} style={{ ...card, padding:'14px 16px' }}>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:5 }}>{m.label}</div>
-              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
-              {m.sub && <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{m.sub}</div>}
-            </div>
-          ))}
-        </div>
-      )}
 
       {msg && (
         <div style={{ marginBottom:14, padding:'10px 14px', borderRadius:9, background: msg.startsWith('✅') ? 'rgba(0,212,160,0.08)' : 'rgba(255,59,92,0.08)', border:`1px solid ${msg.startsWith('✅') ? 'rgba(0,212,160,0.25)' : 'rgba(255,59,92,0.25)'}`, fontSize:13 }}>
@@ -692,19 +672,21 @@ export default function USPortfolioPage() {
 
       {/* Key metrics */}
       {merged.length > 0 && (
-        <div className="g4" style={{ display:'grid', gap:12, marginBottom:20 }}>
+        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12, marginBottom:20 }}>
           {[
             { label:'Total Invested', val:`$${totalInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `₹${(totalInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})} equiv` : '', color:'var(--txt)' },
             { label:'Current Value',  val: totalCurrentUSD > 0 ? `$${totalCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: inrEquiv ? `₹${inrEquiv.toLocaleString('en-IN',{maximumFractionDigits:0})} equiv` : '', color:'var(--txt)' },
             { label:'Unrealised P&L', val: totalPLUSD != null ? `${totalPLUSD >= 0 ? '+' : '-'}$${Math.abs(totalPLUSD).toLocaleString('en-US',{maximumFractionDigits:0})}` : '—',
               sub: totalPLPct != null ? `${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(2)}%` : '', color: totalPLUSD != null ? (totalPLUSD >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' },
             { label:"Today's P&L",   val: `${dayPL >= 0 ? '+' : '-'}$${Math.abs(dayPL).toLocaleString('en-US',{maximumFractionDigits:0})}`, sub:'1-day change', color: dayPL >= 0 ? 'var(--grn)' : 'var(--red)' },
+            { label:'Holdings',       val:`${merged.length} stocks`, sub: usdInr ? `USD/INR ₹${usdInr.toFixed(2)}` : '', color:'var(--txt)' },
           ].map((m, i) => {
             const grads = [
               ['linear-gradient(135deg,rgba(79,111,250,0.12),rgba(23,64,245,0.04))','rgba(79,111,250,0.28)'],
               ['linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,212,160,0.02))','rgba(0,212,160,0.25)'],
               [m.color==='var(--grn)'?'linear-gradient(135deg,rgba(0,212,160,0.12),rgba(0,212,160,0.03))':'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.02))', m.color==='var(--grn)'?'rgba(0,212,160,0.28)':'rgba(255,59,92,0.25)'],
               ['linear-gradient(135deg,rgba(255,92,26,0.09),rgba(255,184,0,0.04))','rgba(255,92,26,0.24)'],
+              ['linear-gradient(135deg,rgba(139,92,246,0.09),rgba(79,111,250,0.03))','rgba(139,92,246,0.22)'],
             ];
             return (
               <div key={m.label} style={cCard(grads[i][0], grads[i][1])}>
