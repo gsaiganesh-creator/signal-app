@@ -34,7 +34,8 @@ export function usePlan() {
       if (!session) { setLoading(false); return; }
 
       // Founders bypass DB — always elite
-      if (FOUNDERS.includes(session.user.email ?? '')) {
+      const email = (session.user.email ?? session.user.user_metadata?.email ?? '').toLowerCase();
+      if (FOUNDERS.map(e => e.toLowerCase()).includes(email)) {
         setPlan('elite');
         setLoading(false);
         return;
@@ -51,6 +52,9 @@ export function usePlan() {
           ? new Date(data.plan_expires_at) < new Date()
           : false;
         setPlan(expired ? 'free' : (data.plan as Plan));
+      } else {
+        // No profile row — last-resort founder check
+        if (FOUNDERS.map(e => e.toLowerCase()).includes(email)) setPlan('elite');
       }
       setLoading(false);
     });
