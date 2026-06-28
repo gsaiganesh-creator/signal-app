@@ -48,6 +48,7 @@ const TABS: { key: string; icon: string; label: string; links: NavLink[] }[] = [
       { href: '/dashboard/upgrade',       icon: '⚡', label: 'Upgrade Plan'   },
       { href: '/dashboard/brokers',       icon: '🔗', label: 'Connect Broker' },
       { href: '/dashboard/refer',         icon: '🎁', label: 'Refer & Earn'   },
+      { href: '/risk-disclosure',         icon: '⚠️', label: 'Risk Disclosure' },
       { href: '/sign-out',                icon: '🚪', label: 'Sign Out', danger: true },
     ],
   },
