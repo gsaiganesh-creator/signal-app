@@ -5,6 +5,9 @@ import * as XLSX from 'xlsx';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
 import type { MlClass } from '@/lib/supabase/types';
+import dynamic from 'next/dynamic';
+
+const StockChart = dynamic(() => import('@/components/StockChart'), { ssr: false });
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -1581,6 +1584,17 @@ export default function PortfolioPage() {
                       </div>
                     </div>
                   )}
+                </div>
+
+                {/* Candlestick chart */}
+                <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--bdr)' }}>
+                  <div style={{ fontSize:9.5, fontWeight:700, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginBottom:4 }}>Price Chart</div>
+                  <StockChart
+                    symbol={h.symbol}
+                    exchange={h.exchange === 'BSE' ? 'BSE' : 'NSE'}
+                    ema20={d?.ema20}
+                    ema50={d?.ema50}
+                  />
                 </div>
 
                 {/* Signals fired */}
