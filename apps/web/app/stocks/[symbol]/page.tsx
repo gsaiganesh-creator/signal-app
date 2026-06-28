@@ -188,8 +188,18 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           </div>
         </div>
 
+        {/* Compare link */}
+        <div style={{ marginTop:24, marginBottom:16, display:'flex', gap:8, flexWrap:'wrap' }}>
+          {['TCS','HDFCBANK','INFY','ICICIBANK','BAJFINANCE'].filter(s => s !== sym).slice(0,4).map(s => (
+            <Link key={s} href={`/stocks/compare?a=${sym}&b=${s}`}
+              style={{ padding:'6px 12px', borderRadius:8, background:'rgba(23,64,245,0.08)', border:'1px solid rgba(23,64,245,0.25)', fontSize:11, fontWeight:700, color:'var(--bluL)', textDecoration:'none' }}>
+              {sym} vs {s} →
+            </Link>
+          ))}
+        </div>
+
         {/* Related stocks */}
-        <div style={{ marginTop:24 }}>
+        <div style={{ marginTop:8 }}>
           <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:12 }}>Explore Other Stocks</div>
           <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
             {['RELIANCE','TCS','HDFCBANK','INFY','ICICIBANK','SBIN','WIPRO','LT','BAJFINANCE','KOTAKBANK']

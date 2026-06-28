@@ -10,6 +10,7 @@ import dynamic from 'next/dynamic';
 const StockChart          = dynamic(() => import('@/components/StockChart'), { ssr: false });
 const PortfolioChart      = dynamic(() => import('@/components/PortfolioChart').then(m => ({ default: m.PortfolioChart })), { ssr: false });
 const PortfolioShareCard  = dynamic(() => import('@/components/PortfolioShareCard').then(m => ({ default: m.PortfolioShareCard })), { ssr: false });
+import { PortfolioRiskCard } from '@/components/PortfolioRiskCard';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -1276,6 +1277,9 @@ export default function PortfolioPage() {
 
           {/* Portfolio performance chart */}
           <PortfolioChart holdings={displayedHoldings.filter(h => h.avg_price >= 1).map(h => ({ symbol: h.symbol, exchange: h.exchange, qty: h.qty, avg_price: h.avg_price }))} />
+
+          {/* Risk metrics */}
+          <PortfolioRiskCard holdings={displayedHoldings} totalCurrent={totalCurrent} />
 
           {/* ML Bucket breakdown — clickable filters */}
           <div style={{ marginBottom:20 }}>
