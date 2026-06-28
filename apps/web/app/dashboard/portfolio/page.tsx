@@ -7,8 +7,9 @@ import type { RawHolding } from '@/lib/portfolio-context';
 import type { MlClass } from '@/lib/supabase/types';
 import dynamic from 'next/dynamic';
 
-const StockChart     = dynamic(() => import('@/components/StockChart'), { ssr: false });
-const PortfolioChart = dynamic(() => import('@/components/PortfolioChart').then(m => ({ default: m.PortfolioChart })), { ssr: false });
+const StockChart          = dynamic(() => import('@/components/StockChart'), { ssr: false });
+const PortfolioChart      = dynamic(() => import('@/components/PortfolioChart').then(m => ({ default: m.PortfolioChart })), { ssr: false });
+const PortfolioShareCard  = dynamic(() => import('@/components/PortfolioShareCard').then(m => ({ default: m.PortfolioShareCard })), { ssr: false });
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -983,9 +984,23 @@ export default function PortfolioPage() {
           </div>
         </div>
         {displayedHoldings.length > 0 && (
-          <div style={{ textAlign:'right' }}>
-            <div style={{ fontSize:32, fontWeight:900, color: totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)', lineHeight:1, letterSpacing:-1 }}>{totalPLPct >= 0 ? '+' : ''}{totalPLPct.toFixed(1)}%</div>
-            <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>return · {fmt(totalPL)}</div>
+          <div style={{ display:'flex', alignItems:'center', gap:12 }}>
+            <PortfolioShareCard
+              totalInvested={totalInvested}
+              totalCurrent={totalCurrent}
+              totalPL={totalPL}
+              totalPLPct={totalPLPct}
+              portfolioName={viewMode === 'all' ? 'All Portfolios' : activePortfolio?.name}
+              topHoldings={[...displayedHoldings]
+                .filter(h => h.avg_price >= 1)
+                .sort((a, b) => ((b.current_price ?? b.avg_price) * b.qty) - ((a.current_price ?? a.avg_price) * a.qty))
+                .slice(0, 5)
+                .map(h => ({ symbol: h.symbol, qty: h.qty, pl_pct: h.pl_pct ?? null, current_price: h.current_price ?? null, avg_price: h.avg_price }))}
+            />
+            <div style={{ textAlign:'right' }}>
+              <div style={{ fontSize:32, fontWeight:900, color: totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)', lineHeight:1, letterSpacing:-1 }}>{totalPLPct >= 0 ? '+' : ''}{totalPLPct.toFixed(1)}%</div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>return · {fmt(totalPL)}</div>
+            </div>
           </div>
         )}
       </div>
