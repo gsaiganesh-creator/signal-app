@@ -1,10 +1,11 @@
 'use client';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { TABS, useNavCtx } from '@/components/DashboardNavContext';
 
 export function DashboardTopNav() {
   const { activeTab, setActiveTab } = useNavCtx();
+  const router = useRouter();
   return (
     <div className="dash-top-tabs">
       {TABS.map(tab => {
@@ -12,7 +13,7 @@ export function DashboardTopNav() {
         return (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => { setActiveTab(tab.key); router.push(tab.links[0].href); }}
             style={{
               height: 58, padding: '0 14px',
               background: 'none', border: 'none',
