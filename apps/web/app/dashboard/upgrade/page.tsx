@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
+import { usePlan } from '@/lib/use-plan';
 
 // Razorpay window type
 declare global {
@@ -50,8 +51,83 @@ function loadRazorpay(): Promise<boolean> {
   });
 }
 
+const COMPARISON: { category: string; rows: { label: string; free: string; starter: string; pro: string; elite: string }[] }[] = [
+  {
+    category: 'Signals & Scan',
+    rows: [
+      { label: 'Daily ML scan results',   free: '5',            starter: '25',          pro: 'Unlimited',     elite: 'Unlimited'     },
+      { label: 'ML signal classification', free: '—',            starter: '✓',           pro: '✓',             elite: '✓'             },
+      { label: 'Watchlist',               free: '5 stocks',     starter: '20 stocks',   pro: 'Unlimited',     elite: 'Unlimited'     },
+      { label: 'Price alerts',            free: '3 alerts',     starter: '10 alerts',   pro: 'Unlimited',     elite: 'Unlimited'     },
+    ],
+  },
+  {
+    category: 'Portfolio',
+    rows: [
+      { label: 'India portfolios',        free: '1',            starter: '2',           pro: '10',            elite: 'Unlimited'     },
+      { label: 'US multi-portfolio',      free: '—',            starter: '1',           pro: '✓ Multi',       elite: '✓ Multi'       },
+      { label: 'MF tracker',              free: '3 funds',      starter: '10 funds',    pro: 'Unlimited',     elite: 'Unlimited'     },
+      { label: 'ETF tracker',             free: '✓',            starter: '✓',           pro: '✓',             elite: '✓'             },
+      { label: 'Portfolio performance chart', free: '✓',        starter: '✓',           pro: '✓',             elite: '✓'             },
+      { label: 'ESPP & RSU tracker',      free: '—',            starter: '—',           pro: '✓',             elite: '✓'             },
+    ],
+  },
+  {
+    category: 'Markets & Analytics',
+    rows: [
+      { label: 'Candlestick charts',      free: '✓',            starter: '✓',           pro: '✓',             elite: '✓'             },
+      { label: 'Sector heatmap',          free: '✓',            starter: '✓',           pro: '✓',             elite: '✓'             },
+      { label: 'FII / DII flows',         free: '✓',            starter: '✓',           pro: '✓',             elite: '✓'             },
+      { label: 'Forex tracker',           free: '✓',            starter: '✓',           pro: '✓',             elite: '✓'             },
+      { label: 'Commodities tracker',     free: '✓',            starter: '✓',           pro: '✓',             elite: '✓'             },
+      { label: 'Track record (accuracy)', free: '—',            starter: '✓',           pro: '✓',             elite: '✓'             },
+    ],
+  },
+  {
+    category: 'Tools',
+    rows: [
+      { label: 'SIP Calculator',          free: '✓',            starter: '✓',           pro: '✓',             elite: '✓'             },
+      { label: 'Paper trading',           free: 'Limited',      starter: '✓ Full',      pro: '✓ Full',        elite: '✓ Full'        },
+      { label: 'Algo builder',            free: '—',            starter: '—',           pro: '✓',             elite: '✓'             },
+      { label: 'Backtest engine',         free: '—',            starter: '—',           pro: '✓',             elite: '✓'             },
+    ],
+  },
+  {
+    category: 'Account',
+    rows: [
+      { label: 'Broker connect',          free: '—',            starter: '—',           pro: '1 broker',      elite: 'Unlimited'     },
+      { label: 'API access',              free: '—',            starter: '—',           pro: '—',             elite: '500 req/day'   },
+      { label: 'Priority support',        free: '—',            starter: 'Email',       pro: 'Email + Chat',  elite: 'Dedicated'     },
+    ],
+  },
+];
+
+const FAQS = [
+  { q: 'Can I cancel anytime?', a: 'Yes. Cancel from Account settings — no questions asked. You keep access till the billing period ends.' },
+  { q: 'Is this SEBI registered?', a: 'No. SIGNAL is a technical analysis and screener tool, not a SEBI Research Analyst. All outputs are "scan results", not investment advice. We are working toward RA registration — until then, use your own judgment.' },
+  { q: 'What payment methods are accepted?', a: 'UPI, Net Banking, Credit/Debit cards, Wallets via Razorpay. All INR payments.' },
+  { q: 'Do you offer a free trial?', a: 'The Free tier is unlimited in time — no credit card required. Upgrade when you need more signals or tools.' },
+  { q: 'What is the Referral discount?', a: 'Refer a friend and you both get 15% off your first paid month. Referral link is in Account → Refer & Earn.' },
+  { q: 'Are prices inclusive of GST?', a: 'No. 18% GST is added at checkout. GST invoice available on request.' },
+];
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, overflow:'hidden' }}>
+      <button onClick={() => setOpen(o => !o)}
+        style={{ width:'100%', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 18px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}>
+        {q}
+        <span style={{ fontSize:16, color:'var(--dim)', flexShrink:0, marginLeft:12, transition:'transform 0.2s', display:'inline-block', transform: open ? 'rotate(45deg)' : 'none' }}>+</span>
+      </button>
+      {open && <div style={{ padding:'0 18px 14px', fontSize:13, color:'var(--dim)', lineHeight:1.7 }}>{a}</div>}
+    </div>
+  );
+}
+
 export default function UpgradePage() {
   const { user, session } = usePortfolio();
+  const { plan: currentPlan } = usePlan();
   const [billing,      setBilling]      = useState<'monthly'|'annual'>('monthly');
   const [loading,      setLoading]      = useState<string | null>(null);
   const [success,      setSuccess]      = useState<string | null>(null);
@@ -190,11 +266,14 @@ export default function UpgradePage() {
           const price = billing === 'annual' ? p.annual : p.monthly;
           const isLoading = loading === p.id;
           return (
-            <div key={p.id} style={{ background:'var(--card-bg)', border:`2px solid ${'badge' in p && p.badge ? p.border : 'var(--bdr)'}`, borderRadius:18, padding:'22px 20px', position:'relative', display:'flex', flexDirection:'column' }}>
-              {'badge' in p && p.badge && (
+            <div key={p.id} style={{ background:'var(--card-bg)', border:`2px solid ${p.id === currentPlan ? p.border : 'badge' in p && p.badge ? p.border : 'var(--bdr)'}`, borderRadius:18, padding:'22px 20px', position:'relative', display:'flex', flexDirection:'column', boxShadow: p.id === currentPlan ? `0 0 0 3px ${p.border}` : 'none' }}>
+              {p.id === currentPlan && (
+                <div style={{ position:'absolute', top:-1, right:12, fontSize:9, fontWeight:800, padding:'3px 10px', borderRadius:'0 0 8px 8px', background:p.color, color: p.id === 'elite' ? '#000' : '#fff', whiteSpace:'nowrap', letterSpacing:0.5 }}>YOUR PLAN</div>
+              )}
+              {'badge' in p && p.badge && p.id !== currentPlan && (
                 <div style={{ position:'absolute', top:-1, left:'50%', transform:'translateX(-50%)', fontSize:10, fontWeight:800, padding:'3px 12px', borderRadius:'0 0 8px 8px', background:p.color, color:'#000', whiteSpace:'nowrap' }}>{p.badge}</div>
               )}
-              <div style={{ fontSize:12, fontWeight:800, color:p.color, marginBottom:4, marginTop: 'badge' in p && p.badge ? 12 : 0, textTransform:'uppercase', letterSpacing:0.5 }}>{p.name}</div>
+              <div style={{ fontSize:12, fontWeight:800, color:p.color, marginBottom:4, marginTop: ('badge' in p && p.badge) || p.id === currentPlan ? 12 : 0, textTransform:'uppercase', letterSpacing:0.5 }}>{p.name}</div>
               <div style={{ display:'flex', alignItems:'baseline', gap:3, marginBottom:4 }}>
                 <span style={{ fontSize:28, fontWeight:900 }}>{price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`}</span>
                 {price > 0 && <span style={{ fontSize:12, color:'var(--dim)' }}>/mo</span>}
@@ -255,6 +334,65 @@ export default function UpgradePage() {
         {['🔒 Secure payments via Razorpay','📄 GST invoice on request','↩️ Cancel anytime','🎁 Referral discounts stack','📞 Support: signal@gsaiganesh.in'].map(t => (
           <span key={t} style={{ fontSize:12, color:'var(--dim)' }}>{t}</span>
         ))}
+      </div>
+
+      {/* Feature comparison table */}
+      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, overflow:'hidden', marginBottom:28 }}>
+        <div style={{ padding:'16px 20px', borderBottom:'1px solid var(--bdr)', fontSize:15, fontWeight:800 }}>Full Feature Comparison</div>
+        <div style={{ overflowX:'auto' }}>
+          <table style={{ width:'100%', borderCollapse:'collapse', minWidth:520 }}>
+            <thead>
+              <tr style={{ background:'var(--surf2)' }}>
+                <th style={{ padding:'10px 16px', textAlign:'left', fontSize:11, fontWeight:700, color:'var(--dim)', width:'35%' }}>Feature</th>
+                {(['Free','Starter','Pro','Elite'] as const).map((name, i) => {
+                  const colors = ['var(--dim)','var(--bluL)','var(--org)','var(--ylw)'];
+                  const isCurrent = (['free','starter','pro','elite'] as const)[i] === currentPlan;
+                  return (
+                    <th key={name} style={{ padding:'10px 8px', textAlign:'center', fontSize:11, fontWeight:800, color:colors[i], background: isCurrent ? 'rgba(23,64,245,0.06)' : 'transparent' }}>
+                      {name}{isCurrent && <span style={{ display:'block', fontSize:8, color:'var(--grn)', letterSpacing:0.5 }}>YOUR PLAN</span>}
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARISON.map(section => (
+                <>
+                  <tr key={section.category}>
+                    <td colSpan={5} style={{ padding:'10px 16px 6px', fontSize:10, fontWeight:800, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, background:'rgba(255,255,255,0.02)', borderTop:'1px solid var(--bdr)' }}>
+                      {section.category}
+                    </td>
+                  </tr>
+                  {section.rows.map((row, ri) => (
+                    <tr key={row.label} style={{ background: ri % 2 === 0 ? 'transparent' : 'rgba(255,255,255,0.01)' }}>
+                      <td style={{ padding:'9px 16px', fontSize:12, color:'var(--dim)', borderBottom:'1px solid rgba(28,46,74,0.3)' }}>{row.label}</td>
+                      {([row.free, row.starter, row.pro, row.elite] as const).map((val, ci) => {
+                        const isCurrent = ci === ['free','starter','pro','elite'].indexOf(currentPlan ?? 'free');
+                        const isCheck = val === '✓';
+                        const isDash  = val === '—';
+                        return (
+                          <td key={ci} style={{ padding:'9px 8px', textAlign:'center', fontSize:11, fontWeight: isCheck || isDash ? 700 : 600, color: isDash ? 'var(--dim2)' : isCheck ? 'var(--grn)' : 'var(--txt)', borderBottom:'1px solid rgba(28,46,74,0.3)', background: isCurrent ? 'rgba(23,64,245,0.04)' : 'transparent' }}>
+                            {val}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* FAQ */}
+      <div style={{ marginBottom:28 }}>
+        <div style={{ fontSize:15, fontWeight:800, marginBottom:16 }}>Frequently Asked Questions</div>
+        <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+          {FAQS.map(faq => (
+            <FaqItem key={faq.q} q={faq.q} a={faq.a} />
+          ))}
+        </div>
       </div>
 
       <div style={{ fontSize:11, color:'var(--dim2)', textAlign:'center' }}>
