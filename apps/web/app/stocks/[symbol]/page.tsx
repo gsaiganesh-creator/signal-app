@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { StockChartWrapper as StockChart } from '@/components/StockChartWrapper';
+import { FinancialsSection } from '@/components/FinancialsSection';
 import { fetchStockDetail } from '@/lib/fetchStockDetail';
 
 export const revalidate = 300; // ISR — refresh every 5 min
@@ -64,6 +65,13 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
   const up     = (d.change_pct ?? 0) >= 0;
   const fmtP   = (n: number | null) => n != null ? `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—';
   const fmtPct = (n: number | null) => n != null ? `${n >= 0 ? '+' : ''}${n.toFixed(2)}%` : '—';
+  const fmtMCap = (n: number | null) => {
+    if (n == null) return '—';
+    if (n >= 1e12) return `₹${(n / 1e12).toFixed(2)} L Cr`;
+    if (n >= 1e7)  return `₹${(n / 1e7).toFixed(0)} Cr`;
+    return `₹${n.toLocaleString('en-IN')}`;
+  };
+  const hasFund = d.pe != null || d.pb != null || d.market_cap != null || d.div_yield != null || d.roe != null || d.ev_ebitda != null;
 
   const bullSignals = d.signals.filter(s => /ABOVE|OVERSOLD/i.test(s)).length;
   const bearSignals = d.signals.filter(s => /BELOW|OVERBOUGHT/i.test(s)).length;
@@ -137,6 +145,32 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           </div>
         </div>
 
+        {/* ── Fundamentals ── */}
+        {hasFund && (
+          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'16px 18px', marginBottom:20 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:12 }}>Fundamentals</div>
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(130px,1fr))', gap:10 }}>
+              {[
+                { label:'Market Cap',       value: fmtMCap(d.market_cap) },
+                { label:'PE (TTM)',          value: d.pe   != null ? d.pe.toFixed(1)   : '—' },
+                { label:'PB Ratio',          value: d.pb   != null ? d.pb.toFixed(2)   : '—' },
+                { label:'EV / EBITDA',       value: d.ev_ebitda != null ? d.ev_ebitda.toFixed(1) : '—' },
+                { label:'Div Yield',         value: d.div_yield  != null ? `${d.div_yield.toFixed(2)}%` : '—' },
+                { label:'ROE',               value: d.roe  != null ? `${d.roe.toFixed(1)}%` : '—',  color: d.roe != null ? (d.roe > 15 ? 'var(--grn)' : d.roe < 5 ? 'var(--red)' : 'var(--ylw)') : undefined },
+                { label:'Rev Growth YoY',    value: d.revenue_growth  != null ? `${d.revenue_growth >= 0 ? '+' : ''}${d.revenue_growth.toFixed(1)}%` : '—', color: d.revenue_growth != null ? (d.revenue_growth > 0 ? 'var(--grn)' : 'var(--red)') : undefined },
+                { label:'Oper Margin',       value: d.operating_margin != null ? `${d.operating_margin.toFixed(1)}%` : '—' },
+                { label:'D/E Ratio',         value: d.debt_to_equity  != null ? d.debt_to_equity.toFixed(1) : '—',  color: d.debt_to_equity != null ? (d.debt_to_equity > 1 ? 'var(--red)' : 'var(--grn)') : undefined },
+                { label:'Beta',              value: d.beta != null ? d.beta.toFixed(2) : '—' },
+              ].filter(r => r.value !== '—').map(({ label, value, color }) => (
+                <div key={label} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:10, padding:'10px 12px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.4, marginBottom:4 }}>{label}</div>
+                  <div style={{ fontSize:16, fontWeight:800, color: color ?? 'var(--txt)' }}>{value}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* ── Stats grid ── */}
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(140px,1fr))', gap:10, marginBottom:20 }}>
           <StatBox label="Prev Close" value={fmtP(d.prev_close)} />
@@ -171,6 +205,9 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
           <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:4 }}>Price Chart</div>
           <StockChart symbol={sym} exchange="NSE" ema20={d.ema20} ema50={d.ema50} />
         </div>
+
+        {/* ── Financial Statements (lazy accordion) ── */}
+        <FinancialsSection symbol={sym} exchange="NSE" />
 
         {/* ── CTA ── */}
         <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.10),rgba(139,92,246,0.06))', border:'1px solid rgba(23,64,245,0.25)', borderRadius:16, padding:'24px', textAlign:'center' }}>

@@ -38,6 +38,8 @@ const TABS: { key: string; icon: string; label: string; links: NavLink[] }[] = [
       { href: '/dashboard/forex',         icon: '💱', label: 'Forex'          },
       { href: '/dashboard/commodities',   icon: '🥇', label: 'Commodities'    },
       { href: '/dashboard/earnings',      icon: '📅', label: 'Earnings'       },
+      { href: '/dashboard/ipo',           icon: '🚀', label: 'IPO Calendar', badge: 'NEW' },
+      { href: '/dashboard/capital-gains', icon: '🧾', label: 'Capital Gains' },
     ],
   },
   {

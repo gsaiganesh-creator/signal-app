@@ -125,6 +125,7 @@ interface QS {
   summaryDetail?: {
     trailingPE?: { raw?: number };
     forwardPE?: { raw?: number };
+    priceToBook?: { raw?: number };
     dividendYield?: { raw?: number };
     payoutRatio?: { raw?: number };
     beta?: { raw?: number };
@@ -167,7 +168,7 @@ export async function GET(request: Request) {
 
     const [chartRes, qsRes] = await Promise.all([
       fetch(chartUrl, { headers: hdrs, signal: AbortSignal.timeout(8000) }),
-      isUS ? fetch(qsUrl, { headers: hdrs, signal: AbortSignal.timeout(8000) }) : Promise.resolve(null),
+      fetch(qsUrl, { headers: hdrs, signal: AbortSignal.timeout(8000) }),
     ]);
 
     if (!chartRes.ok) return Response.json({ error: `yahoo ${chartRes.status}` }, { status: 502 });
@@ -230,7 +231,7 @@ export async function GET(request: Request) {
 
     // ─── US Fundamentals ─────────────────────────────────────────────────────
     let fund: {
-      trailing_pe: Num; forward_pe: Num; ev_ebitda: Num; price_to_sales: Num; beta: Num;
+      trailing_pe: Num; forward_pe: Num; price_to_book: Num; ev_ebitda: Num; price_to_sales: Num; beta: Num;
       revenue_growth: Num; earnings_growth: Num;
       gross_margin: Num; operating_margin: Num; net_margin: Num; roe: Num;
       debt_to_equity: Num; current_ratio: Num;
@@ -242,7 +243,7 @@ export async function GET(request: Request) {
       short_pct_float: Num; short_ratio: Num;
     } | null = null;
 
-    if (isUS && qsRes?.ok) {
+    if (qsRes?.ok) {
       try {
         const qsData = await qsRes.json() as { quoteSummary?: { result?: QS[] } };
         const qs = qsData?.quoteSummary?.result?.[0];
@@ -277,6 +278,7 @@ export async function GET(request: Request) {
           fund = {
             trailing_pe:      sd?.trailingPE?.raw       ? +sd.trailingPE.raw.toFixed(1)      : null,
             forward_pe:       sd?.forwardPE?.raw        ? +sd.forwardPE.raw.toFixed(1)       : null,
+            price_to_book:    sd?.priceToBook?.raw      ? +sd.priceToBook.raw.toFixed(2)     : null,
             ev_ebitda:        ks?.enterpriseToEbitda?.raw ? +ks.enterpriseToEbitda.raw.toFixed(1) : null,
             price_to_sales:   sd?.priceToSalesTrailing12Months?.raw ? +sd.priceToSalesTrailing12Months.raw.toFixed(2) : null,
             beta:             (ks?.beta?.raw ?? sd?.beta?.raw) ? +((ks?.beta?.raw ?? sd?.beta?.raw)!).toFixed(2) : null,

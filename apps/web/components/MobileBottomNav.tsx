@@ -23,9 +23,11 @@ const MORE_SECTIONS = [
       { href: '/dashboard/fii-dii',     icon: '🌍', label: 'FII / DII'      },
       { href: '/dashboard/forex',       icon: '💱', label: 'Forex'          },
       { href: '/dashboard/commodities', icon: '🥇', label: 'Commodities'    },
-      { href: '/dashboard/earnings',    icon: '📅', label: 'Earnings'       },
+      { href: '/dashboard/earnings',      icon: '📅', label: 'Earnings'       },
+      { href: '/dashboard/ipo',           icon: '🚀', label: 'IPO Calendar'   },
+      { href: '/dashboard/capital-gains', icon: '🧾', label: 'Capital Gains'  },
       { href: '/dashboard/equity-comp',   icon: '📊', label: 'ESPP & RSU'    },
-      { href: '/dashboard/etf-mf',       icon: '🏦', label: 'ETF & MF'      },
+      { href: '/dashboard/etf-mf',        icon: '🏦', label: 'ETF & MF'      },
     ],
   },
   {
