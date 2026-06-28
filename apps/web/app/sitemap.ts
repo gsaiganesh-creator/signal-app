@@ -1,4 +1,5 @@
 import type { MetadataRoute } from 'next';
+import { SECTORS } from '@/lib/sectors';
 
 const BASE = 'https://signal-app-api.vercel.app';
 
@@ -19,9 +20,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.8,
   }));
 
+  const sectorPages = SECTORS.map(s => ({
+    url: `${BASE}/sectors/${s.slug}`,
+    lastModified: new Date(),
+    changeFrequency: 'daily' as const,
+    priority: 0.7,
+  }));
+
   return [
-    { url: BASE, lastModified: new Date(), changeFrequency: 'daily', priority: 1.0 },
-    { url: `${BASE}/sign-in`, lastModified: new Date(), changeFrequency: 'monthly', priority: 0.5 },
+    { url: BASE, lastModified: new Date(), changeFrequency: 'daily' as const, priority: 1.0 },
+    { url: `${BASE}/sectors`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.8 },
+    { url: `${BASE}/stocks/compare`, lastModified: new Date(), changeFrequency: 'weekly' as const, priority: 0.6 },
+    { url: `${BASE}/sign-in`, lastModified: new Date(), changeFrequency: 'monthly' as const, priority: 0.5 },
     ...stockPages,
+    ...sectorPages,
   ];
 }

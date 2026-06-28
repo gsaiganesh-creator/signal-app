@@ -6,6 +6,7 @@ import type { Session } from '@supabase/supabase-js';
 import dynamic from 'next/dynamic';
 
 const StockChart = dynamic(() => import('@/components/StockChart'), { ssr: false });
+import { PushSubscribeButton } from '@/components/PushSubscribeButton';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -234,6 +235,7 @@ export default function WatchlistPage() {
             {items.length} stocks · {untriggeredCount} active alert{untriggeredCount !== 1 ? 's' : ''}
           </p>
         </div>
+        <PushSubscribeButton accessToken={session?.access_token ?? null} />
       </div>
 
       {/* Triggered alerts banner */}
