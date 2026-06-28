@@ -11,6 +11,7 @@ const TABS: { key: string; icon: string; label: string; links: NavLink[] }[] = [
     links: [
       { href: '/dashboard',               icon: '🏠', label: 'Dashboard'       },
       { href: '/dashboard/signals',       icon: '📈', label: 'ML Technical Scan' },
+      { href: '/dashboard/watchlist',     icon: '👁', label: 'Watchlist', badge: 'NEW' },
       { href: '/dashboard/portfolio',     icon: '💼', label: 'Indian Portfolio'    },
       { href: '/dashboard/us-portfolio',  icon: '🇺🇸', label: 'US Portfolio'   },
       { href: '/dashboard/equity-comp',   icon: '📊', label: 'ESPP & RSU', badge: 'NEW' },

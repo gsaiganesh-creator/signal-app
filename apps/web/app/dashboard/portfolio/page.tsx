@@ -1522,8 +1522,23 @@ export default function PortfolioPage() {
                       {d?.name ?? h.symbol} · {h.exchange} · {h.qty.toLocaleString('en-IN')} units
                     </div>
                   </div>
-                  <button onClick={() => setSelectedStock(null)}
-                    style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--dim)', fontSize:15, flexShrink:0 }}>✕</button>
+                  <div style={{ display:'flex', gap:8, flexShrink:0 }}>
+                    <button
+                      title="Add to Watchlist"
+                      onClick={async () => {
+                        if (!session) return;
+                        const ex = h.exchange === 'BSE' ? 'BSE' : 'NSE';
+                        const res = await fetch(`${SUPA_URL}/rest/v1/watchlist`, {
+                          method: 'POST',
+                          headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+                          body: JSON.stringify({ user_id: session.user.id, symbol: h.symbol, exchange: ex }),
+                        });
+                        setUploadMsg(res.status === 409 ? `${h.symbol} already in watchlist` : res.ok ? `✅ ${h.symbol} added to watchlist` : '❌ Could not add to watchlist');
+                      }}
+                      style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--dim)', fontSize:14, flexShrink:0 }}>👁</button>
+                    <button onClick={() => setSelectedStock(null)}
+                      style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--dim)', fontSize:15, flexShrink:0 }}>✕</button>
+                  </div>
                 </div>
 
                 {/* Live price row */}
