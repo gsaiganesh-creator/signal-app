@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { useTrackerPositions } from '@/lib/use-tracker-positions';
 
 const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
 const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' };
@@ -32,25 +33,15 @@ interface FxPosition {
 
 type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
 
-const STORE_KEY = 'signal_forex_positions';
-
-function loadPositions(): FxPosition[] {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY) ?? '[]'); } catch { return []; }
-}
-function savePositions(p: FxPosition[]) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(p));
-}
-
 export default function ForexPage() {
-  const [rates, setRates]         = useState<PriceMap>({});
-  const [ratesLoading, setRL]     = useState(true);
-  const [positions, setPositions] = useState<FxPosition[]>([]);
-  const [showAdd, setShowAdd]     = useState(false);
-  const [form, setForm]           = useState({ currency:'USD', amount:'', avg_rate:'', note:'' });
-  const [formErr, setFormErr]     = useState('');
+  const { positions, addPosition: savePosition, deletePosition: removePosition } =
+    useTrackerPositions<FxPosition>('forex', 'signal_forex_positions');
 
-  // Load saved positions from localStorage
-  useEffect(() => { setPositions(loadPositions()); }, []);
+  const [rates, setRates]     = useState<PriceMap>({});
+  const [ratesLoading, setRL] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm]       = useState({ currency:'USD', amount:'', avg_rate:'', note:'' });
+  const [formErr, setFormErr] = useState('');
 
   const fetchRates = useCallback(async () => {
     setRL(true);
@@ -76,16 +67,12 @@ export default function ForexPage() {
     if (isNaN(amt) || amt <= 0) { setFormErr('Enter valid amount'); return; }
     if (isNaN(rate) || rate <= 0) { setFormErr('Enter avg buy rate (INR per unit)'); return; }
     const pos: FxPosition = { id: crypto.randomUUID(), currency: ccy, amount: amt, avg_rate: rate, note: form.note.trim() || undefined };
-    const updated = [...positions, pos];
-    setPositions(updated); savePositions(updated);
+    savePosition(pos);
     setForm({ currency:'USD', amount:'', avg_rate:'', note:'' });
     setShowAdd(false);
   }
 
-  function deletePos(id: string) {
-    const updated = positions.filter(p => p.id !== id);
-    setPositions(updated); savePositions(updated);
-  }
+  function deletePos(id: string) { removePosition(id); }
 
   // Compute P&L for a position
   function positionPL(pos: FxPosition) {

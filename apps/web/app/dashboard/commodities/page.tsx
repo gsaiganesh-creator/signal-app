@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { useTrackerPositions } from '@/lib/use-tracker-positions';
 
 const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
 const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' };
@@ -44,14 +45,6 @@ interface CommodityPosition {
 
 type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
 
-const STORE_KEY = 'signal_commodity_positions';
-function loadPos(): CommodityPosition[] {
-  try { return JSON.parse(localStorage.getItem(STORE_KEY) ?? '[]'); } catch { return []; }
-}
-function savePos(p: CommodityPosition[]) {
-  localStorage.setItem(STORE_KEY, JSON.stringify(p));
-}
-
 // Convert qty+unit to base unit (grams for gold, kg for silver, etc.)
 function toBaseGrams(qty: number, unit: string): number {
   if (unit === 'tola (11.66g)') return qty * 11.66;
@@ -72,15 +65,15 @@ function toBaseBarrels(qty: number, unit: string): number {
 }
 
 export default function CommoditiesPage() {
-  const [prices, setPrices]       = useState<PriceMap>({});
-  const [usdInr, setUsdInr]       = useState<number | null>(null);
-  const [loading, setLoading]     = useState(true);
-  const [positions, setPositions] = useState<CommodityPosition[]>([]);
-  const [showAdd, setShowAdd]     = useState(false);
-  const [form, setForm]           = useState({ commodity:'gold', qty:'', unit:'grams', avg_price:'', note:'' });
-  const [formErr, setFormErr]     = useState('');
+  const { positions, addPosition: savePos, deletePosition: removePos } =
+    useTrackerPositions<CommodityPosition>('commodity', 'signal_commodity_positions');
 
-  useEffect(() => { setPositions(loadPos()); }, []);
+  const [prices, setPrices]   = useState<PriceMap>({});
+  const [usdInr, setUsdInr]   = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm]       = useState({ commodity:'gold', qty:'', unit:'grams', avg_price:'', note:'' });
+  const [formErr, setFormErr] = useState('');
 
   const fetchPrices = useCallback(async () => {
     setLoading(true);
@@ -113,16 +106,12 @@ export default function CommoditiesPage() {
     if (isNaN(qty) || qty <= 0) { setFormErr('Enter valid quantity'); return; }
     if (isNaN(avg) || avg <= 0) { setFormErr('Enter avg buy price (₹ per unit)'); return; }
     const pos: CommodityPosition = { id: crypto.randomUUID(), commodity: form.commodity, qty, unit: form.unit, avg_price: avg, note: form.note.trim() || undefined };
-    const updated = [...positions, pos];
-    setPositions(updated); savePos(updated);
+    savePos(pos);
     setForm({ commodity:'gold', qty:'', unit:'grams', avg_price:'', note:'' });
     setShowAdd(false);
   }
 
-  function deletePos(id: string) {
-    const updated = positions.filter(p => p.id !== id);
-    setPositions(updated); savePos(updated);
-  }
+  function deletePos(id: string) { removePos(id); }
 
   // Get current INR price per position unit
   function getCurrentInrPerUnit(pos: CommodityPosition): number | null {
