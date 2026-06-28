@@ -1,16 +1,12 @@
 FROM node:20-alpine AS base
 
-FROM base AS deps
+FROM base AS builder
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/web/package.json ./apps/web/
 COPY packages/api-client/package.json ./packages/api-client/
 COPY packages/ui/package.json ./packages/ui/
 RUN npm install
-
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 RUN npm run build --workspace=apps/web
 
