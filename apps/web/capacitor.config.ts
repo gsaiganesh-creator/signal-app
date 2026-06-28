@@ -3,13 +3,27 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.signal.app',
   appName: 'SIGNAL',
-  webDir: 'public',
+  webDir: 'public',           // not used — server.url overrides (live Vercel)
   server: {
     url: 'https://signal-app-api.vercel.app',
-    cleartext: false,
+    cleartext: false,         // HTTPS only
   },
   ios: {
-    contentInset: 'always',
+    contentInset: 'automatic',
+    backgroundColor: '#070D1A',
+    scrollEnabled: false,
+    limitsNavigationsToAppBoundDomains: true,
+    allowsLinkPreview: false,
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 800,
+      backgroundColor: '#070D1A',
+      showSpinner: false,
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
   },
 };
 
