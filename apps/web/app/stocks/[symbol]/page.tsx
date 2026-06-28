@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { StockChartWrapper as StockChart } from '@/components/StockChartWrapper';
 import { FinancialsSection } from '@/components/FinancialsSection';
+import { StockNews } from '@/components/StockNews';
 import { fetchStockDetail } from '@/lib/fetchStockDetail';
 
 export const revalidate = 300; // ISR — refresh every 5 min
@@ -208,6 +209,12 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
 
         {/* ── Financial Statements (lazy accordion) ── */}
         <FinancialsSection symbol={sym} exchange="NSE" />
+
+        {/* ── Latest News ── */}
+        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px', marginBottom:20 }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:12 }}>Latest News</div>
+          <StockNews symbol={sym} exchange="NSE" />
+        </div>
 
         {/* ── CTA ── */}
         <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.10),rgba(139,92,246,0.06))', border:'1px solid rgba(23,64,245,0.25)', borderRadius:16, padding:'24px', textAlign:'center' }}>

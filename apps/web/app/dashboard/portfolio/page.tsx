@@ -11,6 +11,7 @@ const StockChart          = dynamic(() => import('@/components/StockChart'), { s
 const PortfolioChart      = dynamic(() => import('@/components/PortfolioChart').then(m => ({ default: m.PortfolioChart })), { ssr: false });
 const PortfolioShareCard  = dynamic(() => import('@/components/PortfolioShareCard').then(m => ({ default: m.PortfolioShareCard })), { ssr: false });
 import { PortfolioRiskCard } from '@/components/PortfolioRiskCard';
+import { DividendTracker } from '@/components/DividendTracker';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -1280,6 +1281,9 @@ export default function PortfolioPage() {
 
           {/* Risk metrics */}
           <PortfolioRiskCard holdings={displayedHoldings} totalCurrent={totalCurrent} />
+
+          {/* Dividend tracker */}
+          <DividendTracker holdings={displayedHoldings} />
 
           {/* ML Bucket breakdown — clickable filters */}
           <div style={{ marginBottom:20 }}>

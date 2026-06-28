@@ -5,6 +5,7 @@ import type { RawHolding } from '@/lib/portfolio-context';
 import { useState, useEffect } from 'react';
 import { TreemapHeatmap } from '@/components/TreemapHeatmap';
 import { MarketBrief } from '@/components/MarketBrief';
+import { MarketMoodIndex } from '@/components/MarketMoodIndex';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -627,7 +628,11 @@ export default function DashboardPage() {
       </div>
 
 
-      <MarketBrief />
+      {/* Market overview row */}
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
+        <MarketBrief />
+        <MarketMoodIndex />
+      </div>
 
       {/* KPI strip — India + Net Worth + US all in one row */}
       <div className="g6" style={{ display:'grid', gap:12, marginBottom:14 }}>
