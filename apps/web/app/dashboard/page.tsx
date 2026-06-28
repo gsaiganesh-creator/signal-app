@@ -629,7 +629,7 @@ export default function DashboardPage() {
 
 
       {/* Market overview row */}
-      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:14, marginBottom:14 }}>
+      <div className="g-brief" style={{ display:'grid', gap:14, marginBottom:14 }}>
         <MarketBrief />
         <MarketMoodIndex />
       </div>

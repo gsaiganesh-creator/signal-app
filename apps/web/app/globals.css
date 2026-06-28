@@ -176,6 +176,8 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .g-values { grid-template-columns: repeat(3, 1fr); }
 /* Dashboard: heatmap + cap donut side-by-side on desktop */
 .g-analytics { grid-template-columns: 1fr minmax(210px,270px); }
+/* Market Brief + MMI side-by-side on desktop, stacked on mobile */
+.g-brief { grid-template-columns: 1fr 1fr; }
 
 /* Table mobile-hide columns */
 .mob-hide { display: table-cell; }
@@ -227,6 +229,7 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .g3-earnings { grid-template-columns: 1fr 1fr; }
   .g-side { grid-template-columns: 1fr; }
   .g-analytics { grid-template-columns: 1fr; }
+  .g-brief { grid-template-columns: 1fr; }
   .g-mission { grid-template-columns: 1fr; }
   .g-founder { grid-template-columns: 1fr; }
   .g-story { grid-template-columns: 1fr; }
