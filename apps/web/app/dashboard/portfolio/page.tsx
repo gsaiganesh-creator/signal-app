@@ -7,7 +7,8 @@ import type { RawHolding } from '@/lib/portfolio-context';
 import type { MlClass } from '@/lib/supabase/types';
 import dynamic from 'next/dynamic';
 
-const StockChart = dynamic(() => import('@/components/StockChart'), { ssr: false });
+const StockChart     = dynamic(() => import('@/components/StockChart'), { ssr: false });
+const PortfolioChart = dynamic(() => import('@/components/PortfolioChart').then(m => ({ default: m.PortfolioChart })), { ssr: false });
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -1257,6 +1258,9 @@ export default function PortfolioPage() {
               </div>
             ))}
           </div>
+
+          {/* Portfolio performance chart */}
+          <PortfolioChart holdings={displayedHoldings.filter(h => h.avg_price >= 1).map(h => ({ symbol: h.symbol, exchange: h.exchange, qty: h.qty, avg_price: h.avg_price }))} />
 
           {/* ML Bucket breakdown — clickable filters */}
           <div style={{ marginBottom:20 }}>
