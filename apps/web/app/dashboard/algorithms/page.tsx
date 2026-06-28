@@ -276,12 +276,13 @@ export default function AlgorithmsPage() {
   const [copied,   setCopied ] = useState<string | null>(null);
   const [codeCopied, setCodeCopied] = useState<string | null>(null);
 
-  const { isPro } = usePlan();
+  const { isPro, loading: planLoading } = usePlan();
+  const notPro = !isPro && !planLoading; // never gate during loading — avoids flash for founders
 
   const filtered = ALGOS.filter(a => cat === 'All' || a.category === cat);
 
   function copyLogic(a: Algorithm) {
-    if (!isPro && a.pro) return;
+    if (notPro && a.pro) return;
     navigator.clipboard.writeText(a.logic).then(() => {
       setCopied(a.id);
       setTimeout(() => setCopied(null), 2000);
@@ -298,7 +299,7 @@ export default function AlgorithmsPage() {
             Battle-tested trading algorithms. View logic, parameters, and backtested stats. Pro users can copy and run these in Algo Builder.
           </div>
         </div>
-        {!isPro && (
+        {notPro && (
           <Link href="/dashboard/upgrade"
             style={{ height:40, padding:'0 18px', borderRadius:10, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:13, fontWeight:800, display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap' }}>
             ⚡ Upgrade to Pro
@@ -321,7 +322,7 @@ export default function AlgorithmsPage() {
       </div>
 
       {/* Pro banner — library tab only */}
-      {tab === 'library' && !isPro && (
+      {tab === 'library' && notPro && (
         <div style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.08),rgba(255,92,26,0.05))', border:'1px solid rgba(255,184,0,0.25)', borderRadius:12, padding:'14px 18px', marginBottom:20, display:'flex', alignItems:'center', gap:12 }}>
           <span style={{ fontSize:24 }}>🔒</span>
           <div>
@@ -373,7 +374,7 @@ export default function AlgorithmsPage() {
       {/* Algorithm cards */}
       <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
         {filtered.map(a => {
-          const locked  = !isPro;
+          const locked  = notPro;
           const isOpen  = expanded === a.id;
           return (
             <div key={a.id} className="hover-lift" style={{ background: CAT_STYLE[a.category]?.grad ?? card.background, border: a.pro ? '1px solid rgba(255,184,0,0.35)' : `1px solid ${CAT_STYLE[a.category]?.bdr ?? 'var(--card-bdr)'}`, borderLeft:`3px solid ${a.pro ? '#FFB800' : (CAT_STYLE[a.category]?.accent ?? 'var(--bluL)')}`, borderRadius:14, padding:'20px' }}>
@@ -529,7 +530,7 @@ export default function AlgorithmsPage() {
       {/* ── Deploy tab ── */}
       {tab === 'deploy' && (
         <div style={{ position:'relative' }}>
-          {!isPro && (
+          {notPro && (
             <div style={{ position:'absolute', inset:0, backdropFilter:'blur(10px)', WebkitBackdropFilter:'blur(10px)', background:'rgba(7,13,26,0.65)', borderRadius:16, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:12, zIndex:10, border:'1px solid rgba(255,255,255,0.06)', minHeight:400 }}>
               <div style={{ fontSize:32 }}>🔒</div>
               <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.95)' }}>Pro Feature</div>
@@ -539,7 +540,7 @@ export default function AlgorithmsPage() {
           )}
 
           {/* Ghost content behind blur */}
-          <div style={{ opacity: isPro ? 1 : 0.3, filter: isPro ? 'none' : 'blur(2px)', pointerEvents: isPro ? 'auto' : 'none' }}>
+          <div style={{ opacity: notPro ? 0.3 : 1, filter: notPro ? 'blur(2px)' : 'none', pointerEvents: notPro ? 'none' : 'auto' }}>
             {/* How-to banner */}
             <div style={{ ...card, marginBottom:20, background:'linear-gradient(135deg,rgba(0,212,160,0.06),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.2)' }}>
               <div style={{ fontSize:14, fontWeight:800, marginBottom:10 }}>🚀 Deploy on Your Machine</div>
