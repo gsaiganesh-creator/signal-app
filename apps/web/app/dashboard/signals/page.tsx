@@ -507,6 +507,12 @@ export default function SignalsPage() {
   const [filter,    setFilter]    = useState('all');
   const [search,    setSearch]    = useState('');
   const [selected,  setSelected]  = useState<MLSignal | null>(null);
+  const [showAdv,   setShowAdv]   = useState(false);
+  const [advSector, setAdvSector] = useState('');
+  const [advMinRsi, setAdvMinRsi] = useState('');
+  const [advMaxRsi, setAdvMaxRsi] = useState('');
+  const [advMinConf,setAdvMinConf]= useState('');
+  const [advMaxEma, setAdvMaxEma] = useState(''); // max abs % from EMA20
 
   // US state
   const [usSignals,    setUsSignals]    = useState<USSignal[]>([]);
@@ -607,6 +613,9 @@ export default function SignalsPage() {
     { key:'sell',       label:`🔴 Weak (${sellCnt})` },
     { key:'high',       label:'🔥 80%+' },
   ];
+  const sectors = Array.from(new Set(mlSignals.map(s => s.sector).filter(Boolean))).sort();
+  const advActive = !!(advSector || advMinRsi || advMaxRsi || advMinConf || advMaxEma);
+
   const shown = mlSignals
     .filter(s => {
       if (filter === 'portfolio')  return portfolioSymbols.includes(s.symbol.replace('.NS',''));
@@ -617,7 +626,12 @@ export default function SignalsPage() {
       if (filter === 'high')       return s.confidence >= 80;
       return true;
     })
-    .filter(s => !search || s.symbol.toLowerCase().includes(search.toLowerCase()) || s.name.toLowerCase().includes(search.toLowerCase()) || s.sector.toLowerCase().includes(search.toLowerCase()));
+    .filter(s => !search || s.symbol.toLowerCase().includes(search.toLowerCase()) || s.name.toLowerCase().includes(search.toLowerCase()) || s.sector.toLowerCase().includes(search.toLowerCase()))
+    .filter(s => !advSector  || s.sector === advSector)
+    .filter(s => !advMinRsi  || s.rsi >= parseFloat(advMinRsi))
+    .filter(s => !advMaxRsi  || s.rsi <= parseFloat(advMaxRsi))
+    .filter(s => !advMinConf || s.confidence >= parseFloat(advMinConf))
+    .filter(s => !advMaxEma  || Math.abs(s.ema_dist_pct) <= parseFloat(advMaxEma));
 
   // US derived
   const usPortSet   = new Set(usPortSyms);
@@ -722,7 +736,63 @@ export default function SignalsPage() {
               </button>
             ))}
             <button onClick={loadIndia} style={{ height:36, padding:'0 14px', borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto' }}>🔄</button>
+            <button onClick={() => setShowAdv(v => !v)}
+              style={{ height:36, padding:'0 14px', borderRadius:9, border:`1px solid ${advActive ? 'var(--pur)' : 'var(--bdr)'}`, background: advActive ? 'rgba(139,92,246,0.12)' : 'var(--surf)', color: advActive ? 'var(--pur)' : 'var(--dim)', fontSize:12, fontWeight: advActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
+              ⚙ Filters{advActive ? ' •' : ''}
+            </button>
           </div>
+
+          {/* Advanced filter panel */}
+          {showAdv && (
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'14px 16px', marginBottom:14, display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:10 }}>
+              {/* Sector */}
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', marginBottom:4, textTransform:'uppercase', letterSpacing:0.4 }}>Sector</div>
+                <select value={advSector} onChange={e => setAdvSector(e.target.value)}
+                  style={{ width:'100%', height:34, borderRadius:7, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit' }}>
+                  <option value=''>All</option>
+                  {sectors.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+              </div>
+              {/* RSI Min */}
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', marginBottom:4, textTransform:'uppercase', letterSpacing:0.4 }}>RSI Min</div>
+                <input type='number' min={0} max={100} value={advMinRsi} onChange={e => setAdvMinRsi(e.target.value)}
+                  placeholder='e.g. 40'
+                  style={{ width:'100%', height:34, borderRadius:7, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit', boxSizing:'border-box' }} />
+              </div>
+              {/* RSI Max */}
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', marginBottom:4, textTransform:'uppercase', letterSpacing:0.4 }}>RSI Max</div>
+                <input type='number' min={0} max={100} value={advMaxRsi} onChange={e => setAdvMaxRsi(e.target.value)}
+                  placeholder='e.g. 65'
+                  style={{ width:'100%', height:34, borderRadius:7, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit', boxSizing:'border-box' }} />
+              </div>
+              {/* Min confidence */}
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', marginBottom:4, textTransform:'uppercase', letterSpacing:0.4 }}>Min Confidence %</div>
+                <input type='number' min={0} max={100} value={advMinConf} onChange={e => setAdvMinConf(e.target.value)}
+                  placeholder='e.g. 70'
+                  style={{ width:'100%', height:34, borderRadius:7, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit', boxSizing:'border-box' }} />
+              </div>
+              {/* Near EMA20 */}
+              <div>
+                <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', marginBottom:4, textTransform:'uppercase', letterSpacing:0.4 }}>Near EMA20 (±%)</div>
+                <input type='number' min={0} value={advMaxEma} onChange={e => setAdvMaxEma(e.target.value)}
+                  placeholder='e.g. 5'
+                  style={{ width:'100%', height:34, borderRadius:7, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit', boxSizing:'border-box' }} />
+              </div>
+              {/* Clear */}
+              {advActive && (
+                <div style={{ display:'flex', alignItems:'flex-end' }}>
+                  <button onClick={() => { setAdvSector(''); setAdvMinRsi(''); setAdvMaxRsi(''); setAdvMinConf(''); setAdvMaxEma(''); }}
+                    style={{ height:34, width:'100%', borderRadius:7, background:'rgba(255,59,92,0.1)', border:'1px solid rgba(255,59,92,0.3)', color:'var(--red)', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                    ✕ Clear
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
 
           {mlLoading && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
