@@ -84,7 +84,32 @@ function fmtINR(n: number) {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function ETFMFPage() {
-  const [tab, setTab] = useState<'etf'|'mf'|'compare'|'holdings'>('etf');
+  const [tab, setTab] = useState<'etf'|'mf'|'compare'|'holdings'|'sip'>('etf');
+
+  // ── SIP Calculator ─────────────────────────────────────────────────────────
+  const [sipMonthly, setSipMonthly]   = useState('5000');
+  const [sipReturn,  setSipReturn]    = useState('12');
+  const [sipYears,   setSipYears]     = useState('15');
+  const [sipStepUp,  setSipStepUp]    = useState('10');
+
+  function calcSIP(monthly: number, annualReturn: number, years: number, stepUpPct: number) {
+    const r = annualReturn / 12 / 100;
+    let corpus = 0; let totalInvested = 0;
+    const data: { year: number; corpus: number; invested: number }[] = [];
+    for (let y = 1; y <= years; y++) {
+      const monthlyAmt = monthly * Math.pow(1 + stepUpPct / 100, y - 1);
+      for (let m = 0; m < 12; m++) {
+        corpus = corpus * (1 + r) + monthlyAmt;
+        totalInvested += monthlyAmt;
+      }
+      data.push({ year: y, corpus: Math.round(corpus), invested: Math.round(totalInvested) });
+    }
+    return data;
+  }
+
+  function calcLumpsum(total: number, annualReturn: number, years: number) {
+    return Math.round(total * Math.pow(1 + annualReturn / 100, years));
+  }
 
   // Best ETFs — live prices
   const [etfPrices, setEtfPrices] = useState<Record<string, { price: number; chg: number }>>({});
@@ -102,7 +127,7 @@ export default function ETFMFPage() {
   // ── ETF Holdings (localStorage — unchanged) ───────────────────────────────
   const [holdings, setHoldings] = useState<Holding[]>([]);
   const [showAdd, setShowAdd] = useState(false);
-  const [addKind, setAddKind] = useState<'etf'|'mf'>('etf');
+  const [addKind] = useState<'etf'|'mf'>('etf');
   const [addLabel, setAddLabel] = useState('');
   const [addUnits, setAddUnits] = useState('');
   const [addBuy, setAddBuy] = useState('');
@@ -251,8 +276,8 @@ export default function ETFMFPage() {
 
       {/* Tabs */}
       <div style={{ display:'flex', gap:8, marginBottom:24, flexWrap:'wrap' }}>
-        {(['etf','mf','compare','holdings'] as const).map(t => {
-          const labels: Record<string, string> = { etf:'📈 Best ETFs', mf:'🏦 Best MFs', compare:'ETF vs MF', holdings:`💼 My Holdings (${holdings.length})` };
+        {(['etf','mf','compare','holdings','sip'] as const).map(t => {
+          const labels: Record<string, string> = { etf:'📈 Best ETFs', mf:'🏦 Best MFs', compare:'ETF vs MF', holdings:`💼 My Holdings (${holdings.length})`, sip:'🧮 SIP Calculator' };
           return (
             <button key={t} onClick={() => setTab(t)}
               style={{ height:38, padding:'0 18px', borderRadius:10, border:`1px solid ${tab===t ? 'var(--blu)' : 'var(--bdr)'}`, background: tab===t ? 'rgba(23,64,245,0.12)' : 'var(--surf)', color: tab===t ? 'var(--bluL)' : 'var(--dim)', fontSize:13, fontWeight: tab===t ? 700 : 500, cursor:'pointer', fontFamily:'inherit' }}>
@@ -658,6 +683,149 @@ export default function ETFMFPage() {
           </div>
         </>
       )}
+
+      {/* ══ TAB: SIP CALCULATOR ══ */}
+      {tab === 'sip' && (() => {
+        const monthly = parseFloat(sipMonthly) || 5000;
+        const ret     = parseFloat(sipReturn)  || 12;
+        const years   = Math.min(Math.max(parseInt(sipYears) || 15, 1), 40);
+        const stepUp  = parseFloat(sipStepUp)  || 0;
+
+        const sipData    = calcSIP(monthly, ret, years, stepUp);
+        const finalCorpus = sipData[sipData.length - 1]?.corpus ?? 0;
+        const finalInvested = sipData[sipData.length - 1]?.invested ?? 0;
+        const wealthGain = finalCorpus - finalInvested;
+        const maxCorpus  = Math.max(...sipData.map(d => d.corpus));
+
+        // Comparisons (using same total invested as SIP)
+        const lumpCorpus = calcLumpsum(finalInvested, ret, years);
+        const fdCorpus   = calcLumpsum(finalInvested, 7.1, years);
+        const ppfCorpus  = calcLumpsum(finalInvested, 7.1, years); // same as FD for simplicity
+
+        const crFmt = (n: number) => {
+          if (n >= 1e7) return `₹${(n/1e7).toFixed(2)} Cr`;
+          if (n >= 1e5) return `₹${(n/1e5).toFixed(1)} L`;
+          return `₹${n.toLocaleString('en-IN')}`;
+        };
+
+        const sInp: React.CSSProperties = {
+          width:'100%', height:40, borderRadius:8, background:'var(--surf2)',
+          border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:14,
+          padding:'0 12px', fontFamily:'inherit', outline:'none', fontWeight:600,
+        };
+
+        return (
+          <>
+            {/* Inputs */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(170px,1fr))', gap:14, marginBottom:24 }}>
+              {[
+                { label:'Monthly SIP (₹)', value: sipMonthly, set: setSipMonthly, type:'number', hint:'How much you invest every month' },
+                { label:'Expected Return (%/yr)', value: sipReturn, set: setSipReturn, type:'number', hint:'Nifty 50 avg ~12%, small cap ~15%' },
+                { label:'Tenure (years)', value: sipYears, set: setSipYears, type:'number', hint:'1 – 40 years' },
+                { label:'Step-up (%/yr)', value: sipStepUp, set: setSipStepUp, type:'number', hint:'Increase SIP annually (0 = flat)' },
+              ].map(f => (
+                <div key={f.label}>
+                  <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginBottom:5, textTransform:'uppercase', letterSpacing:0.4 }}>{f.label}</div>
+                  <input type={f.type} value={f.value} onChange={e => f.set(e.target.value)} style={sInp} />
+                  <div style={{ fontSize:10, color:'var(--dim2)', marginTop:4 }}>{f.hint}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Result cards */}
+            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:12, marginBottom:24 }}>
+              {[
+                { l:'Maturity Value',   v: crFmt(finalCorpus),   c:'var(--grn)',  bg:'rgba(0,212,160,0.08)',  bdr:'rgba(0,212,160,0.3)' },
+                { l:'Total Invested',   v: crFmt(finalInvested), c:'var(--txt)',  bg:'var(--surf)',           bdr:'var(--bdr)' },
+                { l:'Wealth Created',   v: crFmt(wealthGain),    c:'var(--ylw)',  bg:'rgba(255,184,0,0.08)',  bdr:'rgba(255,184,0,0.3)' },
+                { l:'Gain Multiple',    v: finalInvested > 0 ? `${(finalCorpus/finalInvested).toFixed(1)}×` : '—',
+                                         c:'var(--bluL)', bg:'rgba(23,64,245,0.08)', bdr:'rgba(23,64,245,0.25)' },
+              ].map(s => (
+                <div key={s.l} style={{ background:s.bg, border:`1px solid ${s.bdr}`, borderRadius:14, padding:'16px 18px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>{s.l}</div>
+                  <div style={{ fontSize:22, fontWeight:900, color:s.c, letterSpacing:-0.5 }}>{s.v}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Year-by-year bar chart */}
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'16px 18px', marginBottom:20 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:14, textTransform:'uppercase', letterSpacing:0.5 }}>
+                Corpus Growth · Year-by-Year
+              </div>
+              <div style={{ display:'flex', alignItems:'flex-end', gap:3, height:160, overflowX:'auto', paddingBottom:24, position:'relative' }}>
+                {sipData.map(d => {
+                  const barH    = maxCorpus > 0 ? (d.corpus / maxCorpus) * 140 : 0;
+                  const invH    = maxCorpus > 0 ? (d.invested / maxCorpus) * 140 : 0;
+                  const gainH   = Math.max(0, barH - invH);
+                  const showLbl = years <= 20 || d.year % 5 === 0;
+                  return (
+                    <div key={d.year} style={{ display:'flex', flexDirection:'column', alignItems:'center', flex:'1 0 auto', minWidth: years > 25 ? 16 : 22, maxWidth:40, position:'relative' }}
+                      title={`Year ${d.year}: ${crFmt(d.corpus)} (invested ${crFmt(d.invested)})`}>
+                      <div style={{ width:'100%', display:'flex', flexDirection:'column', alignItems:'stretch', borderRadius:'3px 3px 0 0', overflow:'hidden' }}>
+                        <div style={{ height:gainH, background:'var(--grn)', opacity:0.85 }} />
+                        <div style={{ height:invH,  background:'var(--blu)', opacity:0.7 }} />
+                      </div>
+                      {showLbl && (
+                        <div style={{ fontSize:9, color:'var(--dim)', marginTop:4, position:'absolute', bottom:-18, textAlign:'center', whiteSpace:'nowrap' }}>Y{d.year}</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div style={{ display:'flex', gap:16, marginTop:8, fontSize:11, color:'var(--dim)' }}>
+                <span><span style={{ color:'var(--blu)', fontWeight:700 }}>▌</span> Invested</span>
+                <span><span style={{ color:'var(--grn)', fontWeight:700 }}>▌</span> Gains</span>
+              </div>
+            </div>
+
+            {/* Comparison table */}
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'16px 18px', marginBottom:20 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:14, textTransform:'uppercase', letterSpacing:0.5 }}>
+                What if you invested {crFmt(finalInvested)} as a lump sum?
+              </div>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(160px,1fr))', gap:10 }}>
+                {[
+                  { l:`SIP (${ret}% p.a.)${stepUp > 0 ? ` +${stepUp}% step-up` : ''}`, v: crFmt(finalCorpus), c:'var(--grn)', best: true },
+                  { l:`Lump Sum (${ret}% p.a.)`,  v: crFmt(lumpCorpus), c: lumpCorpus > finalCorpus ? 'var(--grn)' : 'var(--dim)' },
+                  { l:'FD / Debt (7.1% p.a.)',     v: crFmt(fdCorpus),   c:'var(--dim)' },
+                  { l:'PPF (7.1% p.a., tax-free)', v: crFmt(ppfCorpus),  c:'var(--dim)' },
+                ].map(s => (
+                  <div key={s.l} style={{ background: s.best ? 'rgba(0,212,160,0.06)' : 'var(--surf2)', border:`1px solid ${s.best ? 'rgba(0,212,160,0.25)' : 'var(--bdr)'}`, borderRadius:10, padding:'12px 14px' }}>
+                    <div style={{ fontSize:10, color:'var(--dim)', fontWeight:600, marginBottom:5, lineHeight:1.4 }}>{s.l}</div>
+                    <div style={{ fontSize:18, fontWeight:900, color:s.c }}>{s.v}</div>
+                    {s.best && <div style={{ fontSize:9, color:'var(--grn)', fontWeight:700, marginTop:4 }}>YOUR SIP PLAN</div>}
+                  </div>
+                ))}
+              </div>
+              <div style={{ fontSize:11, color:'var(--dim2)', marginTop:12 }}>
+                Lump sum assumes investing total SIP corpus ({crFmt(finalInvested)}) on Day 1. FD/PPF rates indicative.
+              </div>
+            </div>
+
+            {/* SIP Tips */}
+            <div style={{ background:'rgba(23,64,245,0.05)', border:'1px solid rgba(23,64,245,0.2)', borderRadius:14, padding:'14px 18px' }}>
+              <div style={{ fontSize:13, fontWeight:800, marginBottom:10 }}>💡 Power of compounding — key insights</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                {[
+                  `Starting just 5 years earlier can 2× your final corpus at the same monthly amount.`,
+                  `Step-up SIP of 10%/yr typically beats a flat SIP by 40–60% over 15+ years.`,
+                  `₹5,000/mo for 25 years at 12% → ~₹94L. Starting at ₹2,000 and stepping up 15% → similar corpus.`,
+                  `Rule of thumb: money doubles every ~6 years at 12% p.a. (Rule of 72).`,
+                ].map((t, i) => (
+                  <div key={i} style={{ fontSize:12, color:'var(--dim)', display:'flex', gap:8 }}>
+                    <span style={{ color:'var(--bluL)', flexShrink:0 }}>→</span>{t}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ fontSize:11, color:'var(--dim2)', marginTop:16 }}>
+              Projections are illustrative. Actual mutual fund returns vary. Not SEBI registered · DYOR
+            </div>
+          </>
+        );
+      })()}
     </>
   );
 }
