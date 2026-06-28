@@ -40,12 +40,11 @@ export default function SectorsIndexPage() {
           Browse stocks by sector — live prices, RSI, EMA scan. 14 sectors, 150+ NSE stocks.
         </p>
 
+        <style>{`.sector-card{background:var(--surf);border:1px solid var(--bdr);border-radius:14px;padding:16px;transition:border-color 0.15s}.sector-card:hover{border-color:rgba(23,64,245,0.4)}`}</style>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))', gap:12 }}>
           {SECTORS.map(s => (
             <Link key={s.slug} href={`/sectors/${s.slug}`} style={{ textDecoration:'none' }}>
-              <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'16px', transition:'border-color 0.15s' }}
-                onMouseEnter={e => (e.currentTarget.style.borderColor = 'rgba(23,64,245,0.4)')}
-                onMouseLeave={e => (e.currentTarget.style.borderColor = 'var(--bdr)')}>
+              <div className="sector-card">
                 <div style={{ fontSize:24, marginBottom:8 }}>{ICONS[s.slug] ?? '📊'}</div>
                 <div style={{ fontSize:14, fontWeight:800, color:'var(--txt)', marginBottom:4 }}>{s.label}</div>
                 <div style={{ fontSize:11, color:'var(--dim)', marginBottom:8 }}>{s.stocks.length} stocks</div>
