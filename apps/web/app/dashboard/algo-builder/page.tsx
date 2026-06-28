@@ -239,7 +239,7 @@ export default function AlgoBuilderPage() {
           </div>
 
           {/* Step 4 */}
-          <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:20 }}>
+          <div id="code-section" style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:20 }}>
             <div style={{ fontSize:14, fontWeight:700, marginBottom:16 }}>Step 4 — Backtest &amp; Download Code</div>
 
             {!btDone ? (
@@ -272,25 +272,34 @@ export default function AlgoBuilderPage() {
                 </div>
               </>
             )}
-            {btDone && (
-              <>
-                <button onClick={() => setShowCode(!showCode)}
-                  style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit', marginBottom:12, marginTop:12 }}>
-                  {showCode ? '▲ Hide Code' : '▼ View Generated Code'}
-                </button>
-                {showCode && (
-                  <div style={{ background:'#0D1117', border:'1px solid #21262D', borderRadius:14, overflow:'hidden' }}>
-                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', background:'#161B22', borderBottom:'1px solid #21262D' }}>
-                      <span style={{ fontFamily:'monospace', fontSize:12, color:'#8B949E' }}>signal_{STRATS[stratIdx].name.toLowerCase().replace(/ /g,'_')}.py</span>
+            {/* Code panel — visible whenever showCode is true, regardless of backtest */}
+            {showCode && (
+              <div style={{ marginTop: btDone ? 12 : 0 }}>
+                <div style={{ background:'#0D1117', border:'1px solid #21262D', borderRadius:14, overflow:'hidden' }}>
+                  <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px 16px', background:'#161B22', borderBottom:'1px solid #21262D' }}>
+                    <span style={{ fontFamily:'monospace', fontSize:12, color:'#8B949E' }}>signal_{STRATS[stratIdx].name.toLowerCase().replace(/ /g,'_')}.py</span>
+                    <div style={{ display:'flex', gap:8 }}>
+                      <button
+                        onClick={() => {
+                          const text = CODE_LINES.map(([,l]) => l).join('\n');
+                          const blob = new Blob([text], { type:'text/plain' });
+                          const url  = URL.createObjectURL(blob);
+                          const a    = document.createElement('a');
+                          a.href = url; a.download = `signal_${STRATS[stratIdx].name.toLowerCase().replace(/ /g,'_')}.py`;
+                          a.click(); URL.revokeObjectURL(url);
+                        }}
+                        style={{ fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:6, background:'rgba(0,212,160,0.12)', color:'var(--grn)', border:'1px solid rgba(0,212,160,0.3)', cursor:'pointer', fontFamily:'inherit' }}>
+                        ↓ Download
+                      </button>
                       <button onClick={() => navigator.clipboard?.writeText(CODE_LINES.map(([,l]) => l).join('\n')).catch(() => {})}
                         style={{ fontSize:11, fontWeight:700, padding:'3px 10px', borderRadius:6, background:'rgba(23,64,245,0.15)', color:'var(--bluL)', border:'1px solid rgba(23,64,245,0.3)', cursor:'pointer', fontFamily:'inherit' }}>⎘ Copy</button>
                     </div>
-                    <div style={{ padding:16, fontFamily:'monospace', fontSize:12, lineHeight:1.7, overflowX:'auto' }}>
-                      {CODE_LINES.map(([c, line], i) => <div key={i} style={{ color: c || 'transparent', whiteSpace:'pre' }}>{line || ' '}</div>)}
-                    </div>
                   </div>
-                )}
-              </>
+                  <div style={{ padding:16, fontFamily:'monospace', fontSize:12, lineHeight:1.7, overflowX:'auto' }}>
+                    {CODE_LINES.map(([c, line], i) => <div key={i} style={{ color: c || 'transparent', whiteSpace:'pre' }}>{line || ' '}</div>)}
+                  </div>
+                </div>
+              </div>
             )}
           </div>
         </div>
@@ -321,7 +330,10 @@ export default function AlgoBuilderPage() {
                 style={{ height:46, borderRadius:12, background:'transparent', border:`1px solid ${saved ? 'var(--grn)' : 'var(--card-bdr)'}`, color: saved ? 'var(--grn)' : 'var(--txt)', fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit', transition:'all 0.2s' }}>
                 {saved ? '✅ Saved!' : '💾 Save Strategy'}
               </button>
-              <button onClick={() => setShowCode(!showCode)} style={{ height:46, borderRadius:12, background:'rgba(23,64,245,0.1)', border:'1px solid rgba(23,64,245,0.3)', color:'var(--bluL)', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>{'</>'} Generate Code</button>
+              <button onClick={() => {
+                setShowCode(true);
+                setTimeout(() => document.getElementById('code-section')?.scrollIntoView({ behavior:'smooth', block:'start' }), 50);
+              }} style={{ height:46, borderRadius:12, background:'rgba(23,64,245,0.1)', border:'1px solid rgba(23,64,245,0.3)', color:'var(--bluL)', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>{'</>'} Generate Code</button>
             </div>
           </div>
 
