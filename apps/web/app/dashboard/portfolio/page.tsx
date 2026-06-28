@@ -527,6 +527,8 @@ export default function PortfolioPage() {
   const [deletingPortfolio, setDeletingPortfolio] = useState(false);
   const [editingCostId, setEditingCostId] = useState<string | null>(null);
   const [editCostVal, setEditCostVal] = useState('');
+  const [pdfReviewRows, setPdfReviewRows] = useState<(ParsedRow & { inputPrice: string })[]>([]);
+  const [pdfReviewOpen, setPdfReviewOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<MlClass | null>(null);
   const [selectedStock, setSelectedStock] = useState<Holding | null>(null);
   const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
@@ -752,12 +754,36 @@ export default function PortfolioPage() {
       setUploadMsg(`❌ Could not parse file.\nDebug: ${debug}`);
       setSyncing(false); return;
     }
+    // PDF DP imports have avg_price < 1 (placeholder) — show review modal so user enters costs first
+    const hasMissingPrice = result.some(r => r.avg_price < 1);
+    if (hasMissingPrice) {
+      setPdfReviewRows(result.map(r => ({ ...r, inputPrice: '' })));
+      setPdfReviewOpen(true);
+      setUploadMsg('');
+      setSyncing(false);
+      e.target.value = '';
+      return;
+    }
     const insertErr = await restInsertHoldings(activeId, session.user.id, session.access_token, result);
     if (insertErr) { setUploadMsg(`❌ ${insertErr}`); setSyncing(false); return; }
     setUploadMsg(`✅ ${result.length} holdings imported — running ML analysis…`);
     await refreshContext();
     setSyncing(false);
     e.target.value = '';
+  }
+
+  async function handlePdfReviewSave() {
+    if (!activeId || !session) return;
+    const allPriced = pdfReviewRows.every(r => parseFloat(r.inputPrice) > 0);
+    if (!allPriced) { setUploadMsg('❌ Enter avg cost for every holding before saving.'); return; }
+    setSyncing(true);
+    const rows = pdfReviewRows.map(r => ({ ...r, avg_price: parseFloat(r.inputPrice) }));
+    const insertErr = await restInsertHoldings(activeId, session.user.id, session.access_token, rows);
+    if (insertErr) { setUploadMsg(`❌ ${insertErr}`); setSyncing(false); return; }
+    setPdfReviewOpen(false); setPdfReviewRows([]);
+    setUploadMsg(`✅ ${rows.length} holdings imported — running ML analysis…`);
+    await refreshContext();
+    setSyncing(false);
   }
 
   async function handleAdd() {
@@ -1111,6 +1137,48 @@ export default function PortfolioPage() {
           </div>
           <button onClick={handleAdd}
             style={{ height:40, padding:'0 20px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>Add →</button>
+        </div>
+      )}
+
+      {/* PDF review modal — shown when MStock DP PDF parsed (avg_price missing) */}
+      {pdfReviewOpen && (
+        <div style={{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.7)', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
+          onClick={() => { setPdfReviewOpen(false); setPdfReviewRows([]); }}>
+          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:24, width:'100%', maxWidth:560, maxHeight:'80vh', display:'flex', flexDirection:'column', gap:16 }}
+            onClick={e => e.stopPropagation()}>
+            <div>
+              <div style={{ fontSize:16, fontWeight:700, marginBottom:4 }}>Enter Avg Cost — MStock DP Import</div>
+              <div style={{ fontSize:12, color:'var(--dim)' }}>DP statements don&apos;t include avg cost. Enter cost per unit for each holding.</div>
+            </div>
+            <div style={{ overflowY:'auto', flex:1, display:'flex', flexDirection:'column', gap:8 }}>
+              {pdfReviewRows.map((r, i) => (
+                <div key={i} style={{ display:'flex', alignItems:'center', gap:10, background:'var(--surf2)', borderRadius:8, padding:'10px 12px' }}>
+                  <div style={{ flex:1 }}>
+                    <div style={{ fontSize:13, fontWeight:700 }}>{r.symbol}</div>
+                    <div style={{ fontSize:11, color:'var(--dim)' }}>Qty: {r.qty} · {r.exchange}{r.is_etf ? ' · ETF/MF' : ''}</div>
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                    <span style={{ fontSize:12, color:'var(--dim)' }}>₹</span>
+                    <input
+                      type="number"
+                      placeholder="Avg cost"
+                      value={r.inputPrice}
+                      onChange={e => setPdfReviewRows(rows => rows.map((row, j) => j === i ? { ...row, inputPrice: e.target.value } : row))}
+                      style={{ width:100, height:32, borderRadius:6, background:'var(--bg)', border:`1px solid ${parseFloat(r.inputPrice) > 0 ? 'var(--grn)' : 'var(--bdr)'}`, color:'var(--txt)', fontSize:13, padding:'0 8px', fontFamily:'inherit', outline:'none' }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div style={{ display:'flex', gap:10, justifyContent:'flex-end' }}>
+              <button onClick={() => { setPdfReviewOpen(false); setPdfReviewRows([]); }}
+                style={{ padding:'8px 18px', borderRadius:8, background:'none', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>Cancel</button>
+              <button onClick={handlePdfReviewSave} disabled={syncing || !pdfReviewRows.every(r => parseFloat(r.inputPrice) > 0)}
+                style={{ padding:'8px 20px', borderRadius:8, background: pdfReviewRows.every(r => parseFloat(r.inputPrice) > 0) ? 'var(--blu)' : 'var(--surf2)', border:'none', color: pdfReviewRows.every(r => parseFloat(r.inputPrice) > 0) ? '#fff' : 'var(--dim)', fontSize:13, fontWeight:700, cursor: pdfReviewRows.every(r => parseFloat(r.inputPrice) > 0) ? 'pointer' : 'not-allowed', fontFamily:'inherit' }}>
+                {syncing ? 'Saving…' : `Import ${pdfReviewRows.length} holdings →`}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
