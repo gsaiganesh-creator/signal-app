@@ -20,9 +20,9 @@ export interface Database {
         Relationships: [];
       };
       holdings: {
-        Row:    { id: string; portfolio_id: string; user_id: string; symbol: string; exchange: string; qty: number; avg_price: number; ml_class: MlClass | null; created_at: string; updated_at: string };
-        Insert: { id?: string; portfolio_id: string; user_id: string; symbol: string; exchange?: string; qty: number; avg_price: number; ml_class?: MlClass | null };
-        Update: { portfolio_id?: string; user_id?: string; symbol?: string; exchange?: string; qty?: number; avg_price?: number; ml_class?: MlClass | null };
+        Row:    { id: string; portfolio_id: string; user_id: string; symbol: string; exchange: string; qty: number; avg_price: number; purchase_date: string | null; ml_class: MlClass | null; created_at: string; updated_at: string };
+        Insert: { id?: string; portfolio_id: string; user_id: string; symbol: string; exchange?: string; qty: number; avg_price: number; purchase_date?: string | null; ml_class?: MlClass | null };
+        Update: { portfolio_id?: string; user_id?: string; symbol?: string; exchange?: string; qty?: number; avg_price?: number; purchase_date?: string | null; ml_class?: MlClass | null };
         Relationships: [];
       };
       watchlists: {
