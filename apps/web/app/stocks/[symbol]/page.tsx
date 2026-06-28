@@ -1,11 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
+import { StockChartWrapper as StockChart } from '@/components/StockChartWrapper';
 import { fetchStockDetail } from '@/lib/fetchStockDetail';
 
 export const revalidate = 300; // ISR — refresh every 5 min
-
-const StockChart = dynamic(() => import('@/components/StockChart'), { ssr: false });
 
 // Pre-generate top NSE stocks at build time
 export function generateStaticParams() {
