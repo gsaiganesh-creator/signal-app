@@ -388,6 +388,9 @@ export default function DashboardPage() {
   const [cmPos,   setCmPos]  = useState<{ id:string; commodity:string; qty:number; unit:string; avg_price:number }[]>([]);
   const [fxPrices, setFxPrices] = useState<Record<string, PriceData>>({});
   const [cmPrices, setCmPrices] = useState<Record<string, PriceData>>({});
+  const [watchlist, setWatchlist]   = useState<{ id: string; symbol: string; exchange: string }[]>([]);
+  const [watchPrices, setWatchPrices] = useState<Record<string, PriceData>>({});
+  const [scanPicks, setScanPicks]   = useState<{ symbol: string; exchange: string; price_at: number; rsi14: number | null; scanned_at: string }[]>([]);
 
   // All India NSE/BSE holdings across EVERY portfolio
   useEffect(() => {
@@ -482,6 +485,43 @@ export default function DashboardPage() {
       })
       .catch(() => {});
   }, [cmPos, usdInr]);
+
+  // Watchlist preview
+  useEffect(() => {
+    if (!session) return;
+    fetch(`${SUPA_URL}/rest/v1/watchlist?user_id=eq.${session.user.id}&select=id,symbol,exchange&order=added_at.desc&limit=8`, {
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(rows => setWatchlist(Array.isArray(rows) ? rows : []))
+      .catch(() => {});
+  }, [session]);
+
+  useEffect(() => {
+    if (!watchlist.length) return;
+    const syms = watchlist.map(w =>
+      w.exchange === 'BSE' ? `${w.symbol}.BO` : w.exchange === 'NSE' ? `${w.symbol}.NS` : w.symbol
+    ).join(',');
+    fetch(`/api/prices?symbols=${encodeURIComponent(syms)}`)
+      .then(r => r.json())
+      .then((d: Record<string, PriceData>) => {
+        const m: Record<string, PriceData> = {};
+        for (const [k, v] of Object.entries(d)) m[k.replace('.NS', '').replace('.BO', '')] = v;
+        setWatchPrices(m);
+      })
+      .catch(() => {});
+  }, [watchlist]);
+
+  // Recent scan picks from scan_log
+  useEffect(() => {
+    if (!session) return;
+    fetch(`${SUPA_URL}/rest/v1/scan_log?select=symbol,exchange,price_at,rsi14,scanned_at&scan_score=eq.Strong%20Momentum&order=scanned_at.desc&limit=6`, {
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
+    })
+      .then(r => r.json())
+      .then(rows => setScanPicks(Array.isArray(rows) ? rows.filter((r: { price_at?: unknown }) => r.price_at != null) : []))
+      .catch(() => {});
+  }, [session]);
 
   const name = user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Trader';
 
@@ -738,6 +778,42 @@ export default function DashboardPage() {
           )}
         </Link>
       </div>
+
+      {/* Recent scan picks */}
+      {scanPicks.length > 0 && (
+        <div style={{ ...card, marginBottom:16, borderColor:'rgba(0,212,160,0.22)', background:'linear-gradient(135deg,rgba(0,212,160,0.06),var(--card-bg))' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+              <div style={{ width:30, height:30, borderRadius:9, background:'rgba(0,212,160,0.14)', border:'1px solid rgba(0,212,160,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🤖</div>
+              <div>
+                <div style={{ fontSize:13, fontWeight:800 }}>Recent Scan Picks</div>
+                <div style={{ fontSize:11, color:'var(--dim)' }}>Latest strong momentum · algorithmic scan output</div>
+              </div>
+            </div>
+            <Link href="/dashboard/signals" style={{ fontSize:11, color:'var(--grn)', fontWeight:700, textDecoration:'none', padding:'4px 12px', border:'1px solid rgba(0,212,160,0.3)', borderRadius:8 }}>Full Scan →</Link>
+          </div>
+          <div className="g3" style={{ display:'grid', gap:10, marginBottom:10 }}>
+            {scanPicks.slice(0, 3).map((p, i) => (
+              <Link key={`${p.symbol}-${i}`} href={`/stocks/${p.symbol.toLowerCase()}`}
+                style={{ textDecoration:'none', background:'rgba(0,212,160,0.07)', border:'1px solid rgba(0,212,160,0.2)', borderRadius:12, padding:'14px 15px', display:'flex', flexDirection:'column', gap:5 }}>
+                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                  <div style={{ fontSize:14, fontWeight:900, letterSpacing:-0.3 }}>{p.symbol}</div>
+                  <div style={{ fontSize:9, fontWeight:800, color:'var(--grn)', background:'rgba(0,212,160,0.12)', border:'1px solid rgba(0,212,160,0.3)', borderRadius:6, padding:'2px 7px', textTransform:'uppercase' as const, letterSpacing:0.5 }}>Strong</div>
+                </div>
+                <div style={{ fontSize:13, fontWeight:700 }}>₹{Number(p.price_at).toLocaleString('en-IN', { maximumFractionDigits:2 })}</div>
+                {p.rsi14 != null && (
+                  <div style={{ fontSize:10, color:'var(--dim)' }}>
+                    RSI <span style={{ color: p.rsi14 < 45 ? 'var(--grn)' : p.rsi14 > 65 ? 'var(--red)' : 'var(--ylw)', fontWeight:700 }}>{Number(p.rsi14).toFixed(0)}</span>
+                    <span style={{ marginLeft:6, color:'var(--dim2)' }}>· {p.exchange}</span>
+                  </div>
+                )}
+                <div style={{ fontSize:9, color:'var(--dim2)', marginTop:2 }}>{new Date(p.scanned_at).toLocaleDateString('en-IN', { day:'2-digit', month:'short' })}</div>
+              </Link>
+            ))}
+          </div>
+          <div style={{ fontSize:10, color:'var(--dim2)' }}>⚠️ NOT SEBI REGISTERED · Algorithmic scan output — not investment advice · DYOR</div>
+        </div>
+      )}
 
       {/* ETF & MF breakdown */}
       {etfH.length > 0 && (
@@ -999,6 +1075,42 @@ export default function DashboardPage() {
             </div>
           </div>
           <HomeSectorPerf />
+
+          {/* Watchlist preview */}
+          {watchlist.length > 0 && (
+            <div style={{ ...card, marginTop:14 }}>
+              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+                <div style={{ fontSize:13, fontWeight:800 }}>⭐ Watchlist</div>
+                <Link href="/dashboard/watchlist" style={{ fontSize:11, color:'var(--bluL)', fontWeight:600, textDecoration:'none' }}>All →</Link>
+              </div>
+              <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
+                {watchlist.slice(0, 6).map(w => {
+                  const p = watchPrices[w.symbol];
+                  const isIndia = w.exchange === 'NSE' || w.exchange === 'BSE';
+                  const col = p?.change_pct == null ? 'var(--dim)' : p.change_pct >= 0 ? 'var(--grn)' : 'var(--red)';
+                  return (
+                    <Link key={w.id} href={`/stocks/${w.symbol.toLowerCase()}`}
+                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', background:'var(--surf2)', borderRadius:9, textDecoration:'none' }}>
+                      <div>
+                        <div style={{ fontSize:12, fontWeight:700 }}>{w.symbol}</div>
+                        <div style={{ fontSize:9.5, color:'var(--dim)', marginTop:1 }}>{w.exchange}</div>
+                      </div>
+                      <div style={{ textAlign:'right' }}>
+                        <div style={{ fontSize:12, fontWeight:800 }}>
+                          {p?.price != null ? (isIndia ? `₹${p.price.toLocaleString('en-IN', { maximumFractionDigits:2 })}` : `$${p.price.toFixed(2)}`) : '—'}
+                        </div>
+                        {p?.change_pct != null && (
+                          <div style={{ fontSize:10, fontWeight:700, color:col }}>
+                            {p.change_pct >= 0 ? '+' : ''}{p.change_pct.toFixed(2)}%
+                          </div>
+                        )}
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
 import { useTheme } from '@/components/ThemeProvider';
+import { usePlan } from '@/lib/use-plan';
 
 // 4 primary tabs — mirrors sidebar tab structure
 const PRIMARY_TABS = [
@@ -47,8 +48,14 @@ const MORE_SECTIONS = [
       { href: '/dashboard/upgrade', icon: '⚡', label: 'Upgrade Plan'   },
       { href: '/dashboard/brokers', icon: '🔗', label: 'Connect Broker' },
       { href: '/dashboard/refer',   icon: '🎁', label: 'Refer & Earn'   },
-      { href: '/risk-disclosure',   icon: '⚠️', label: 'Risk Disclosure' },
+      { href: '/risk',              icon: '⚠️', label: 'Risk Disclosure' },
       { href: '/sign-out',          icon: '🚪', label: 'Sign Out'       },
+    ],
+  },
+  {
+    label: 'Admin',
+    links: [
+      { href: '/admin', icon: '🛡️', label: 'Admin Console' },
     ],
   },
 ];
@@ -57,6 +64,7 @@ export function MobileBottomNav() {
   const path = usePathname();
   const [moreOpen, setMoreOpen] = useState(false);
   const { theme, toggle } = useTheme();
+  const { isAdmin } = usePlan();
 
   const allMoreLinks = MORE_SECTIONS.flatMap(s => s.links);
   const isMoreActive = allMoreLinks.some(l => path === l.href || (l.href !== '/dashboard' && path.startsWith(l.href)));
@@ -102,7 +110,7 @@ export function MobileBottomNav() {
             </button>
 
             {/* Grouped sections */}
-            {MORE_SECTIONS.map(section => (
+            {MORE_SECTIONS.filter(s => s.label !== 'Admin' || isAdmin).map(section => (
               <div key={section.label}>
                 <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--dim)', letterSpacing: 1, textTransform: 'uppercase', padding: '10px 16px 4px' }}>
                   {section.label}

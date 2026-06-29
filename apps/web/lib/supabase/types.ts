@@ -1,4 +1,4 @@
-export type Plan = 'free' | 'starter' | 'pro' | 'elite';
+export type Plan = 'free' | 'starter' | 'pro' | 'elite' | 'admin';
 export type MlClass = 'Momentum' | 'Swing' | 'Accumulate' | 'Hold' | 'Exit' | 'Dead' | 'Watch';
 export type SignalType = 'BUY' | 'SELL' | 'HOLD';
 export type TradeStatus = 'open' | 'win' | 'sl' | 'hold';

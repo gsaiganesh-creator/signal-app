@@ -11,6 +11,7 @@ const FEATURE_LABELS: Record<PlanFeature, { name: string; tier: string; desc: st
   'equity-comp':         { name: 'ESPP & RSU Tracker',    tier: 'Pro',      desc: 'Track equity compensation grants and vesting' },
   'paper-trading-full':  { name: 'Paper Trading',         tier: 'Starter+', desc: 'Unlimited virtual trades' },
   'track-record':        { name: 'Track Record',          tier: 'Starter+', desc: 'P&L history and performance analytics' },
+  'admin':               { name: 'Admin Console',         tier: 'Admin',    desc: 'Co-founder admin access only' },
 };
 
 export function ProGate({ feature, children }: { feature: PlanFeature; children: React.ReactNode }) {

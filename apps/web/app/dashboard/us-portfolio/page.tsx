@@ -197,6 +197,7 @@ export default function USPortfolioPage() {
   const [mlSignals, setMlSignals] = useState<Record<string, MLSignal>>({});
   const [mlLoading, setMlLoading] = useState(false);
   const [mlExpanded, setMlExpanded] = useState(false);
+  const [contentTab, setContentTab] = useState<'holdings' | 'signals' | 'espp'>('holdings');
 
   // Close port dropdown on outside click/scroll
   useEffect(() => {
@@ -619,6 +620,24 @@ export default function USPortfolioPage() {
         </div>
       )}
 
+      {/* Content-type tabs */}
+      <div style={{ display:'flex', gap:6, marginBottom:16, borderBottom:'1px solid var(--bdr)', paddingBottom:0 }}>
+        {([
+          { key:'holdings', label:'📋 Holdings', desc:'P&L + table' },
+          { key:'signals',  label:'🤖 ML Signals', desc:'Momentum scan' },
+          { key:'espp',     label:'📊 ESPP & RSU', desc:'Grants tracker' },
+        ] as const).map(t => (
+          <button key={t.key} onClick={() => setContentTab(t.key)}
+            style={{ height:36, padding:'0 16px', borderRadius:0, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit',
+              fontSize:13, fontWeight: contentTab === t.key ? 700 : 500,
+              color: contentTab === t.key ? 'var(--bluL)' : 'var(--dim)',
+              borderBottom: contentTab === t.key ? '2px solid var(--bluL)' : '2px solid transparent',
+              marginBottom:-1, transition:'all 0.15s' }}>
+            {t.label}
+          </button>
+        ))}
+      </div>
+
       {/* US Indices bar */}
       <div style={{ ...card, padding:'12px 18px', marginBottom:16 }}>
         <div className="g4" style={{ display:'grid', gap:10 }}>
@@ -638,7 +657,7 @@ export default function USPortfolioPage() {
         </div>
       </div>
       {/* RSU / ESPP summary card */}
-      <div style={{ ...card, background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.25)', marginBottom:16, padding:'16px 20px' }}>
+      {contentTab === 'espp' && <div style={{ ...card, background:'rgba(139,92,246,0.06)', border:'1px solid rgba(139,92,246,0.25)', marginBottom:16, padding:'16px 20px' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: rsuCount > 0 ? 14 : 0 }}>
           <div>
             <div style={{ fontSize:13, fontWeight:700 }}>📊 ESPP &amp; RSU Grants</div>
@@ -668,10 +687,63 @@ export default function USPortfolioPage() {
             ))}
           </div>
         )}
-      </div>
+      </div>}
+
+      {/* ESPP & RSU grants table */}
+      {contentTab === 'espp' && grants.length > 0 && (
+        <div style={{ ...card, marginBottom:20 }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div style={{ fontSize:13, fontWeight:700 }}>Your Grants</div>
+            <Link href="/dashboard/equity-comp" style={{ fontSize:11, color:'var(--pur)', fontWeight:600, textDecoration:'none' }}>Full tracker →</Link>
+          </div>
+          <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
+                <tr>{['Symbol','Type','Shares','Grant Price','CMP','Unrealised P&L'].map((h,i) => (
+                  <th key={i} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'5px 10px', textAlign:'left', borderBottom:'1px solid rgba(139,92,246,0.2)', textTransform:'uppercase' as const, letterSpacing:0.4, whiteSpace:'nowrap' as const }}>{h}</th>
+                ))}</tr>
+              </thead>
+              <tbody>
+                {grants.map((g, i) => {
+                  const sym  = (g.symbol||'').trim().toUpperCase();
+                  const cmp  = grantPrices[sym]?.price ?? null;
+                  const pl   = cmp != null && g.grant_price > 0 ? (cmp - g.grant_price) * g.shares : null;
+                  const plPct = (pl != null && g.grant_price > 0) ? (cmp! - g.grant_price) / g.grant_price * 100 : null;
+                  return (
+                    <tr key={i} onMouseEnter={e=>(e.currentTarget.style.background='rgba(139,92,246,0.05)')} onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(139,92,246,0.1)', fontWeight:700, fontSize:13 }}>{sym}</td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(139,92,246,0.1)', fontSize:11 }}>
+                        <span style={{ padding:'2px 8px', borderRadius:20, background:'rgba(139,92,246,0.12)', border:'1px solid rgba(139,92,246,0.3)', color:'var(--pur)', fontSize:10, fontWeight:700 }}>{g.type}</span>
+                      </td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(139,92,246,0.1)', fontSize:12 }}>{g.shares.toLocaleString()}</td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(139,92,246,0.1)', fontSize:12 }}>${g.grant_price.toFixed(2)}</td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(139,92,246,0.1)', fontSize:12, fontWeight:700 }}>{cmp != null ? `$${cmp.toFixed(2)}` : '—'}</td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(139,92,246,0.1)', fontSize:12, fontWeight:700, color: pl == null ? 'var(--dim)' : pl >= 0 ? 'var(--grn)' : 'var(--red)', whiteSpace:'nowrap' as const }}>
+                        {pl != null ? `${pl >= 0 ? '+' : '-'}$${Math.abs(pl).toFixed(0)}` : '—'}
+                        {plPct != null && <div style={{ fontSize:10, fontWeight:700 }}>{plPct >= 0 ? '+' : ''}{plPct.toFixed(1)}%</div>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {contentTab === 'espp' && grants.length === 0 && (
+        <div style={{ ...card, textAlign:'center', padding:'40px 20px', marginBottom:20 }}>
+          <div style={{ fontSize:28, marginBottom:10 }}>📊</div>
+          <div style={{ fontSize:14, fontWeight:700, marginBottom:8 }}>No grants added yet</div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>Import your broker file or add RSU/ESPP grants manually.</div>
+          <Link href="/dashboard/equity-comp" style={{ height:38, padding:'0 20px', borderRadius:9, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.35)', color:'var(--pur)', fontSize:13, fontWeight:700, display:'inline-flex', alignItems:'center', textDecoration:'none' }}>
+            Go to ESPP & RSU Tracker →
+          </Link>
+        </div>
+      )}
 
       {/* Key metrics */}
-      {merged.length > 0 && (
+      {contentTab === 'holdings' && merged.length > 0 && (
         <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12, marginBottom:20 }}>
           {[
             { label:'Total Invested', val:`$${totalInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `₹${(totalInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})} equiv` : '', color:'var(--txt)' },
@@ -700,7 +772,7 @@ export default function USPortfolioPage() {
       )}
 
       {/* ML What-it-analyzes panel */}
-      {merged.length > 0 && (
+      {contentTab === 'signals' && merged.length > 0 && (
         <div style={{ ...card, marginBottom:12, background:'linear-gradient(135deg,rgba(79,111,250,0.07),rgba(139,92,246,0.04))', borderColor:'rgba(79,111,250,0.22)' }}>
           <button onClick={() => setMlExpanded(v => !v)}
             style={{ width:'100%', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'space-between', padding:0 }}>
@@ -749,8 +821,66 @@ export default function USPortfolioPage() {
         </div>
       )}
 
+      {/* ML Signals summary table */}
+      {contentTab === 'signals' && merged.length > 0 && (
+        <div style={{ ...card, marginBottom:20, borderColor:'rgba(79,111,250,0.18)', background:'linear-gradient(160deg,rgba(79,111,250,0.04),var(--card-bg))' }}>
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
+            <div style={{ fontSize:13, fontWeight:700 }}>🤖 Momentum Zones {mlLoading && <span style={{ fontSize:11, color:'var(--dim)', fontWeight:400 }}>· scanning…</span>}</div>
+            <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
+          </div>
+          <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
+                <tr>{['Stock','CMP','RSI','EMA Trend','Momentum Zone','BB%','Vol Ratio'].map((h, i) => (
+                  <th key={i} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'5px 10px', textAlign:'left', borderBottom:'1px solid rgba(79,111,250,0.15)', textTransform:'uppercase' as const, letterSpacing:0.4, whiteSpace:'nowrap' as const }}>{h}</th>
+                ))}</tr>
+              </thead>
+              <tbody>
+                {[...allHoldings].sort((a,b) => a.symbol.localeCompare(b.symbol)).map(h => {
+                  const p   = prices[h.symbol];
+                  const ms  = mlSignals[h.symbol];
+                  const emaTrend = ms?.ema20 && ms?.ema50 ? (ms.ema20 > ms.ema50 ? '↑ Up' : '↓ Down') : '—';
+                  const emaCol   = ms?.ema20 && ms?.ema50 ? (ms.ema20 > ms.ema50 ? 'var(--grn)' : 'var(--red)') : 'var(--dim)';
+                  return (
+                    <tr key={h.id} onClick={() => selectHolding(h)} style={{ cursor:'pointer' }}
+                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(79,111,250,0.05)')}
+                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontWeight:700, fontSize:13 }}>{h.symbol}</td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:12, whiteSpace:'nowrap' as const }}>
+                        {p?.price != null ? `$${p.price.toFixed(2)}` : '—'}
+                        {p?.change_pct != null && <div style={{ fontSize:10, color: p.change_pct >= 0 ? 'var(--grn)' : 'var(--red)' }}>{p.change_pct >= 0 ? '+' : ''}{p.change_pct.toFixed(2)}%</div>}
+                      </td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:12 }}>
+                        {ms?.rsi14 != null ? (
+                          <span style={{ fontWeight:700, color: ms.rsi14 < 35 ? 'var(--grn)' : ms.rsi14 > 70 ? 'var(--red)' : 'var(--ylw)' }}>{ms.rsi14.toFixed(0)}</span>
+                        ) : mlLoading ? '⏳' : '—'}
+                      </td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:11, fontWeight:700, color:emaCol }}>{ms ? emaTrend : mlLoading ? '⏳' : '—'}</td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', whiteSpace:'nowrap' as const }}>
+                        {ms ? (
+                          <span style={{ display:'inline-block', padding:'2px 9px', borderRadius:20, fontSize:11, fontWeight:800, background:ms.bg, color:ms.color, border:`1px solid ${ms.bdr}` }}>{ms.label}</span>
+                        ) : mlLoading ? <span style={{ fontSize:11, color:'var(--dim2)' }}>⏳</span> : <span style={{ color:'var(--dim2)', fontSize:11 }}>—</span>}
+                      </td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:11 }}>
+                        {ms?.bb_pct != null ? `${(ms.bb_pct * 100).toFixed(0)}%` : '—'}
+                      </td>
+                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:11 }}>
+                        {ms?.vol_ratio != null ? (
+                          <span style={{ color: ms.vol_ratio > 1.5 ? 'var(--grn)' : 'var(--dim)', fontWeight: ms.vol_ratio > 1.5 ? 700 : 400 }}>{ms.vol_ratio.toFixed(2)}x</span>
+                        ) : '—'}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+          <div style={{ fontSize:10, color:'var(--dim2)', marginTop:10 }}>⚠️ NOT SEC REGISTERED · Algorithmic scan — not investment advice · DYOR</div>
+        </div>
+      )}
+
       {/* Holdings table */}
-      {merged.length > 0 ? (
+      {contentTab === 'holdings' && (merged.length > 0 ? (
         <div style={{ ...card, marginBottom:20, borderColor:'rgba(79,111,250,0.18)', background:'linear-gradient(160deg,rgba(79,111,250,0.04),var(--card-bg))' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12, flexWrap:'wrap', gap:8 }}>
             <div style={{ fontSize:13, fontWeight:700 }}>Holdings {mlLoading && <span style={{ fontSize:11, color:'var(--dim)', fontWeight:400 }}>· fetching ML signals…</span>}</div>
@@ -872,7 +1002,7 @@ export default function USPortfolioPage() {
             </>
           )}
         </div>
-      )}
+      ))}
 
 
 

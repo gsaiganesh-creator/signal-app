@@ -27,6 +27,20 @@ interface TADetail {
   signals: { type: string; reason: string }[];
 }
 type Num = number | null;
+interface FundDetail {
+  trailing_pe: Num; forward_pe: Num; price_to_book: Num; ev_ebitda: Num;
+  gross_margin: Num; operating_margin: Num; net_margin: Num; roe: Num;
+  debt_to_equity: Num; current_ratio: Num; revenue_growth: Num; earnings_growth: Num;
+  dividend_yield: Num; market_cap: Num;
+  analyst_count: Num; analyst_consensus: string | null; analyst_target: Num; upside_to_target: Num;
+  next_earnings_date: string | null; days_to_earnings: Num;
+  quarterly_results: Array<{ quarter: string; revenue_cr: number | null; net_income_cr: number | null; net_margin: number | null }>;
+  insider_pct: Num; institution_pct: Num; public_pct: Num;
+}
+interface PeerRow {
+  symbol: string; name: string; price: Num; change_pct: Num;
+  trailing_pe: Num; roe: Num; market_cap: Num;
+}
 interface USDetail {
   symbol: string; name: string; price: Num; change_pct: Num;
   ema20: Num; ema50: Num; ema200: Num; rsi14: Num; macd: Num;
@@ -165,10 +179,22 @@ function zs(z: USSignal['zone']) { return ZONE_STYLE[z] ?? ZONE_STYLE['N/A']; }
 // ── India Detail Drawer ───────────────────────────────────────────────────────
 function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) {
   const [ta, setTA] = useState<TADetail | null>(null);
+  const [fund, setFund] = useState<FundDetail | null>(null);
+  const [peers, setPeers] = useState<PeerRow[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
-    setLoading(true);
-    fetchTA(sig.symbol).then(d => { setTA(d); setLoading(false); });
+    setLoading(true); setFund(null); setPeers([]);
+    const sym = sig.symbol.replace(/\.(NS|BO)$/i, '');
+    const ex  = sig.symbol.endsWith('.BO') ? 'BSE' : 'NSE';
+    Promise.all([
+      fetchTA(sig.symbol),
+      fetch(`/api/stock-detail?symbol=${sym}&exchange=${ex}`).then(r => r.ok ? r.json() as Promise<FundDetail> : null).catch(() => null),
+      fetch(`/api/peer-compare?symbol=${sym}&exchange=${ex}`).then(r => r.ok ? r.json() : null).catch(() => null),
+    ]).then(([taData, fundData, peerData]) => {
+      setTA(taData); setFund(fundData);
+      setPeers((peerData as { peers?: PeerRow[] } | null)?.peers ?? []);
+      setLoading(false);
+    });
   }, [sig.symbol]);
   const rr = ta
     ? ((ta.target_1 - ta.entry_hi) / (ta.entry_hi - ta.stop)).toFixed(1)
@@ -290,6 +316,133 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
               ⚠️ Full technical analysis unavailable. ML API may be offline.
             </div>
           )}
+
+          {/* ── Fundamentals ── */}
+          {!loading && fund && (fund.trailing_pe != null || fund.roe != null || fund.market_cap != null) && (
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Fundamentals</div>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+                {[
+                  { l:'P/E (TTM)',   v: fund.trailing_pe   != null ? `${fund.trailing_pe}×`  : '—', c: fund.trailing_pe != null && fund.trailing_pe < 20 ? 'var(--grn)' : fund.trailing_pe != null && fund.trailing_pe > 40 ? 'var(--red)' : 'var(--txt)' },
+                  { l:'P/B',        v: fund.price_to_book  != null ? `${fund.price_to_book}×` : '—', c:'var(--txt)' },
+                  { l:'EV/EBITDA',  v: fund.ev_ebitda      != null ? `${fund.ev_ebitda}×`     : '—', c:'var(--txt)' },
+                  { l:'ROE',        v: fund.roe             != null ? `${fund.roe}%`           : '—', c: fund.roe != null && fund.roe > 15 ? 'var(--grn)' : 'var(--txt)' },
+                  { l:'Net Margin', v: fund.net_margin      != null ? `${fund.net_margin}%`    : '—', c: fund.net_margin != null && fund.net_margin > 15 ? 'var(--grn)' : 'var(--txt)' },
+                  { l:'D/E Ratio',  v: fund.debt_to_equity != null ? `${fund.debt_to_equity}` : '—', c: fund.debt_to_equity != null && fund.debt_to_equity > 2 ? 'var(--red)' : 'var(--txt)' },
+                  { l:'Rev Growth', v: fund.revenue_growth  != null ? `${fund.revenue_growth > 0 ? '+' : ''}${fund.revenue_growth}%` : '—', c: fund.revenue_growth != null && fund.revenue_growth > 0 ? 'var(--grn)' : 'var(--txt)' },
+                  { l:'Div Yield',  v: fund.dividend_yield  != null ? `${fund.dividend_yield}%` : '—', c:'var(--ylw)' },
+                  { l:'Mkt Cap',    v: fund.market_cap      != null ? fund.market_cap >= 1e12 ? `₹${(fund.market_cap/1e12).toFixed(1)}L Cr` : fund.market_cap >= 1e9 ? `₹${(fund.market_cap/1e9).toFixed(0)}K Cr` : `₹${(fund.market_cap/1e7).toFixed(0)} Cr` : '—', c:'var(--dim)' },
+                ].map(row => (
+                  <div key={row.l} style={{ background:'var(--surf2)', borderRadius:10, padding:'9px 12px' }}>
+                    <div style={{ fontSize:10, color:'var(--dim)', marginBottom:3 }}>{row.l}</div>
+                    <div style={{ fontSize:14, fontWeight:800, color:row.c }}>{row.v}</div>
+                  </div>
+                ))}
+              </div>
+              {fund.analyst_count != null && fund.analyst_target != null && (
+                <div style={{ marginTop:8, padding:'10px 14px', background:'rgba(23,64,245,0.06)', border:'1px solid rgba(23,64,245,0.18)', borderRadius:10, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                  <div>
+                    <div style={{ fontSize:10, color:'var(--dim)', marginBottom:2 }}>ANALYST CONSENSUS ({fund.analyst_count} analysts)</div>
+                    <div style={{ fontSize:13, fontWeight:800, color: fund.analyst_consensus === 'buy' || fund.analyst_consensus === 'strong_buy' ? 'var(--grn)' : fund.analyst_consensus === 'sell' ? 'var(--red)' : 'var(--ylw)' }}>
+                      {(fund.analyst_consensus ?? 'N/A').replace('_',' ').toUpperCase()}
+                    </div>
+                  </div>
+                  <div style={{ textAlign:'right' }}>
+                    <div style={{ fontSize:10, color:'var(--dim)', marginBottom:2 }}>TARGET PRICE</div>
+                    <div style={{ fontSize:13, fontWeight:800 }}>₹{fund.analyst_target?.toLocaleString('en-IN')}{fund.upside_to_target != null && <span style={{ fontSize:11, color: fund.upside_to_target > 0 ? 'var(--grn)' : 'var(--red)', marginLeft:4 }}>{fund.upside_to_target > 0 ? '+' : ''}{fund.upside_to_target}%</span>}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── Shareholding ── */}
+          {!loading && fund && (fund.insider_pct != null || fund.institution_pct != null) && (
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Shareholding Pattern</div>
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {[
+                  { label:'Promoter / Insider', pct: fund.insider_pct, color:'var(--bluL)' },
+                  { label:'Institutions (FII + DII)', pct: fund.institution_pct, color:'var(--grn)' },
+                  { label:'Public', pct: fund.public_pct, color:'var(--dim)' },
+                ].filter(r => r.pct != null).map(row => (
+                  <div key={row.label}>
+                    <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:4 }}>
+                      <span style={{ color:'var(--dim)' }}>{row.label}</span>
+                      <span style={{ fontWeight:800, color: row.color }}>{row.pct}%</span>
+                    </div>
+                    <div style={{ height:6, background:'var(--bdr)', borderRadius:3, overflow:'hidden' }}>
+                      <div style={{ height:'100%', width:`${Math.min(100, row.pct ?? 0)}%`, background: row.color, borderRadius:3, transition:'width 0.5s' }}/>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ fontSize:10, color:'var(--dim2)', marginTop:2 }}>Source: Yahoo Finance · Approximate — not official NSE shareholding data</div>
+              </div>
+            </div>
+          )}
+
+          {/* ── Peer Comparison ── */}
+          {!loading && peers.length > 0 && (
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Peer Comparison</div>
+              <div style={{ overflowX:'auto' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                  <thead>
+                    <tr style={{ borderBottom:'1px solid var(--bdr)' }}>
+                      {['Stock','Price','Chg%','P/E','ROE'].map(h => (
+                        <th key={h} style={{ padding:'5px 8px', textAlign: h === 'Stock' ? 'left' : 'right', color:'var(--dim)', fontWeight:700, fontSize:10 }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {peers.map(p => (
+                      <tr key={p.symbol} style={{ borderBottom:'1px solid var(--bdr)' }}>
+                        <td style={{ padding:'7px 8px', fontWeight:700, fontSize:11 }}>{p.symbol}</td>
+                        <td style={{ padding:'7px 8px', textAlign:'right', fontSize:11 }}>{p.price != null ? `₹${p.price.toLocaleString('en-IN',{maximumFractionDigits:1})}` : '—'}</td>
+                        <td style={{ padding:'7px 8px', textAlign:'right', fontSize:11, fontWeight:700, color: p.change_pct != null ? (p.change_pct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--dim)' }}>
+                          {p.change_pct != null ? `${p.change_pct >= 0 ? '+' : ''}${p.change_pct.toFixed(2)}%` : '—'}
+                        </td>
+                        <td style={{ padding:'7px 8px', textAlign:'right', fontSize:11, color: p.trailing_pe != null && p.trailing_pe < 20 ? 'var(--grn)' : p.trailing_pe != null && p.trailing_pe > 40 ? 'var(--red)' : 'var(--txt)' }}>
+                          {p.trailing_pe != null ? `${p.trailing_pe}×` : '—'}
+                        </td>
+                        <td style={{ padding:'7px 8px', textAlign:'right', fontSize:11, color: p.roe != null && p.roe > 15 ? 'var(--grn)' : 'var(--txt)' }}>
+                          {p.roe != null ? `${p.roe}%` : '—'}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* ── Quarterly Results ── */}
+          {!loading && fund?.quarterly_results?.length ? (
+            <div style={{ marginBottom:20 }}>
+              <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Quarterly Results</div>
+              <div style={{ overflowX:'auto' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                  <thead>
+                    <tr style={{ borderBottom:'1px solid var(--bdr)' }}>
+                      {['Quarter','Revenue (Cr)','Net Profit (Cr)','Margin'].map(h => (
+                        <th key={h} style={{ padding:'6px 8px', textAlign:'right', color:'var(--dim)', fontWeight:700, fontSize:10, whiteSpace:'nowrap' }}>{h}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {fund.quarterly_results.map((q, i) => (
+                      <tr key={i} style={{ borderBottom:'1px solid var(--bdr)' }}>
+                        <td style={{ padding:'8px 8px', fontWeight:700, fontSize:11 }}>{q.quarter}</td>
+                        <td style={{ padding:'8px 8px', textAlign:'right', color:'var(--txt)' }}>{q.revenue_cr != null ? `₹${Number(q.revenue_cr).toLocaleString('en-IN')}` : '—'}</td>
+                        <td style={{ padding:'8px 8px', textAlign:'right', color: q.net_income_cr != null && q.net_income_cr > 0 ? 'var(--grn)' : 'var(--red)' }}>{q.net_income_cr != null ? `₹${Number(q.net_income_cr).toLocaleString('en-IN')}` : '—'}</td>
+                        <td style={{ padding:'8px 8px', textAlign:'right', color: q.net_margin != null && q.net_margin > 15 ? 'var(--grn)' : 'var(--txt)' }}>{q.net_margin != null ? `${q.net_margin}%` : '—'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ) : null}
         </div>
         <div style={{ padding:'14px 24px', borderTop:'1px solid var(--bdr)', background:'var(--surf2)' }}>
           <div style={{ fontSize:10, color:'var(--dim2)', marginBottom:8 }}>⚠️ NOT SEBI REGISTERED · ML signals are probabilistic · Not financial advice · DYOR</div>
@@ -478,17 +631,24 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
 }
 
 // ── Market Toggle ─────────────────────────────────────────────────────────────
-function MarketToggle({ market, onChange }: { market: 'india' | 'us'; onChange: (m: 'india' | 'us') => void }) {
+type Market = 'india' | 'us' | 'fundamental';
+const MARKET_OPTS: Array<{ key: Market; label: string; activeColor: string; activeBorder: string }> = [
+  { key:'india',       label:'🇮🇳 India (NSE)',      activeColor:'var(--ylw)',  activeBorder:'rgba(255,184,0,0.35)' },
+  { key:'us',          label:'🇺🇸 US (NYSE/NASDAQ)', activeColor:'var(--bluL)', activeBorder:'rgba(79,111,250,0.35)' },
+  { key:'fundamental', label:'📊 Fundamentals',       activeColor:'var(--grn)',  activeBorder:'rgba(0,212,160,0.35)' },
+];
+function MarketToggle({ market, onChange }: { market: Market; onChange: (m: Market) => void }) {
   return (
     <div style={{ display:'inline-flex', background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:12, padding:3, gap:2 }}>
-      {(['india','us'] as const).map(m => (
-        <button key={m} onClick={() => onChange(m)}
-          style={{ height:34, padding:'0 18px', borderRadius:9, border:'none', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', transition:'all 0.15s',
-            background: market === m ? (m === 'india' ? 'rgba(255,184,0,0.15)' : 'rgba(23,64,245,0.15)') : 'transparent',
-            color: market === m ? (m === 'india' ? 'var(--ylw)' : 'var(--bluL)') : 'var(--dim)',
-            boxShadow: market === m ? `0 0 0 1px ${m === 'india' ? 'rgba(255,184,0,0.35)' : 'rgba(79,111,250,0.35)'}` : 'none',
+      {MARKET_OPTS.map(opt => (
+        <button key={opt.key} onClick={() => onChange(opt.key)}
+          style={{ height:34, padding:'0 14px', borderRadius:9, border:'none', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', transition:'all 0.15s',
+            background: market === opt.key ? `${opt.activeColor.replace('var(--','').replace(')','')}-bg` : 'transparent',
+            backgroundColor: market === opt.key ? opt.activeBorder.replace('0.35','0.15') : 'transparent',
+            color: market === opt.key ? opt.activeColor : 'var(--dim)',
+            boxShadow: market === opt.key ? `0 0 0 1px ${opt.activeBorder}` : 'none',
           }}>
-          {m === 'india' ? '🇮🇳 India (NSE)' : '🇺🇸 US (NYSE/NASDAQ)'}
+          {opt.label}
         </button>
       ))}
     </div>
@@ -498,7 +658,7 @@ function MarketToggle({ market, onChange }: { market: 'india' | 'us'; onChange: 
 // ── Main Page ─────────────────────────────────────────────────────────────────
 export default function SignalsPage() {
   const { symbols: portfolioSymbols, portfolios, session } = usePortfolio();
-  const [market, setMarket] = useState<'india' | 'us'>('india');
+  const [market, setMarket] = useState<Market>('india');
 
   // India state
   const [mlSignals, setMlSignals] = useState<MLSignal[]>([]);
@@ -522,6 +682,22 @@ export default function SignalsPage() {
   const [usSearch,     setUsSearch]     = useState('');
   const [selectedUS,   setSelectedUS]   = useState<USSignal | null>(null);
   const [usPortSyms,   setUsPortSyms]   = useState<string[]>([]);
+
+  // Fundamental screener state
+  type FundStock = { symbol:string; sector:string; name:string; price:number|null; change_pct:number|null;
+    trailing_pe:number|null; price_to_book:number|null; roe:number|null; net_margin:number|null;
+    operating_margin:number|null; debt_to_equity:number|null; revenue_growth:number|null;
+    dividend_yield:number|null; market_cap:number|null };
+  const [fundResults,   setFundResults]   = useState<FundStock[]>([]);
+  const [fundLoading,   setFundLoading]   = useState(false);
+  const [fundLoaded,    setFundLoaded]    = useState(false);
+  const [fundSector,    setFundSector]    = useState('All');
+  const [fundCapBucket, setFundCapBucket] = useState('All');
+  const [fundPeMax,     setFundPeMax]     = useState('');
+  const [fundRoeMin,    setFundRoeMin]    = useState('');
+  const [fundDeMax,     setFundDeMax]     = useState('');
+  const [fundRevMin,    setFundRevMin]    = useState('');
+  const [fundSort,      setFundSort]      = useState<{ col: keyof FundStock; dir: 1 | -1 }>({ col:'market_cap', dir:-1 });
 
   // India search
   const [searchResults, setSearchResults] = useState<{ symbol:string; ticker:string; name:string; exchange:string }[]>([]);
@@ -593,6 +769,29 @@ export default function SignalsPage() {
     setUsLoaded(true);
   }, [usPortSyms, usLoaded]);
 
+  const loadFundamentals = useCallback(async () => {
+    setFundLoading(true);
+    // Import universe list from API module — hardcode here to avoid dynamic import
+    const BATCHES = [
+      'TCS,INFY,WIPRO,HCLTECH,TECHM,LTIM,MPHASIS,COFORGE,PERSISTENT,KPITTECH',
+      'HDFCBANK,ICICIBANK,KOTAKBANK,AXISBANK,SBIN,INDUSINDBK,FEDERALBNK,BANDHANBNK',
+      'BAJFINANCE,BAJAJFINSV,CHOLAFIN,MUTHOOTFIN,LICHSGFIN,MARUTI,TATAMOTORS,M&M,BAJAJ-AUTO,HEROMOTOCO',
+      'SUNPHARMA,CIPLA,DRREDDY,DIVISLAB,LUPIN,AUROPHARMA,ALKEM,EICHERMOT,TVSMOTOR',
+      'HINDUNILVR,ITC,NESTLEIND,BRITANNIA,DABUR,MARICO,GODREJCP,TATACONSUM',
+      'TATASTEEL,JSWSTEEL,HINDALCO,VEDL,SAIL,NMDC,RELIANCE,ONGC,NTPC,POWERGRID',
+      'COALINDIA,BPCL,DLF,GODREJPROP,OBEROIREALTY,PRESTIGE,BHARTIARTL,INDUSTOWER',
+      'TITAN,ASIANPAINT,PIDILITIND,HAVELLS,VOLTAS,TRENT,ULTRACEMCO,SHREECEM,ACC,AMBUJACEM',
+      'LT,ABB,SIEMENS,CUMMINSIND,APOLLOHOSP,FORTIS,MAXHEALTH,ADANIENT,ZOMATO,IRCTC,NAUKRI',
+    ];
+    const settled = await Promise.allSettled(
+      BATCHES.map(b => fetch(`/api/fundamental-scan?symbols=${encodeURIComponent(b)}`).then(r => r.ok ? r.json() as Promise<{results:FundStock[]}> : {results:[]}).catch(() => ({results:[]})))
+    );
+    const all: FundStock[] = settled.flatMap(r => r.status === 'fulfilled' ? r.value.results : []);
+    setFundResults(all);
+    setFundLoading(false);
+    setFundLoaded(true);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { loadIndia(); }, [loadIndia]);
   useEffect(() => { localStorage.setItem('signal_visited_signals', '1'); }, []);
   useEffect(() => { if (market === 'us') loadUS(); }, [market, loadUS]);
@@ -663,11 +862,11 @@ export default function SignalsPage() {
       {/* Header row — title + market toggle */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div>
-          <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color: market === 'india' ? 'var(--ylw)' : 'var(--bluL)', textTransform:'uppercase', marginBottom:4 }}>
-            {market === 'india' ? 'ML Technical Scan · NSE Screener' : 'Technical Scan · NYSE / NASDAQ'}
+          <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color: market === 'india' ? 'var(--ylw)' : market === 'fundamental' ? 'var(--grn)' : 'var(--bluL)', textTransform:'uppercase', marginBottom:4 }}>
+            {market === 'india' ? 'ML Technical Scan · NSE Screener' : market === 'fundamental' ? 'Fundamental Screener · NSE' : 'Technical Scan · NYSE / NASDAQ'}
           </div>
           <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5 }}>
-            {market === 'india' ? '🇮🇳 India Signals' : '🇺🇸 US Signals'}
+            {market === 'india' ? '🇮🇳 India Signals' : market === 'fundamental' ? '📊 Fundamental Scan' : '🇺🇸 US Signals'}
           </div>
         </div>
         <MarketToggle market={market} onChange={m => setMarket(m)} />
@@ -678,8 +877,9 @@ export default function SignalsPage() {
         <span style={{ fontSize:14, flexShrink:0 }}>🛠️</span>
         <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.65 }}>
           <strong style={{ color:'var(--ylw)' }}>Technical screening tool — not financial advice.</strong>{' '}
-          Momentum zones computed from RSI, EMA, volume and {market === 'india' ? 'sector strength' : 'analyst consensus'}. Shows where price is technically — not what to do.{' '}
-          {market === 'india' ? 'NOT SEBI registered.' : 'NOT SEC registered.'} DYOR.
+          {market === 'fundamental'
+            ? 'Fundamental data from Yahoo Finance — P/E, ROE, D/E, Revenue Growth. Screen ~80 curated NSE stocks. Data may be 24h delayed. NOT SEBI registered. DYOR.'
+            : `Momentum zones computed from RSI, EMA, volume and ${market === 'india' ? 'sector strength' : 'analyst consensus'}. Shows where price is technically — not what to do. ${market === 'india' ? 'NOT SEBI registered.' : 'NOT SEC registered.'} DYOR.`}
         </div>
       </div>
 
@@ -983,6 +1183,182 @@ export default function SignalsPage() {
           </div>
         </>
       )}
+
+      {/* ── FUNDAMENTAL SCREENER ─────────────────────────────────────────── */}
+      {market === 'fundamental' && (() => {
+        const SECTORS = ['All','IT','Banking','Finance','Auto','Pharma','FMCG','Metals','Energy','Realty','Telecom','Consumer','Cement','Infra','Hospital','Diversified'];
+        const CAP_BUCKETS = ['All','Large Cap (>₹20K Cr)','Mid Cap (₹5K–20K Cr)','Small Cap (<₹5K Cr)'];
+        const capFilter = (mc: number | null) => {
+          if (fundCapBucket === 'All' || mc == null) return true;
+          if (fundCapBucket.startsWith('Large')) return mc > 2e11;
+          if (fundCapBucket.startsWith('Mid'))   return mc >= 5e10 && mc <= 2e11;
+          return mc < 5e10;
+        };
+        const filtered = fundResults.filter(s => {
+          if (fundSector !== 'All' && s.sector !== fundSector) return false;
+          if (!capFilter(s.market_cap)) return false;
+          if (fundPeMax  && s.trailing_pe != null && s.trailing_pe > +fundPeMax)   return false;
+          if (fundRoeMin && s.roe         != null && s.roe          < +fundRoeMin) return false;
+          if (fundDeMax  && s.debt_to_equity != null && s.debt_to_equity > +fundDeMax) return false;
+          if (fundRevMin && s.revenue_growth != null && s.revenue_growth < +fundRevMin) return false;
+          return true;
+        }).sort((a, b) => {
+          const av = a[fundSort.col] as number | null;
+          const bv = b[fundSort.col] as number | null;
+          if (av == null && bv == null) return 0;
+          if (av == null) return 1;
+          if (bv == null) return -1;
+          return (av - bv) * fundSort.dir;
+        });
+
+        const fmtCap = (mc: number | null) => {
+          if (mc == null) return '—';
+          if (mc >= 1e12) return `₹${(mc/1e12).toFixed(1)}L Cr`;
+          if (mc >= 1e9)  return `₹${(mc/1e9).toFixed(0)}K Cr`;
+          return `₹${(mc/1e7).toFixed(0)} Cr`;
+        };
+        const sortBtn = (col: keyof FundStock, label: string) => (
+          <th key={col} onClick={() => setFundSort(s => ({ col, dir: s.col === col ? -s.dir as 1|-1 : -1 }))}
+            style={{ padding:'8px 10px', textAlign: col === 'symbol' || col === 'sector' || col === 'name' ? 'left' : 'right', color:'var(--dim)', fontWeight:700, fontSize:10, cursor:'pointer', whiteSpace:'nowrap', userSelect:'none' }}>
+            {label}{fundSort.col === col ? (fundSort.dir === -1 ? ' ▼' : ' ▲') : ''}
+          </th>
+        );
+
+        return (
+          <>
+            {/* Filter panel */}
+            <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'16px 18px', marginBottom:16 }}>
+              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))', gap:10, marginBottom:12 }}>
+                <div>
+                  <div style={{ fontSize:10, color:'var(--dim)', fontWeight:700, marginBottom:4 }}>SECTOR</div>
+                  <select value={fundSector} onChange={e => setFundSector(e.target.value)}
+                    style={{ width:'100%', height:34, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit' }}>
+                    {SECTORS.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                <div>
+                  <div style={{ fontSize:10, color:'var(--dim)', fontWeight:700, marginBottom:4 }}>MARKET CAP</div>
+                  <select value={fundCapBucket} onChange={e => setFundCapBucket(e.target.value)}
+                    style={{ width:'100%', height:34, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit' }}>
+                    {CAP_BUCKETS.map(s => <option key={s}>{s}</option>)}
+                  </select>
+                </div>
+                {[
+                  { label:'P/E MAX', val:fundPeMax, set:setFundPeMax, ph:'e.g. 25' },
+                  { label:'ROE MIN %', val:fundRoeMin, set:setFundRoeMin, ph:'e.g. 15' },
+                  { label:'D/E MAX', val:fundDeMax, set:setFundDeMax, ph:'e.g. 1.5' },
+                  { label:'REV GROWTH MIN %', val:fundRevMin, set:setFundRevMin, ph:'e.g. 10' },
+                ].map(f => (
+                  <div key={f.label}>
+                    <div style={{ fontSize:10, color:'var(--dim)', fontWeight:700, marginBottom:4 }}>{f.label}</div>
+                    <input value={f.val} onChange={e => f.set(e.target.value)} placeholder={f.ph} type="number"
+                      style={{ width:'100%', height:34, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit', boxSizing:'border-box' }} />
+                  </div>
+                ))}
+              </div>
+              <div style={{ display:'flex', gap:10, alignItems:'center' }}>
+                <button onClick={() => loadFundamentals()}
+                  disabled={fundLoading}
+                  style={{ height:38, padding:'0 22px', borderRadius:10, background:'var(--grn)', border:'none', color:'#000', fontWeight:800, fontSize:13, cursor:fundLoading ? 'wait' : 'pointer', fontFamily:'inherit', opacity: fundLoading ? 0.7 : 1 }}>
+                  {fundLoading ? '⏳ Scanning…' : fundLoaded ? '🔄 Re-scan' : '🔍 Run Scan'}
+                </button>
+                {fundLoaded && <span style={{ fontSize:11, color:'var(--dim)' }}>{filtered.length} of {fundResults.length} stocks</span>}
+                {(fundPeMax || fundRoeMin || fundDeMax || fundRevMin || fundSector !== 'All' || fundCapBucket !== 'All') && (
+                  <button onClick={() => { setFundSector('All'); setFundCapBucket('All'); setFundPeMax(''); setFundRoeMin(''); setFundDeMax(''); setFundRevMin(''); }}
+                    style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                    Clear filters
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {!fundLoaded && !fundLoading && (
+              <div style={{ textAlign:'center', padding:'48px 24px', background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14 }}>
+                <div style={{ fontSize:36, marginBottom:12 }}>📊</div>
+                <div style={{ fontSize:15, fontWeight:700, marginBottom:6 }}>Fundamental Screener</div>
+                <div style={{ fontSize:13, color:'var(--dim)', marginBottom:18 }}>Scans ~80 NSE stocks · P/E · ROE · D/E · Revenue Growth · Market Cap<br/>Set filters above and click Run Scan</div>
+                <button onClick={() => loadFundamentals()}
+                  style={{ height:40, padding:'0 28px', borderRadius:11, background:'var(--grn)', border:'none', color:'#000', fontWeight:800, fontSize:14, cursor:'pointer', fontFamily:'inherit' }}>
+                  🔍 Run Scan
+                </button>
+              </div>
+            )}
+
+            {fundLoading && (
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {Array.from({length:6}).map((_,i) => (
+                  <div key={i} style={{ height:44, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, animation:'pulse 1.5s ease-in-out infinite', opacity: 1 - i*0.12 }}/>
+                ))}
+                <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center' }}>Fetching fundamentals from Yahoo Finance…</div>
+              </div>
+            )}
+
+            {!fundLoading && fundLoaded && (
+              <div style={{ overflowX:'auto' }}>
+                <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
+                  <thead>
+                    <tr style={{ borderBottom:'2px solid var(--bdr)', background:'var(--surf)' }}>
+                      {sortBtn('symbol','Symbol')}
+                      {sortBtn('sector','Sector')}
+                      {sortBtn('price','Price')}
+                      {sortBtn('change_pct','Chg%')}
+                      {sortBtn('trailing_pe','P/E')}
+                      {sortBtn('price_to_book','P/B')}
+                      {sortBtn('roe','ROE%')}
+                      {sortBtn('net_margin','Net Margin')}
+                      {sortBtn('debt_to_equity','D/E')}
+                      {sortBtn('revenue_growth','Rev Growth')}
+                      {sortBtn('dividend_yield','Div Yield')}
+                      {sortBtn('market_cap','Mkt Cap')}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(s => (
+                      <tr key={s.symbol} style={{ borderBottom:'1px solid var(--bdr)', transition:'background 0.1s' }}
+                        onMouseEnter={e => (e.currentTarget.style.background = 'var(--surf)')}
+                        onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                        <td style={{ padding:'9px 10px', fontWeight:800 }}>{s.symbol}</td>
+                        <td style={{ padding:'9px 10px', color:'var(--dim)', fontSize:11 }}>{s.sector}</td>
+                        <td style={{ padding:'9px 10px', textAlign:'right' }}>{s.price != null ? `₹${s.price.toLocaleString('en-IN',{maximumFractionDigits:1})}` : '—'}</td>
+                        <td style={{ padding:'9px 10px', textAlign:'right', fontWeight:700, color: s.change_pct != null ? (s.change_pct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--dim)' }}>
+                          {s.change_pct != null ? `${s.change_pct >= 0 ? '+' : ''}${s.change_pct.toFixed(2)}%` : '—'}
+                        </td>
+                        <td style={{ padding:'9px 10px', textAlign:'right', color: s.trailing_pe != null ? (s.trailing_pe < 15 ? 'var(--grn)' : s.trailing_pe > 40 ? 'var(--red)' : 'var(--txt)') : 'var(--dim)' }}>
+                          {s.trailing_pe != null ? `${s.trailing_pe}×` : '—'}
+                        </td>
+                        <td style={{ padding:'9px 10px', textAlign:'right' }}>{s.price_to_book != null ? `${s.price_to_book}×` : '—'}</td>
+                        <td style={{ padding:'9px 10px', textAlign:'right', color: s.roe != null ? (s.roe > 20 ? 'var(--grn)' : s.roe < 8 ? 'var(--red)' : 'var(--txt)') : 'var(--dim)' }}>
+                          {s.roe != null ? `${s.roe}%` : '—'}
+                        </td>
+                        <td style={{ padding:'9px 10px', textAlign:'right', color: s.net_margin != null ? (s.net_margin > 15 ? 'var(--grn)' : s.net_margin < 5 ? 'var(--red)' : 'var(--txt)') : 'var(--dim)' }}>
+                          {s.net_margin != null ? `${s.net_margin}%` : '—'}
+                        </td>
+                        <td style={{ padding:'9px 10px', textAlign:'right', color: s.debt_to_equity != null ? (s.debt_to_equity < 0.5 ? 'var(--grn)' : s.debt_to_equity > 2 ? 'var(--red)' : 'var(--txt)') : 'var(--dim)' }}>
+                          {s.debt_to_equity != null ? s.debt_to_equity : '—'}
+                        </td>
+                        <td style={{ padding:'9px 10px', textAlign:'right', color: s.revenue_growth != null ? (s.revenue_growth > 15 ? 'var(--grn)' : s.revenue_growth < 0 ? 'var(--red)' : 'var(--txt)') : 'var(--dim)' }}>
+                          {s.revenue_growth != null ? `${s.revenue_growth > 0 ? '+' : ''}${s.revenue_growth}%` : '—'}
+                        </td>
+                        <td style={{ padding:'9px 10px', textAlign:'right', color:'var(--ylw)' }}>
+                          {s.dividend_yield != null ? `${s.dividend_yield}%` : '—'}
+                        </td>
+                        <td style={{ padding:'9px 10px', textAlign:'right', color:'var(--dim)' }}>{fmtCap(s.market_cap)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {filtered.length === 0 && (
+                  <div style={{ textAlign:'center', padding:'32px', color:'var(--dim)' }}>No stocks match current filters</div>
+                )}
+              </div>
+            )}
+
+            <div style={{ fontSize:11, color:'var(--dim2)', marginTop:12 }}>
+              Fundamental data from Yahoo Finance · ~80 curated NSE stocks · NOT SEBI REGISTERED · Not investment advice · DYOR · Data may be delayed
+            </div>
+          </>
+        );
+      })()}
 
       {selected  && <DetailDrawer   sig={selected}   onClose={() => setSelected(null)}  />}
       {selectedUS && <USDetailDrawer sig={selectedUS} onClose={() => setSelectedUS(null)} />}

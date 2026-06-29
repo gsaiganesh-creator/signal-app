@@ -1510,6 +1510,13 @@ export default function PortfolioPage() {
           stop_loss?: number; target1?: number; target2?: number;
           entry_low?: number; entry_high?: number;
           signals?: string[];
+          trailing_pe?: number; price_to_book?: number; ev_ebitda?: number;
+          roe?: number; net_margin?: number; debt_to_equity?: number;
+          revenue_growth?: number; dividend_yield?: number; market_cap?: number;
+          analyst_count?: number; analyst_consensus?: string; analyst_target?: number; upside_to_target?: number;
+          next_earnings_date?: string; days_to_earnings?: number;
+          insider_pct?: number; institution_pct?: number; public_pct?: number;
+          quarterly_results?: Array<{ quarter: string; revenue_cr: number | null; net_income_cr: number | null; net_margin: number | null }>;
         } | null;
         const clsKey = h.ml_class ?? classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
         const cls = BUCKET_META[clsKey];
@@ -1721,6 +1728,80 @@ export default function PortfolioPage() {
                         </div>
                       </div>
                     )}
+                  </div>
+                )}
+
+                {/* ── Fundamentals ── */}
+                {!detailLoading && d && (d.trailing_pe != null || d.roe != null || d.market_cap != null) && (
+                  <div style={{ padding:'0 18px 16px' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Fundamentals</div>
+                    <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7 }}>
+                      {[
+                        { l:'P/E',         v: d.trailing_pe   != null ? `${d.trailing_pe}×`  : null, c: d.trailing_pe != null && d.trailing_pe < 20 ? 'var(--grn)' : d.trailing_pe != null && d.trailing_pe > 40 ? 'var(--red)' : 'var(--txt)' },
+                        { l:'P/B',         v: d.price_to_book != null ? `${d.price_to_book}×` : null, c:'var(--txt)' },
+                        { l:'ROE',         v: d.roe           != null ? `${d.roe}%`           : null, c: d.roe != null && d.roe > 15 ? 'var(--grn)' : 'var(--txt)' },
+                        { l:'Net Margin',  v: d.net_margin    != null ? `${d.net_margin}%`    : null, c: d.net_margin != null && d.net_margin > 15 ? 'var(--grn)' : 'var(--txt)' },
+                        { l:'D/E',         v: d.debt_to_equity != null ? `${d.debt_to_equity}` : null, c: d.debt_to_equity != null && d.debt_to_equity > 2 ? 'var(--red)' : 'var(--txt)' },
+                        { l:'Rev Growth',  v: d.revenue_growth != null ? `${d.revenue_growth > 0 ? '+' : ''}${d.revenue_growth}%` : null, c: d.revenue_growth != null && d.revenue_growth > 0 ? 'var(--grn)' : 'var(--txt)' },
+                      ].filter(r => r.v != null).map(row => (
+                        <div key={row.l} style={{ background:'var(--surf2)', borderRadius:8, padding:'8px 10px' }}>
+                          <div style={{ fontSize:9, color:'var(--dim)', marginBottom:2 }}>{row.l}</div>
+                          <div style={{ fontSize:13, fontWeight:800, color:row.c }}>{row.v}</div>
+                        </div>
+                      ))}
+                    </div>
+                    {d.analyst_target != null && d.analyst_count != null && (
+                      <div style={{ marginTop:8, padding:'8px 12px', background:'rgba(23,64,245,0.06)', border:'1px solid rgba(23,64,245,0.18)', borderRadius:9, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+                        <div style={{ fontSize:10, color:'var(--dim)' }}>Analyst target ({d.analyst_count} analysts)</div>
+                        <div style={{ fontSize:13, fontWeight:800 }}>₹{d.analyst_target.toLocaleString('en-IN')}{d.upside_to_target != null && <span style={{ fontSize:10, color: d.upside_to_target > 0 ? 'var(--grn)' : 'var(--red)', marginLeft:4 }}>{d.upside_to_target > 0 ? '+' : ''}{d.upside_to_target}%</span>}</div>
+                      </div>
+                    )}
+                    {d.quarterly_results && d.quarterly_results.length > 0 && (
+                      <div style={{ marginTop:12 }}>
+                        <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:6 }}>Quarterly Results</div>
+                        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:11 }}>
+                          <thead><tr style={{ borderBottom:'1px solid var(--bdr)' }}>
+                            {['Qtr','Revenue','Net Profit','Margin'].map(h2 => (
+                              <th key={h2} style={{ padding:'4px 6px', textAlign:'right', color:'var(--dim)', fontWeight:600, fontSize:9 }}>{h2}</th>
+                            ))}
+                          </tr></thead>
+                          <tbody>
+                            {d.quarterly_results.map((q, i) => (
+                              <tr key={i} style={{ borderBottom:'1px solid var(--bdr)' }}>
+                                <td style={{ padding:'6px 6px', fontWeight:700, fontSize:10 }}>{q.quarter}</td>
+                                <td style={{ padding:'6px 6px', textAlign:'right', color:'var(--txt)', fontSize:10 }}>{q.revenue_cr != null ? `₹${Number(q.revenue_cr).toLocaleString('en-IN')}Cr` : '—'}</td>
+                                <td style={{ padding:'6px 6px', textAlign:'right', color: q.net_income_cr != null && q.net_income_cr > 0 ? 'var(--grn)' : 'var(--red)', fontSize:10 }}>{q.net_income_cr != null ? `₹${Number(q.net_income_cr).toLocaleString('en-IN')}Cr` : '—'}</td>
+                                <td style={{ padding:'6px 6px', textAlign:'right', color: q.net_margin != null && q.net_margin > 15 ? 'var(--grn)' : 'var(--txt)', fontSize:10 }}>{q.net_margin != null ? `${q.net_margin}%` : '—'}</td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── Shareholding ── */}
+                {!detailLoading && d && (d.insider_pct != null || d.institution_pct != null) && (
+                  <div style={{ padding:'0 18px 16px' }}>
+                    <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Shareholding Pattern</div>
+                    <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
+                      {[
+                        { label:'Promoter / Insider', pct: d.insider_pct, color:'var(--bluL)' },
+                        { label:'Institutions', pct: d.institution_pct, color:'var(--grn)' },
+                        { label:'Public', pct: d.public_pct, color:'var(--dim)' },
+                      ].filter(r => r.pct != null).map(row => (
+                        <div key={row.label}>
+                          <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:3 }}>
+                            <span style={{ color:'var(--dim)' }}>{row.label}</span>
+                            <span style={{ fontWeight:700, color: row.color }}>{row.pct}%</span>
+                          </div>
+                          <div style={{ height:5, background:'var(--bdr)', borderRadius:3 }}>
+                            <div style={{ height:'100%', width:`${Math.min(100, row.pct ?? 0)}%`, background: row.color, borderRadius:3 }}/>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 )}
 

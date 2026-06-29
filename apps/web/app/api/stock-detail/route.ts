@@ -143,6 +143,20 @@ interface QS {
     longName?: string;
     shortName?: string;
   };
+  majorHoldersBreakdown?: {
+    insidersPercentHeld?: { raw?: number };
+    institutionsPercentHeld?: { raw?: number };
+    institutionCount?: { raw?: number };
+  };
+  incomeStatementHistoryQuarterly?: {
+    incomeStatementHistory?: Array<{
+      endDate?: { raw?: number; fmt?: string };
+      totalRevenue?: { raw?: number };
+      grossProfit?: { raw?: number };
+      netIncome?: { raw?: number };
+      ebit?: { raw?: number };
+    }>;
+  };
 }
 
 // ─── Route ────────────────────────────────────────────────────────────────────
@@ -164,7 +178,7 @@ export async function GET(request: Request) {
   try {
     // Run chart + quoteSummary in parallel; quoteSummary only for US stocks
     const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=3mo`;
-    const qsUrl    = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ySym)}?modules=defaultKeyStatistics,financialData,summaryDetail,calendarEvents`;
+    const qsUrl    = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ySym)}?modules=defaultKeyStatistics,financialData,summaryDetail,calendarEvents,incomeStatementHistoryQuarterly,majorHoldersBreakdown`;
 
     const [chartRes, qsRes] = await Promise.all([
       fetch(chartUrl, { headers: hdrs, signal: AbortSignal.timeout(8000) }),
@@ -243,11 +257,54 @@ export async function GET(request: Request) {
       short_pct_float: Num; short_ratio: Num;
     } | null = null;
 
+    type QuarterRow = { quarter: string; revenue_cr: number | null; net_income_cr: number | null; net_margin: number | null };
+    let quarterly_results: QuarterRow[] = [];
+    let insider_pct: number | null = null;
+    let institution_pct: number | null = null;
+    let public_pct: number | null = null;
+
     if (qsRes?.ok) {
       try {
         const qsData = await qsRes.json() as { quoteSummary?: { result?: QS[] } };
         const qs = qsData?.quoteSummary?.result?.[0];
         if (qs) {
+          // ── Quarterly results ─────────────────────────────────────────────
+          const hist = qs.incomeStatementHistoryQuarterly?.incomeStatementHistory;
+          if (hist?.length) {
+            const div = isUS ? 1e6 : 1e7;
+            quarterly_results = hist.slice(0, 4).map(q => {
+              const rev = q.totalRevenue?.raw ?? null;
+              const ni  = q.netIncome?.raw   ?? null;
+              const revenue_cr    = rev != null ? +(rev / div).toFixed(0) : null;
+              const net_income_cr = ni  != null ? +(ni  / div).toFixed(0) : null;
+              const net_margin    = (rev && ni && rev > 0) ? +(ni / rev * 100).toFixed(1) : null;
+              let quarter = q.endDate?.fmt ?? '';
+              if (q.endDate?.raw) {
+                const d  = new Date(q.endDate.raw * 1000);
+                const mo = d.getUTCMonth() + 1;
+                const yr = d.getUTCFullYear();
+                if (isUS) {
+                  quarter = `Q${mo <= 3 ? 1 : mo <= 6 ? 2 : mo <= 9 ? 3 : 4} ${yr}`;
+                } else {
+                  const qnum = mo <= 3 ? 4 : mo <= 6 ? 1 : mo <= 9 ? 2 : 3;
+                  const fy   = mo <= 3 ? yr : yr + 1;
+                  quarter = `Q${qnum} FY${String(fy).slice(-2)}`;
+                }
+              }
+              return { quarter, revenue_cr, net_income_cr, net_margin };
+            });
+          }
+
+          // ── Shareholding breakdown ────────────────────────────────────────
+          const mh = qs.majorHoldersBreakdown;
+          if (mh) {
+            insider_pct     = mh.insidersPercentHeld?.raw     != null ? +(mh.insidersPercentHeld.raw * 100).toFixed(1)     : null;
+            institution_pct = mh.institutionsPercentHeld?.raw != null ? +(mh.institutionsPercentHeld.raw * 100).toFixed(1) : null;
+            if (insider_pct != null && institution_pct != null) {
+              public_pct = +Math.max(0, 100 - insider_pct - institution_pct).toFixed(1);
+            }
+          }
+
           const ks  = qs.defaultKeyStatistics;
           const fd  = qs.financialData;
           const sd  = qs.summaryDetail;
@@ -309,6 +366,7 @@ export async function GET(request: Request) {
       } catch { /* quoteSummary failed — return technicals only */ }
     }
 
+
     // ─── Signal strings ───────────────────────────────────────────────────────
     const signals: string[] = [];
     // Supertrend first — strongest directional signal
@@ -354,6 +412,8 @@ export async function GET(request: Request) {
       supertrend_value: st?.value ?? null,
       supertrend_dir:   st?.direction ?? null,
       signals,
+      quarterly_results,
+      insider_pct, institution_pct, public_pct,
       ...(fund ?? {}),
     }, { headers: { 'Cache-Control': 'public, max-age=120, stale-while-revalidate=60' } });
 

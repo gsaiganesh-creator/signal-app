@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { usePlan } from '@/lib/use-plan';
 
 interface NavLink { href: string; icon: string; label: string; badge?: string; danger?: boolean; }
 
@@ -65,6 +66,7 @@ function resolveTab(pathname: string): string {
 
 export function DashboardSidebar() {
   const pathname = usePathname();
+  const { isAdmin } = usePlan();
   const [activeTab, setActiveTab] = useState(() => resolveTab(pathname));
 
   // Sync tab when navigating
@@ -129,21 +131,40 @@ export function DashboardSidebar() {
         })}
       </div>
 
-      {/* Upgrade nudge — only when not in account tab */}
+      {/* Admin link for founders / Upgrade nudge for others */}
       {activeTab !== 'account' && (
         <div style={{ padding: '10px 12px 14px', borderTop: '1px solid rgba(255,255,255,0.07)' }}>
-          <Link href="/dashboard/upgrade" style={{
-            display: 'flex', alignItems: 'center', gap: 8,
-            padding: '10px 12px', borderRadius: 10,
-            background: 'linear-gradient(135deg,rgba(255,184,0,0.12),rgba(255,92,26,0.08))',
-            border: '1px solid rgba(255,184,0,0.25)',
-            color: '#FFB800', fontSize: 12, fontWeight: 700, textDecoration: 'none',
-          }}>
-            <span style={{ fontSize: 15 }}>⚡</span>
-            Upgrade to Pro
-          </Link>
+          {isAdmin ? (
+            <Link href="/admin" style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 12px', borderRadius: 10,
+              background: 'linear-gradient(135deg,rgba(167,139,250,0.12),rgba(79,111,250,0.08))',
+              border: '1px solid rgba(167,139,250,0.30)',
+              color: '#a78bfa', fontSize: 12, fontWeight: 700, textDecoration: 'none',
+            }}>
+              <span style={{ fontSize: 15 }}>🛡️</span>
+              Admin Console
+            </Link>
+          ) : (
+            <Link href="/dashboard/upgrade" style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 12px', borderRadius: 10,
+              background: 'linear-gradient(135deg,rgba(255,184,0,0.12),rgba(255,92,26,0.08))',
+              border: '1px solid rgba(255,184,0,0.25)',
+              color: '#FFB800', fontSize: 12, fontWeight: 700, textDecoration: 'none',
+            }}>
+              <span style={{ fontSize: 15 }}>⚡</span>
+              Upgrade to Pro
+            </Link>
+          )}
         </div>
       )}
+      <div style={{ padding: '8px 16px 14px', fontSize: 10, color: 'rgba(122,139,170,0.6)', lineHeight: 1.5 }}>
+        <Link href="/privacy" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy Policy</Link>
+        {' · '}
+        <Link href="/risk" style={{ color: 'inherit', textDecoration: 'underline' }}>Risk Disclosure</Link>
+        {' · '}Not SEBI registered · Not investment advice
+      </div>
     </aside>
   );
 }
