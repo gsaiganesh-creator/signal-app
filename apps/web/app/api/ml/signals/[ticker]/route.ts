@@ -1,6 +1,10 @@
 // Technical analysis detail for a single ticker — matches TADetail interface in signals/page.tsx
+// Primary: serve from shared scan cache (no Yahoo Finance call needed for scanned stocks).
+// Fallback: live Yahoo Finance fetch for stocks not in the scan (e.g. manual search).
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
+
+import { findInScan } from '../_cache';
 
 function r(v: number, d = 2) { return +v.toFixed(d); }
 
@@ -88,12 +92,41 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ticker:
   const { ticker } = await params;
   const sym = ticker.toUpperCase().endsWith('.NS') ? ticker.toUpperCase() : `${ticker.toUpperCase()}.NS`;
 
+  // ── 1. Serve from per-ticker cache ──────────────────────────────────────────
   const cached = _tickerCache.get(sym);
   if (cached && Date.now() - cached.ts < CACHE_TTL) {
     return Response.json(Object.assign({}, cached.data as object, { cached: true }),
       { headers: { 'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=3600' } });
   }
 
+  // ── 2. Serve from shared scan cache (no Yahoo Finance call needed) ──────────
+  const scanHit = findInScan(sym);
+  if (scanHit) {
+    const cmp = scanHit.cmp;
+    const scanDerived = {
+      symbol: sym, name: scanHit.name,
+      price: cmp, change_pct: scanHit.chg,
+      ema5: 0, ema20: scanHit.ema20, ema50: 0, sma200: null,
+      rsi: scanHit.rsi, macd: 0, macd_signal: 0,
+      bb_upper: 0, bb_lower: 0,
+      support_1: r(scanHit.sl * 1.01), support_2: r(scanHit.sl),
+      resistance_1: r(scanHit.entry_high * 1.02), resistance_2: r(scanHit.target * 0.97),
+      entry_lo: scanHit.entry_low, entry_hi: scanHit.entry_high,
+      target_1: scanHit.target, target_2: r(scanHit.target * 1.04), stop: scanHit.sl,
+      w52_high: 0, w52_low: 0, pct_from_52h: 0,
+      vol_ratio: 1, bias: scanHit.confidence >= 70 ? 'BULLISH' : 'NEUTRAL',
+      signals: [
+        { type: scanHit.signal, reason: `RSI ${scanHit.rsi} · EMA dist ${scanHit.ema_dist_pct}% · Confidence ${scanHit.confidence}%` },
+        ...(scanHit.rsi < 50 ? [{ type: 'BULLISH', reason: 'RSI below midline — building momentum' }] : []),
+      ],
+      from_scan_cache: true,
+    };
+    _tickerCache.set(sym, { data: scanDerived, ts: Date.now() });
+    return Response.json({ ...scanDerived, cached: false },
+      { headers: { 'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=3600' } });
+  }
+
+  // ── 3. Fallback: live Yahoo Finance fetch (for manually searched stocks) ─────
   try {
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=6mo`;
     const res = await fetch(url, {

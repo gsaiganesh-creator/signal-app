@@ -2,6 +2,8 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
+import { setScanCache, getScanCache, isCacheFresh, SCAN_TTL } from './_cache';
+
 // ─── Universe (top 4 per sector, 100 stocks) ──────────────────────────────────
 const UNIVERSE = [
   {symbol:'HAL.NS',name:'Hindustan Aeronautics',sector:'Defense'},{symbol:'BEL.NS',name:'Bharat Electronics',sector:'Defense'},{symbol:'BDL.NS',name:'Bharat Dynamics',sector:'Defense'},{symbol:'COCHINSHIP.NS',name:'Cochin Shipyard',sector:'Defense'},
@@ -94,9 +96,7 @@ interface Signal {
   target: number; sl: number; signal: string; confidence: number; score: number;
 }
 
-// ─── Global in-memory cache (persists in warm Lambda) ────────────────────────
-let _cache: { data: Signal[]; ts: number } | null = null;
-const CACHE_TTL = 3_600_000; // 1 hour
+// Cache lives in _cache.ts — shared with the per-ticker route
 
 async function runScan(): Promise<Signal[]> {
   const BATCH = 10;
@@ -149,20 +149,20 @@ export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') ?? '20')));
 
-  // Serve from in-memory cache if fresh
-  if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
+  const cached = getScanCache();
+  if (isCacheFresh() && cached) {
     return Response.json(
-      { signals: _cache.data.slice(0, limit), count: _cache.data.slice(0, limit).length, cached: true },
-      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
+      { signals: cached.data.slice(0, limit), count: cached.data.slice(0, limit).length, cached: true },
+      { headers: { 'Cache-Control': `public, s-maxage=${SCAN_TTL / 1000}, stale-while-revalidate=86400` } }
     );
   }
 
   try {
     const picks = await runScan();
-    _cache = { data: picks, ts: Date.now() };
+    setScanCache(picks);
     return Response.json(
       { signals: picks.slice(0, limit), count: picks.slice(0, limit).length, cached: false },
-      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
+      { headers: { 'Cache-Control': `public, s-maxage=${SCAN_TTL / 1000}, stale-while-revalidate=86400` } }
     );
   } catch (e) {
     return Response.json({ error: String(e), signals: [], count: 0 }, { status: 500 });
