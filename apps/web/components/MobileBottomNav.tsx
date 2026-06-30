@@ -27,6 +27,7 @@ const MORE_SECTIONS = [
       { href: '/dashboard/earnings',      icon: '📅', label: 'Earnings'       },
       { href: '/dashboard/ipo',           icon: '🚀', label: 'IPO Calendar'   },
       { href: '/dashboard/capital-gains', icon: '🧾', label: 'Capital Gains'  },
+      { href: '/dashboard/dividends',     icon: '💰', label: 'Dividends'      },
       { href: '/dashboard/equity-comp',   icon: '📊', label: 'ESPP & RSU'    },
       { href: '/dashboard/etf-mf',        icon: '🏦', label: 'ETF & MF'      },
     ],
@@ -40,6 +41,7 @@ const MORE_SECTIONS = [
       { href: '/dashboard/algo-builder',  icon: '⚙️', label: 'Algo Builder'  },
       { href: '/dashboard/backtest',      icon: '📋', label: 'Backtest'      },
       { href: '/dashboard/track-record',  icon: '🏆', label: 'Track Record'  },
+      { href: '/dashboard/feed',          icon: '📰', label: 'Market Feed'   },
     ],
   },
   {

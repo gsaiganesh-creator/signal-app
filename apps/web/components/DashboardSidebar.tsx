@@ -29,6 +29,7 @@ const TABS: { key: string; icon: string; label: string; links: NavLink[] }[] = [
       { href: '/dashboard/ai-prompts',    icon: '💬', label: 'AI Prompts'     },
       { href: '/dashboard/paper-trading', icon: '🧪', label: 'Paper Trading'  },
       { href: '/dashboard/backtest',      icon: '📋', label: 'Backtest'       },
+      { href: '/dashboard/feed',          icon: '📰', label: 'Market Feed'    },
     ],
   },
   {
@@ -41,6 +42,7 @@ const TABS: { key: string; icon: string; label: string; links: NavLink[] }[] = [
       { href: '/dashboard/earnings',      icon: '📅', label: 'Earnings'       },
       { href: '/dashboard/ipo',           icon: '🚀', label: 'IPO Calendar', badge: 'NEW' },
       { href: '/dashboard/capital-gains', icon: '🧾', label: 'Capital Gains' },
+      { href: '/dashboard/dividends',     icon: '💰', label: 'Dividends'     },
     ],
   },
   {
