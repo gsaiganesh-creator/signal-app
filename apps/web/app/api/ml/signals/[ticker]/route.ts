@@ -127,8 +127,9 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ticker:
   }
 
   // ── 3. Fallback: live Yahoo Finance fetch (for manually searched stocks) ─────
+  // Use range=2mo — same range as the working main scan — to avoid VPS rate limiting.
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=6mo`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=2mo`;
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
       signal: AbortSignal.timeout(10000),
@@ -151,7 +152,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ticker:
     const lows   = (q.low   ?? []).filter((l): l is number => l != null && isFinite(l));
     const vols   = (q.volume ?? []).filter((v): v is number => v != null && isFinite(v));
 
-    if (closes.length < 50) return Response.json({ error: 'insufficient data' }, { status: 404 });
+    if (closes.length < 22) return Response.json({ error: 'insufficient data' }, { status: 404 });
 
     const price    = m.regularMarketPrice ?? closes.at(-1) ?? 0;
     const chgPct   = m.regularMarketChangePercent ?? 0;
