@@ -1,3 +1,5 @@
+export const dynamic = 'force-dynamic';
+
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardSidebar } from '@/components/DashboardSidebar';
