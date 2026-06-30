@@ -6,13 +6,13 @@ import { ThemeProvider } from '@/components/ThemeProvider';
 import { CapacitorOAuthListener } from '@/components/CapacitorOAuthListener';
 
 export const metadata: Metadata = {
-  title: 'SIGNAL — ML-Powered Algo Trading Platform',
-  description: 'Portfolio analysis, Random Forest signals, Algo Builder, Paper Trading — at ₹299/month. Not SEBI advice.',
+  title: 'SignalGenie — ML-Powered Algo Trading',
+  description: 'Portfolio analysis, ML signals, Algo Builder, Paper Trading. Not SEBI advice.',
   manifest: '/manifest.json',
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'SIGNAL',
+    title: 'SignalGenie',
   },
   other: {
     'mobile-web-app-capable': 'yes',

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0E1628"/>
+      <stop offset="100%" stop-color="#070D1A"/>
+    </linearGradient>
+    <linearGradient id="line" x1="52" y1="0" x2="460" y2="0" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#4F6FFA"/>
+      <stop offset="100%" stop-color="#00D4A0"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <!-- Rising signal / chart line -->
+  <polyline points="52,370 142,278 210,316 302,188 386,228 460,110"
+    stroke="url(#line)" stroke-width="28" fill="none"
+    stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Peak dot -->
+  <circle cx="460" cy="110" r="24" fill="#00D4A0"/>
+  <!-- SG monogram -->
+  <text x="256" y="460"
+    font-family="-apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif"
+    font-size="92" font-weight="800" fill="white" text-anchor="middle" letter-spacing="-2">SG</text>
+</svg>
