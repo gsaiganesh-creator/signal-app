@@ -86,7 +86,7 @@ async function fetchMLSignals(): Promise<MLSignal[]> {
 }
 async function fetchTA(symbol: string): Promise<TADetail | null> {
   try {
-    const r = await fetch(`/api/ml/signals/${encodeURIComponent(symbol)}`);
+    const r = await fetch(`/api/ml/signals/detail?ticker=${encodeURIComponent(symbol)}`);
     if (!r.ok) return null;
     return await r.json();
   } catch { return null; }
