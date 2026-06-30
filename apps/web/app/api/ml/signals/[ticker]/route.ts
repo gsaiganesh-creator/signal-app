@@ -95,12 +95,17 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ticker:
   }
 
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=1y`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=1d&range=6mo`;
     const res = await fetch(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; signal/1.0)' },
-      signal: AbortSignal.timeout(8000),
+      headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36' },
+      signal: AbortSignal.timeout(10000),
     });
     if (!res.ok) return Response.json({ error: `yahoo ${res.status}` }, { status: 502 });
+
+    const ct = res.headers.get('content-type') ?? '';
+    if (!ct.includes('application/json')) {
+      return Response.json({ error: 'yahoo returned non-JSON (rate limited)' }, { status: 502 });
+    }
 
     const json = await res.json() as YahooChart;
     const result = json?.chart?.result?.[0];
