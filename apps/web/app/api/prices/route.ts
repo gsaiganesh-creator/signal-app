@@ -6,7 +6,8 @@ export const runtime = 'edge';
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const raw = searchParams.get('symbols') ?? '';
-  const symbols = raw.split(',').map(s => s.trim()).filter(Boolean);
+  // Sort symbols so identical sets share the same Vercel CDN cache key
+  const symbols = raw.split(',').map(s => s.trim().toUpperCase()).filter(Boolean).sort();
 
   if (!symbols.length) return Response.json({});
 
@@ -40,6 +41,8 @@ export async function GET(request: Request) {
   }));
 
   return Response.json(results, {
-    headers: { 'Cache-Control': 'public, max-age=60, stale-while-revalidate=30' },
+    // Yahoo Finance data is already 15min delayed — no value refreshing faster than 3min.
+    // SWR >= max-age ensures CDN always serves stale while background refresh runs.
+    headers: { 'Cache-Control': 'public, max-age=180, stale-while-revalidate=600' },
   });
 }

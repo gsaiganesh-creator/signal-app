@@ -68,7 +68,7 @@ export async function GET(req: Request) {
       .reverse();
 
     return Response.json({ symbol, exchange, income, balance }, {
-      headers: { 'Cache-Control': 'public, max-age=3600, stale-while-revalidate=600' },
+      headers: { 'Cache-Control': 'public, max-age=3600, stale-while-revalidate=3600' },
     });
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500 });

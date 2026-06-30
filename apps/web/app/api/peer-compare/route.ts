@@ -124,6 +124,6 @@ export async function GET(request: Request) {
   const data    = settled.map(r => r.status === 'fulfilled' ? r.value : null).filter(Boolean) as Peer[];
 
   return Response.json({ peers: data, sector }, {
-    headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=60' },
+    headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=600' },
   });
 }

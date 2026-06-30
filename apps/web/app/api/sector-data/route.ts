@@ -73,6 +73,6 @@ export async function GET(request: Request) {
   }
 
   return Response.json(out, {
-    headers: { 'Cache-Control': 'public, max-age=120, stale-while-revalidate=60' },
+    headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=900' },
   });
 }

@@ -415,7 +415,7 @@ export async function GET(request: Request) {
       quarterly_results,
       insider_pct, institution_pct, public_pct,
       ...(fund ?? {}),
-    }, { headers: { 'Cache-Control': 'public, max-age=120, stale-while-revalidate=60' } });
+    }, { headers: { 'Cache-Control': 'public, max-age=180, stale-while-revalidate=600' } });
 
   } catch (e) {
     return Response.json({ error: String(e) }, { status: 500 });
