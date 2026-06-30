@@ -1,5 +1,5 @@
-// Shared in-process cache — both the scan route and the ticker route
-// run in the same Node.js process in Docker, so this module is a singleton.
+// Shared scan cache pinned to Node.js `global` so it survives across
+// Next.js route bundles (each route gets its own module scope, but global is shared).
 
 export interface ScanSignal {
   symbol: string; name: string; sector: string;
@@ -8,23 +8,27 @@ export interface ScanSignal {
   target: number; sl: number; signal: string; confidence: number; score: number;
 }
 
-let _cache: { data: ScanSignal[]; ts: number } | null = null;
+type Cache = { data: ScanSignal[]; ts: number } | null;
+const g = global as typeof global & { __signalScanCache?: Cache };
+
 export const SCAN_TTL = 3_600_000; // 1 hour
 
 export function setScanCache(data: ScanSignal[]) {
-  _cache = { data, ts: Date.now() };
+  g.__signalScanCache = { data, ts: Date.now() };
 }
 
-export function getScanCache(): { data: ScanSignal[]; ts: number } | null {
-  return _cache;
+export function getScanCache(): Cache {
+  return g.__signalScanCache ?? null;
 }
 
 export function isCacheFresh(): boolean {
-  return !!_cache && Date.now() - _cache.ts < SCAN_TTL;
+  const c = g.__signalScanCache;
+  return !!c && Date.now() - c.ts < SCAN_TTL;
 }
 
 export function findInScan(sym: string): ScanSignal | null {
-  if (!_cache) return null;
+  const c = g.__signalScanCache;
+  if (!c) return null;
   const key = sym.toUpperCase();
-  return _cache.data.find(s => s.symbol.toUpperCase() === key) ?? null;
+  return c.data.find(s => s.symbol.toUpperCase() === key) ?? null;
 }
