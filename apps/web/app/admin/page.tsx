@@ -69,7 +69,11 @@ export default function AdminPage() {
     const res = await fetch('/api/admin/stats', {
       headers: { Authorization: `Bearer ${session.access_token}` },
     });
-    if (!res.ok) { setError(`API error: ${res.status}`); setLoading(false); return; }
+    if (!res.ok) {
+      const body = await res.json().catch(() => ({}));
+      setError(body.error ?? `API error ${res.status}`);
+      setLoading(false); return;
+    }
     setData(await res.json());
     setLoading(false);
   }, []);

@@ -18,6 +18,8 @@ async function svcGet(path: string) {
 }
 
 export async function GET(req: Request) {
+  if (!SRVC_KEY) return Response.json({ error: 'SUPABASE_SERVICE_ROLE_KEY not set in Vercel env vars' }, { status: 503 });
+
   // ── Auth: verify caller is a founder ───────────────────────────────────────
   const auth = req.headers.get('Authorization');
   if (!auth?.startsWith('Bearer ')) return Response.json({ error: 'unauth' }, { status: 401 });
