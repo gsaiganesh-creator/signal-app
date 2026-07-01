@@ -229,9 +229,9 @@ async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: strin
       // NOTE: +/- on %change may be CSS-injected (not in PDF text), so treat it as optional.
       if (/ICICI/i.test(fullText) || /Allocated\s*Qty/i.test(fullText) || /allocated\s*qty/i.test(fullText)) {
         const SKIP = /^(STOCK|TOTAL|VALUE|LTP|CHANGE|MARKET|PLEDGE|FREEZE|BLOCK|MANDATE|ACTION|ALLOCATED|BUY|SELL|GTT|NAME|QTY|FOR|SAM|FREEZE|DELIVERY)/;
-        // Flexible: %change column is optional sign + decimal (CSS may strip the + sign in PDF)
-        // Pattern: ALLCAPS_NAME  LTP_decimal  optional_%change  market_value_decimal  qty_integer
-        const iciRe = /([A-Z][A-Z &.'/-]{2,60?}?)\s+([\d,]+\.\d{1,2})\s+[+-]?[\d.]+%?\s+[\d,]+(?:\.\d{1,2})?\s+(\d{1,8})/g;
+        // Pattern: ALLCAPS_NAME  LTP  optional_%change  market_value  qty_integer
+        // {2,50}? is lazy syntax (? AFTER closing brace). + sign may be CSS-only, so [+-]? optional.
+        const iciRe = /([A-Z][A-Z &.'/-]{2,50}?)\s+([\d,]+\.\d{1,2})\s+[+-]?[\d.]+%?\s+[\d,]+(?:\.\d{1,2})?\s+(\d{1,8})/g;
         for (const m of [...fullText.matchAll(iciRe)]) {
           const rawName = m[1].trim().replace(/\s+/g, ' ');
           if (SKIP.test(rawName)) continue;
