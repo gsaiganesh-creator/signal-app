@@ -182,11 +182,11 @@ async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: strin
     const isinRe = /\b(IN[A-Z0-9]{10})\b/g;
     const allIsins = [...fullText.matchAll(isinRe)];
 
-    // Accept as DP statement if: known broker string found OR multiple ISINs present
-    const isDp = /MIRAE ASSET|CDSL|NSDL|TOTAL HOLDING|DEPOSITORY PARTICIPANT|DP STATEMENT/i.test(fullText)
-              || allIsins.length >= 2;
+    // Accept as DP statement if: known broker keyword found OR at least 1 ISIN present
+    const isDp = /MIRAE ASSET|CDSL|NSDL|TOTAL HOLDING|DEPOSITORY PARTICIPANT|DP STATEMENT|ICICI DIRECT|ICICI SECURITIES|ANGEL ONE|ANGEL BROKING|ZERODHA|UPSTOX|GROWW|5PAISA|MOTILAL OSWAL|KOTAK SECURITIES|AXIS SECURITIES|SHAREKHAN|IIFL|HDFC SECURITIES/i.test(fullText)
+              || allIsins.length >= 1;
     if (!isDp) {
-      return { result: [], debug: `PDF: no DP keywords or ISINs found. Got ${allIsins.length} ISIN(s). Supported: MStock DP Holding Statement.` };
+      return { result: [], debug: `PDF: no broker keywords or ISINs found. Got ${allIsins.length} ISIN(s). Try uploading a Holdings/Portfolio PDF from your broker, or use CSV/Excel export instead.` };
     }
 
     const results: ParsedRow[] = [];
@@ -299,6 +299,11 @@ const ISIN_NSE_EQUITY: Record<string, string> = {
   'INE758T01015':'IRCTC',      'INE152A01029':'TITAN',      'INE301A01014':'VOLTAS',
   'INE070E01018':'APOLLOTYRE', 'INE133A01011':'PAGEIND',    'INE188A01016':'EXIDEIND',
   'INE463A01038':'AMARAJABAT', 'INE174A01027':'MCDOWELL-N', 'INE260B01010':'UBL',
+  // ── Additional equities (Upstox / ICICI user portfolios) ─────────────────
+  'INE442H01029':'ASHOKA',     'INE021A01026':'ASIANPAINT', 'INE284H01025':'DCAL',
+  'INE127D01025':'HDFCAMC',    'INE030A01027':'HINDUNILVR', 'INE022Q01020':'IEX',
+  'INE149O01028':'IREDA',      'INE093I01010':'CDSL',       'INE335Y01020':'NSDL',
+  'INE202B01012':'BSE',
 };
 
 // Best-effort NSE ticker from full company name (fallback when ISIN not in table)
@@ -318,6 +323,13 @@ function cleanSymbol(raw: string): string {
     .replace(/-EQ$/i, '')     // Upstox suffix
     .replace(/\.NS$/i, '')    // already has suffix
     .replace(/\.BO$/i, '');
+}
+
+// Returns false for G-Secs (IN0...) and debt/NCD instruments (alphabetic series code in ISIN positions 9-10)
+function isEquityIsin(isin: string): boolean {
+  if (!isin || isin.length !== 12) return false;
+  if (!isin.startsWith('INE')) return false;
+  return !/[A-Z]/.test(isin.slice(9, 11)); // alpha series = debenture/NCD
 }
 
 function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
@@ -402,6 +414,50 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
       const unmatched = parsed.length - matched;
       const note = unmatched > 0 ? `. ${unmatched} used company-name ticker (CMP may not load — fix symbol manually)` : '';
       return { result: parsed, debug: `HDFC_OK: ${parsed.length} rows, ${matched} ISIN-matched${note}` };
+    }
+
+    // ── Upstox DP Holding Statement ─────────────────────────────────────────
+    // Headers: ISIN | Scrip Name | Free Qty | Current Qty | ... | Rate | Valuation
+    // "Rate" = current market price (NOT avg buy cost) — no cost column in this report.
+    // avg_price=0 triggers the review modal where user enters buy prices manually.
+    if (
+      headers.includes('isin') &&
+      headers.includes('scrip name') &&
+      (headers.includes('rate') || headers.includes('valuation')) &&
+      !headers.some(h => h.includes('avg') || h.includes('cost') || h.includes('purchase') || h.includes('buy'))
+    ) {
+      const isinI = headers.indexOf('isin');
+      const nameI = headers.indexOf('scrip name');
+      const fqI   = headers.indexOf('free qty');
+      const cqI   = headers.indexOf('current qty');
+      const qtyI  = fqI >= 0 ? fqI : cqI;
+      if (qtyI < 0) return { result: [], debug: 'UPSTOX_DP: could not find qty column' };
+
+      const parsed = rows.slice(headerIdx + 1)
+        .filter(r => r.length > Math.max(isinI, qtyI))
+        .map(r => {
+          const isin    = String(r[isinI] ?? '').trim().toUpperCase();
+          const rawName = nameI >= 0 ? String(r[nameI] ?? '').trim() : '';
+          const qty     = parseInt(String(r[qtyI] ?? '0').replace(/,/g, ''), 10);
+          if (!isin || isNaN(qty) || qty <= 0) return null;
+          if (!isEquityIsin(isin)) return null; // skip G-Secs, debentures, NCDs
+          let sym = ISIN_NSE_EQUITY[isin] ?? ISIN_NSE[isin];
+          if (!sym) {
+            // Strip Upstox scrip suffix: "ASHOKA BUILD EQ 5/" → "ASHOKA BUILD"
+            const cleaned = rawName.replace(/[\s-]+EQS?\b.*/i, '').trim();
+            sym = cleaned ? companyNameToTicker(cleaned) : '';
+          }
+          if (!sym || sym.length < 2) return null;
+          return { symbol: sym, qty, avg_price: 0, exchange: 'NSE' as Exchange, isin };
+        })
+        .filter(Boolean) as ParsedRow[];
+
+      if (!parsed.length) return { result: [], debug: 'UPSTOX_DP: 0 valid equity rows (bonds/G-Secs skipped)' };
+      const isinMatched = parsed.filter(r => ISIN_NSE_EQUITY[r.isin ?? ''] || ISIN_NSE[r.isin ?? '']).length;
+      return {
+        result: parsed,
+        debug: `UPSTOX_DP: ${parsed.length} equity rows, ${isinMatched} ISIN-matched. Enter avg buy prices in review.`,
+      };
     }
 
     const symIdx   = col(SYM_NAMES);
