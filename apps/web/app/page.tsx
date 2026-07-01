@@ -37,8 +37,15 @@ const GC: Record<string,React.CSSProperties> = {
 const SignalLogo = () => (
   <svg width="24" height="24" viewBox="0 0 26 26" fill="none">
     <rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/>
-    <polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="21" cy="11" r="2.8" fill="#FF5C1A"/>
+    <polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    <circle cx="22" cy="4" r="3.6" stroke="#8B5CF6" strokeWidth="0.6" opacity="0.7"/>
+    <circle cx="22" cy="0.4" r="0.55" fill="#8B5CF6" opacity="0.8"/>
+    <circle cx="25.1" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
+    <circle cx="25.1" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
+    <circle cx="22" cy="7.6" r="0.55" fill="#8B5CF6" opacity="0.8"/>
+    <circle cx="18.9" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
+    <circle cx="18.9" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
+    <path d="M22 2.2 L22.45 3.55 L23.8 4 L22.45 4.45 L22 5.8 L21.55 4.45 L20.2 4 L21.55 3.55 Z" fill="#FF5C1A"/>
   </svg>
 );
 
@@ -244,7 +251,7 @@ export default function LandingPage() {
       {/* ── Nav ──────────────────────────────────────────────── */}
       <nav style={{ position:'sticky', top:0, zIndex:200, display:'flex', alignItems:'center', justifyContent:'space-between', padding:'0 clamp(20px,5vw,80px)', height:60, background: isDark ? 'rgba(7,13,26,0.88)' : 'rgba(240,244,255,0.92)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', borderBottom: isDark ? '1px solid rgba(255,255,255,0.05)' : '1px solid rgba(79,111,250,0.15)' }}>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:9, fontSize:19, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)', textDecoration:'none' }}>
-          <SignalLogo /> SIGNAL
+          <SignalLogo /> SignalGenie
         </Link>
         <div className="lp-nav-links">
           {(['Scanner','Portfolio','Algo Builder','Pricing','Track Record'] as const).map((l,i) => (
@@ -510,7 +517,7 @@ export default function LandingPage() {
             <h2 style={{ fontSize:'clamp(28px,3.8vw,50px)', fontWeight:900, letterSpacing:-2, lineHeight:.97, marginBottom:16 }}>
               Build your strategy.<br/><span style={grd('linear-gradient(135deg,var(--org),var(--ylw))')}>No code needed.</span>
             </h2>
-            <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Pick a strategy, select indicators, set entry/exit conditions. SIGNAL generates Python code with full 1-year backtest results — then paper-trade it to validate. Your code. Your broker. Your decision.</p>
+            <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Pick a strategy, select indicators, set entry/exit conditions. SignalGenie generates Python code with full 1-year backtest results — then paper-trade it to validate. Your code. Your broker. Your decision.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {fpill('🛠️','rgba(255,92,26,0.12)','Visual no-code builder','Momentum, Trend Following, Mean Reversion, Breakout — pick type, drag in indicators, set rules in minutes.')}
               {fpill('🧪','rgba(255,184,0,0.12)','1-year backtesting on real NSE data','Sharpe ratio, win rate, max drawdown, full returns — calculated on actual historical data before you risk a rupee.')}
@@ -536,7 +543,7 @@ export default function LandingPage() {
                   <span style={{ fontSize:10, fontWeight:700, padding:'2px 8px', borderRadius:5, background:'rgba(79,111,250,0.15)', color:'var(--bluL)', border:'1px solid rgba(79,111,250,0.3)' }}>⎘ Copy</span>
                 </div>
                 <div style={{ padding:13, fontFamily:'JetBrains Mono,monospace', fontSize:11, lineHeight:1.8 }}>
-                  <div style={{ color:'#68D391' }}># SIGNAL · RSI + EMA Strategy</div>
+                  <div style={{ color:'#68D391' }}># SignalGenie · RSI + EMA Strategy</div>
                   <div style={{ color:'#F6C90E' }}>RSI_LOW, RSI_HIGH = 35, 70</div>
                   <div style={{ color:'#F6C90E' }}>STOP_LOSS = 2.5</div>
                   <div style={{ color:'#FF7D46' }}>def signal(df):</div>
@@ -577,7 +584,7 @@ export default function LandingPage() {
             <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Deploy your algo with ₹1,00,000 virtual capital on real NSE/BSE live feeds. Watch signals fire, track virtual P&amp;L, tweak any parameter — then go live when you&apos;re confident.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {fpill('🎮','rgba(139,92,246,0.12)','Real data, zero real money','Live NSE/BSE market feed with ₹1,00,000 virtual capital. Adjust any strategy parameter anytime.')}
-              {fpill('🚀','rgba(0,212,160,0.12)','Download and deploy yourself','After consistent paper-trade results, SIGNAL generates code you download and run via your own broker API. You control the execution.')}
+              {fpill('🚀','rgba(0,212,160,0.12)','Download and deploy yourself','After consistent paper-trade results, SignalGenie generates code you download and run via your own broker API. You control the execution.')}
             </div>
           </div>
           <div className="lp-feat-visual" style={{ direction:'ltr' }}>
@@ -648,7 +655,7 @@ export default function LandingPage() {
             <div style={{ ...GC.grn, padding:28, borderRadius:22, position:'relative', overflow:'hidden', transition:'transform .2s' }} onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-3px)')} onMouseLeave={e=>(e.currentTarget.style.transform='')}>
               <div style={{ width:44, height:44, borderRadius:14, background:'rgba(0,212,160,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, marginBottom:16 }}>🇮🇳</div>
               <div style={{ fontSize:17, fontWeight:800, marginBottom:8 }}>Account Aggregator</div>
-              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>RBI-regulated AA sync — stocks, MFs, FDs, NPS, EPF in one SIGNAL dashboard.</div>
+              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>RBI-regulated AA sync — stocks, MFs, FDs, NPS, EPF in one SignalGenie dashboard.</div>
             </div>
             <div style={{ ...GC.ylw, padding:28, borderRadius:22, position:'relative', overflow:'hidden', transition:'transform .2s' }} onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-3px)')} onMouseLeave={e=>(e.currentTarget.style.transform='')}>
               <div style={{ width:44, height:44, borderRadius:14, background:'rgba(255,184,0,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, marginBottom:16 }}>📅</div>
@@ -679,7 +686,7 @@ export default function LandingPage() {
             <div style={{ ...GC.mix, padding:28, borderRadius:22, position:'relative', overflow:'hidden', transition:'transform .2s' }} onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-3px)')} onMouseLeave={e=>(e.currentTarget.style.transform='')}>
               <div style={{ width:44, height:44, borderRadius:14, background:'rgba(79,111,250,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, marginBottom:16 }}>📱</div>
               <div style={{ fontSize:17, fontWeight:800, marginBottom:8 }}>Mobile App <span style={{ fontSize:11, padding:'2px 7px', borderRadius:5, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', fontWeight:600 }}>Soon</span></div>
-              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>Full SIGNAL on iOS &amp; Android — scan results, alerts, portfolio sync, paper trading in your pocket.</div>
+              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>Full SignalGenie on iOS &amp; Android — scan results, alerts, portfolio sync, paper trading in your pocket.</div>
             </div>
           </div>
         </div>
@@ -799,7 +806,7 @@ export default function LandingPage() {
           {/* SEBI disclaimer */}
           <div style={{ marginTop:16, padding:'14px 22px', background:'rgba(255,184,0,0.04)', border:'1px solid rgba(255,184,0,0.12)', borderRadius:14 }} className="lp-reveal">
             <p style={{ fontSize:12, color:'rgba(255,184,0,0.65)', lineHeight:1.7, margin:0 }}>
-              <strong style={{ color:'var(--ylw)' }}>⚠️ SEBI DISCLAIMER:</strong> SIGNAL is <strong style={{ color:'var(--ylw)' }}>NOT registered with SEBI</strong>. This is a <strong style={{ color:'var(--ylw)' }}>technical screening tool</strong>. All scan results and computed indicators are for <strong style={{ color:'var(--ylw)' }}>informational purposes only</strong> — not financial advice, not investment recommendations. Consult a SEBI-registered Research Analyst before investing.
+              <strong style={{ color:'var(--ylw)' }}>⚠️ SEBI DISCLAIMER:</strong> SignalGenie is <strong style={{ color:'var(--ylw)' }}>NOT registered with SEBI</strong>. This is a <strong style={{ color:'var(--ylw)' }}>technical screening tool</strong>. All scan results and computed indicators are for <strong style={{ color:'var(--ylw)' }}>informational purposes only</strong> — not financial advice, not investment recommendations. Consult a SEBI-registered Research Analyst before investing.
             </p>
           </div>
         </div>
@@ -854,7 +861,7 @@ export default function LandingPage() {
       <footer style={{ borderTop:'1px solid var(--bdr)', padding:'40px clamp(20px,6vw,80px)' }}>
         <div style={{ maxWidth:1200, margin:'0 auto', display:'flex', justifyContent:'space-between', flexWrap:'wrap', gap:32 }}>
           <div>
-            <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:19, fontWeight:900, letterSpacing:-0.5, marginBottom:6 }}><SignalLogo /> SIGNAL</div>
+            <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:19, fontWeight:900, letterSpacing:-0.5, marginBottom:6 }}><SignalLogo /> SignalGenie</div>
             <div style={{ fontSize:12, color:'var(--dim)', maxWidth:260, lineHeight:1.6 }}>ML-powered trading intelligence for NSE &amp; BSE. Not SEBI registered. Not financial advice.</div>
           </div>
           <div style={{ display:'flex', gap:48, flexWrap:'wrap' }}>
@@ -873,7 +880,7 @@ export default function LandingPage() {
           </div>
         </div>
         <div style={{ maxWidth:1200, margin:'24px auto 0', paddingTop:20, borderTop:'1px solid var(--bdr)', fontSize:12, color:'var(--dim2)', lineHeight:1.7 }}>
-          © 2026 SIGNAL · Built by Vaasudev Amitav &amp; Sai Kumar Bethala &nbsp;·&nbsp;
+          © 2026 SignalGenie · Built by Vaasudev Amitav &amp; Sai Kumar Bethala &nbsp;·&nbsp;
           <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> &nbsp;·&nbsp;
           Technical scan results for educational purposes only &nbsp;·&nbsp; Not financial advice &nbsp;·&nbsp; DYOR
         </div>
