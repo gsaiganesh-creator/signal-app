@@ -545,8 +545,8 @@ export default function PortfolioPage() {
   const [viewMode, setViewMode] = useState<'all' | string>('all');
   const [allViewHoldings, setAllViewHoldings] = useState<Holding[]>([]);
   const [allLoading, setAllLoading] = useState(false);
-  // portfolio IDs that have at least one NSE/BSE holding — used to hide US-only portfolios from tabs
-  const [indiaPortfolioIds, setIndiaPortfolioIds] = useState<Set<string>>(new Set());
+  // portfolio IDs that have holdings but ALL are US-only — hidden from India portfolio tabs
+  const [usOnlyPortfolioIds, setUsOnlyPortfolioIds] = useState<Set<string>>(new Set());
   const fileRef = useRef<HTMLInputElement>(null);
 
   function toggleSort(col: typeof sortCol) {
@@ -696,7 +696,11 @@ export default function PortfolioPage() {
       if (!res.ok) { setAllLoading(false); return; }
       const allRaw = await res.json() as (RawHolding & { portfolio_id: string })[];
       const raw = allRaw.filter(h => h.exchange === 'NSE' || h.exchange === 'BSE');
-      setIndiaPortfolioIds(new Set(raw.map(h => h.portfolio_id)));
+      const indiaIds = new Set(raw.map(h => h.portfolio_id));
+      // portfolios with holdings but NONE are India → US-only, hide from India tabs
+      const allHoldingIds = new Set(allRaw.map(h => h.portfolio_id));
+      const usOnlyIds = new Set([...allHoldingIds].filter(id => !indiaIds.has(id)));
+      setUsOnlyPortfolioIds(usOnlyIds);
       const merged = mergeBySymbol(raw);
       if (!merged.length) { setAllViewHoldings([]); setAllLoading(false); return; }
 
@@ -1040,7 +1044,7 @@ export default function PortfolioPage() {
           style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:13, fontWeight: viewMode === 'all' ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: viewMode === 'all' ? '1px solid var(--grn)' : '1px solid var(--tab-inactive-bdr)', background: viewMode === 'all' ? 'rgba(0,212,160,0.10)' : 'var(--tab-inactive-bg)', color: viewMode === 'all' ? 'var(--grn)' : 'var(--tab-inactive-txt)', whiteSpace:'nowrap' }}>
           📊 All Portfolios
         </button>
-        {portfolios.filter(p => indiaPortfolioIds.size === 0 || indiaPortfolioIds.has(p.id)).map(p => {
+        {portfolios.filter(p => !usOnlyPortfolioIds.has(p.id)).map(p => {
           const isActive = viewMode === p.id;
           const isRenaming = renamingId === p.id;
           return (
