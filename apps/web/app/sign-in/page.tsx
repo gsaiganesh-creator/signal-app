@@ -17,6 +17,13 @@ export default function SignInPage() {
 
   const go = (s: Screen) => { setScreen(s); setMsg(''); };
 
+  // After successful auth, go back to intended page (e.g. /dashboard/feed)
+  function afterLogin() {
+    const params = new URLSearchParams(window.location.search);
+    const next = params.get('next');
+    window.location.href = (next && next.startsWith('/')) ? next : '/dashboard';
+  }
+
   // ── OAuth ──────────────────────────────────────────────────────────────────
   async function doOAuth(provider: 'google' | 'twitter') {
     setLoading(true);
@@ -46,7 +53,7 @@ export default function SignInPage() {
       }
       setLoading(false); return;
     }
-    window.location.href = '/dashboard';
+    afterLogin();
   }
 
   // ── Email + password sign-up ───────────────────────────────────────────────
@@ -75,7 +82,7 @@ export default function SignInPage() {
     }
     if (data.session) {
       // Email confirmation disabled — signed in immediately
-      window.location.href = '/dashboard';
+      afterLogin();
       return;
     }
     setLoading(false);

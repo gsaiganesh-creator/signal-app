@@ -53,6 +53,8 @@ export async function middleware(request: NextRequest) {
   if (!user && isProtected) {
     const url = request.nextUrl.clone();
     url.pathname = '/sign-in';
+    // preserve intended destination so after login we redirect back
+    url.searchParams.set('next', pathname);
     return NextResponse.redirect(url);
   }
 

@@ -110,16 +110,6 @@ function capCat(sym: string): 'large' | 'mid' | 'small' | 'etf' {
   return 'small';
 }
 
-function heatColor(pct: number | null | undefined): string {
-  if (pct == null) return 'rgba(255,255,255,0.04)';
-  const c = Math.max(-5, Math.min(5, pct));
-  if (c >= 0) {
-    const i = c / 5;
-    return `rgba(0,${Math.round(180 * i)},${Math.round(130 * i)},${0.18 + i * 0.45})`;
-  }
-  const i = Math.abs(c) / 5;
-  return `rgba(255,${Math.round(59 + 90 * (1 - i))},${Math.round(80 * (1 - i))},${0.18 + i * 0.45})`;
-}
 
 interface PriceData { price: number | null; change_pct: number | null }
 
@@ -1059,12 +1049,14 @@ export default function DashboardPage() {
             <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Quick Links</div>
             <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
               {[
-                { href:'/dashboard/signals',       icon:'📈', label:'ML Scan',          sub:'RSI + EMA screener',   grad:'rgba(23,64,245,0.10)',  bdr:'rgba(23,64,245,0.28)' },
-                { href:'/dashboard/portfolio',     icon:'💼', label:'India Portfolio',   sub:'P&L · signals',        grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
-                { href:'/dashboard/us-portfolio',  icon:'🇺🇸', label:'US Portfolio',    sub:'USD stocks',            grad:'rgba(79,111,250,0.09)', bdr:'rgba(79,111,250,0.28)' },
-                { href:'/dashboard/paper-trading', icon:'🧪', label:'Paper Trading',     sub:'Risk-free strategies', grad:'rgba(139,92,246,0.09)', bdr:'rgba(139,92,246,0.28)' },
-                { href:'/dashboard/sectors',       icon:'🔥', label:'Sector Heatmap',    sub:'Hot sectors',          grad:'rgba(255,92,26,0.09)',  bdr:'rgba(255,92,26,0.28)' },
-                { href:'/dashboard/fii-dii',       icon:'🌍', label:'FII / DII Flow',    sub:'Institutional flow',   grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
+                { href:'/dashboard/signals',                 icon:'📈', label:'ML Scan',          sub:'RSI + EMA screener',   grad:'rgba(23,64,245,0.10)',  bdr:'rgba(23,64,245,0.28)' },
+                { href:'/dashboard/signals?tab=fundamental', icon:'📊', label:'Fundamentals',     sub:'PE · ROE · D/E screener', grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
+                { href:'/dashboard/portfolio',               icon:'💼', label:'India Portfolio',   sub:'P&L · signals',        grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
+                { href:'/dashboard/us-portfolio',            icon:'🇺🇸', label:'US Portfolio',    sub:'USD stocks',            grad:'rgba(79,111,250,0.09)', bdr:'rgba(79,111,250,0.28)' },
+                { href:'/dashboard/dividends',               icon:'💰', label:'Dividends',        sub:'Ex-dates · income',     grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
+                { href:'/dashboard/paper-trading',           icon:'🧪', label:'Paper Trading',     sub:'Risk-free strategies', grad:'rgba(139,92,246,0.09)', bdr:'rgba(139,92,246,0.28)' },
+                { href:'/dashboard/sectors',                 icon:'🔥', label:'Sector Heatmap',    sub:'Hot sectors',          grad:'rgba(255,92,26,0.09)',  bdr:'rgba(255,92,26,0.28)' },
+                { href:'/dashboard/fii-dii',                 icon:'🌍', label:'FII / DII Flow',    sub:'Institutional flow',   grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
               ].map(l => (
                 <Link key={l.href} href={l.href} className="hover-lift" style={{ display:'flex', flexDirection:'column', gap:2, padding:'12px 13px', background:`linear-gradient(135deg,${l.grad},transparent)`, border:`1px solid ${l.bdr}`, borderRadius:11, textDecoration:'none' }}>
                   <span style={{ fontSize:18 }}>{l.icon}</span>
