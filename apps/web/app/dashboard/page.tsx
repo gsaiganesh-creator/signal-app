@@ -324,11 +324,11 @@ function WelcomeEmpty({ name, email }: { name: string; email?: string }) {
       </div>
       <div style={{ marginBottom:24 }}>
         <div style={{ fontSize:26, fontWeight:800, letterSpacing:-0.5 }}>{greet()}, {name} 👋</div>
-        <div style={{ fontSize:13, color:'var(--dim)', marginTop:4 }}>Welcome to SIGNAL. Upload your portfolio to unlock technical scan results and P&L tracking.</div>
+        <div style={{ fontSize:13, color:'var(--dim)', marginTop:4 }}>Welcome to SignalGenie. Upload your portfolio to unlock technical scan results and P&L tracking.</div>
       </div>
       <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.08),rgba(0,212,160,0.04))', border:'1px solid rgba(23,64,245,0.2)', borderRadius:16, padding:'28px 32px', marginBottom:20 }}>
         <div style={{ fontSize:19, fontWeight:800, marginBottom:6 }}>📂 Upload your portfolio to get started</div>
-        <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Add your holdings once — SIGNAL tracks P&L, scan results and risk metrics automatically.</div>
+        <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Add your holdings once — SignalGenie tracks P&L, scan results and risk metrics automatically.</div>
         <div className="g3" style={{ display:'grid', gap:16, marginBottom:28 }}>
           {[
             { n:'1', t:'Name your portfolio', d:'e.g. "Zerodha Long Term" or "Swing Trades"' },
@@ -373,6 +373,8 @@ export default function DashboardPage() {
   const [allIndiaRaw, setAllIndiaRaw] = useState<RawHolding[]>([]);
   const [usHoldings, setUsHoldings]   = useState<{ symbol:string; qty:number; avg_price:number }[]>([]);
   const [usPrices, setUsPrices]       = useState<Record<string, PriceData>>({});
+  const [rsuGrants, setRsuGrants]     = useState<{ symbol:string; shares:number; grant_price:number }[]>([]);
+  const [rsuPrices, setRsuPrices]     = useState<Record<string, PriceData>>({});
   const [usdInr, setUsdInr]           = useState<number | null>(null);
   const [fxPos,   setFxPos]  = useState<{ id:string; currency:string; amount:number; avg_rate:number }[]>([]);
   const [cmPos,   setCmPos]  = useState<{ id:string; commodity:string; qty:number; unit:string; avg_price:number }[]>([]);
@@ -436,6 +438,28 @@ export default function DashboardPage() {
       })
       .catch(() => {});
   }, [usHoldings]);
+
+  // RSU/ESPP grants from equity_grants table
+  useEffect(() => {
+    if (!session) return;
+    fetch(`${SUPA_URL}/rest/v1/equity_grants?user_id=eq.${session.user.id}&select=symbol,shares,grant_price`, {
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` }
+    })
+      .then(r => r.ok ? r.json() : [])
+      .then(rows => setRsuGrants(Array.isArray(rows) ? rows : []))
+      .catch(() => {});
+  }, [session]);
+
+  // RSU live prices
+  useEffect(() => {
+    if (!rsuGrants.length) { setRsuPrices({}); return; }
+    const syms = [...new Set(rsuGrants.map(g => g.symbol).filter(Boolean))];
+    if (!syms.length) return;
+    fetch(`/api/prices?symbols=${encodeURIComponent(syms.join(','))}`)
+      .then(r => r.json())
+      .then((data: Record<string, PriceData>) => setRsuPrices(data))
+      .catch(() => {});
+  }, [rsuGrants]);
 
   // Forex + commodity positions from localStorage (client-only)
   useEffect(() => {
@@ -577,6 +601,15 @@ export default function DashboardPage() {
   const usPLPct       = usInvestedUSD > 0 && usCurrentUSD > 0 ? (usCurrentUSD - usInvestedUSD) / usInvestedUSD * 100 : null;
   const hasUSHoldings = usHoldings.length > 0;
 
+  // RSU/ESPP totals
+  const rsuCostUSD    = rsuGrants.reduce((s, g) => s + g.shares * g.grant_price, 0);
+  const rsuCurrentUSD = rsuGrants.reduce((s, g) => {
+    const p = rsuPrices[g.symbol]?.price;
+    return p != null ? s + p * g.shares : s + g.shares * g.grant_price;
+  }, 0);
+  const rsuValueINR   = usdInr ? rsuCurrentUSD * usdInr : rsuCurrentUSD * 84;
+  const hasRSU        = rsuGrants.length > 0;
+
   // Forex positions (INR invested = amount × avg_rate; current = amount × live_rate)
   const FX_TICKERS: Record<string, string> = {
     USD:'USDINR=X', EUR:'EURINR=X', GBP:'GBPINR=X', JPY:'JPYINR=X',
@@ -620,7 +653,7 @@ export default function DashboardPage() {
   const cmPL    = cmPos.length ? cmCurrentINR - cmInvestedINR : 0;
   const cmPLPct = cmInvestedINR > 0 ? (cmPL / cmInvestedINR) * 100 : 0;
 
-  const combinedINR = invested + usInrEquiv + fxCurrentINR + cmCurrentINR;
+  const combinedINR = invested + usInrEquiv + rsuValueINR + fxCurrentINR + cmCurrentINR;
 
   const capDist = { large:0, mid:0, small:0, etf:0 };
   for (const h of mergedIndia) capDist[capCat(h.symbol)] += h.avg_price * h.qty;
@@ -739,7 +772,7 @@ export default function DashboardPage() {
               🇮🇳{fmtL(invested)} + 🇺🇸{fmtL(usInrEquiv)}
               {fxPos.length>0?` + 💱${fmtL(fxCurrentINR)}`:''}
             </div>
-            {usdInr && <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>₹{usdInr.toFixed(1)} USD/INR</div>}
+            {usdInr && <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>₹{usdInr.toFixed(1)} USD/INR{hasRSU ? ` · RSU ₹${(rsuValueINR/1e5).toFixed(1)}L` : ''}</div>}
           </div>
         </Link>
 
@@ -1027,6 +1060,30 @@ export default function DashboardPage() {
             </Link>
           </div>
         )}
+        {/* RSU / ESPP summary — shown when grants exist */}
+        {hasRSU && (
+          <div style={{ borderTop:'1px solid var(--bdr)', paddingTop:12, marginTop:4, marginBottom:8 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+              <div style={{ fontSize:11, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, textTransform:'uppercase' }}>🔒 RSU &amp; ESPP Grants</div>
+              <Link href="/dashboard/equity-comp" style={{ fontSize:11, color:'var(--pur)', fontWeight:600, textDecoration:'none' }}>Manage →</Link>
+            </div>
+            <div className="g4" style={{ display:'grid', gap:8 }}>
+              {[
+                { label:'Grants',    val:`${rsuGrants.length}`,                                                                                               sub:`${rsuGrants.filter(g=>g.grant_price>0).length} with cost basis`, color:'var(--txt)' },
+                { label:'Cost Basis', val: usdInr ? `₹${(rsuCostUSD*usdInr/1e5).toFixed(1)}L`  : `$${rsuCostUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `$${rsuCostUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
+                { label:'Mkt Value', val: usdInr ? `₹${(rsuCurrentUSD*usdInr/1e5).toFixed(1)}L` : `$${rsuCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `$${rsuCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '', color:'var(--grn)' },
+                { label:'Gain',       val: rsuCostUSD > 0 ? `${((rsuCurrentUSD-rsuCostUSD)/rsuCostUSD*100).toFixed(1)}%` : '—', sub:'vs grant price', color: rsuCurrentUSD>=rsuCostUSD?'var(--grn)':'var(--red)' },
+              ].map(m => (
+                <div key={m.label} style={{ background:'rgba(139,92,246,0.07)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:9, padding:'9px 12px' }}>
+                  <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:3 }}>{m.label}</div>
+                  <div style={{ fontSize:14, fontWeight:900, color:m.color }}>{m.val}</div>
+                  {m.sub && <div style={{ fontSize:9, color:'var(--dim)', marginTop:1 }}>{m.sub}</div>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div style={{ display:'flex', gap:8, flexWrap:'wrap', marginTop: hasUSHoldings ? 0 : 12 }}>
           {hasUSHoldings && (
             <Link href="/dashboard/us-portfolio" style={{ height:32, padding:'0 14px', borderRadius:8, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
