@@ -78,6 +78,58 @@ function parseISODate(val: string): string {
   if (m) return `${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`;
   return '';
 }
+// ── E*Trade ByBenefitType parser ──────────────────────────────────────────────
+// Hierarchical: Grant → Vest Schedule → Tax Withholding rows (63 col sparse format)
+// FMV at vest = col41 (Taxable Gain) / col25 (Vested Qty) per vest period
+function parseETradeRSU(raw: string[][]): ParsedRow[] {
+  if (raw[0]?.[0] !== 'Record Type') return [];
+  type VestData  = { vestedQty: number; releasedQty: number; vestDate: string; };
+  type TaxData   = { taxableGain: number; withholding: number; };
+  type GrantData = { symbol: string; vests: Map<number, VestData>; taxes: Map<number, TaxData> };
+  const grants = new Map<string, GrantData>();
+
+  const n = (v: string | undefined) => parseFloat((v ?? '').replace(/[,$%]/g, '')) || 0;
+
+  for (let i = 1; i < raw.length; i++) {
+    const r = raw[i];
+    const rec = r[0];
+    if (rec === 'Grant') {
+      const grantNum = r[11]; const sym = r[1];
+      if (grantNum && sym) grants.set(grantNum, { symbol: sym.trim().toUpperCase(), vests: new Map(), taxes: new Map() });
+    } else if (rec === 'Vest Schedule') {
+      const g = grants.get(r[11]);
+      if (!g) continue;
+      const period = parseInt(r[18] || '0');
+      const vestDate = parseISODate(r[19] || '');
+      if (!vestDate) continue;
+      g.vests.set(period, { vestedQty: n(r[25]), releasedQty: n(r[26]), vestDate });
+    } else if (rec === 'Tax Withholding') {
+      const g = grants.get(r[11]);
+      if (!g) continue;
+      const period = parseInt(r[18] || '0');
+      g.taxes.set(period, { taxableGain: n(r[41]), withholding: n(r[43]) });
+    }
+  }
+
+  const out: ParsedRow[] = [];
+  for (const [grantNum, g] of grants) {
+    for (const [period, v] of g.vests) {
+      const tax = g.taxes.get(period);
+      const fmv = (tax && v.vestedQty > 0) ? tax.taxableGain / v.vestedQty : 0;
+      if (v.releasedQty > 0 && v.vestDate && fmv > 0) {
+        out.push({
+          type: 'RSU', symbol: g.symbol, company: g.symbol, employer: '',
+          shares: v.releasedQty, grantPrice: Math.round(fmv * 100) / 100,
+          vestDate: v.vestDate, brokerage: 'E*TRADE (Morgan Stanley)',
+          notes: `Grant ${grantNum} · Vest ${period}${tax?.withholding ? ` · Tax $${tax.withholding.toFixed(2)}` : ''}`,
+          selected: true,
+        });
+      }
+    }
+  }
+  return out.sort((a, b) => a.vestDate.localeCompare(b.vestDate));
+}
+
 function parseRows2D(rows: string[][], brokerage: string): ParsedRow[] {
   if (rows.length < 2) return [];
   const headers = rows[0];
@@ -154,6 +206,12 @@ async function parseGrantFile(file: File): Promise<{ rows: ParsedRow[]; error?: 
       const wb = XLSX.read(buf, { type:'array', cellDates:true });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const raw: string[][] = XLSX.utils.sheet_to_json(ws, { header:1, raw:false, dateNF:'yyyy-mm-dd' }) as string[][];
+      // E*Trade ByBenefitType format (hierarchical, 63 cols)
+      if (raw[0]?.[0] === 'Record Type') {
+        const rows = parseETradeRSU(raw);
+        if (rows.length > 0) return { rows };
+        return { rows: [], error: 'E*Trade file detected but no vest lots parsed. Ensure "Restricted Stock" sheet has Vest Schedule + Tax Withholding rows.' };
+      }
       const flatText = raw.flat().join(' ');
       return { rows: parseRows2D(raw, guessBrokerage(flatText) || brokerage) };
     }
