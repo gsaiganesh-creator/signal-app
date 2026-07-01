@@ -844,11 +844,17 @@ export default function PortfolioPage() {
   async function handleCreatePortfolio() {
     const name = newPortfolioName.trim();
     if (!name) { setUploadMsg('❌ Enter a portfolio name first.'); return; }
+    if (portfolios.some(p => p.name.toLowerCase() === name.toLowerCase())) {
+      setUploadMsg('❌ A portfolio with that name already exists.'); return;
+    }
     setCreatingPortfolio(true); setUploadMsg(''); setPortfolioJustCreated(false);
     const { id, error } = await createPortfolio(name);
     setCreatingPortfolio(false);
     if (!id) { setUploadMsg(`❌ ${error ?? 'Could not create portfolio'}`); return; }
     setPortfolioJustCreated(true);
+    setNewPortfolioName('');
+    setShowNewPortfolio(false);
+    setViewMode('all');
     setUploadMsg('✅ Portfolio created! Now upload your holdings file.');
   }
 
@@ -862,7 +868,11 @@ export default function PortfolioPage() {
   async function handleDeletePortfolio(id: string) {
     setDeletingPortfolio(true);
     const { error } = await deletePortfolio(id);
-    if (error) setUploadMsg(`❌ Delete failed: ${error}`);
+    if (error) { setUploadMsg(`❌ Delete failed: ${error}`); }
+    else {
+      if (viewMode === id) setViewMode('all');
+      setUsOnlyPortfolioIds(prev => { const s = new Set(prev); s.delete(id); return s; });
+    }
     setConfirmDeleteId(null);
     setDeletingPortfolio(false);
   }
@@ -1219,7 +1229,7 @@ export default function PortfolioPage() {
           <table className="port-table" style={{ width:'100%', borderCollapse:'collapse' }}>
             <thead>
               <tr>
-                {['Portfolio','Holdings','Invested'].map(h => (
+                {['Portfolio','Holdings','Invested',''].map(h => (
                   <th key={h} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'5px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4 }}>{h}</th>
                 ))}
               </tr>
@@ -1244,6 +1254,12 @@ export default function PortfolioPage() {
                     </td>
                     <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:13, fontWeight:600, color: isCorrupt ? 'var(--red)' : tot ? 'var(--txt)' : 'var(--dim)' }}>
                       {tot && tot.invested >= 1 ? (tot.invested >= 1e7 ? `₹${(tot.invested/1e7).toFixed(2)}Cr` : tot.invested >= 1e5 ? `₹${(tot.invested/1e5).toFixed(2)}L` : `₹${tot.invested.toLocaleString('en-IN',{maximumFractionDigits:0})}`) : '—'}
+                    </td>
+                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', textAlign:'right' }}
+                      onClick={e => e.stopPropagation()}>
+                      <button onClick={() => { setConfirmDeleteId(p.id); setMenuId(null); }}
+                        style={{ background:'none', border:'none', color:'var(--dim2)', cursor:'pointer', fontSize:13, padding:'2px 6px', borderRadius:6 }}
+                        title="Delete portfolio">🗑️</button>
                     </td>
                   </tr>
                 );

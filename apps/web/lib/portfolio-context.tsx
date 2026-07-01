@@ -204,7 +204,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         headers: { apikey: SUPA_KEY, Authorization: `Bearer ${token}` },
       });
       const remaining = portfolios.filter(p => p.id !== id);
-      setPortfolios(remaining);
+      setPortfolios(prev => prev.filter(p => p.id !== id));
       if (activeId === id) {
         const next = remaining[0]?.id ?? null;
         setActiveIdState(next);
