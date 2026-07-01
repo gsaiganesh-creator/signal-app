@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
 import { StockNews } from '@/components/StockNews';
+import { usePlan } from '@/lib/use-plan';
+import Link from 'next/link';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -669,8 +671,66 @@ function MarketToggle({ market, onChange }: { market: Market; onChange: (m: Mark
 }
 
 // ── Main Page ─────────────────────────────────────────────────────────────────
+function SignalsPaywall() {
+  const MOCK = ['SBIN','DIXON','COCHINSHIP','HAL','CUMMINSIND'];
+  return (
+    <div style={{ position:'relative' }}>
+      {/* Blurred preview */}
+      <div style={{ filter:'blur(5px)', pointerEvents:'none', userSelect:'none', opacity:0.45 }}>
+        <div style={{ display:'grid', gap:10 }}>
+          {MOCK.map((sym, i) => (
+            <div key={sym} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'16px 18px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
+              <div>
+                <div style={{ fontSize:15, fontWeight:900 }}>{sym}</div>
+                <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>NSE · Strong Momentum</div>
+                <div style={{ fontSize:12, fontWeight:700, color:'var(--grn)', marginTop:5 }}>RSI {42+i*3} · Conf {72+i*4}%</div>
+              </div>
+              <div style={{ textAlign:'right' }}>
+                <div style={{ fontSize:18, fontWeight:900 }}>₹{(800+i*200).toLocaleString('en-IN')}</div>
+                <div style={{ fontSize:11, color:'var(--grn)', marginTop:2 }}>▲ +{(1.2+i*0.3).toFixed(1)}%</div>
+                <div style={{ fontSize:10, color:'var(--dim)', marginTop:4 }}>Target ₹{(900+i*220).toLocaleString('en-IN')} · SL ₹{(760+i*190).toLocaleString('en-IN')}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      {/* Lock overlay */}
+      <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:'32px 36px', maxWidth:440, width:'90%', textAlign:'center', backdropFilter:'blur(20px)', boxShadow:'0 20px 60px rgba(0,0,0,0.5)' }}>
+          <div style={{ fontSize:40, marginBottom:12 }}>🔒</div>
+          <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, marginBottom:6 }}>ML Signals — Subscribers Only</div>
+          <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6, marginBottom:20 }}>
+            Real-time RSI + EMA technical scan across 100 NSE stocks. BUY zones, entry ranges, targets, stop-losses — all algorithmically computed and logged.
+          </div>
+          {/* Plan chips */}
+          <div style={{ display:'flex', gap:10, justifyContent:'center', marginBottom:22 }}>
+            {[
+              { name:'Starter', price:'₹299/mo', color:'var(--bluL)', bg:'rgba(23,64,245,0.12)', bdr:'rgba(23,64,245,0.3)' },
+              { name:'Pro', price:'₹799/mo', color:'var(--org)', bg:'rgba(255,92,26,0.12)', bdr:'rgba(255,92,26,0.3)', badge:'Popular' },
+              { name:'Elite', price:'₹1,999/mo', color:'var(--ylw)', bg:'rgba(255,184,0,0.1)', bdr:'rgba(255,184,0,0.25)' },
+            ].map(p => (
+              <div key={p.name} style={{ flex:1, background:p.bg, border:`1px solid ${p.bdr}`, borderRadius:12, padding:'10px 8px', position:'relative' }}>
+                {'badge' in p && <div style={{ position:'absolute', top:-8, left:'50%', transform:'translateX(-50%)', fontSize:8, fontWeight:800, padding:'2px 8px', borderRadius:10, background:'var(--org)', color:'#fff', whiteSpace:'nowrap' }}>POPULAR</div>}
+                <div style={{ fontSize:12, fontWeight:800, color:p.color }}>{p.name}</div>
+                <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>{p.price}</div>
+              </div>
+            ))}
+          </div>
+          <Link href="/dashboard/upgrade" style={{ display:'block', height:44, lineHeight:'44px', borderRadius:11, background:'linear-gradient(135deg,var(--blu),rgba(79,111,250,0.8))', color:'#fff', fontSize:14, fontWeight:700, textDecoration:'none', marginBottom:12 }}>
+            Unlock Signals →
+          </Link>
+          <Link href="/dashboard/track-record" style={{ display:'block', fontSize:12, color:'var(--bluL)', fontWeight:600, textDecoration:'none' }}>
+            📊 View Track Record (free) — see our accuracy first →
+          </Link>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SignalsPage() {
   const { symbols: portfolioSymbols, portfolios, session } = usePortfolio();
+  const { canAccess, loading: planLoading } = usePlan();
   const [market, setMarket] = useState<Market>('india');
 
   // Deep-link: /dashboard/signals?tab=fundamental|us|india
@@ -878,6 +938,24 @@ export default function SignalsPage() {
     })
     .filter(s => !usSearch || s.symbol.toLowerCase().includes(usSearch.toLowerCase()) || (s.name ?? '').toLowerCase().includes(usSearch.toLowerCase()));
 
+  // Paywall for free users (founders/admins auto-bypass)
+  if (!planLoading && !canAccess('signals-unlimited')) {
+    return (
+      <>
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
+          <div>
+            <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--ylw)', textTransform:'uppercase', marginBottom:4 }}>ML Technical Scan · NSE Screener</div>
+            <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5 }}>🇮🇳 India Signals</div>
+          </div>
+          <Link href="/dashboard/track-record" style={{ height:34, padding:'0 14px', borderRadius:9, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.28)', color:'var(--grn)', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
+            📊 Track Record →
+          </Link>
+        </div>
+        <SignalsPaywall />
+      </>
+    );
+  }
+
   return (
     <>
       {/* Header row — title + market toggle */}
@@ -890,7 +968,12 @@ export default function SignalsPage() {
             {market === 'india' ? '🇮🇳 India Signals' : market === 'fundamental' ? '📊 Fundamental Scan' : '🇺🇸 US Signals'}
           </div>
         </div>
-        <MarketToggle market={market} onChange={m => setMarket(m)} />
+        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <Link href="/dashboard/track-record" style={{ height:34, padding:'0 14px', borderRadius:9, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.28)', color:'var(--grn)', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
+            📊 Track Record →
+          </Link>
+          <MarketToggle market={market} onChange={m => setMarket(m)} />
+        </div>
       </div>
 
       {/* Disclaimer */}
