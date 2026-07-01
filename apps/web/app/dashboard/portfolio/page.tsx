@@ -223,7 +223,10 @@ async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: strin
     }
 
     if (!results.length) {
-      return { result: [], debug: `PDF DP: ${allIsins.length} ISINs found but no valid qty rows. PDF may use image-based text or non-standard layout.` };
+      const hint = allIsins.length === 0
+        ? `PDF DP: 0 ISINs found — PDF is likely image/scanned or has no ISIN column. Try: ICICI Direct → Portfolio → Export as CSV/Excel instead.`
+        : `PDF DP: ${allIsins.length} ISINs found but no valid qty rows. PDF layout may be non-standard.`;
+      return { result: [], debug: hint };
     }
     const etfCount = results.filter(r => r.is_etf).length;
     const eqCount  = results.length - etfCount;
@@ -427,10 +430,11 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
       !headers.some(h => h.includes('avg') || h.includes('cost') || h.includes('purchase') || h.includes('buy'))
     ) {
       const isinI = headers.indexOf('isin');
-      const nameI = headers.indexOf('scrip name');
-      const fqI   = headers.indexOf('free qty');
-      const cqI   = headers.indexOf('current qty');
-      const qtyI  = fqI >= 0 ? fqI : cqI;
+      const nameI  = headers.indexOf('scrip name');
+      const fqI    = headers.indexOf('free qty');
+      const cqI    = headers.indexOf('current qty');
+      const qtyI   = fqI >= 0 ? fqI : cqI;
+      const rateI  = headers.indexOf('rate');        // closing CMP — used as avg_price placeholder
       if (qtyI < 0) return { result: [], debug: 'UPSTOX_DP: could not find qty column' };
 
       const parsed = rows.slice(headerIdx + 1)
@@ -439,6 +443,7 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
           const isin    = String(r[isinI] ?? '').trim().toUpperCase();
           const rawName = nameI >= 0 ? String(r[nameI] ?? '').trim() : '';
           const qty     = parseInt(String(r[qtyI] ?? '0').replace(/,/g, ''), 10);
+          const rate    = rateI >= 0 ? parseFloat(String(r[rateI] ?? '0').replace(/,/g, '')) : 0;
           if (!isin || isNaN(qty) || qty <= 0) return null;
           if (!isEquityIsin(isin)) return null; // skip G-Secs, debentures, NCDs
           let sym = ISIN_NSE_EQUITY[isin] ?? ISIN_NSE[isin];
@@ -448,7 +453,10 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
             sym = cleaned ? companyNameToTicker(cleaned) : '';
           }
           if (!sym || sym.length < 2) return null;
-          return { symbol: sym, qty, avg_price: 0, exchange: 'NSE' as Exchange, isin };
+          // Use Rate (closing CMP) as avg_price placeholder — imports directly without review modal.
+          // P&L shows 0 until user edits individual buy prices.
+          const avg_price = (rate > 0) ? rate : 0.001;
+          return { symbol: sym, qty, avg_price, exchange: 'NSE' as Exchange, isin };
         })
         .filter(Boolean) as ParsedRow[];
 
@@ -456,7 +464,7 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
       const isinMatched = parsed.filter(r => ISIN_NSE_EQUITY[r.isin ?? ''] || ISIN_NSE[r.isin ?? '']).length;
       return {
         result: parsed,
-        debug: `UPSTOX_DP: ${parsed.length} equity rows, ${isinMatched} ISIN-matched. Enter avg buy prices in review.`,
+        debug: `UPSTOX_DP: ${parsed.length} equity rows, ${isinMatched} ISIN-matched. avg_price pre-filled with 30-Jun CMP — edit for accurate P&L.`,
       };
     }
 
@@ -838,7 +846,10 @@ export default function PortfolioPage() {
     }
     const insertErr = await restInsertHoldings(activeId, session.user.id, session.access_token, result);
     if (insertErr) { setUploadMsg(`❌ ${insertErr}`); setSyncing(false); return; }
-    setUploadMsg(`✅ ${result.length} holdings imported — running ML analysis…`);
+    const isUpstoxDp = debug.includes('UPSTOX_DP');
+    setUploadMsg(isUpstoxDp
+      ? `✅ ${result.length} holdings imported. ⚠️ Avg price pre-filled with last CMP — click each holding to enter your actual buy price for accurate P&L.`
+      : `✅ ${result.length} holdings imported — running ML analysis…`);
     await refreshContext();
     setSyncing(false);
     e.target.value = '';
@@ -1243,8 +1254,8 @@ export default function PortfolioPage() {
           <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:24, width:'100%', maxWidth:560, maxHeight:'80vh', display:'flex', flexDirection:'column', gap:16 }}
             onClick={e => e.stopPropagation()}>
             <div>
-              <div style={{ fontSize:16, fontWeight:700, marginBottom:4 }}>Enter Avg Cost — MStock DP Import</div>
-              <div style={{ fontSize:12, color:'var(--dim)' }}>DP statements don&apos;t include avg cost. Enter cost per unit for each holding.</div>
+              <div style={{ fontSize:16, fontWeight:700, marginBottom:4 }}>Enter Avg Cost — DP Holding Import</div>
+              <div style={{ fontSize:12, color:'var(--dim)' }}>This DP statement doesn&apos;t include avg buy cost. Enter your actual buy price per unit for each holding.</div>
             </div>
             <div style={{ overflowY:'auto', flex:1, display:'flex', flexDirection:'column', gap:8 }}>
               {pdfReviewRows.map((r, i) => (
@@ -1419,29 +1430,31 @@ export default function PortfolioPage() {
           <div style={{ textAlign:'center', padding:'40px 0' }}>
             <div style={{ fontSize:40, marginBottom:16 }}>📂</div>
             <div style={{ fontSize:17, fontWeight:800, marginBottom:6 }}>No holdings in {viewMode === 'all' ? 'any portfolio' : (activePortfolio?.name ?? '')}</div>
-            <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Upload your broker export — CSV, Excel, or MStock DP PDF.</div>
+            <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Upload your broker export — CSV, Excel, or DP PDF.</div>
             <button onClick={() => fileRef.current?.click()} disabled={syncing}
               style={{ height:48, padding:'0 32px', borderRadius:12, background:'var(--blu)', border:'none', color:'#fff', fontSize:15, fontWeight:700, cursor:'pointer', fontFamily:'inherit', marginBottom:16, display:'inline-flex', alignItems:'center', gap:10 }}>
               {syncing ? '⏳ Importing…' : '📤 Upload Holdings (CSV / Excel / PDF)'}
             </button>
             <div style={{ fontSize:12, color:'var(--dim)', marginBottom:16 }}>or use <strong style={{ color:'var(--txt)' }}>+ Add Stock</strong> above to add manually</div>
-            <div style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:12, padding:'16px 20px', display:'inline-block', textAlign:'left', maxWidth:440 }}>
+            <div style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:12, padding:'16px 20px', display:'inline-block', textAlign:'left', maxWidth:480 }}>
               <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:10 }}>Supported formats</div>
               {[
-                ['MStock DP PDF', 'Download Holdings → DP Holding Statement (PDF)'],
-                ['Zerodha Kite', 'Download Holdings → Export CSV'],
+                ['MStock / Mirae', 'Holdings → DP Holding Statement (PDF)'],
+                ['Upstox', 'Portfolio → Holding Statement (Excel) ✓ auto-import'],
+                ['Zerodha Kite', 'Holdings → Export CSV'],
                 ['Zerodha Console', 'Reports → Holdings → Download'],
-                ['Upstox', 'Portfolio → Holdings → Download CSV'],
+                ['ICICI Direct', 'Portfolio → Export CSV (PDF not supported)'],
+                ['HDFC Securities', 'Portfolio → Download CSV (HDFC SKY app)'],
                 ['Groww', 'Portfolio → Download statement'],
                 ['SignalGenie CSV', 'SYMBOL, QTY, AVG_PRICE, EXCHANGE'],
               ].map(([broker, hint]) => (
                 <div key={broker} style={{ display:'flex', gap:8, marginBottom:7, fontSize:12 }}>
-                  <span style={{ color:'var(--grn)', fontWeight:700, minWidth:110 }}>{broker}</span>
+                  <span style={{ color:'var(--grn)', fontWeight:700, minWidth:120 }}>{broker}</span>
                   <span style={{ color:'var(--dim)' }}>{hint}</span>
                 </div>
               ))}
               <div style={{ fontSize:11, color:'var(--ylw)', marginTop:10, borderTop:'1px solid var(--bdr)', paddingTop:10 }}>
-                ℹ️ MStock DP PDF imports ETF/MF demat holdings. Avg cost not in DP statement — enter manually after import.
+                ℹ️ Upstox Holding Statement: imports directly — avg price pre-filled with last CMP, edit for accurate P&amp;L. MStock DP PDF: enter avg cost manually after import.
               </div>
             </div>
           </div>
