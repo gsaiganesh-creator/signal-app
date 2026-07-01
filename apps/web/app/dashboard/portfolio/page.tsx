@@ -226,15 +226,18 @@ async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: strin
       // ── ICICI Direct name-based fallback ──────────────────────────────────
       // ICICI Direct portfolio PDF: columns = Stock Name | LTP | %Change | Market Value | Allocated Qty
       // Company names are ALL CAPS, no ISIN column. Use LTP as avg_price placeholder.
-      if (/ICICI\s*(DIRECT|SECURITIES|BANK\s*DEMAT)/i.test(fullText) || /Allocated\s*Qty/i.test(fullText)) {
-        // Match: ALLCAPS_NAME  decimal  +/-decimal  decimal  integer
-        const iciRe = /([A-Z][A-Z &.'/-]{2,50?})\s+([\d,]+\.\d{1,2})\s+([+-][\d.]+)\s+[\d,]+\.\d{1,2}\s+(\d{1,7})/g;
-        const SKIP  = /^(STOCK|TOTAL|VALUE|LTP|CHANGE|MARKET|PLEDGE|FREEZE|BLOCK|MANDATE|ACTION|ALLOCATED|BUY|SELL|GTT)/;
+      // NOTE: +/- on %change may be CSS-injected (not in PDF text), so treat it as optional.
+      if (/ICICI/i.test(fullText) || /Allocated\s*Qty/i.test(fullText) || /allocated\s*qty/i.test(fullText)) {
+        const SKIP = /^(STOCK|TOTAL|VALUE|LTP|CHANGE|MARKET|PLEDGE|FREEZE|BLOCK|MANDATE|ACTION|ALLOCATED|BUY|SELL|GTT|NAME|QTY|FOR|SAM|FREEZE|DELIVERY)/;
+        // Flexible: %change column is optional sign + decimal (CSS may strip the + sign in PDF)
+        // Pattern: ALLCAPS_NAME  LTP_decimal  optional_%change  market_value_decimal  qty_integer
+        const iciRe = /([A-Z][A-Z &.'/-]{2,60?}?)\s+([\d,]+\.\d{1,2})\s+[+-]?[\d.]+%?\s+[\d,]+(?:\.\d{1,2})?\s+(\d{1,8})/g;
         for (const m of [...fullText.matchAll(iciRe)]) {
           const rawName = m[1].trim().replace(/\s+/g, ' ');
           if (SKIP.test(rawName)) continue;
+          if (rawName.length < 3 || rawName.length > 60) continue;
           const ltp = parseFloat(m[2].replace(/,/g, ''));
-          const qty = parseInt(m[4], 10);
+          const qty = parseInt(m[3], 10);
           if (ltp <= 0 || qty <= 0 || qty > 1e7) continue;
           const sym = companyNameToTicker(rawName);
           if (!sym || sym.length < 2) continue;
@@ -243,12 +246,15 @@ async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: strin
         if (results.length) {
           return {
             result: results,
-            debug: `ICICI_DIRECT: ${results.length} holdings. avg_price pre-filled with LTP — edit each holding for accurate P&L.`,
+            debug: `ICICI_DIRECT: ${results.length} holdings parsed. avg_price pre-filled with LTP — edit each holding for accurate P&L.`,
           };
         }
+        // Zero matches — expose first 400 chars of extracted text for debugging
+        const snippet = fullText.replace(/\s+/g, ' ').slice(0, 400);
+        return { result: [], debug: `ICICI detected but regex matched 0 rows. PDF text sample: "${snippet}"` };
       }
       const hint = allIsins.length === 0
-        ? `PDF: 0 ISINs and no parseable table rows. If this is ICICI Direct, try Export CSV from Portfolio page. Other brokers: use CSV/Excel export.`
+        ? `PDF: 0 ISINs and no parseable rows. Try: broker app → Export CSV/Excel instead of printing to PDF.`
         : `PDF DP: ${allIsins.length} ISINs found but no valid qty rows. PDF layout may be non-standard.`;
       return { result: [], debug: hint };
     }
