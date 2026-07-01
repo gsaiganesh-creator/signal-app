@@ -223,8 +223,32 @@ async function parsePdf(file: File): Promise<{ result: ParsedRow[]; debug: strin
     }
 
     if (!results.length) {
+      // ── ICICI Direct name-based fallback ──────────────────────────────────
+      // ICICI Direct portfolio PDF: columns = Stock Name | LTP | %Change | Market Value | Allocated Qty
+      // Company names are ALL CAPS, no ISIN column. Use LTP as avg_price placeholder.
+      if (/ICICI\s*(DIRECT|SECURITIES|BANK\s*DEMAT)/i.test(fullText) || /Allocated\s*Qty/i.test(fullText)) {
+        // Match: ALLCAPS_NAME  decimal  +/-decimal  decimal  integer
+        const iciRe = /([A-Z][A-Z &.'/-]{2,50?})\s+([\d,]+\.\d{1,2})\s+([+-][\d.]+)\s+[\d,]+\.\d{1,2}\s+(\d{1,7})/g;
+        const SKIP  = /^(STOCK|TOTAL|VALUE|LTP|CHANGE|MARKET|PLEDGE|FREEZE|BLOCK|MANDATE|ACTION|ALLOCATED|BUY|SELL|GTT)/;
+        for (const m of [...fullText.matchAll(iciRe)]) {
+          const rawName = m[1].trim().replace(/\s+/g, ' ');
+          if (SKIP.test(rawName)) continue;
+          const ltp = parseFloat(m[2].replace(/,/g, ''));
+          const qty = parseInt(m[4], 10);
+          if (ltp <= 0 || qty <= 0 || qty > 1e7) continue;
+          const sym = companyNameToTicker(rawName);
+          if (!sym || sym.length < 2) continue;
+          results.push({ symbol: sym, qty, avg_price: ltp, exchange: 'NSE', is_etf: false });
+        }
+        if (results.length) {
+          return {
+            result: results,
+            debug: `ICICI_DIRECT: ${results.length} holdings. avg_price pre-filled with LTP — edit each holding for accurate P&L.`,
+          };
+        }
+      }
       const hint = allIsins.length === 0
-        ? `PDF DP: 0 ISINs found — PDF is likely image/scanned or has no ISIN column. Try: ICICI Direct → Portfolio → Export as CSV/Excel instead.`
+        ? `PDF: 0 ISINs and no parseable table rows. If this is ICICI Direct, try Export CSV from Portfolio page. Other brokers: use CSV/Excel export.`
         : `PDF DP: ${allIsins.length} ISINs found but no valid qty rows. PDF layout may be non-standard.`;
       return { result: [], debug: hint };
     }
@@ -309,9 +333,148 @@ const ISIN_NSE_EQUITY: Record<string, string> = {
   'INE202B01012':'BSE',
 };
 
+// Stocks where full company name doesn't derive to NSE symbol naturally
+const COMPANY_NAME_NSE: Record<string, string> = {
+  'INDIAN OVERSEAS BANK':          'IOB',
+  'STATE BANK OF INDIA':           'SBIN',
+  'PUNJAB NATIONAL BANK':          'PNB',
+  'CANARA BANK':                   'CANBK',
+  'BANK OF BARODA':                'BANKBARODA',
+  'BANK OF INDIA':                 'BANKINDIA',
+  'UNION BANK OF INDIA':           'UNIONBANK',
+  'CENTRAL BANK OF INDIA':         'CENTRALBK',
+  'UCO BANK':                      'UCOBANK',
+  'INDIAN BANK':                   'INDIANB',
+  'MAHARASHTRA BANK':              'MAHABANK',
+  'KARNATAKA BANK':                'KTKBANK',
+  'SOUTH INDIAN BANK':             'SOUTHBANK',
+  'FEDERAL BANK':                  'FEDERALBNK',
+  'IDFC FIRST BANK':               'IDFCFIRSTB',
+  'BANDHAN BANK':                  'BANDHANBNK',
+  'RBL BANK':                      'RBLBANK',
+  'YES BANK':                      'YESBANK',
+  'HDFC BANK':                     'HDFCBANK',
+  'ICICI BANK':                    'ICICIBANK',
+  'KOTAK MAHINDRA BANK':           'KOTAKBANK',
+  'AXIS BANK':                     'AXISBANK',
+  'INDUSIND BANK':                 'INDUSINDBK',
+  'LIC OF INDIA':                  'LICI',
+  'LIFE INSURANCE CORPORATION':    'LICI',
+  'TATA CONSULTANCY SERVICES':     'TCS',
+  'INFOSYS':                       'INFY',
+  'RELIANCE INDUSTRIES':           'RELIANCE',
+  'OIL AND NATURAL GAS':           'ONGC',
+  'BHARAT PETROLEUM':              'BPCL',
+  'HINDUSTAN PETROLEUM':           'HINDPETRO',
+  'INDIAN OIL':                    'IOC',
+  'POWER GRID':                    'POWERGRID',
+  'NATIONAL THERMAL POWER':        'NTPC',
+  'STEEL AUTHORITY':               'SAIL',
+  'BHARAT HEAVY ELECTRICALS':      'BHEL',
+  'HINDUSTAN AERONAUTICS':         'HAL',
+  'DEFENCE RESEARCH':              'DRDO',
+  'MAHANAGAR GAS':                 'MGL',
+  'INDRAPRASTHA GAS':              'IGL',
+  'GUJARAT GAS':                   'GUJGASLTD',
+  'TATA MOTORS':                   'TATAMOTORS',
+  'MARUTI SUZUKI':                 'MARUTI',
+  'HERO MOTOCORP':                 'HEROMOTOCO',
+  'BAJAJ AUTO':                    'BAJAJ-AUTO',
+  'EICHER MOTORS':                 'EICHERMOT',
+  'MAHINDRA':                      'M&M',
+  'TATA STEEL':                    'TATASTEEL',
+  'HINDALCO':                      'HINDALCO',
+  'VEDANTA':                       'VEDL',
+  'NATIONAL ALUMINIUM':            'NATIONALUM',
+  'JSW STEEL':                     'JSWSTEEL',
+  'LARSEN':                        'LT',
+  'ULTRATECH CEMENT':              'ULTRACEMCO',
+  'SHREE CEMENT':                  'SHREECEM',
+  'AMBUJA CEMENTS':                'AMBUJACEM',
+  'ACC':                           'ACC',
+  'ASIAN PAINTS':                  'ASIANPAINT',
+  'BERGER PAINTS':                 'BERGEPAINT',
+  'PIDILITE':                      'PIDILITIND',
+  'NESTLE':                        'NESTLEIND',
+  'HINDUSTAN UNILEVER':            'HINDUNILVR',
+  'ITC':                           'ITC',
+  'DABUR':                         'DABUR',
+  'MARICO':                        'MARICO',
+  'COLGATE':                       'COLPAL',
+  'BRITANNIA':                     'BRITANNIA',
+  'GODREJ CONSUMER':               'GODREJCP',
+  'TATA CONSUMER':                 'TATACONSUM',
+  'GODREJ PROPERTIES':             'GODREJPROP',
+  'DLF':                           'DLF',
+  'TITAN':                         'TITAN',
+  'TRENT':                         'TRENT',
+  'AVENUE SUPERMARTS':             'DMART',
+  'ZOMATO':                        'ZOMATO',
+  'PAYTM':                         'PAYTM',
+  'NYKAA':                         'FSN',
+  'POLICYBAZAAR':                  'POLICYBZR',
+  'ADANI ENTERPRISES':             'ADANIENT',
+  'ADANI PORTS':                   'ADANIPORTS',
+  'ADANI GREEN':                   'ADANIGREEN',
+  'ADANI POWER':                   'ADANIPOWER',
+  'ADANI TOTAL GAS':               'ATGL',
+  'WIPRO':                         'WIPRO',
+  'HCL TECHNOLOGIES':              'HCLTECH',
+  'TECH MAHINDRA':                 'TECHM',
+  'MPHASIS':                       'MPHASIS',
+  'COFORGE':                       'COFORGE',
+  'PERSISTENT SYSTEMS':            'PERSISTENT',
+  'KPIT TECHNOLOGIES':             'KPITTECH',
+  'LT TECHNOLOGY SERVICES':        'LTTS',
+  'SUN PHARMACEUTICAL':            'SUNPHARMA',
+  'DR REDDYS':                     'DRREDDY',
+  'CIPLA':                         'CIPLA',
+  'LUPIN':                         'LUPIN',
+  'AUROBINDO PHARMA':              'AUROPHARMA',
+  'LAURUS LABS':                   'LAURUSLABS',
+  'DIVIS LABORATORIES':            'DIVISLAB',
+  'ALKEM LABORATORIES':            'ALKEM',
+  'TORRENT PHARMACEUTICALS':       'TORNTPHARM',
+  'APOLLO HOSPITALS':              'APOLLOHOSP',
+  'MAX HEALTHCARE':                'MAXHEALTH',
+  'FORTIS HEALTHCARE':             'FORTIS',
+  'BAJAJ FINANCE':                 'BAJFINANCE',
+  'BAJAJ FINSERV':                 'BAJAJFINSV',
+  'HDFC LIFE':                     'HDFCLIFE',
+  'SBI LIFE':                      'SBILIFE',
+  'ICICI PRUDENTIAL LIFE':         'ICICIPRULI',
+  'ICICI LOMBARD':                 'ICICIGI',
+  'MUTHOOT FINANCE':               'MUTHOOTFIN',
+  'CHOLAMANDALAM':                 'CHOLAFIN',
+  'PFC':                           'PFC',
+  'REC':                           'RECLTD',
+  'IRFC':                          'IRFC',
+  'POWER FINANCE':                 'PFC',
+  'VOLTAS':                        'VOLTAS',
+  'HAVELLS':                       'HAVELLS',
+  'POLYCAB':                       'POLYCAB',
+  'SIEMENS':                       'SIEMENS',
+  'ABB':                           'ABB',
+  'CUMMINS':                       'CUMMINSIND',
+  'IRCTC':                         'IRCTC',
+  'COAL INDIA':                    'COALINDIA',
+  'NMDC':                          'NMDC',
+  'VEDL':                          'VEDL',
+  'HINDZINC':                      'HINDZINC',
+  'GAIL':                          'GAIL',
+  'BHARTI AIRTEL':                 'BHARTIARTL',
+  'INDUS TOWERS':                  'INDUSTOWER',
+  'VODAFONE IDEA':                 'IDEA',
+};
+
 // Best-effort NSE ticker from full company name (fallback when ISIN not in table)
 function companyNameToTicker(name: string): string {
-  let s = name.trim().toUpperCase();
+  const upper = name.trim().toUpperCase().replace(/\s+/g, ' ');
+  // Direct lookup first (handles banks and stocks that don't derive naturally)
+  for (const [key, ticker] of Object.entries(COMPANY_NAME_NSE)) {
+    if (upper === key || upper.startsWith(key)) return ticker;
+  }
+  let s = upper;
   const drop = (p: RegExp) => { s = s.replace(p, '').replace(/\s+/g, ' ').trim(); };
   drop(/\bLIMITED\b|\bLTD\.?\b|\bCORPORATION\b|\bCORP\.?\b|\s+\bLT\b$/g);
   drop(/\bPRIVATE\b|\bPVT\.?\b|\bINC\.?\b/g);
