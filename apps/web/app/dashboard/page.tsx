@@ -171,48 +171,37 @@ const MKT_INDICES = [
   { name:'NIFTY IT',   ticker:'^CNXIT'  },
 ];
 
-// ─── Portfolio News Widget ───────────────────────────────────────────────────
+// ─── US Stock News (lazy, max 3 symbols, deferred 2s) ────────────────────────
 interface NewsItem { title: string; publisher: string; link: string; published_at: string | null; ticker: string }
-function PortfolioNewsWidget({ symbols }: { symbols: string[] }) {
+function UsNewsWidget({ symbols }: { symbols: string[] }) {
   const [news, setNews]     = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const key = symbols.slice(0, 10).join(',');
+  const usSyms = symbols.filter(s => !s.endsWith('.NS') && !s.endsWith('.BO')).slice(0, 3);
 
   useEffect(() => {
-    if (!symbols.length) { setLoading(false); return; }
-    setLoading(true);
-    fetch(`/api/portfolio-news?symbols=${encodeURIComponent(symbols.slice(0, 10).join(','))}`)
-      .then(r => r.json())
-      .then((d: { news?: NewsItem[] }) => { setNews(d.news ?? []); setLoading(false); })
-      .catch(() => setLoading(false));
+    if (!usSyms.length) { setLoading(false); return; }
+    // Defer so main P&L + prices render first
+    const t = setTimeout(() => {
+      fetch(`/api/portfolio-news?symbols=${encodeURIComponent(usSyms.join(','))}`)
+        .then(r => r.json())
+        .then((d: { news?: NewsItem[] }) => { setNews(d.news ?? []); setLoading(false); })
+        .catch(() => setLoading(false));
+    }, 2000);
+    return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key]);
+  }, [usSyms.join(',')]);
 
-  if (!loading && !news.length) return null;
+  if (!usSyms.length || (!loading && !news.length)) return null;
 
   return (
-    <div style={{ ...card, marginBottom:16, borderColor:'rgba(79,111,250,0.22)', background:'linear-gradient(135deg,rgba(23,64,245,0.05),var(--card-bg))' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-          <div style={{ width:30, height:30, borderRadius:9, background:'rgba(79,111,250,0.14)', border:'1px solid rgba(79,111,250,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>📰</div>
-          <div>
-            <div style={{ fontSize:13, fontWeight:800 }}>Portfolio News</div>
-            <div style={{ fontSize:11, color:'var(--dim)' }}>Latest from your holdings</div>
-          </div>
-        </div>
-        {!loading && news.length > 0 && <span style={{ fontSize:11, color:'var(--dim)', fontWeight:500 }}>{news.length} stories</span>}
-        {loading && <span style={{ fontSize:11, color:'var(--dim)' }}>loading…</span>}
+    <div style={{ borderTop:'1px solid var(--bdr)', paddingTop:14, marginTop:14 }}>
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+        <div style={{ fontSize:12, fontWeight:800 }}>📰 US Market News</div>
+        {loading && <span style={{ fontSize:10, color:'var(--dim)' }}>loading…</span>}
       </div>
-
-      {loading && (
-        <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-          {[0,1,2].map(i => <div key={i} style={{ height:52, background:'var(--surf2)', borderRadius:9, opacity:0.6-i*0.15 }}/>)}
-        </div>
-      )}
-
       {!loading && (
         <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-          {news.map((n, i) => {
+          {news.slice(0, 5).map((n, i) => {
             const ago = (() => {
               if (!n.published_at) return '';
               const s = (Date.now() - new Date(n.published_at).getTime()) / 1000;
@@ -220,25 +209,18 @@ function PortfolioNewsWidget({ symbols }: { symbols: string[] }) {
               if (s < 86400) return `${Math.floor(s/3600)}h ago`;
               return `${Math.floor(s/86400)}d ago`;
             })();
-            const isIndia = n.ticker.endsWith('.NS') || n.ticker.endsWith('.BO');
-            const tag = n.ticker.replace('.NS','').replace('.BO','');
             return (
               <a key={i} href={n.link} target="_blank" rel="noopener noreferrer"
-                className="hover-lift"
-                style={{ textDecoration:'none', display:'flex', alignItems:'flex-start', gap:10, padding:'10px 12px', background:'var(--surf2)', borderRadius:9, borderLeft:`3px solid ${isIndia ? 'rgba(0,212,160,0.45)' : 'rgba(79,111,250,0.45)'}` }}>
+                style={{ textDecoration:'none', display:'flex', alignItems:'flex-start', gap:8, padding:'8px 10px', background:'var(--surf2)', borderRadius:8, borderLeft:'3px solid rgba(79,111,250,0.4)' }}>
                 <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12.5, fontWeight:600, color:'var(--txt)', lineHeight:1.4, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>
-                    {n.title}
-                  </div>
-                  <div style={{ display:'flex', alignItems:'center', gap:6, marginTop:4, flexWrap:'wrap' }}>
-                    <span style={{ fontSize:9.5, color:'var(--dim)' }}>{n.publisher}</span>
-                    {ago && <><span style={{ fontSize:9, color:'var(--dim2)' }}>·</span><span style={{ fontSize:9.5, color:'var(--dim2)' }}>{ago}</span></>}
-                    <span style={{ fontSize:9, fontWeight:700, padding:'1px 6px', borderRadius:4, background: isIndia ? 'rgba(0,212,160,0.12)' : 'rgba(79,111,250,0.12)', color: isIndia ? 'var(--grn)' : 'var(--bluL)' }}>
-                      {tag} {isIndia ? '🇮🇳' : '🇺🇸'}
-                    </span>
+                  <div style={{ fontSize:12, fontWeight:600, color:'var(--txt)', lineHeight:1.4, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>{n.title}</div>
+                  <div style={{ display:'flex', gap:6, marginTop:3, alignItems:'center' }}>
+                    <span style={{ fontSize:9, color:'var(--dim)' }}>{n.publisher}</span>
+                    {ago && <span style={{ fontSize:9, color:'var(--dim2)' }}>· {ago}</span>}
+                    <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:3, background:'rgba(79,111,250,0.12)', color:'var(--bluL)' }}>{n.ticker} 🇺🇸</span>
                   </div>
                 </div>
-                <span style={{ fontSize:12, color:'var(--dim2)', flexShrink:0, marginTop:2 }}>↗</span>
+                <span style={{ fontSize:11, color:'var(--dim2)', flexShrink:0 }}>↗</span>
               </a>
             );
           })}
@@ -776,14 +758,17 @@ export default function DashboardPage() {
       .catch(() => {});
   }, [watchlist]);
 
-  // US technical analysis — fetch after holdings load
+  // US technical analysis — defer 1.5s so prices/P&L load first
   useEffect(() => {
     if (!usHoldings.length) { setUsAnalysis({}); return; }
-    const syms = [...new Set(usHoldings.map(h => h.symbol))].join(',');
-    fetch(`/api/us/analysis?symbols=${encodeURIComponent(syms)}`)
-      .then(r => r.json())
-      .then((d: Record<string, UsTA>) => setUsAnalysis(d))
-      .catch(() => {});
+    const t = setTimeout(() => {
+      const syms = [...new Set(usHoldings.map(h => h.symbol))].join(',');
+      fetch(`/api/us/analysis?symbols=${encodeURIComponent(syms)}`)
+        .then(r => r.json())
+        .then((d: Record<string, UsTA>) => setUsAnalysis(d))
+        .catch(() => {});
+    }, 1500);
+    return () => clearTimeout(t);
   }, [usHoldings]);
 
   // Recent scan picks from scan_log
@@ -1158,15 +1143,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Portfolio News — above treemap */}
-      {(() => {
-        const newsSyms = [
-          ...heatTiles.slice(0, 8).map(h => `${h.symbol}.NS`),
-          ...usHoldings.slice(0, 4).map(h => h.symbol),
-        ];
-        return newsSyms.length > 0 ? <PortfolioNewsWidget symbols={newsSyms} /> : null;
-      })()}
-
       {/* Analytics: treemap heatmap + cap donut */}
       <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
         {/* Treemap heatmap */}
@@ -1318,6 +1294,8 @@ export default function DashboardPage() {
                 </tbody>
               </table>
             </div>
+            {/* US news — lazy loaded, US-only symbols */}
+            <UsNewsWidget symbols={usHoldings.map(h => h.symbol)} />
             {/* US deep analysis — RSI, MACD, sector, insights */}
             <UsAnalysisSection holdings={usHoldings} usPrices={usPrices} usAnalysis={usAnalysis} usdInr={usdInr} />
           </>
