@@ -41,11 +41,52 @@ const EMPTY_FORM: Omit<Grant,'id'> = {
 
 // ── File parser ───────────────────────────────────────────────────────────────
 const SYM_P  = ['symbol','ticker','stock','security','equity symbol','stock symbol'];
-const TYPE_P = ['type','grant type','award type','plan type','equity type','transaction type','plan'];
-const SHR_P  = ['shares','quantity','qty','units','net shares','shares vested','vested shares','shares purchased','number of shares'];
-const PRC_P  = ['price','fmv','fair market value','grant price','award price','vest price','purchase price','price per share','market price','ordinary income per share','cost per share','sale price','grant date fmv'];
+const TYPE_P = ['type','grant type','award type','asset class','plan type','equity type','transaction type','plan'];
+const SHR_P  = ['shares vested','vested quantity','vested shares','vested qty','shares','quantity','qty','units','net shares','shares purchased','number of shares'];
+const PRC_P  = ['fair market value at vest','fmv at vest','price','fmv','fair market value','grant price','award price','vest price','purchase price','price per share','market price','ordinary income per share','cost per share','sale price','grant date fmv'];
 const DAT_P  = ['vest date','vesting date','date','purchase date','transaction date','date vested','acquisition date','release date','delivery date'];
-const CO_P   = ['company','company name','description','security description','issuer'];
+const CO_P   = ['company name','company','description','security description','issuer'];
+
+// Company name → ticker for Shareworks / broker files that omit Symbol column
+const COMPANY_TICKER: Record<string, string> = {
+  'AMAZON.COM INC': 'AMZN', 'AMAZON': 'AMZN',
+  'ALPHABET INC': 'GOOGL', 'GOOGLE': 'GOOGL', 'ALPHABET': 'GOOGL',
+  'META PLATFORMS INC': 'META', 'META PLATFORMS': 'META', 'META': 'META',
+  'MICROSOFT CORP': 'MSFT', 'MICROSOFT CORPORATION': 'MSFT', 'MICROSOFT': 'MSFT',
+  'APPLE INC': 'AAPL', 'APPLE': 'AAPL',
+  'NVIDIA CORP': 'NVDA', 'NVIDIA CORPORATION': 'NVDA', 'NVIDIA': 'NVDA',
+  'NETFLIX INC': 'NFLX', 'NETFLIX': 'NFLX',
+  'TESLA INC': 'TSLA', 'TESLA': 'TSLA',
+  'SALESFORCE INC': 'CRM', 'SALESFORCE': 'CRM',
+  'ADOBE INC': 'ADBE', 'ADOBE': 'ADBE',
+  'QUALCOMM INC': 'QCOM', 'QUALCOMM': 'QCOM',
+  'INTEL CORP': 'INTC', 'INTEL CORPORATION': 'INTC', 'INTEL': 'INTC',
+  'ADVANCED MICRO DEVICES': 'AMD', 'AMD': 'AMD',
+  'CISCO SYSTEMS': 'CSCO', 'CISCO': 'CSCO',
+  'ORACLE CORP': 'ORCL', 'ORACLE': 'ORCL',
+  'SERVICENOW INC': 'NOW', 'SERVICENOW': 'NOW',
+  'WORKDAY INC': 'WDAY', 'WORKDAY': 'WDAY',
+  'SNOWFLAKE INC': 'SNOW', 'SNOWFLAKE': 'SNOW',
+  'PALANTIR TECHNOLOGIES': 'PLTR', 'PALANTIR': 'PLTR',
+  'COINBASE GLOBAL': 'COIN', 'COINBASE': 'COIN',
+  'UBER TECHNOLOGIES': 'UBER', 'UBER': 'UBER',
+  'LYFT INC': 'LYFT', 'LYFT': 'LYFT',
+  'AIRBNB INC': 'ABNB', 'AIRBNB': 'ABNB',
+  'DOORDASH INC': 'DASH', 'DOORDASH': 'DASH',
+  'BLOCK INC': 'SQ', 'BLOCK': 'SQ',
+  'TWITTER INC': 'TWTR', 'TWITTER': 'TWTR',
+  'LINKEDIN': 'MSFT',  // acquired by Microsoft
+};
+
+// Find first row that looks like a header — skip meta text (account number, report date, etc.)
+const HEADER_KEYWORDS = ['symbol','ticker','award','grant','shares','quantity','vested','vest date','type','fmv','fair market value','asset class'];
+function findHeaderRow(rows: string[][]): string[][] {
+  for (let i = 0; i < Math.min(rows.length, 10); i++) {
+    const lc = rows[i].map(c => (c ?? '').toString().toLowerCase());
+    if (HEADER_KEYWORDS.some(h => lc.some(c => c.includes(h)))) return rows.slice(i);
+  }
+  return rows;
+}
 
 function colIdx(headers: string[], patterns: string[]): number {
   const h = headers.map(s => s.toLowerCase().trim());
@@ -64,6 +105,7 @@ function guessBrokerage(text: string): string {
   const t = text.toLowerCase();
   if (t.includes('schwab')) return 'Schwab Equity Awards';
   if (t.includes('fidelity') || t.includes('netbenefits')) return 'Fidelity NetBenefits';
+  if (t.includes('shareworks')) return 'E*TRADE (Morgan Stanley)';
   if (t.includes('etrade') || t.includes('e*trade') || t.includes('morgan stanley')) return 'E*TRADE (Morgan Stanley)';
   if (t.includes('ubs')) return 'UBS Financial';
   if (t.includes('computershare')) return 'Computershare';
@@ -130,21 +172,34 @@ function parseETradeRSU(raw: string[][]): ParsedRow[] {
   return out.sort((a, b) => a.vestDate.localeCompare(b.vestDate));
 }
 
+function companyToTicker(name: string): string {
+  const key = name.trim().toUpperCase().replace(/[.,]/g, '').replace(/\s+/g, ' ');
+  // exact match first, then prefix match
+  if (COMPANY_TICKER[key]) return COMPANY_TICKER[key];
+  for (const [k, v] of Object.entries(COMPANY_TICKER)) {
+    if (key.startsWith(k) || k.startsWith(key)) return v;
+  }
+  return '';
+}
+
 function parseRows2D(rows: string[][], brokerage: string): ParsedRow[] {
-  if (rows.length < 2) return [];
-  const headers = rows[0];
+  const trimmed = findHeaderRow(rows);
+  if (trimmed.length < 2) return [];
+  const headers = trimmed[0];
   const symI = colIdx(headers, SYM_P);
   const typI = colIdx(headers, TYPE_P);
   const shrI = colIdx(headers, SHR_P);
   const prcI = colIdx(headers, PRC_P);
   const datI = colIdx(headers, DAT_P);
   const coI  = colIdx(headers, CO_P);
-  if (symI < 0 || shrI < 0) return [];
+  if (shrI < 0) return [];
   const out: ParsedRow[] = [];
-  for (let i = 1; i < rows.length; i++) {
-    const r = rows[i];
-    const sym = (r[symI] ?? '').toString().trim().toUpperCase()
-      .replace(/\.NS$/,'').replace(/\.BO$/,'');
+  for (let i = 1; i < trimmed.length; i++) {
+    const r = trimmed[i];
+    // Symbol: prefer explicit symbol col, fallback to company name lookup
+    let sym = symI >= 0 ? (r[symI] ?? '').toString().trim().toUpperCase()
+      .replace(/\.NS$/,'').replace(/\.BO$/,'') : '';
+    if (!sym && coI >= 0) sym = companyToTicker((r[coI] ?? '').toString());
     if (!sym || sym.length > 10) continue;
     const rawShares = (r[shrI] ?? '').toString().replace(/[,\s$]/g,'');
     const shares = parseFloat(rawShares);
