@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePortfolio } from '@/lib/portfolio-context';
+import { StockNews } from '@/components/StockNews';
 import * as XLSX from 'xlsx';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -1262,6 +1263,12 @@ export default function USPortfolioPage() {
                   {[1,2,3].map(i => <div key={i} className="shimmer" style={{ height:60, borderRadius:9 }} />)}
                 </div>
               )}
+
+              {/* ── Latest News ── */}
+              <Section title="Latest News" />
+              <div style={{ marginBottom:14 }}>
+                <StockNews symbol={h.symbol} exchange="US" />
+              </div>
 
               <button onClick={() => { handleDelete(h); setSelected(null); setDetail(null); }}
                 style={{ width:'100%', height:38, borderRadius:9, background:'rgba(255,59,92,0.08)', border:'1px solid rgba(255,59,92,0.25)', color:'var(--red)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>

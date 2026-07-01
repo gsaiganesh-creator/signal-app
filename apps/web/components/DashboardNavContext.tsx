@@ -27,11 +27,14 @@ export const TABS = [
   {
     key: 'markets', label: 'Markets',
     links: [
-      { href: '/dashboard/sectors',     label: 'Heatmap'     },
-      { href: '/dashboard/fii-dii',     label: 'FII / DII'   },
-      { href: '/dashboard/forex',       label: 'Forex'       },
-      { href: '/dashboard/commodities', label: 'Commodities' },
-      { href: '/dashboard/earnings',    label: 'Earnings'    },
+      { href: '/dashboard/sectors',                 label: 'Heatmap'      },
+      { href: '/dashboard/fii-dii',                 label: 'FII / DII'    },
+      { href: '/dashboard/signals?tab=fundamental', label: 'Fundamentals' },
+      { href: '/dashboard/dividends',               label: 'Dividends'    },
+      { href: '/dashboard/earnings',                label: 'Earnings'     },
+      { href: '/dashboard/feed',                    label: 'Market Feed'  },
+      { href: '/dashboard/forex',                   label: 'Forex'        },
+      { href: '/dashboard/commodities',             label: 'Commodities'  },
     ],
   },
   {

@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
+import { StockNews } from '@/components/StockNews';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -443,6 +444,12 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
               </div>
             </div>
           ) : null}
+
+          {/* ── Latest News ── */}
+          <div style={{ marginBottom:8 }}>
+            <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:6 }}>Latest News</div>
+            <StockNews symbol={sig.symbol.replace(/\.(NS|BO)$/i, '')} exchange={sig.symbol.endsWith('.BO') ? 'BSE' : 'NSE'} />
+          </div>
         </div>
         <div style={{ padding:'14px 24px', borderTop:'1px solid var(--bdr)', background:'var(--surf2)' }}>
           <div style={{ fontSize:10, color:'var(--dim2)', marginBottom:8 }}>⚠️ NOT SEBI REGISTERED · ML signals are probabilistic · Not financial advice · DYOR</div>
@@ -620,6 +627,12 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
               </div>
             </>
           )}
+
+          {/* ── Latest News ── */}
+          <div style={{ marginTop:20 }}>
+            <Section title="Latest News" />
+            <StockNews symbol={sig.symbol} exchange="US" />
+          </div>
         </div>
 
         <div style={{ padding:'14px 24px', borderTop:'1px solid var(--bdr)', background:'var(--surf2)' }}>
@@ -659,6 +672,14 @@ function MarketToggle({ market, onChange }: { market: Market; onChange: (m: Mark
 export default function SignalsPage() {
   const { symbols: portfolioSymbols, portfolios, session } = usePortfolio();
   const [market, setMarket] = useState<Market>('india');
+
+  // Deep-link: /dashboard/signals?tab=fundamental|us|india
+  useEffect(() => {
+    const p = new URLSearchParams(window.location.search);
+    const t = p.get('tab') ?? p.get('market');
+    if (t === 'fundamental' || t === 'fundamentals') setMarket('fundamental');
+    else if (t === 'us') setMarket('us');
+  }, []);
 
   // India state
   const [mlSignals, setMlSignals] = useState<MLSignal[]>([]);

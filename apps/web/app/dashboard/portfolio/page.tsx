@@ -12,6 +12,7 @@ const PortfolioChart      = dynamic(() => import('@/components/PortfolioChart').
 const PortfolioShareCard  = dynamic(() => import('@/components/PortfolioShareCard').then(m => ({ default: m.PortfolioShareCard })), { ssr: false });
 import { PortfolioRiskCard } from '@/components/PortfolioRiskCard';
 import { DividendTracker } from '@/components/DividendTracker';
+import { StockNews } from '@/components/StockNews';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -1804,6 +1805,12 @@ export default function PortfolioPage() {
                     </div>
                   </div>
                 )}
+
+                {/* ── Latest News ── */}
+                <div style={{ padding:'0 18px 16px' }}>
+                  <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:4 }}>Latest News</div>
+                  <StockNews symbol={h.symbol} exchange={h.exchange === 'BSE' ? 'BSE' : 'NSE'} />
+                </div>
 
                 {/* Loading skeleton */}
                 {detailLoading && (
