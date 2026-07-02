@@ -929,33 +929,41 @@ export default function DashboardPage() {
       {/* KPI strip — India + Net Worth + US all in one row */}
       <div className="g6" style={{ display:'grid', gap:12, marginBottom:14 }}>
         {/* Equity */}
-        <div style={colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)')}>
-          <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-            <div style={{ width:26, height:26, borderRadius:7, background:'rgba(79,111,250,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>📈</div>
-            <div style={{ fontSize:10, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>Equity Stocks</div>
-          </div>
-          <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{equityH.length}</div>
-          <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{fmtL(equityInvested)} invested</div>
-          {hasPrices && equityInvested > 0 && (
-            <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: equityPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-              {equityPL >= 0 ? '▲' : '▼'} {equityPL >= 0 ? '+' : ''}{equityPLPct.toFixed(1)}%
+        <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
+          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(79,111,250,0.18)';}}
+          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
+          <div style={colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)')}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+              <div style={{ width:26, height:26, borderRadius:7, background:'rgba(79,111,250,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>📈</div>
+              <div style={{ fontSize:10, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>Equity Stocks</div>
             </div>
-          )}
-        </div>
+            <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{equityH.length}</div>
+            <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{fmtL(equityInvested)} invested</div>
+            {hasPrices && equityInvested > 0 && (
+              <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: equityPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                {equityPL >= 0 ? '▲' : '▼'} {equityPL >= 0 ? '+' : ''}{equityPLPct.toFixed(1)}%
+              </div>
+            )}
+          </div>
+        </Link>
         {/* ETF & MF */}
-        <div style={colorCard('linear-gradient(135deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))','rgba(139,92,246,0.3)')}>
-          <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-            <div style={{ width:26, height:26, borderRadius:7, background:'rgba(139,92,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🏦</div>
-            <div style={{ fontSize:10, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, textTransform:'uppercase' }}>ETF & MF</div>
-          </div>
-          <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{etfH.length}</div>
-          <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{etfInvested > 0 ? fmtL(etfInvested) : '—'} invested</div>
-          {hasPrices && etfInvested > 0 && (
-            <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: etfPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-              {etfPL >= 0 ? '▲' : '▼'} {etfPL >= 0 ? '+' : ''}{etfPLPct.toFixed(1)}%
+        <Link href="/dashboard/etf-mf" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
+          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(139,92,246,0.18)';}}
+          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
+          <div style={colorCard('linear-gradient(135deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))','rgba(139,92,246,0.3)')}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+              <div style={{ width:26, height:26, borderRadius:7, background:'rgba(139,92,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🏦</div>
+              <div style={{ fontSize:10, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, textTransform:'uppercase' }}>ETF & MF</div>
             </div>
-          )}
-        </div>
+            <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{etfH.length}</div>
+            <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{etfInvested > 0 ? fmtL(etfInvested) : '—'} invested</div>
+            {hasPrices && etfInvested > 0 && (
+              <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: etfPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                {etfPL >= 0 ? '▲' : '▼'} {etfPL >= 0 ? '+' : ''}{etfPLPct.toFixed(1)}%
+              </div>
+            )}
+          </div>
+        </Link>
         {/* Total Invested */}
         <div style={colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)')}>
           <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
