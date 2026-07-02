@@ -865,15 +865,37 @@ export default function LandingPage() {
             <div style={{ fontSize:12, color:'var(--dim)', maxWidth:260, lineHeight:1.6 }}>ML-powered trading intelligence for NSE &amp; BSE. Not SEBI registered. Not financial advice.</div>
           </div>
           <div style={{ display:'flex', gap:48, flexWrap:'wrap' }}>
-            {[
-              { h:'Platform', links:['Portfolio Analysis','ML Technical Scan','Algo Builder','Paper Trading'] },
-              { h:'Company',  links:['About & Founders','Track Record','Privacy Policy','SEBI Disclaimer'] },
-              { h:'Connect',  links:['Twitter / X','WhatsApp','Contact'] },
-            ].map(col => (
+            {([
+              { h:'Platform', links:[
+                { label:'Portfolio Analysis',  href:'/auth' },
+                { label:'ML Technical Scan',   href:'/signals' },
+                { label:'Algo Builder',        href:'/auth' },
+                { label:'Paper Trading',       href:'/auth' },
+              ]},
+              { h:'Company', links:[
+                { label:'About & Founders',   href:'/about' },
+                { label:'Track Record',       href:'/track-record' },
+                { label:'Privacy Policy',     href:'/privacy' },
+                { label:'SEBI Disclaimer',    href:'/risk-disclosure' },
+              ]},
+              { h:'Connect', links:[
+                { label:'Twitter / X',  href:'https://twitter.com/signalgenie_in' },
+                { label:'Contact',      href:'mailto:support@signalgenie.ai' },
+              ]},
+            ] as { h:string; links:{label:string;href:string}[] }[]).map(col => (
               <div key={col.h}>
                 <div style={{ fontSize:10.5, fontWeight:700, color:'var(--dim2)', letterSpacing:1, textTransform:'uppercase', marginBottom:12 }}>{col.h}</div>
                 <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
-                  {col.links.map(l => <a key={l} href="#" style={{ fontSize:13, color:'var(--dim)', textDecoration:'none' }} onMouseEnter={e=>(e.currentTarget.style.color='var(--txt)')} onMouseLeave={e=>(e.currentTarget.style.color='var(--dim)')}>{l}</a>)}
+                  {col.links.map(l => (
+                    <a key={l.label} href={l.href}
+                      target={l.href.startsWith('http') || l.href.startsWith('mailto') ? '_blank' : undefined}
+                      rel={l.href.startsWith('http') ? 'noopener noreferrer' : undefined}
+                      style={{ fontSize:13, color:'var(--dim)', textDecoration:'none' }}
+                      onMouseEnter={e=>(e.currentTarget.style.color='var(--txt)')}
+                      onMouseLeave={e=>(e.currentTarget.style.color='var(--dim)')}>
+                      {l.label}
+                    </a>
+                  ))}
                 </div>
               </div>
             ))}
