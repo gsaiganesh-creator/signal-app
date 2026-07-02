@@ -93,7 +93,7 @@ export function MarketBrief() {
   }
 
   return (
-    <div style={{ marginBottom: 16, background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 16, padding: '16px 20px', position: 'relative', overflow: 'hidden' }}>
+    <div style={{ background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 16, padding: '16px 20px', position: 'relative', overflow: 'hidden', height: '100%', boxSizing: 'border-box' }}>
 
       {/* Subtle glow */}
       <div style={{ position: 'absolute', top: -30, right: -30, width: 150, height: 150, borderRadius: '50%', background: 'rgba(23,64,245,0.06)', filter: 'blur(40px)', pointerEvents: 'none' }} />
@@ -143,19 +143,19 @@ export function MarketBrief() {
 
         {/* FII/DII */}
         {fiidii && (
-          <div style={{ flex: '1 1 180px', background: 'var(--surf2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '8px 12px' }}>
-            <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>FII / DII</div>
-            <div style={{ display: 'flex', gap: 12 }}>
+          <div style={{ flex: '1 1 180px', background: 'var(--surf2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '12px 14px' }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>FII / DII</div>
+            <div style={{ display: 'flex', gap: 16 }}>
               <div>
-                <div style={{ fontSize: 9, color: 'var(--dim2)', marginBottom: 1 }}>FII</div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: fiidii.fii_net >= 0 ? 'var(--grn)' : 'var(--red)' }}>{crFmt(fiidii.fii_net)}</div>
+                <div style={{ fontSize: 10, color: 'var(--dim2)', marginBottom: 2 }}>FII</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: fiidii.fii_net >= 0 ? 'var(--grn)' : 'var(--red)' }}>{crFmt(fiidii.fii_net)}</div>
               </div>
               <div>
-                <div style={{ fontSize: 9, color: 'var(--dim2)', marginBottom: 1 }}>DII</div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: fiidii.dii_net >= 0 ? 'var(--grn)' : 'var(--red)' }}>{crFmt(fiidii.dii_net)}</div>
+                <div style={{ fontSize: 10, color: 'var(--dim2)', marginBottom: 2 }}>DII</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: fiidii.dii_net >= 0 ? 'var(--grn)' : 'var(--red)' }}>{crFmt(fiidii.dii_net)}</div>
               </div>
             </div>
-            <div style={{ fontSize: 9, color: 'var(--dim2)', marginTop: 4 }}>{fiidii.date}</div>
+            <div style={{ fontSize: 10, color: 'var(--dim2)', marginTop: 6 }}>{fiidii.date}</div>
           </div>
         )}
 
@@ -165,16 +165,16 @@ export function MarketBrief() {
           const chg = d?.change_pct ?? null;
           const up  = (chg ?? 0) >= 0;
           return (
-            <div key={g.key} style={{ flex: '1 1 90px', background: 'var(--surf2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '8px 12px' }}>
-              <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 3 }}>{g.label}</div>
+            <div key={g.key} style={{ flex: '1 1 90px', background: 'var(--surf2)', border: '1px solid var(--bdr)', borderRadius: 10, padding: '12px 14px' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 4 }}>{g.label}</div>
               {loading
-                ? <div style={{ width: 55, height: 16, borderRadius: 4, background: 'var(--bdr)' }} />
-                : <div style={{ fontSize: 13, fontWeight: 900, letterSpacing: -0.3 }}>
+                ? <div style={{ width: 55, height: 18, borderRadius: 4, background: 'var(--bdr)' }} />
+                : <div style={{ fontSize: 16, fontWeight: 900, letterSpacing: -0.3 }}>
                     {g.key === 'GC=F' && d?.price != null ? `$${d.price.toLocaleString('en-US', { maximumFractionDigits: 0 })}` :
                      g.key === 'CL=F' && d?.price != null ? `$${d.price.toFixed(1)}` :
                      d?.price != null ? d.price.toLocaleString('en-US', { maximumFractionDigits: 0 }) : '—'}
                   </div>}
-              <div style={{ fontSize: 10, fontWeight: 700, marginTop: 2, color: up ? 'var(--grn)' : 'var(--red)' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, marginTop: 3, color: up ? 'var(--grn)' : 'var(--red)' }}>
                 {!loading && chg != null ? `${up ? '▲' : '▼'} ${Math.abs(chg).toFixed(2)}%` : ''}
               </div>
             </div>

@@ -1032,7 +1032,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Market brief + MMI — below KPIs */}
-      <div className="g-brief" style={{ display:'grid', gap:14, marginBottom:14 }}>
+      <div className="g-brief" style={{ display:'grid', gap:14, marginBottom:14, alignItems:'stretch' }}>
         <MarketBrief />
         <MarketMoodIndex />
       </div>

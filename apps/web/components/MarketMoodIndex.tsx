@@ -85,7 +85,7 @@ export function MarketMoodIndex() {
   const color = data?.zoneColor ?? '#FFB800';
 
   return (
-    <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px', minWidth:220 }}>
+    <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px', minWidth:220, height:'100%', boxSizing:'border-box' }}>
       <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.8, marginBottom:2 }}>
         SIGNAL-MMI
       </div>
