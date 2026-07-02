@@ -160,6 +160,86 @@ export default function ETFMFPage() {
   const [showMfForm, setShowMfForm]   = useState(false);
   const searchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // ── CASParser Gmail Import ────────────────────────────────────────────────
+  type CASStep = 'idle' | 'connecting' | 'files' | 'pan' | 'parsing' | 'done' | 'error';
+  interface CASFile { message_id: string; filename: string; original_filename: string; message_date: string; cas_type: string; url: string; }
+  interface ImportedHolding { scheme_code: string; scheme_name: string; units: number; avg_nav: number; current_nav: number; }
+
+  const [casStep,     setCasStep]     = useState<CASStep>('idle');
+  const [casFiles,    setCasFiles]    = useState<CASFile[]>([]);
+  const [casSelected, setCasSelected] = useState<CASFile | null>(null);
+  const [casPan,      setCasPan]      = useState('');
+  const [casResults,  setCasResults]  = useState<ImportedHolding[]>([]);
+  const [casError,    setCasError]    = useState('');
+  const [casSaving,   setCasSaving]   = useState(false);
+
+  // On mount: check if returning from Gmail OAuth callback
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const token = sessionStorage.getItem('cas_inbox_token');
+    const isCasReturn = window.location.search.includes('cas=1');
+    if (token && isCasReturn) {
+      setTab('holdings');
+      setCasStep('files');
+      fetch('/api/casparser/files', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inbox_token: token }),
+      })
+        .then(r => r.json())
+        .then((d: { files?: CASFile[]; error?: string }) => {
+          if (d.error) { setCasError(d.error); setCasStep('error'); return; }
+          setCasFiles(d.files ?? []);
+          if ((d.files ?? []).length > 0) setCasSelected(d.files![0]);
+          setCasStep('pan');
+        })
+        .catch(() => { setCasError('Failed to fetch CAS files.'); setCasStep('error'); });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  async function handleGmailImport() {
+    setCasStep('connecting'); setCasError('');
+    try {
+      const r = await fetch('/api/casparser/connect');
+      const d = await r.json() as { oauth_url?: string; error?: string };
+      if (d.error || !d.oauth_url) { setCasError(d.error ?? 'Failed to get OAuth URL'); setCasStep('error'); return; }
+      window.location.href = d.oauth_url;
+    } catch { setCasError('Network error'); setCasStep('error'); }
+  }
+
+  async function handleParseAndImport() {
+    if (!casSelected || !casPan.trim()) return;
+    setCasStep('parsing'); setCasError('');
+    try {
+      const r = await fetch('/api/casparser/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdf_url: casSelected.url, pan: casPan.trim() }),
+      });
+      const d = await r.json() as { holdings?: ImportedHolding[]; error?: string };
+      if (d.error || !d.holdings) { setCasError(d.error ?? 'Parse failed'); setCasStep('error'); return; }
+      setCasResults(d.holdings);
+      setCasStep('done');
+    } catch { setCasError('Network error during parse'); setCasStep('error'); }
+  }
+
+  async function saveImportedHoldings() {
+    if (!session || casResults.length === 0) return;
+    setCasSaving(true);
+    for (const h of casResults) {
+      await fetch(`${SUPA_URL}/rest/v1/mf_holdings`, {
+        method: 'POST',
+        headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({ user_id: session.user.id, scheme_code: h.scheme_code, scheme_name: h.scheme_name, units: h.units, avg_nav: h.avg_nav }),
+      });
+    }
+    sessionStorage.removeItem('cas_inbox_token');
+    setCasStep('idle'); setCasResults([]); setCasPan(''); setCasFiles([]); setCasSelected(null);
+    setCasSaving(false);
+    loadMFHoldings(session);
+  }
+
   const loadMFHoldings = useCallback(async (sess: Session) => {
     setMfLoading(true);
     const res = await fetch(`${SUPA_URL}/rest/v1/mf_holdings?user_id=eq.${sess.user.id}&select=*&order=created_at.desc`, {
@@ -459,16 +539,89 @@ export default function ETFMFPage() {
       {/* ══ TAB: MY HOLDINGS ══ */}
       {tab === 'holdings' && (
         <>
-          {/* CAMS Auto-Import Coming Soon Banner */}
-          <div style={{ background:'linear-gradient(135deg,rgba(139,92,246,0.1),rgba(23,64,245,0.08))', border:'1px solid rgba(139,92,246,0.3)', borderRadius:14, padding:'14px 18px', marginBottom:20, display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
-            <div style={{ width:38, height:38, borderRadius:10, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🔗</div>
-            <div style={{ flex:1, minWidth:180 }}>
-              <div style={{ fontSize:13, fontWeight:800, color:'var(--pur)', marginBottom:2 }}>CAMS Auto-Import — Coming Soon</div>
-              <div style={{ fontSize:11, color:'var(--dim)', lineHeight:1.5 }}>
-                One-tap import of all your MFs via PAN + OTP (no CSV, no upload). In progress with CAMS tech partnership.
+          {/* CASParser Gmail Import */}
+          <div style={{ background:'linear-gradient(135deg,rgba(139,92,246,0.1),rgba(23,64,245,0.08))', border:'1px solid rgba(139,92,246,0.3)', borderRadius:14, padding:'16px 18px', marginBottom:20 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: casStep === 'idle' ? 0 : 14, flexWrap:'wrap' }}>
+              <div style={{ width:36, height:36, borderRadius:10, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:16, flexShrink:0 }}>📧</div>
+              <div style={{ flex:1, minWidth:160 }}>
+                <div style={{ fontSize:13, fontWeight:800, color:'var(--pur)' }}>Import all MFs via Gmail</div>
+                <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>Read-only Google access · finds CAS emails automatically · no PDF upload</div>
               </div>
+              {casStep === 'idle' && (
+                <button onClick={handleGmailImport}
+                  style={{ height:36, padding:'0 16px', borderRadius:9, background:'rgba(139,92,246,0.18)', border:'1px solid rgba(139,92,246,0.4)', color:'var(--pur)', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>
+                  Connect Gmail →
+                </button>
+              )}
             </div>
-            <span style={{ fontSize:10, fontWeight:800, padding:'4px 10px', borderRadius:20, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', color:'var(--pur)', flexShrink:0 }}>COMING SOON</span>
+
+            {casStep === 'connecting' && (
+              <div style={{ fontSize:13, color:'var(--dim)', padding:'8px 0' }}>Opening Google sign-in…</div>
+            )}
+
+            {casStep === 'files' && (
+              <div style={{ fontSize:13, color:'var(--dim)', padding:'8px 0' }}>⏳ Fetching CAS files from your inbox…</div>
+            )}
+
+            {casStep === 'pan' && casFiles.length > 0 && (
+              <div>
+                <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:8 }}>Found {casFiles.length} CAS file{casFiles.length > 1 ? 's' : ''} in Gmail</div>
+                {casFiles.length > 1 && (
+                  <select value={casSelected?.url ?? ''} onChange={e => setCasSelected(casFiles.find(f => f.url === e.target.value) ?? null)}
+                    style={{ width:'100%', height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 10px', marginBottom:10, fontFamily:'inherit' }}>
+                    {casFiles.map(f => <option key={f.message_id} value={f.url}>{f.original_filename} · {f.message_date}</option>)}
+                  </select>
+                )}
+                <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
+                  <input value={casPan} onChange={e => setCasPan(e.target.value.toUpperCase())} placeholder="Enter PAN (used to decrypt CAS)" maxLength={10}
+                    style={{ flex:'1 1 160px', height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit' }} />
+                  <button onClick={handleParseAndImport} disabled={!casPan.trim() || casPan.length < 10}
+                    style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--pur)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor: casPan.length < 10 ? 'not-allowed' : 'pointer', fontFamily:'inherit', opacity: casPan.length < 10 ? 0.5 : 1 }}>
+                    Import →
+                  </button>
+                </div>
+                <div style={{ fontSize:10, color:'var(--dim2)', marginTop:6 }}>PAN is used only to decrypt the CAS PDF · never stored</div>
+              </div>
+            )}
+
+            {casStep === 'parsing' && (
+              <div style={{ fontSize:13, color:'var(--dim)', padding:'8px 0' }}>⏳ Parsing your CAS statement… (may take 10–20s)</div>
+            )}
+
+            {casStep === 'done' && casResults.length > 0 && (
+              <div>
+                <div style={{ fontSize:13, fontWeight:700, color:'var(--grn)', marginBottom:10 }}>✅ Found {casResults.length} mutual fund scheme{casResults.length > 1 ? 's' : ''}</div>
+                <div style={{ maxHeight:160, overflowY:'auto', marginBottom:12, display:'flex', flexDirection:'column', gap:6 }}>
+                  {casResults.slice(0, 8).map((h, i) => (
+                    <div key={i} style={{ display:'flex', justifyContent:'space-between', fontSize:11, padding:'6px 10px', background:'var(--surf2)', borderRadius:8 }}>
+                      <span style={{ color:'var(--txt)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', maxWidth:'60%' }}>{h.scheme_name}</span>
+                      <span style={{ color:'var(--dim)', flexShrink:0 }}>{h.units} units · NAV ₹{h.avg_nav.toFixed(2)}</span>
+                    </div>
+                  ))}
+                  {casResults.length > 8 && <div style={{ fontSize:11, color:'var(--dim)', padding:'4px 10px' }}>+{casResults.length - 8} more</div>}
+                </div>
+                <div style={{ display:'flex', gap:10 }}>
+                  <button onClick={saveImportedHoldings} disabled={casSaving}
+                    style={{ height:36, padding:'0 20px', borderRadius:9, background:'var(--grn)', border:'none', color:'#000', fontSize:13, fontWeight:800, cursor: casSaving ? 'not-allowed' : 'pointer', fontFamily:'inherit', opacity: casSaving ? 0.6 : 1 }}>
+                    {casSaving ? 'Saving…' : `Save ${casResults.length} funds to portfolio`}
+                  </button>
+                  <button onClick={() => { setCasStep('idle'); setCasResults([]); sessionStorage.removeItem('cas_inbox_token'); }}
+                    style={{ height:36, padding:'0 14px', borderRadius:9, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {casStep === 'error' && (
+              <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
+                <div style={{ fontSize:12, color:'var(--red)' }}>❌ {casError || 'Something went wrong'}</div>
+                <button onClick={() => { setCasStep('idle'); setCasError(''); sessionStorage.removeItem('cas_inbox_token'); }}
+                  style={{ height:30, padding:'0 12px', borderRadius:7, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+                  Try again
+                </button>
+              </div>
+            )}
           </div>
 
           {/* ── MF Holdings (Supabase + MFAPI live NAV) ── */}
