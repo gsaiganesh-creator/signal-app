@@ -196,6 +196,7 @@ export default function USPortfolioPage() {
   const [mlSignals, setMlSignals] = useState<Record<string, MLSignal>>({});
   const [mlLoading, setMlLoading] = useState(false);
   const [contentTab, setContentTab] = useState<'holdings' | 'espp'>('holdings');
+  const [selectedGrant, setSelectedGrant] = useState<GrantRow | null>(null);
 
   // Close port dropdown on outside click/scroll
   useEffect(() => {
@@ -533,9 +534,8 @@ export default function USPortfolioPage() {
         {/* All portfolios aggregate card */}
         {(() => {
           const isAll = !activePortId;
-          const hasPx = merged.some(h => prices[h.symbol]?.price != null);
-          const plPct = sumInvestedUSD > 0 ? ((sumCurrentUSD - sumInvestedUSD) / sumInvestedUSD) * 100 : 0;
-          const plAbs = sumCurrentUSD - sumInvestedUSD;
+          const hasPx = merged.some(h => prices[h.symbol]?.price != null) || rsuHasPrices;
+          const plPct = combinedInvested > 0 ? (combinedPL / combinedInvested) * 100 : 0;
           return (
             <button key="all" onClick={() => { setActivePortId(null); setViewMode('merged'); setMenuPortId(null); }}
               style={{ border: isAll ? '1.5px solid var(--grn)' : '1px solid var(--bdr)',
@@ -546,17 +546,19 @@ export default function USPortfolioPage() {
                 📊 All Portfolios
               </div>
               <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)' }}>
-                ${sumCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}
+                ${combinedCurrent.toLocaleString('en-US',{maximumFractionDigits:0})}
               </div>
               <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>
-                ${sumInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})} invested
+                ${combinedInvested.toLocaleString('en-US',{maximumFractionDigits:0})} invested
               </div>
-              {hasPx && sumInvestedUSD > 0 && (
-                <div style={{ fontSize:13, fontWeight:800, marginTop:6, color: plAbs >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-                  {plAbs >= 0 ? '+' : ''}{plPct.toFixed(1)}% · {plAbs >= 0 ? '+' : '-'}${Math.abs(plAbs).toLocaleString('en-US',{maximumFractionDigits:0})}
+              {hasPx && combinedInvested > 0 && (
+                <div style={{ fontSize:13, fontWeight:800, marginTop:6, color: combinedPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                  {combinedPL >= 0 ? '+' : ''}{plPct.toFixed(1)}% · {combinedPL >= 0 ? '+' : '-'}${Math.abs(combinedPL).toLocaleString('en-US',{maximumFractionDigits:0})}
                 </div>
               )}
-              <div style={{ fontSize:10, color:'var(--dim2)', marginTop:5 }}>{merged.length} holdings · {usPortfolios.length} accounts</div>
+              <div style={{ fontSize:10, color:'var(--dim2)', marginTop:5 }}>
+                {merged.length} stocks · {usPortfolios.length} accounts{validCount > 0 ? ` · ${validCount} RSU/ESPP` : ''}
+              </div>
             </button>
           );
         })()}
@@ -770,7 +772,8 @@ export default function USPortfolioPage() {
                   const pl   = cmp != null && g.grant_price > 0 ? (cmp - g.grant_price) * g.shares : null;
                   const plPct = (pl != null && g.grant_price > 0) ? (cmp! - g.grant_price) / g.grant_price * 100 : null;
                   return (
-                    <tr key={i} onMouseEnter={e=>(e.currentTarget.style.background='rgba(139,92,246,0.05)')} onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
+                    <tr key={i} onClick={() => { const sym = (g.symbol||'').trim().toUpperCase(); if (/^[A-Z]{1,6}$/.test(sym)) setSelectedGrant(g); }} style={{ cursor:'pointer' }}
+                      onMouseEnter={e=>(e.currentTarget.style.background='rgba(139,92,246,0.05)')} onMouseLeave={e=>(e.currentTarget.style.background='transparent')}>
                       <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(139,92,246,0.1)', fontWeight:700, fontSize:13 }}>{sym}</td>
                       <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(139,92,246,0.1)', fontSize:11 }}>
                         <span style={{ padding:'2px 8px', borderRadius:20, background:'rgba(139,92,246,0.12)', border:'1px solid rgba(139,92,246,0.3)', color:'var(--pur)', fontSize:10, fontWeight:700 }}>{g.type}</span>
@@ -1004,7 +1007,7 @@ export default function USPortfolioPage() {
         </div>
       )}
 
-      {/* Stock detail sheet */}
+      {/* Stock detail sheet — holdings */}
       {selectedHolding && (
         <StockDetailSheet
           symbol={selectedHolding.symbol}
@@ -1017,6 +1020,22 @@ export default function USPortfolioPage() {
             usdInr: usdInr,
             portfolioName: selectedHolding.portfolio_name,
             onDelete: () => { handleDelete(selectedHolding); setSelected(null); },
+          }}
+        />
+      )}
+
+      {/* Stock detail sheet — RSU/ESPP grants */}
+      {selectedGrant && (
+        <StockDetailSheet
+          symbol={selectedGrant.symbol.trim().toUpperCase()}
+          exchange="NYSE"
+          onClose={() => setSelectedGrant(null)}
+          holding={{
+            qty: selectedGrant.shares,
+            avgPrice: selectedGrant.grant_price,
+            currency: 'USD',
+            usdInr: usdInr,
+            portfolioName: `${selectedGrant.type} Grant`,
           }}
         />
       )}
