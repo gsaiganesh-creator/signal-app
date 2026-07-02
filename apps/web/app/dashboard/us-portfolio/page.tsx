@@ -527,75 +527,133 @@ export default function USPortfolioPage() {
         </div>
       )}
 
-      {/* Portfolio tabs */}
-      <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
-        <button onClick={() => { setActivePortId(null); setViewMode('merged'); setMenuPortId(null); }}
-          style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:13, fontWeight: !activePortId ? 700 : 500, cursor:'pointer', fontFamily:'inherit',
-            border: !activePortId ? '1px solid var(--grn)' : '1px solid var(--tab-inactive-bdr)',
-            background: !activePortId ? 'rgba(0,212,160,0.10)' : 'var(--tab-inactive-bg)',
-            color: !activePortId ? 'var(--grn)' : 'var(--tab-inactive-txt)', whiteSpace:'nowrap' }}>
-          📊 All Portfolios
-        </button>
+      {/* Portfolio widgets */}
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(190px, 1fr))', gap:10, marginBottom:18 }}>
+
+        {/* All portfolios aggregate card */}
+        {(() => {
+          const isAll = !activePortId;
+          const hasPx = merged.some(h => prices[h.symbol]?.price != null);
+          const plPct = sumInvestedUSD > 0 ? ((sumCurrentUSD - sumInvestedUSD) / sumInvestedUSD) * 100 : 0;
+          const plAbs = sumCurrentUSD - sumInvestedUSD;
+          return (
+            <button key="all" onClick={() => { setActivePortId(null); setViewMode('merged'); setMenuPortId(null); }}
+              style={{ border: isAll ? '1.5px solid var(--grn)' : '1px solid var(--bdr)',
+                background: isAll ? 'linear-gradient(135deg,rgba(0,212,160,0.10),var(--surf))' : 'var(--surf)',
+                borderRadius:14, padding:'14px 16px', cursor:'pointer', textAlign:'left', fontFamily:'inherit',
+                boxShadow: isAll ? '0 0 0 3px rgba(0,212,160,0.12)' : 'none', transition:'box-shadow 0.2s' }}>
+              <div style={{ fontSize:11, fontWeight:700, color: isAll ? 'var(--grn)' : 'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>
+                📊 All Portfolios
+              </div>
+              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)' }}>
+                ${sumCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}
+              </div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>
+                ${sumInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})} invested
+              </div>
+              {hasPx && sumInvestedUSD > 0 && (
+                <div style={{ fontSize:13, fontWeight:800, marginTop:6, color: plAbs >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                  {plAbs >= 0 ? '+' : ''}{plPct.toFixed(1)}% · {plAbs >= 0 ? '+' : '-'}${Math.abs(plAbs).toLocaleString('en-US',{maximumFractionDigits:0})}
+                </div>
+              )}
+              <div style={{ fontSize:10, color:'var(--dim2)', marginTop:5 }}>{merged.length} holdings · {usPortfolios.length} accounts</div>
+            </button>
+          );
+        })()}
+
+        {/* Per-portfolio cards */}
         {usPortfolios.map(p => {
           const isActive = activePortId === p.id;
           const isRenaming = renamingPortId === p.id;
+          const portH  = allHoldings.filter(h => h.portfolio_id === p.id);
+          const portInv = portH.reduce((s, h) => s + (h.avg_price > 0.01 ? h.avg_price * h.qty : 0), 0);
+          const portCur = portH.reduce((s, h) => { const pr = prices[h.symbol]?.price; return s + (pr != null ? pr * h.qty : (h.avg_price > 0.01 ? h.avg_price * h.qty : 0)); }, 0);
+          const portPL = portCur - portInv;
+          const portPLPct = portInv > 0 ? (portPL / portInv) * 100 : 0;
+          const hasPx = portH.some(h => prices[h.symbol]?.price != null);
           return (
-            <div key={p.id} style={{ position:'relative', display:'inline-flex', alignItems:'center', gap:0 }}>
-              {isRenaming ? (
-                <>
-                  <input autoFocus value={renamePortVal} onChange={e => setRenamePortVal(e.target.value)}
-                    onKeyDown={e => { if (e.key==='Enter') handleRenamePort(); if (e.key==='Escape') setRenamingPortId(null); }}
-                    style={{ height:34, borderRadius:'8px 0 0 8px', background:'var(--surf2)', border:'1px solid var(--blu)', borderRight:'none', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:140 }}/>
-                  <button onClick={handleRenamePort} style={{ height:34, padding:'0 10px', borderRadius:'0 8px 8px 0', background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>✓</button>
-                  <button onClick={() => setRenamingPortId(null)} style={{ height:34, padding:'0 8px', marginLeft:4, borderRadius:8, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => { setActivePortId(p.id); setViewMode('by-portfolio'); setMenuPortId(null); setUploadPortId(p.id); }}
-                    style={{ height:34, padding:'0 12px 0 16px', borderRadius:'8px 0 0 8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit',
-                      border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderRight:'none',
-                      background: isActive ? 'rgba(23,64,245,0.1)' : 'var(--tab-inactive-bg)',
-                      color: isActive ? 'var(--bluL)' : 'var(--tab-inactive-txt)' }}>
-                    📂 {p.name}
-                  </button>
-                  <button onClick={e => { e.stopPropagation(); setMenuPortId(m=>m===p.id?null:p.id); }}
-                    style={{ height:34, padding:'0 8px', borderRadius:'0 8px 8px 0', border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderLeft:'1px solid rgba(79,111,250,0.15)', background: isActive ? 'rgba(23,64,245,0.08)' : 'var(--tab-inactive-bg)', color: isActive ? 'var(--bluL)' : 'var(--dim)', cursor:'pointer', fontFamily:'inherit', fontSize:16, lineHeight:1 }}>
-                    ⋯
-                  </button>
-                </>
-              )}
-              {menuPortId === p.id && (
-                <div onClick={e => e.stopPropagation()} style={{ position:'absolute', top:'calc(100% + 4px)', left:0, zIndex:9999, background:'var(--surf2)', border:'1px solid var(--blu)', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.5),0 0 0 1px rgba(79,111,250,0.3)', minWidth:160, padding:'4px 0' }}>
-                  <button onClick={() => { setRenamingPortId(p.id); setRenamePortVal(p.name); setMenuPortId(null); }}
-                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--txt)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
-                    ✏️ Rename
-                  </button>
-                  <div style={{ height:1, background:'var(--bdr)', margin:'2px 0' }}/>
-                  <button onClick={() => { setConfirmDeletePortId(p.id); setMenuPortId(null); }}
-                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'var(--red)', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
-                    🗑️ Delete portfolio
-                  </button>
+            <div key={p.id} style={{ position:'relative',
+              border: isActive ? '1.5px solid var(--blu)' : '1px solid var(--bdr)',
+              background: isActive ? 'linear-gradient(135deg,rgba(23,64,245,0.09),var(--surf))' : 'var(--surf)',
+              borderRadius:14, padding:'14px 16px',
+              boxShadow: isActive ? '0 0 0 3px rgba(23,64,245,0.12)' : 'none', transition:'box-shadow 0.2s' }}>
+
+              {/* Header row: name + action buttons */}
+              <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6, gap:4 }}>
+                {isRenaming ? (
+                  <div style={{ display:'flex', gap:4, flex:1 }}>
+                    <input autoFocus value={renamePortVal} onChange={e => setRenamePortVal(e.target.value)}
+                      onKeyDown={e => { if (e.key==='Enter') handleRenamePort(); if (e.key==='Escape') setRenamingPortId(null); }}
+                      style={{ flex:1, height:26, borderRadius:6, background:'var(--surf2)', border:'1px solid var(--blu)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit', outline:'none', minWidth:0 }}/>
+                    <button onClick={handleRenamePort} style={{ height:26, padding:'0 8px', borderRadius:6, background:'var(--blu)', border:'none', color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>✓</button>
+                    <button onClick={() => setRenamingPortId(null)} style={{ height:26, padding:'0 6px', borderRadius:6, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:11, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>✕</button>
+                  </div>
+                ) : (
+                  <>
+                    <button onClick={() => { setActivePortId(p.id); setViewMode('by-portfolio'); setMenuPortId(null); setUploadPortId(p.id); }}
+                      style={{ flex:1, background:'none', border:'none', padding:0, cursor:'pointer', textAlign:'left', fontFamily:'inherit', minWidth:0 }}>
+                      <div style={{ fontSize:11, fontWeight:700, color: isActive ? 'var(--bluL)' : 'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                        📂 {p.name}
+                      </div>
+                    </button>
+                    <div style={{ display:'flex', gap:3, flexShrink:0 }}>
+                      <button onClick={e => { e.stopPropagation(); setRenamingPortId(p.id); setRenamePortVal(p.name); setMenuPortId(null); }}
+                        title="Rename"
+                        style={{ width:22, height:22, borderRadius:5, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:10, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        ✏️
+                      </button>
+                      <button onClick={e => { e.stopPropagation(); setConfirmDeletePortId(p.id); }}
+                        title="Delete"
+                        style={{ width:22, height:22, borderRadius:5, background:'transparent', border:'1px solid rgba(255,59,92,0.2)', color:'var(--red)', fontSize:10, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                        🗑
+                      </button>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Amounts — click anywhere to select */}
+              <div onClick={() => { setActivePortId(p.id); setViewMode('by-portfolio'); setMenuPortId(null); setUploadPortId(p.id); }}
+                style={{ cursor:'pointer' }}>
+                <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)' }}>
+                  ${portCur.toLocaleString('en-US',{maximumFractionDigits:0})}
                 </div>
-              )}
+                <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>
+                  ${portInv.toLocaleString('en-US',{maximumFractionDigits:0})} invested
+                </div>
+                {hasPx && portInv > 0 && (
+                  <div style={{ fontSize:13, fontWeight:800, marginTop:6, color: portPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                    {portPL >= 0 ? '+' : ''}{portPLPct.toFixed(1)}% · {portPL >= 0 ? '+' : '-'}${Math.abs(portPL).toLocaleString('en-US',{maximumFractionDigits:0})}
+                  </div>
+                )}
+                <div style={{ fontSize:10, color:'var(--dim2)', marginTop:5 }}>{portH.length} holdings</div>
+              </div>
             </div>
           );
         })}
+
+        {/* Add new portfolio card */}
         {showNewPortInput ? (
-          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
+          <div style={{ border:'1px dashed var(--blu)', borderRadius:14, padding:'14px 16px', display:'flex', flexDirection:'column', gap:8 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5 }}>New Portfolio</div>
             <input autoFocus placeholder="Portfolio name…" value={newPortName} onChange={e => setNewPortName(e.target.value)}
               onKeyDown={e => { if (e.key==='Enter') handleCreatePortfolio(); if (e.key==='Escape') { setShowNewPortInput(false); setNewPortName(''); } }}
-              style={{ height:34, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--blu)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:160 }}/>
-            <button onClick={handleCreatePortfolio} disabled={!newPortName.trim()||creatingPort}
-              style={{ height:34, padding:'0 14px', borderRadius:8, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-              {creatingPort ? '…' : 'Create'}
-            </button>
-            <button onClick={() => { setShowNewPortInput(false); setNewPortName(''); }}
-              style={{ height:34, padding:'0 10px', borderRadius:8, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+              style={{ height:32, borderRadius:7, background:'var(--surf2)', border:'1px solid var(--blu)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' }}/>
+            <div style={{ display:'flex', gap:6 }}>
+              <button onClick={handleCreatePortfolio} disabled={!newPortName.trim()||creatingPort}
+                style={{ flex:1, height:30, borderRadius:7, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                {creatingPort ? '…' : 'Create'}
+              </button>
+              <button onClick={() => { setShowNewPortInput(false); setNewPortName(''); }}
+                style={{ height:30, padding:'0 10px', borderRadius:7, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+            </div>
           </div>
         ) : (
           <button onClick={() => { setShowNewPortInput(true); setMenuPortId(null); }}
-            style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', border:'1px dashed var(--tab-inactive-bdr)', background:'var(--tab-inactive-bg)', color:'var(--tab-inactive-txt)' }}>
-            + New Portfolio
+            style={{ border:'1px dashed var(--bdr)', borderRadius:14, padding:'14px 16px', cursor:'pointer', fontFamily:'inherit',
+              background:'transparent', color:'var(--dim)', fontSize:13, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, minHeight:120 }}>
+            <span style={{ fontSize:22 }}>+</span>
+            <span style={{ fontSize:11, fontWeight:600 }}>New Portfolio</span>
           </button>
         )}
       </div>

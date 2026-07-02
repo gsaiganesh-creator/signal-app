@@ -15,8 +15,8 @@ function rawLabel(s: Sub): string {
   if (!s.ok || s.raw == null) return '—';
   const r = s.raw;
   if (s.key === 'momentum') return `${r >= 0 ? '+' : ''}${r.toFixed(1)}%`;
-  if (s.key === 'fii')      return `${r >= 0 ? '+' : '−'}₹${Math.abs(r/100).toFixed(0)}Cr`;
-  if (s.key === 'breadth')  return `${Math.round(r * 100)}% ↑`;
+  if (s.key === 'fii')      return `${r >= 0 ? '+' : '−'}₹${Math.abs(r / 100).toFixed(0)}Cr`;
+  if (s.key === 'breadth')  return `${Math.round(r * 100)}% adv`;
   return `${r.toFixed(1)}`;
 }
 
@@ -27,9 +27,13 @@ function barColor(score: number): string {
   return '#00D4A0';
 }
 
+const SHORT: Record<string, string> = {
+  momentum: 'Momentum', fii: 'FII / DII', vix: 'VIX', breadth: 'Breadth', delivery: 'Delivery'
+};
+
 // Compact semicircular gauge
 function Gauge({ score, color }: { score: number; color: string }) {
-  const CX = 80, CY = 86, R = 58;
+  const CX = 84, CY = 90, R = 62;
   const toRad = (d: number) => (d * Math.PI) / 180;
   const pt = (deg: number) => ({
     x: CX + R * Math.cos(toRad(180 - deg)),
@@ -44,57 +48,54 @@ function Gauge({ score, color }: { score: number; color: string }) {
   ];
   const arcPath = (from: number, to: number) => {
     const s = pt(from * 1.8), e = pt(to * 1.8);
-    const large = (to - from) * 1.8 > 180 ? 1 : 0;
-    return `M ${s.x} ${s.y} A ${R} ${R} 0 ${large} 1 ${e.x} ${e.y}`;
+    return `M ${s.x} ${s.y} A ${R} ${R} 0 ${(to - from) * 1.8 > 180 ? 1 : 0} 1 ${e.x} ${e.y}`;
   };
   const angle = score * 1.8;
   const tip = pt(angle);
-  const base1 = { x: CX + 6 * Math.cos(toRad(180 - angle + 90)), y: CY - 6 * Math.sin(toRad(180 - angle + 90)) };
-  const base2 = { x: CX + 6 * Math.cos(toRad(180 - angle - 90)), y: CY - 6 * Math.sin(toRad(180 - angle - 90)) };
-
+  const b1 = { x: CX + 7 * Math.cos(toRad(180 - angle + 90)), y: CY - 7 * Math.sin(toRad(180 - angle + 90)) };
+  const b2 = { x: CX + 7 * Math.cos(toRad(180 - angle - 90)), y: CY - 7 * Math.sin(toRad(180 - angle - 90)) };
   return (
-    <svg width={160} height={100} viewBox="0 0 160 100" style={{ display:'block' }}>
-      <path d={arcPath(0, 100)} fill="none" stroke="var(--bdr)" strokeWidth={9} strokeLinecap="round"/>
+    <svg width={168} height={106} viewBox="0 0 168 106" style={{ display:'block' }}>
+      <path d={arcPath(0, 100)} fill="none" stroke="var(--bdr)" strokeWidth={10} strokeLinecap="round"/>
       {bands.map(b => (
-        <path key={b.from} d={arcPath(b.from, b.to)} fill="none" stroke={b.col} strokeWidth={9}
-          strokeLinecap={b.from === 0 || b.to === 100 ? 'round' : 'butt'} opacity={0.85}/>
+        <path key={b.from} d={arcPath(b.from, b.to)} fill="none" stroke={b.col} strokeWidth={10}
+          strokeLinecap={b.from === 0 || b.to === 100 ? 'round' : 'butt'} opacity={0.9}/>
       ))}
-      <polygon points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`} fill={color} opacity={0.95}/>
-      <circle cx={CX} cy={CY} r={6} fill={color} stroke="var(--surf)" strokeWidth={2}/>
-      <text x={CX} y={CY + 18} textAnchor="middle" fontSize={26} fontWeight={900} fill={color}
+      <polygon points={`${tip.x},${tip.y} ${b1.x},${b1.y} ${b2.x},${b2.y}`} fill={color}/>
+      <circle cx={CX} cy={CY} r={7} fill={color} stroke="var(--surf2)" strokeWidth={2}/>
+      <text x={CX} y={CY + 20} textAnchor="middle" fontSize={28} fontWeight={900} fill={color}
         style={{ fontFamily:'inherit' }}>{score}</text>
     </svg>
   );
 }
 
-// Vertical bar chart for sub-scores
-function BarChart({ subs }: { subs: Sub[] }) {
-  const BAR_H = 90;
-  const SHORT: Record<string, string> = {
-    momentum: 'Momo', fii: 'FII', vix: 'VIX', breadth: 'A/D', delivery: 'Delvr'
-  };
+// Horizontal bars — one row per signal
+function HBar({ subs }: { subs: Sub[] }) {
   return (
-    <div style={{ display:'flex', alignItems:'flex-end', gap:8, height: BAR_H + 52, paddingTop:4 }}>
+    <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
       {subs.map(s => {
-        const h = s.ok ? Math.max(4, (s.score / 100) * BAR_H) : 4;
         const col = s.ok ? barColor(s.score) : 'var(--dim2)';
+        const pct = s.ok ? s.score : 0;
         return (
-          <div key={s.key} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
-            {/* value label above bar */}
-            <div style={{ fontSize:10, fontWeight:700, color: s.ok ? col : 'var(--dim2)', minHeight:14, lineHeight:1 }}>
-              {s.ok ? s.score : '—'}
+          <div key={s.key}>
+            {/* label row */}
+            <div style={{ display:'flex', justifyContent:'space-between', alignItems:'baseline', marginBottom:4 }}>
+              <span style={{ fontSize:12, fontWeight:600, color: s.ok ? 'var(--txt)' : 'var(--dim2)' }}>
+                {SHORT[s.key] ?? s.key}
+              </span>
+              <span style={{ fontSize:11, color:'var(--dim)', fontFamily:'monospace' }}>
+                {s.ok ? `${s.score}/100` : '—'}{s.ok && s.raw != null ? `  ${rawLabel(s)}` : ''}
+              </span>
             </div>
             {/* bar track */}
-            <div style={{ width:'100%', height: BAR_H, display:'flex', alignItems:'flex-end', background:'var(--bdr)', borderRadius:6, overflow:'hidden', position:'relative' }}>
-              <div style={{ width:'100%', height:`${h}px`, background:col, borderRadius:6, transition:'height 0.6s ease' }}/>
-            </div>
-            {/* short label */}
-            <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)', textAlign:'center', lineHeight:1.2 }}>
-              {SHORT[s.key] ?? s.key}
-            </div>
-            {/* raw value */}
-            <div style={{ fontSize:8, color:'var(--dim2)', textAlign:'center', lineHeight:1 }}>
-              {rawLabel(s)}
+            <div style={{ height:8, background:'var(--bdr)', borderRadius:99, overflow:'hidden' }}>
+              <div style={{
+                height:'100%', width:`${pct}%`, borderRadius:99,
+                background: s.ok
+                  ? `linear-gradient(90deg, ${col}99, ${col})`
+                  : 'var(--dim2)',
+                transition:'width 0.7s ease',
+              }}/>
             </div>
           </div>
         );
@@ -127,40 +128,51 @@ export function MarketMoodIndex() {
   const color = data?.zoneColor ?? '#FFB800';
 
   return (
-    <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'16px 20px', height:'100%', boxSizing:'border-box' }}>
+    /* BENTO CARD */
+    <div style={{
+      background: 'linear-gradient(145deg,rgba(23,64,245,0.06),var(--surf))',
+      border: '1px solid rgba(23,64,245,0.18)',
+      borderRadius: 18, padding: '18px 22px',
+      height: '100%', boxSizing: 'border-box',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* subtle glow orb */}
+      <div style={{ position:'absolute', top:-60, right:-60, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle,rgba(23,64,245,0.10) 0%,transparent 65%)', pointerEvents:'none' }}/>
 
       {/* Header */}
-      <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:14 }}>
-        <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.8 }}>SIGNAL-MMI</div>
-        <div style={{ fontSize:10, color:'var(--dim2)' }}>Proprietary · 5 inputs</div>
+      <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:16, position:'relative' }}>
+        <div style={{ fontSize:12, fontWeight:800, color:'var(--txt)', letterSpacing:0.5 }}>SIGNAL-MMI</div>
+        <div style={{ fontSize:10, color:'var(--dim2)', background:'var(--bdr)', padding:'2px 7px', borderRadius:99 }}>Proprietary · 5 inputs</div>
       </div>
 
       {loading ? (
-        <div style={{ height:140, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--dim)', fontSize:12 }}>Loading…</div>
+        <div style={{ height:140, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--dim)', fontSize:13 }}>Loading…</div>
       ) : error ? (
-        <div style={{ height:140, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--red)', fontSize:12 }}>Unavailable</div>
+        <div style={{ height:140, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--red)', fontSize:13 }}>Unavailable</div>
       ) : (
-        /* TWO-COLUMN LAYOUT */
-        <div style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
+        <div style={{ display:'flex', gap:20, alignItems:'flex-start', position:'relative' }}>
 
-          {/* LEFT — gauge + zone */}
-          <div style={{ flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center' }}>
+          {/* LEFT — gauge + label */}
+          <div style={{ flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', minWidth:160 }}>
             <Gauge score={score} color={color}/>
-            <div style={{ textAlign:'center', marginTop:6 }}>
-              <div style={{ fontSize:13, fontWeight:800, color, letterSpacing:0.4 }}>{data?.zone}</div>
-              <div style={{ fontSize:10, color:'var(--dim)', marginTop:4, lineHeight:1.45, maxWidth:140 }}>{data?.hint}</div>
+            <div style={{ textAlign:'center', marginTop:2 }}>
+              <div style={{ fontSize:14, fontWeight:800, color, letterSpacing:0.3 }}>{data?.zone}</div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:5, lineHeight:1.5, maxWidth:148 }}>{data?.hint}</div>
             </div>
           </div>
 
-          {/* RIGHT — vertical bar chart */}
+          {/* DIVIDER */}
+          <div style={{ width:1, alignSelf:'stretch', background:'var(--bdr)', flexShrink:0, marginTop:4 }}/>
+
+          {/* RIGHT — horizontal bars */}
           <div style={{ flex:1, minWidth:0 }}>
-            <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>
+            <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.8, marginBottom:12 }}>
               Input Signals
             </div>
-            {data?.subScores && <BarChart subs={data.subScores}/>}
+            {data?.subScores && <HBar subs={data.subScores}/>}
             {data?.asOf && (
-              <div style={{ fontSize:9, color:'var(--dim2)', marginTop:8, borderTop:'1px solid var(--bdr)', paddingTop:5 }}>
-                {new Date(data.asOf).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })} · Not SEBI advice
+              <div style={{ fontSize:10, color:'var(--dim2)', marginTop:14, paddingTop:8, borderTop:'1px solid var(--bdr)' }}>
+                Updated {new Date(data.asOf).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })} · Not SEBI advice · DYOR
               </div>
             )}
           </div>
