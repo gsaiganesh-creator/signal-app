@@ -254,8 +254,8 @@ export default function LandingPage() {
           <SignalLogo /> SignalGenie
         </Link>
         <div className="lp-nav-links">
-          {(['Scanner','Portfolio','Algo Builder','Pricing','Track Record'] as const).map((l,i) => (
-            <a key={l} href={['#signals','#portfolio','#algo','#pricing','#track'][i]} style={{ fontSize:13, fontWeight:500, color:'var(--dim)', textDecoration:'none' }}
+          {(['Scanner','Portfolio','Algo Builder','Pricing','Track Record','About'] as const).map((l,i) => (
+            <a key={l} href={['#signals','#portfolio','#algo','#pricing','#track','/about'][i]} style={{ fontSize:13, fontWeight:500, color:'var(--dim)', textDecoration:'none' }}
               onMouseEnter={e=>(e.currentTarget.style.color='var(--txt)')} onMouseLeave={e=>(e.currentTarget.style.color='var(--dim)')}>
               {l}
             </a>
