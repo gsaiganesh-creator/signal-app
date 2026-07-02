@@ -17,16 +17,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <nav style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:58, padding:'0 clamp(12px,3vw,32px)', background:'var(--card-bg)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', borderBottom:'1px solid rgba(79,111,250,0.22)', boxShadow:'0 4px 40px rgba(0,0,0,0.22),0 0 60px rgba(23,64,245,0.08)', position:'sticky', top:0, zIndex:100, overflow:'visible' }}>
           <Link href="/dashboard" style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)', flexShrink:0, justifySelf:'start' }}>
             <svg width="22" height="22" viewBox="0 0 26 26" fill="none">
-              <rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/>
-              <polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <circle cx="22" cy="4" r="3.6" stroke="#8B5CF6" strokeWidth="0.6" opacity="0.7"/>
-              <circle cx="22" cy="0.4" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-              <circle cx="25.1" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-              <circle cx="25.1" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-              <circle cx="22" cy="7.6" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-              <circle cx="18.9" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-              <circle cx="18.9" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-              <path d="M22 2.2 L22.45 3.55 L23.8 4 L22.45 4.45 L22 5.8 L21.55 4.45 L20.2 4 L21.55 3.55 Z" fill="#FF5C1A"/>
+              <defs>
+                <linearGradient id="dBg" x1="0" y1="0" x2="26" y2="26" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#0E1628"/>
+                  <stop offset="100%" stopColor="#070D1A"/>
+                </linearGradient>
+                <linearGradient id="dLine" x1="2" y1="0" x2="24" y2="0" gradientUnits="userSpaceOnUse">
+                  <stop offset="0%" stopColor="#4F6FFA"/>
+                  <stop offset="100%" stopColor="#00D4A0"/>
+                </linearGradient>
+              </defs>
+              <rect width="26" height="26" rx="5" fill="url(#dBg)"/>
+              <polyline points="2,19 7,14 10,16 15,9 19,11 24,5" stroke="url(#dLine)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <circle cx="24" cy="5" r="1.5" fill="#00D4A0"/>
             </svg>
             SignalGenie
           </Link>

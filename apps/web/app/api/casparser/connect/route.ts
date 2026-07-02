@@ -1,6 +1,9 @@
 export const runtime = 'edge';
 
 export async function GET(req: Request) {
+  if (!process.env.CAS_PARSER_API_KEY) {
+    return Response.json({ error: 'CAS_PARSER_API_KEY not configured on server' }, { status: 500 });
+  }
   const origin = new URL(req.url).origin;
   const redirectUri = `${origin}/casparser-callback`;
 

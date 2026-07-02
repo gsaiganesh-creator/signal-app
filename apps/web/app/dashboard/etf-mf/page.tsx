@@ -202,10 +202,16 @@ export default function ETFMFPage() {
     setCasStep('connecting'); setCasError('');
     try {
       const r = await fetch('/api/casparser/connect');
+      if (!r.ok) {
+        const txt = await r.text().catch(() => `HTTP ${r.status}`);
+        setCasError(`Server error (${r.status}): ${txt.slice(0, 120)}`);
+        setCasStep('error');
+        return;
+      }
       const d = await r.json() as { oauth_url?: string; error?: string };
       if (d.error || !d.oauth_url) { setCasError(d.error ?? 'Failed to get OAuth URL'); setCasStep('error'); return; }
       window.location.href = d.oauth_url;
-    } catch { setCasError('Network error'); setCasStep('error'); }
+    } catch (e) { setCasError('Network error: ' + String(e)); setCasStep('error'); }
   }
 
   async function handleParseAndImport() {
