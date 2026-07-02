@@ -4,14 +4,17 @@ import { usePlan } from '@/lib/use-plan';
 import type { PlanFeature } from '@/lib/use-plan';
 
 const FEATURE_LABELS: Record<PlanFeature, { name: string; tier: string; desc: string }> = {
-  'signals-unlimited':   { name: 'Unlimited Scan Results', tier: 'Starter+', desc: 'Get unlimited ML Technical Scan results daily' },
-  'us-portfolio-multi':  { name: 'Multiple US Portfolios', tier: 'Pro',      desc: 'Track multiple broker accounts' },
-  'algo-builder':        { name: 'Algo Builder',           tier: 'Pro',      desc: 'Build and save custom trading strategies' },
-  'backtest':            { name: 'Backtest Engine',        tier: 'Pro',      desc: 'Run strategies against historical data' },
-  'equity-comp':         { name: 'ESPP & RSU Tracker',    tier: 'Pro',      desc: 'Track equity compensation grants and vesting' },
-  'paper-trading-full':  { name: 'Paper Trading',         tier: 'Starter+', desc: 'Unlimited virtual trades' },
-  'track-record':        { name: 'Track Record',          tier: 'Starter+', desc: 'P&L history and performance analytics' },
-  'admin':               { name: 'Admin Console',         tier: 'Admin',    desc: 'Co-founder admin access only' },
+  'signals-unlimited':       { name: 'Unlimited Scan Results',  tier: 'Starter+', desc: 'Get unlimited ML Technical Scan results daily' },
+  'signals-detail':          { name: 'Signal Detail View',      tier: 'Starter+', desc: 'Entry range, targets, stop-loss for each signal' },
+  'signals-portfolio':       { name: 'Portfolio Universe Scan', tier: 'Starter+', desc: 'Scan signals only for your holdings' },
+  'signals-custom-universe': { name: 'Custom Universe Scan',    tier: 'Pro',      desc: 'Build a custom stock list for scanning' },
+  'us-portfolio-multi':      { name: 'Multiple US Portfolios',  tier: 'Pro',      desc: 'Track multiple broker accounts' },
+  'algo-builder':            { name: 'Algo Builder',            tier: 'Pro',      desc: 'Build and save custom trading strategies' },
+  'backtest':                { name: 'Backtest Engine',         tier: 'Pro',      desc: 'Run strategies against historical data' },
+  'equity-comp':             { name: 'ESPP & RSU Tracker',     tier: 'Pro',      desc: 'Track equity compensation grants and vesting' },
+  'paper-trading-full':      { name: 'Paper Trading',          tier: 'Starter+', desc: 'Unlimited virtual trades' },
+  'track-record':            { name: 'Track Record',           tier: 'Starter+', desc: 'P&L history and performance analytics' },
+  'admin':                   { name: 'Admin Console',          tier: 'Admin',    desc: 'Co-founder admin access only' },
 };
 
 export function ProGate({ feature, children }: { feature: PlanFeature; children: React.ReactNode }) {

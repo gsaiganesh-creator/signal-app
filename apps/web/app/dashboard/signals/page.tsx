@@ -670,59 +670,52 @@ function MarketToggle({ market, onChange }: { market: Market; onChange: (m: Mark
   );
 }
 
-// ── Main Page ─────────────────────────────────────────────────────────────────
-function SignalsPaywall() {
-  const MOCK = ['SBIN','DIXON','COCHINSHIP','HAL','CUMMINSIND'];
+// ── Upgrade Modal ─────────────────────────────────────────────────────────────
+const PLAN_DETAILS = {
+  starter: {
+    color:'var(--bluL)', bg:'rgba(23,64,245,0.12)', bdr:'rgba(23,64,245,0.3)',
+    price:'₹299/mo',
+    perks:['All 20 ML signals + full detail','Entry range, targets, stop-loss','Portfolio universe scan','Signal track record'],
+  },
+  pro: {
+    color:'var(--org)', bg:'rgba(255,92,26,0.12)', bdr:'rgba(255,92,26,0.3)',
+    price:'₹799/mo',
+    perks:['Everything in Starter','Custom universe (any NSE stock)','Price alerts from signal rows','Export signals CSV'],
+  },
+} as const;
+
+function UpgradeModal({ feature, minPlan, onClose }: { feature: string; minPlan: 'starter' | 'pro'; onClose: () => void }) {
+  const d = PLAN_DETAILS[minPlan];
   return (
-    <div style={{ position:'relative' }}>
-      {/* Blurred preview */}
-      <div style={{ filter:'blur(5px)', pointerEvents:'none', userSelect:'none', opacity:0.45 }}>
-        <div style={{ display:'grid', gap:10 }}>
-          {MOCK.map((sym, i) => (
-            <div key={sym} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'16px 18px', display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-              <div>
-                <div style={{ fontSize:15, fontWeight:900 }}>{sym}</div>
-                <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>NSE · Strong Momentum</div>
-                <div style={{ fontSize:12, fontWeight:700, color:'var(--grn)', marginTop:5 }}>RSI {42+i*3} · Conf {72+i*4}%</div>
-              </div>
-              <div style={{ textAlign:'right' }}>
-                <div style={{ fontSize:18, fontWeight:900 }}>₹{(800+i*200).toLocaleString('en-IN')}</div>
-                <div style={{ fontSize:11, color:'var(--grn)', marginTop:2 }}>▲ +{(1.2+i*0.3).toFixed(1)}%</div>
-                <div style={{ fontSize:10, color:'var(--dim)', marginTop:4 }}>Target ₹{(900+i*220).toLocaleString('en-IN')} · SL ₹{(760+i*190).toLocaleString('en-IN')}</div>
-              </div>
+    <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.65)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
+      <div onClick={e => e.stopPropagation()}
+        style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:22, padding:'32px 28px', maxWidth:420, width:'100%', textAlign:'center', boxShadow:'0 24px 80px rgba(0,0,0,0.6)' }}>
+        <div style={{ fontSize:36, marginBottom:10 }}>🔒</div>
+        <div style={{ fontSize:18, fontWeight:900, letterSpacing:-0.4, marginBottom:6 }}>
+          {minPlan === 'starter' ? 'Starter' : 'Pro'} feature
+        </div>
+        <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.65, marginBottom:20, background:'var(--surf2)', borderRadius:10, padding:'10px 14px' }}>
+          <strong style={{ color:'var(--txt)' }}>{feature}</strong><br/>requires {minPlan === 'starter' ? 'Starter' : 'Pro'} plan or higher.
+        </div>
+        <div style={{ background:d.bg, border:`1px solid ${d.bdr}`, borderRadius:14, padding:'16px', marginBottom:20, textAlign:'left' }}>
+          <div style={{ fontSize:13, fontWeight:800, color:d.color, marginBottom:10 }}>
+            {minPlan === 'starter' ? 'Starter' : 'Pro'} — {d.price}
+          </div>
+          {d.perks.map(p => (
+            <div key={p} style={{ fontSize:12, color:'var(--dim)', marginBottom:6, display:'flex', alignItems:'flex-start', gap:7 }}>
+              <span style={{ color:d.color, flexShrink:0 }}>✓</span>{p}
             </div>
           ))}
         </div>
-      </div>
-      {/* Lock overlay */}
-      <div style={{ position:'absolute', inset:0, display:'flex', alignItems:'center', justifyContent:'center' }}>
-        <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:'32px 36px', maxWidth:440, width:'90%', textAlign:'center', backdropFilter:'blur(20px)', boxShadow:'0 20px 60px rgba(0,0,0,0.5)' }}>
-          <div style={{ fontSize:40, marginBottom:12 }}>🔒</div>
-          <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, marginBottom:6 }}>ML Signals — Subscribers Only</div>
-          <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6, marginBottom:20 }}>
-            Real-time RSI + EMA technical scan across 100 NSE stocks. BUY zones, entry ranges, targets, stop-losses — all algorithmically computed and logged.
-          </div>
-          {/* Plan chips */}
-          <div style={{ display:'flex', gap:10, justifyContent:'center', marginBottom:22 }}>
-            {[
-              { name:'Starter', price:'₹299/mo', color:'var(--bluL)', bg:'rgba(23,64,245,0.12)', bdr:'rgba(23,64,245,0.3)' },
-              { name:'Pro', price:'₹799/mo', color:'var(--org)', bg:'rgba(255,92,26,0.12)', bdr:'rgba(255,92,26,0.3)', badge:'Popular' },
-              { name:'Elite', price:'₹1,999/mo', color:'var(--ylw)', bg:'rgba(255,184,0,0.1)', bdr:'rgba(255,184,0,0.25)' },
-            ].map(p => (
-              <div key={p.name} style={{ flex:1, background:p.bg, border:`1px solid ${p.bdr}`, borderRadius:12, padding:'10px 8px', position:'relative' }}>
-                {'badge' in p && <div style={{ position:'absolute', top:-8, left:'50%', transform:'translateX(-50%)', fontSize:8, fontWeight:800, padding:'2px 8px', borderRadius:10, background:'var(--org)', color:'#fff', whiteSpace:'nowrap' }}>POPULAR</div>}
-                <div style={{ fontSize:12, fontWeight:800, color:p.color }}>{p.name}</div>
-                <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>{p.price}</div>
-              </div>
-            ))}
-          </div>
-          <Link href="/dashboard/upgrade" style={{ display:'block', height:44, lineHeight:'44px', borderRadius:11, background:'linear-gradient(135deg,var(--blu),rgba(79,111,250,0.8))', color:'#fff', fontSize:14, fontWeight:700, textDecoration:'none', marginBottom:12 }}>
-            Unlock Signals →
-          </Link>
-          <Link href="/dashboard/track-record" style={{ display:'block', fontSize:12, color:'var(--bluL)', fontWeight:600, textDecoration:'none' }}>
-            📊 View Track Record (free) — see our accuracy first →
-          </Link>
-        </div>
+        <Link href="/dashboard/upgrade" style={{ display:'block', height:44, lineHeight:'44px', borderRadius:11, background:'linear-gradient(135deg,var(--blu),rgba(79,111,250,0.8))', color:'#fff', fontSize:14, fontWeight:700, textDecoration:'none', marginBottom:10 }}>
+          Upgrade Now →
+        </Link>
+        <Link href="/dashboard/track-record" style={{ display:'block', fontSize:12, color:'var(--bluL)', fontWeight:600, textDecoration:'none', marginBottom:14 }}>
+          📊 See our accuracy first (free) →
+        </Link>
+        <button onClick={onClose} style={{ background:'none', border:'none', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>
+          Maybe later
+        </button>
       </div>
     </div>
   );
@@ -730,7 +723,7 @@ function SignalsPaywall() {
 
 export default function SignalsPage() {
   const { symbols: portfolioSymbols, portfolios, session } = usePortfolio();
-  const { canAccess, loading: planLoading } = usePlan();
+  const { isStarter, loading: planLoading } = usePlan();
   const [market, setMarket] = useState<Market>('india');
 
   // Deep-link: /dashboard/signals?tab=fundamental|us|india
@@ -771,6 +764,9 @@ export default function SignalsPage() {
   const [usSearch,     setUsSearch]     = useState('');
   const [selectedUS,   setSelectedUS]   = useState<USSignal | null>(null);
   const [usPortSyms,   setUsPortSyms]   = useState<string[]>([]);
+
+  // Upgrade modal
+  const [upgradeModal, setUpgradeModal] = useState<{ feature: string; minPlan: 'starter' | 'pro' } | null>(null);
 
   // Fundamental screener state
   type FundStock = { symbol:string; sector:string; name:string; price:number|null; change_pct:number|null;
@@ -946,13 +942,13 @@ export default function SignalsPage() {
   useEffect(() => { localStorage.setItem('signal_visited_signals', '1'); }, []);
   useEffect(() => { if (market === 'us') loadUS(); }, [market, loadUS]);
 
-  // Auto-switch to portfolio mode when holdings load
+  // Auto-switch to portfolio mode when holdings load — starter+ only
   useEffect(() => {
-    if (session && portfolios.length > 0 && !portScanLoaded && !portScanLoading) {
+    if (session && portfolios.length > 0 && isStarter && !planLoading && !portScanLoaded && !portScanLoading) {
       setPortMode('portfolio');
       loadPortfolioScan();
     }
-  }, [session, portfolios.length]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [session, portfolios.length, isStarter, planLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // India derived — use portScanResults in portfolio mode, mlSignals in ml mode
   const activeSignals = portMode === 'portfolio' ? portScanResults : mlSignals;
@@ -1017,23 +1013,8 @@ export default function SignalsPage() {
     })
     .filter(s => !usSearch || s.symbol.toLowerCase().includes(usSearch.toLowerCase()) || (s.name ?? '').toLowerCase().includes(usSearch.toLowerCase()));
 
-  // Paywall for free users (founders/admins auto-bypass)
-  if (!planLoading && !canAccess('signals-unlimited')) {
-    return (
-      <>
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-          <div>
-            <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color:'var(--ylw)', textTransform:'uppercase', marginBottom:4 }}>ML Technical Scan · NSE Screener</div>
-            <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5 }}>🇮🇳 India Signals</div>
-          </div>
-          <Link href="/dashboard/track-record" style={{ height:34, padding:'0 14px', borderRadius:9, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.28)', color:'var(--grn)', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
-            📊 Track Record →
-          </Link>
-        </div>
-        <SignalsPaywall />
-      </>
-    );
-  }
+  // Constants for soft gating
+  const FREE_LIMIT = 5; // rows visible without blur for free tier
 
   return (
     <>
@@ -1069,40 +1050,49 @@ export default function SignalsPage() {
       {/* ── INDIA CONTENT ────────────────────────────────────────────────── */}
       {market === 'india' && (
         <>
-          {/* Universe mode toggle — visible only when user has portfolios */}
-          {portfolios.length > 0 && (
-            <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:14, flexWrap:'wrap' }}>
-              <button onClick={() => setPortMode('ml')}
-                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                  background: portMode==='ml' ? 'rgba(255,184,0,0.12)' : 'var(--surf2)',
-                  border: portMode==='ml' ? '1px solid rgba(255,184,0,0.35)' : '1px solid var(--bdr)',
-                  color: portMode==='ml' ? 'var(--ylw)' : 'var(--dim)' }}>
-                📡 ML Top 20
-              </button>
-              <button onClick={() => { setPortMode('portfolio'); if (!portScanLoaded && !portScanLoading) loadPortfolioScan(); }}
-                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                  background: portMode==='portfolio' ? 'rgba(23,64,245,0.12)' : 'var(--surf2)',
-                  border: portMode==='portfolio' ? '1px solid rgba(23,64,245,0.35)' : '1px solid var(--bdr)',
-                  color: portMode==='portfolio' ? 'var(--bluL)' : 'var(--dim)' }}>
-                💼 My Portfolio{portScanLoading ? ` — scanning… ${portScanProgress}%` : portScanResults.length > 0 ? ` (${portScanResults.length})` : ''}
-              </button>
-              {portScanLoading && (
-                <div style={{ flex:1, height:4, background:'var(--bdr)', borderRadius:99, overflow:'hidden', minWidth:80, maxWidth:200 }}>
-                  <div style={{ height:'100%', width:`${portScanProgress}%`, background:'var(--blu)', borderRadius:99, transition:'width 0.3s' }}/>
-                </div>
-              )}
-              {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
-                <span style={{ fontSize:11, color:'var(--dim)' }}>sorted by ₹ invested · click to refresh</span>
-              )}
-              {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
-                <button onClick={() => { setPortScanLoaded(false); loadPortfolioScan(); }}
-                  style={{ height:26, padding:'0 10px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
-                    background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)' }}>
-                  ↺ Refresh
+          {/* Universe mode toggle */}
+          <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:14, flexWrap:'wrap' }}>
+            <button onClick={() => setPortMode('ml')}
+              style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                background: portMode==='ml' ? 'rgba(255,184,0,0.12)' : 'var(--surf2)',
+                border: portMode==='ml' ? '1px solid rgba(255,184,0,0.35)' : '1px solid var(--bdr)',
+                color: portMode==='ml' ? 'var(--ylw)' : 'var(--dim)' }}>
+              📡 ML Top 20
+            </button>
+            {/* Portfolio mode — locked for free users */}
+            {isStarter ? (
+              <>
+                <button onClick={() => { setPortMode('portfolio'); if (!portScanLoaded && !portScanLoading) loadPortfolioScan(); }}
+                  style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                    background: portMode==='portfolio' ? 'rgba(23,64,245,0.12)' : 'var(--surf2)',
+                    border: portMode==='portfolio' ? '1px solid rgba(23,64,245,0.35)' : '1px solid var(--bdr)',
+                    color: portMode==='portfolio' ? 'var(--bluL)' : 'var(--dim)' }}>
+                  💼 My Portfolio{portScanLoading ? ` — scanning… ${portScanProgress}%` : portScanResults.length > 0 ? ` (${portScanResults.length})` : ''}
                 </button>
-              )}
-            </div>
-          )}
+                {portScanLoading && (
+                  <div style={{ flex:1, height:4, background:'var(--bdr)', borderRadius:99, overflow:'hidden', minWidth:80, maxWidth:200 }}>
+                    <div style={{ height:'100%', width:`${portScanProgress}%`, background:'var(--blu)', borderRadius:99, transition:'width 0.3s' }}/>
+                  </div>
+                )}
+                {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
+                  <span style={{ fontSize:11, color:'var(--dim)' }}>sorted by ₹ invested · click to refresh</span>
+                )}
+                {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
+                  <button onClick={() => { setPortScanLoaded(false); loadPortfolioScan(); }}
+                    style={{ height:26, padding:'0 10px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+                      background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)' }}>
+                    ↺ Refresh
+                  </button>
+                )}
+              </>
+            ) : (
+              <button onClick={() => setUpgradeModal({ feature: 'Portfolio Universe — scan only your holdings', minPlan: 'starter' })}
+                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', display:'flex', alignItems:'center', gap:6 }}>
+                🔒 My Portfolio <span style={{ fontSize:10, background:'rgba(23,64,245,0.15)', color:'var(--bluL)', borderRadius:4, padding:'1px 5px' }}>Starter</span>
+              </button>
+            )}
+          </div>
 
           {/* Zone KPIs */}
           {!(portMode === 'portfolio' ? portScanLoading : mlLoading) && activeSignals.length > 0 && (
@@ -1229,50 +1219,88 @@ export default function SignalsPage() {
 
           {!(portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : mlLoading) && shown.length > 0 && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-              {shown.map(sig => {
+              {shown.map((sig, sigIdx) => {
+                const locked = !isStarter && sigIdx >= FREE_LIMIT;
                 const inPortfolio = portfolioSymbols.includes(sig.symbol.replace('.NS',''));
                 const rr = ((sig.target - sig.cmp) / (sig.cmp - sig.sl)).toFixed(1);
                 const secBg = sectorColor(sig.sector);
                 return (
-                  <div key={sig.symbol} onClick={() => setSelected(sig)}
-                    style={{ background:`linear-gradient(160deg,${secBg},var(--card-bg))`, border:'1px solid var(--card-bdr)', borderRadius:16, padding:'15px 18px', cursor:'pointer', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:12, alignItems:'center' }}
-                    onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor='rgba(0,212,160,0.4)'; }}
-                    onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='var(--card-bdr)'; }}>
-                    <div style={{ width:50, height:50, borderRadius:12, background:secBg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, color:'var(--txt)', flexShrink:0, border:'1px solid rgba(255,255,255,0.06)' }}>
-                      {sig.symbol.replace('.NS','').slice(0,4)}
-                    </div>
-                    <div>
-                      <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:4, flexWrap:'wrap' }}>
-                        <span style={{ fontSize:14, fontWeight:800 }}>{sig.symbol.replace('.NS','')}</span>
-                        {inPortfolio && <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)' }}>IN PORTFOLIO</span>}
-                        {(() => {
-                          const cat = scoreSig(sig);
-                          const cfg = { buy:{ label:'Strong Momentum', bg:'rgba(0,212,160,0.12)', color:'var(--grn)', border:'rgba(0,212,160,0.25)' }, accumulate:{ label:'Building', bg:'rgba(79,111,250,0.12)', color:'var(--bluL)', border:'rgba(79,111,250,0.25)' }, hold:{ label:'Sideways', bg:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'rgba(255,184,0,0.25)' }, sell:{ label:'Weak / Declining', bg:'rgba(255,59,92,0.12)', color:'var(--red)', border:'rgba(255,59,92,0.25)' } }[cat];
-                          return <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4, background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}` }}>{cfg.label}</span>;
-                        })()}
-                        <span style={{ marginLeft:'auto', fontSize:11, color:'var(--dim)' }}>{sig.sector.replace(/_/g,' ')}</span>
+                  <div key={sig.symbol} style={{ position:'relative' }}
+                    onClick={() => {
+                      if (!isStarter) {
+                        setUpgradeModal({ feature: 'ML signal detail — entry range, targets, stop-loss', minPlan: 'starter' });
+                        return;
+                      }
+                      setSelected(sig);
+                    }}>
+                    {/* Blur overlay for locked rows */}
+                    {locked && (
+                      <div style={{ position:'absolute', inset:0, zIndex:2, borderRadius:16, backdropFilter:'blur(5px)', WebkitBackdropFilter:'blur(5px)', background:'rgba(7,13,26,0.55)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', gap:8 }}>
+                        <span style={{ fontSize:14 }}>🔒</span>
+                        <span style={{ fontSize:11, fontWeight:700, color:'var(--dim)' }}>Starter to unlock</span>
+                        <span style={{ fontSize:10, fontWeight:700, color:'var(--bluL)', background:'rgba(23,64,245,0.2)', border:'1px solid rgba(23,64,245,0.35)', borderRadius:5, padding:'2px 7px' }}>₹299/mo</span>
                       </div>
-                      <div style={{ fontSize:11, color:'var(--dim)', marginBottom:5 }}>{sig.name}</div>
-                      <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                        {[`RSI ${sig.rsi}`, `EMA ${sig.ema_dist_pct > 0 ? '+' : ''}${sig.ema_dist_pct}%`, `${sig.chg >= 0 ? '+' : ''}${sig.chg.toFixed(1)}%`].map(t => (
-                          <span key={t} style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>{t}</span>
-                        ))}
+                    )}
+                    <div
+                      style={{ background:`linear-gradient(160deg,${secBg},var(--card-bg))`, border:'1px solid var(--card-bdr)', borderRadius:16, padding:'15px 18px', cursor:'pointer', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:12, alignItems:'center', ...(locked ? { filter:'blur(1.5px)', userSelect:'none', pointerEvents:'none' } : {}) }}
+                      onMouseEnter={e => { if (!locked) (e.currentTarget as HTMLElement).style.borderColor='rgba(0,212,160,0.4)'; }}
+                      onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='var(--card-bdr)'; }}>
+                      <div style={{ width:50, height:50, borderRadius:12, background:secBg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, color:'var(--txt)', flexShrink:0, border:'1px solid rgba(255,255,255,0.06)' }}>
+                        {sig.symbol.replace('.NS','').slice(0,4)}
                       </div>
-                    </div>
-                    <div style={{ textAlign:'right', flexShrink:0 }}>
-                      <div style={{ fontSize:15, fontWeight:900 }}>₹{sig.cmp.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
-                      <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>T₹{sig.target.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
-                      <div style={{ marginTop:5, display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
-                        <div style={{ width:52, height:4, borderRadius:2, background:'var(--bdr)' }}>
-                          <div style={{ width:`${sig.confidence}%`, height:'100%', borderRadius:2, background:confColor(sig.confidence) }}/>
+                      <div>
+                        <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:4, flexWrap:'wrap' }}>
+                          <span style={{ fontSize:14, fontWeight:800 }}>{sig.symbol.replace('.NS','')}</span>
+                          {inPortfolio && <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)' }}>IN PORTFOLIO</span>}
+                          {(() => {
+                            const cat = scoreSig(sig);
+                            const cfg = { buy:{ label:'Strong Momentum', bg:'rgba(0,212,160,0.12)', color:'var(--grn)', border:'rgba(0,212,160,0.25)' }, accumulate:{ label:'Building', bg:'rgba(79,111,250,0.12)', color:'var(--bluL)', border:'rgba(79,111,250,0.25)' }, hold:{ label:'Sideways', bg:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'rgba(255,184,0,0.25)' }, sell:{ label:'Weak / Declining', bg:'rgba(255,59,92,0.12)', color:'var(--red)', border:'rgba(255,59,92,0.25)' } }[cat];
+                            return <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4, background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}` }}>{cfg.label}</span>;
+                          })()}
+                          <span style={{ marginLeft:'auto', fontSize:11, color:'var(--dim)' }}>{sig.sector.replace(/_/g,' ')}</span>
                         </div>
-                        <span style={{ fontSize:11, fontWeight:700, color:confColor(sig.confidence) }}>{sig.confidence}%</span>
+                        <div style={{ fontSize:11, color:'var(--dim)', marginBottom:5 }}>{sig.name}</div>
+                        <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
+                          {[`RSI ${sig.rsi}`, `EMA ${sig.ema_dist_pct > 0 ? '+' : ''}${sig.ema_dist_pct}%`, `${sig.chg >= 0 ? '+' : ''}${sig.chg.toFixed(1)}%`].map(t => (
+                            <span key={t} style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>{t}</span>
+                          ))}
+                        </div>
                       </div>
-                      <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>R/R {rr}×</div>
+                      <div style={{ textAlign:'right', flexShrink:0 }}>
+                        <div style={{ fontSize:15, fontWeight:900 }}>₹{sig.cmp.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+                        <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>T₹{sig.target.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+                        <div style={{ marginTop:5, display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
+                          <div style={{ width:52, height:4, borderRadius:2, background:'var(--bdr)' }}>
+                            <div style={{ width:`${sig.confidence}%`, height:'100%', borderRadius:2, background:confColor(sig.confidence) }}/>
+                          </div>
+                          <span style={{ fontSize:11, fontWeight:700, color:confColor(sig.confidence) }}>{sig.confidence}%</span>
+                        </div>
+                        <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>R/R {rr}×</div>
+                      </div>
                     </div>
                   </div>
                 );
               })}
+
+              {/* Upgrade CTA strip — free users only */}
+              {!isStarter && shown.length > FREE_LIMIT && (
+                <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.10),rgba(139,92,246,0.06))', border:'1px solid rgba(23,64,245,0.28)', borderRadius:16, padding:'20px 24px', textAlign:'center', marginTop:4 }}>
+                  <div style={{ fontSize:14, fontWeight:800, marginBottom:6 }}>
+                    🔒 {shown.length - FREE_LIMIT} more signals locked
+                  </div>
+                  <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6, marginBottom:14 }}>
+                    Starter unlocks all {shown.length} signals · entry ranges · targets · stop-losses · portfolio universe scan
+                  </div>
+                  <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
+                    <Link href="/dashboard/upgrade" style={{ height:38, padding:'0 22px', borderRadius:10, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, textDecoration:'none', display:'inline-flex', alignItems:'center' }}>
+                      Upgrade to Starter — ₹299/mo →
+                    </Link>
+                    <Link href="/dashboard/track-record" style={{ height:38, padding:'0 16px', borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, textDecoration:'none', display:'inline-flex', alignItems:'center' }}>
+                      See track record first
+                    </Link>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1580,6 +1608,7 @@ export default function SignalsPage() {
 
       {selected  && <DetailDrawer   sig={selected}   onClose={() => setSelected(null)}  />}
       {selectedUS && <USDetailDrawer sig={selectedUS} onClose={() => setSelectedUS(null)} />}
+      {upgradeModal && <UpgradeModal feature={upgradeModal.feature} minPlan={upgradeModal.minPlan} onClose={() => setUpgradeModal(null)} />}
     </>
   );
 }

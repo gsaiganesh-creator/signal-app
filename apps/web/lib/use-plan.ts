@@ -7,6 +7,9 @@ export const FOUNDERS = ['gsaiganesh@gmail.com', 'gsai0905@gmail.com', 'bskumar.
 
 export type PlanFeature =
   | 'signals-unlimited'
+  | 'signals-detail'
+  | 'signals-portfolio'
+  | 'signals-custom-universe'
   | 'us-portfolio-multi'
   | 'algo-builder'
   | 'backtest'
@@ -20,14 +23,17 @@ const PLAN_RANK: Record<Plan, number> = {
 };
 
 const PLAN_GATES: Record<PlanFeature, Plan[]> = {
-  'signals-unlimited':   ['starter', 'pro', 'elite', 'admin'],
-  'us-portfolio-multi':  ['pro', 'elite', 'admin'],
-  'algo-builder':        ['pro', 'elite', 'admin'],
-  'backtest':            ['pro', 'elite', 'admin'],
-  'equity-comp':         ['pro', 'elite', 'admin'],
-  'paper-trading-full':  ['starter', 'pro', 'elite', 'admin'],
-  'track-record':        ['starter', 'pro', 'elite', 'admin'],
-  'admin':               ['admin'],
+  'signals-unlimited':        ['starter', 'pro', 'elite', 'admin'],
+  'signals-detail':           ['starter', 'pro', 'elite', 'admin'],
+  'signals-portfolio':        ['starter', 'pro', 'elite', 'admin'],
+  'signals-custom-universe':  ['pro', 'elite', 'admin'],
+  'us-portfolio-multi':       ['pro', 'elite', 'admin'],
+  'algo-builder':             ['pro', 'elite', 'admin'],
+  'backtest':                 ['pro', 'elite', 'admin'],
+  'equity-comp':              ['pro', 'elite', 'admin'],
+  'paper-trading-full':       ['starter', 'pro', 'elite', 'admin'],
+  'track-record':             ['starter', 'pro', 'elite', 'admin'],
+  'admin':                    ['admin'],
 };
 
 export function usePlan() {
