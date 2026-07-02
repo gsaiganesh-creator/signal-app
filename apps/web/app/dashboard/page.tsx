@@ -1168,7 +1168,6 @@ export default function DashboardPage() {
 
       <div className="g-side" style={{ display:'grid', gap:16 }}>
         <div>
-          <MarketOverview data={mktData} loading={mktLoading} />
           <HomeFIIDII today={fiiData} loading={fiiLoading} />
           <div style={{ marginTop:16 }}>
             <HomeSectorPerf data={mktData} loading={mktLoading} />
