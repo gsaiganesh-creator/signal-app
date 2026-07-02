@@ -4,10 +4,12 @@ import { usePathname } from 'next/navigation';
 import { ThemeToggle } from './ThemeToggle';
 
 const NAV_LINKS = [
-  { href:'/',              label:'Home'        },
+  { href:'/#signals',     label:'Scanner'      },
+  { href:'/#portfolio',   label:'Portfolio'    },
+  { href:'/#algo',        label:'Algo Builder' },
+  { href:'/#pricing',     label:'Pricing'      },
   { href:'/track-record', label:'Track Record' },
   { href:'/about',        label:'About'        },
-  { href:'/#pricing',     label:'Pricing'      },
 ];
 
 export function PublicNav() {
