@@ -22,6 +22,30 @@ interface HoldingWithDiv extends DivResult {
   estimated_annual: number | null;
 }
 
+interface NSELeader {
+  symbol: string; name: string; sector: string;
+  price: number | null; div_yield: number | null;
+  dps: number | null; market_cap: number | null;
+  payout_ratio: number | null;
+}
+
+// Curated NSE high-dividend universe
+const NSE_DIV_UNIVERSE = [
+  'VEDL','COALINDIA','ONGC','BPCL','HINDPETRO','IOC','NMDC','REC','PFC',
+  'POWERGRID','NTPC','ITC','HINDUNILVR','NESTLEIND','CASTROLIND','CUMMINSIND',
+  'MOIL','NATIONALUM','TATASTEEL','JSWSTEEL','COALINDIA','IRFC',
+].filter((v,i,a)=>a.indexOf(v)===i);
+
+// Known consistent payers (hardcoded — streak in years)
+const ARISTOCRATS = [
+  { symbol:'HINDUNILVR', name:'HUL',          streak:'30+ yrs', note:'Uninterrupted since 1994' },
+  { symbol:'NESTLEIND',  name:'Nestle India',  streak:'25+ yrs', note:'Decades of consistent payouts' },
+  { symbol:'ITC',        name:'ITC Ltd',       streak:'30+ yrs', note:'Never missed since 1990s' },
+  { symbol:'INFOSYS',    name:'Infosys',       streak:'20+ yrs', note:'Paid since listing in 1993' },
+  { symbol:'TCS',        name:'TCS',           streak:'18+ yrs', note:'+ special dividends in bumper years' },
+  { symbol:'POWERGRID',  name:'Power Grid',    streak:'15+ yrs', note:'Steady PSU compounder' },
+];
+
 function fmtDate(iso: string) {
   return new Date(iso).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
@@ -51,8 +75,12 @@ export default function DividendsPage() {
   const [loading, setLoading]       = useState(true);
   const [error, setError]           = useState('');
   const [sort, setSort]             = useState<{ col: keyof HoldingWithDiv; dir: 1 | -1 }>({ col: 'days_to_ex', dir: 1 });
-  const [tab, setTab]               = useState<'upcoming' | 'all' | 'nodiv'>('upcoming');
+  const [tab, setTab]               = useState<'upcoming' | 'all' | 'leaders'>('upcoming');
   const [detailSym, setDetailSym]   = useState<{ symbol: string; exchange: string } | null>(null);
+  const [leaders,       setLeaders]       = useState<NSELeader[]>([]);
+  const [leadersLoading,setLeadersLoading]= useState(false);
+  const [leadersLoaded, setLeadersLoaded] = useState(false);
+  const [leaderSort, setLeaderSort] = useState<{ col: keyof NSELeader; dir: 1|-1 }>({ col:'div_yield', dir:-1 });
 
   useEffect(() => {
     if (!session || !portfolios.length) { setLoading(false); return; }
@@ -115,13 +143,36 @@ export default function DividendsPage() {
         // Auto-switch to relevant tab
         const upcoming = withDiv.filter(r => r.days_to_ex != null && r.days_to_ex >= 0 && r.days_to_ex <= 60);
         if (upcoming.length === 0 && withDiv.length > 0) setTab('all');
-        else if (withDiv.length === 0 && noDiv.length > 0) setTab('nodiv');
       } catch (e) {
         setError(String(e));
       }
       setLoading(false);
     })();
   }, [session, portfolios]);
+
+  async function loadLeaders() {
+    if (leadersLoaded || leadersLoading) return;
+    setLeadersLoading(true);
+    try {
+      const batch = NSE_DIV_UNIVERSE.join(',');
+      const r = await fetch(`/api/fundamental-scan?symbols=${encodeURIComponent(batch)}`);
+      if (!r.ok) return;
+      const d = await r.json() as { results: { symbol:string; name:string; sector:string; price:number|null; dividend_yield:number|null; market_cap:number|null; payout_ratio:number|null }[] };
+      const mapped: NSELeader[] = d.results
+        .filter(s => s.dividend_yield != null && s.dividend_yield > 0)
+        .map(s => ({
+          symbol: s.symbol, name: s.name ?? s.symbol, sector: s.sector ?? '—',
+          price: s.price, div_yield: s.dividend_yield,
+          dps: (s.price != null && s.dividend_yield != null) ? +(s.price * s.dividend_yield / 100).toFixed(2) : null,
+          market_cap: s.market_cap, payout_ratio: s.payout_ratio,
+        }))
+        .sort((a, b) => (b.div_yield ?? 0) - (a.div_yield ?? 0));
+      setLeaders(mapped);
+      setLeadersLoaded(true);
+    } finally {
+      setLeadersLoading(false);
+    }
+  }
 
   const sorted = [...rows].sort((a, b) => {
     const av = a[sort.col] as number | string | null;
@@ -238,9 +289,9 @@ export default function DividendsPage() {
             {([
               { key: 'upcoming', label: `Upcoming (60d) · ${upcoming.length}` },
               { key: 'all',      label: `All Paying · ${rows.length}` },
-              { key: 'nodiv',    label: `Non-Paying / Unknown · ${noDivSyms.length}` },
+              { key: 'leaders',  label: '🏆 NSE Dividend Leaders' },
             ] as { key: typeof tab; label: string }[]).map(t => (
-              <button key={t.key} onClick={() => setTab(t.key)}
+              <button key={t.key} onClick={() => { setTab(t.key); if (t.key === 'leaders') loadLeaders(); }}
                 style={{ height: 34, padding: '0 14px', borderRadius: 9, border: '1px solid', fontSize: 12, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit', transition: 'all 0.15s',
                   background: tab === t.key ? 'var(--blu)' : 'var(--surf2)',
                   borderColor: tab === t.key ? 'var(--blu)' : 'var(--bdr)',
@@ -250,16 +301,14 @@ export default function DividendsPage() {
             ))}
           </div>
 
-          {/* Table */}
-          {tab !== 'nodiv' && (
+          {/* Portfolio holding table — Upcoming / All Paying */}
+          {(tab === 'upcoming' || tab === 'all') && (
             displayed.length === 0 ? (
               <div style={{ ...card, textAlign: 'center', padding: '40px 20px' }}>
                 <div style={{ fontSize: 32, marginBottom: 12 }}>📅</div>
                 <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>No upcoming ex-dates in next 60 days</div>
                 <div style={{ fontSize: 12, color: 'var(--dim)' }}>
-                  {rows.length > 0
-                    ? 'Switch to "All Paying" to see all dividend stocks'
-                    : 'Switch to "Non-Paying / Unknown" to view all holdings'}
+                  {rows.length > 0 ? 'Switch to "All Paying" to see all dividend stocks' : 'Switch to "NSE Dividend Leaders" to explore top-yield stocks'}
                 </div>
               </div>
             ) : (
@@ -283,8 +332,7 @@ export default function DividendsPage() {
                           onMouseEnter={e => (e.currentTarget.style.background = 'var(--surf2)')}
                           onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                           <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', fontWeight: 700 }}>
-                            <button
-                              onClick={() => setDetailSym({ symbol: r.symbol, exchange: r.exchange })}
+                            <button onClick={() => setDetailSym({ symbol: r.symbol, exchange: r.exchange })}
                               style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--bluL)', fontWeight: 700, fontSize: 13, fontFamily: 'inherit', textAlign: 'left' }}>
                               {r.symbol}
                             </button>
@@ -292,24 +340,12 @@ export default function DividendsPage() {
                               {r.exchange}{r.source === 'history' && <span style={{ color: 'rgba(122,139,170,0.7)', marginLeft: 4 }}>• hist</span>}
                             </div>
                           </td>
-                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', whiteSpace: 'nowrap' }}>
-                            {r.ex_div_date ? fmtDate(r.ex_div_date) : '—'}
-                          </td>
-                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)' }}>
-                            <DaysChip days={r.days_to_ex} source={r.source} />
-                          </td>
-                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', fontWeight: 700, color: 'var(--ylw)' }}>
-                            {r.div_yield != null ? `${r.div_yield.toFixed(2)}%` : '—'}
-                          </td>
-                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', color: 'var(--dim)' }}>
-                            {r.annual_div_per_share != null ? `₹${r.annual_div_per_share.toFixed(2)}` : '—'}
-                          </td>
-                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', color: 'var(--dim)' }}>
-                            {r.qty.toLocaleString('en-IN')}
-                          </td>
-                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', fontWeight: 700, color: 'var(--grn)' }}>
-                            {r.estimated_annual != null ? fmtINR(r.estimated_annual) : '—'}
-                          </td>
+                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', whiteSpace: 'nowrap' }}>{r.ex_div_date ? fmtDate(r.ex_div_date) : '—'}</td>
+                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)' }}><DaysChip days={r.days_to_ex} source={r.source} /></td>
+                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', fontWeight: 700, color: 'var(--ylw)' }}>{r.div_yield != null ? `${r.div_yield.toFixed(2)}%` : '—'}</td>
+                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', color: 'var(--dim)' }}>{r.annual_div_per_share != null ? `₹${r.annual_div_per_share.toFixed(2)}` : '—'}</td>
+                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', color: 'var(--dim)' }}>{r.qty.toLocaleString('en-IN')}</td>
+                          <td style={{ padding: '11px 12px', borderBottom: '1px solid var(--bdr)', fontWeight: 700, color: 'var(--grn)' }}>{r.estimated_annual != null ? fmtINR(r.estimated_annual) : '—'}</td>
                         </tr>
                       ))}
                     </tbody>
@@ -319,30 +355,95 @@ export default function DividendsPage() {
             )
           )}
 
-          {/* Non-paying / unknown */}
-          {tab === 'nodiv' && (
-            <div style={card}>
-              {noDivHoldings.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '20px 0', color: 'var(--dim)', fontSize: 13 }}>All holdings pay dividends 🎉</div>
-              ) : (
-                <>
-                  <div style={{ fontSize: 13, color: 'var(--dim)', marginBottom: 14 }}>
-                    No dividend data found for these holdings (limited Yahoo Finance coverage for Indian stocks — may still pay dividends)
+          {/* NSE Dividend Leaders tab */}
+          {tab === 'leaders' && (
+            <>
+              {/* Aristocrats strip */}
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--ylw)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>🏅 Consistent Payers — 15+ Years</div>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill,minmax(170px,1fr))', gap: 8 }}>
+                  {ARISTOCRATS.map(a => (
+                    <button key={a.symbol} onClick={() => setDetailSym({ symbol: a.symbol, exchange: 'NSE' })}
+                      style={{ textAlign: 'left', background: 'linear-gradient(135deg,rgba(255,184,0,0.07),var(--surf))', border: '1px solid rgba(255,184,0,0.22)', borderRadius: 12, padding: '12px 14px', cursor: 'pointer', fontFamily: 'inherit' }}>
+                      <div style={{ fontSize: 13, fontWeight: 800, color: 'var(--txt)', marginBottom: 3 }}>{a.name}</div>
+                      <div style={{ fontSize: 11, color: 'var(--ylw)', fontWeight: 700 }}>{a.streak}</div>
+                      <div style={{ fontSize: 10, color: 'var(--dim)', marginTop: 3, lineHeight: 1.4 }}>{a.note}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Top yield table */}
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--grn)', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 }}>📊 Top Yield — NSE Universe · Sorted by Yield %</div>
+
+              {leadersLoading ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {[1,2,3,4,5].map(i => <div key={i} style={{ height: 44, borderRadius: 8, background: 'var(--surf2)', animation: 'pulse 1.4s infinite' }}/>)}
+                </div>
+              ) : leaders.length === 0 && leadersLoaded ? (
+                <div style={{ ...card, textAlign: 'center', padding: '30px 20px', color: 'var(--dim)', fontSize: 13 }}>No data — Yahoo Finance may be slow. Try again in a moment.</div>
+              ) : leaders.length > 0 ? (
+                <div style={{ ...card, padding: 0, overflow: 'hidden' }}>
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+                      <thead>
+                        <tr>
+                          {(['symbol','name','sector','price','div_yield','dps','payout_ratio','market_cap'] as (keyof NSELeader)[]).map((col, i) => {
+                            const labels: Record<string, string> = { symbol:'Stock', name:'Name', sector:'Sector', price:'CMP', div_yield:'Yield %', dps:'Annual DPS', payout_ratio:'Payout %', market_cap:'Mkt Cap' };
+                            const active = leaderSort.col === col;
+                            return (
+                              <th key={col} onClick={() => setLeaderSort(s => s.col === col ? { col, dir: s.dir === 1 ? -1 : 1 } : { col, dir: -1 })}
+                                style={{ padding: '10px 12px', fontSize: 11, fontWeight: 700, color: active ? 'var(--txt)' : 'var(--dim)', textAlign: i < 3 ? 'left' : 'right', whiteSpace: 'nowrap', cursor: 'pointer', userSelect: 'none', borderBottom: '1px solid var(--bdr)', background: 'var(--surf2)' }}>
+                                {labels[col]}{active ? (leaderSort.dir === -1 ? ' ▼' : ' ▲') : ''}
+                              </th>
+                            );
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {[...leaders].sort((a,b) => {
+                          const av = a[leaderSort.col] as number|string|null;
+                          const bv = b[leaderSort.col] as number|string|null;
+                          if (av == null && bv == null) return 0;
+                          if (av == null) return 1; if (bv == null) return -1;
+                          return (av < bv ? -1 : av > bv ? 1 : 0) * leaderSort.dir;
+                        }).map((r, idx) => (
+                          <tr key={r.symbol}
+                            onMouseEnter={e => (e.currentTarget.style.background = 'var(--surf2)')}
+                            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
+                            <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--bdr)', fontWeight: 800 }}>
+                              <button onClick={() => setDetailSym({ symbol: r.symbol, exchange: 'NSE' })}
+                                style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer', color: 'var(--bluL)', fontWeight: 800, fontSize: 13, fontFamily: 'inherit' }}>
+                                {idx + 1}. {r.symbol}
+                              </button>
+                            </td>
+                            <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--bdr)', fontSize: 12, color: 'var(--dim)', maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{r.name}</td>
+                            <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--bdr)', fontSize: 11, color: 'var(--dim2)' }}>{r.sector}</td>
+                            <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--bdr)', textAlign: 'right', fontWeight: 600 }}>₹{r.price?.toLocaleString('en-IN', { maximumFractionDigits: 1 }) ?? '—'}</td>
+                            <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--bdr)', textAlign: 'right', fontWeight: 800, color: (r.div_yield ?? 0) >= 5 ? 'var(--grn)' : 'var(--ylw)' }}>
+                              {r.div_yield != null ? `${r.div_yield.toFixed(2)}%` : '—'}
+                            </td>
+                            <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--bdr)', textAlign: 'right', color: 'var(--dim)' }}>
+                              {r.dps != null ? `₹${r.dps.toFixed(2)}` : '—'}
+                            </td>
+                            <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--bdr)', textAlign: 'right', fontSize: 12, color: 'var(--dim)' }}>
+                              {r.payout_ratio != null ? `${(r.payout_ratio * 100).toFixed(0)}%` : '—'}
+                            </td>
+                            <td style={{ padding: '10px 12px', borderBottom: '1px solid var(--bdr)', textAlign: 'right', fontSize: 12, color: 'var(--dim)' }}>
+                              {r.market_cap != null ? (r.market_cap >= 1e11 ? `₹${(r.market_cap/1e11).toFixed(1)}L Cr` : r.market_cap >= 1e9 ? `₹${(r.market_cap/1e9).toFixed(0)}Cr` : '—') : '—'}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                    {noDivHoldings.map(h => (
-                      <button
-                        key={h.symbol}
-                        onClick={() => setDetailSym({ symbol: h.symbol, exchange: h.exchange })}
-                        style={{ display: 'inline-flex', alignItems: 'center', padding: '6px 12px', background: 'var(--surf2)', border: '1px solid var(--bdr)', borderRadius: 8, fontSize: 12, fontWeight: 700, color: 'var(--txt)', cursor: 'pointer', fontFamily: 'inherit' }}>
-                        {h.symbol}
-                        <span style={{ fontSize: 10, color: 'var(--dim)', marginLeft: 4 }}>{h.exchange}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+                </div>
+              ) : null}
+
+              <div style={{ fontSize: 11, color: 'var(--dim2)', marginTop: 12 }}>
+                Yield % = annual DPS / current price · Annual DPS computed from price × yield · Payout % = dividends / earnings · Data from Yahoo Finance · Click any stock for full detail · NOT SEBI REGISTERED · Not investment advice.
+              </div>
+            </>
           )}
 
           <div style={{ fontSize: 11, color: 'var(--dim2)', marginTop: 16 }}>
