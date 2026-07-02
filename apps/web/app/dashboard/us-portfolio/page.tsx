@@ -495,6 +495,22 @@ export default function USPortfolioPage() {
 
   return (
     <div style={{ maxWidth:1200 }}>
+      {/* India / US toggle */}
+      <div style={{ display:'flex', gap:6, marginBottom:20 }}>
+        {[
+          { label:'🇮🇳 India', href:'/dashboard/portfolio', active:false },
+          { label:'🇺🇸 US',    href:'/dashboard/us-portfolio', active:true },
+        ].map(t => (
+          <a key={t.href} href={t.href} style={{
+            height:34, padding:'0 18px', borderRadius:9, fontSize:13, fontWeight:700,
+            display:'flex', alignItems:'center', textDecoration:'none', cursor:'pointer',
+            background: t.active ? 'var(--blu)' : 'var(--surf2)',
+            border: `1px solid ${t.active ? 'var(--blu)' : 'var(--bdr)'}`,
+            color: t.active ? '#fff' : 'var(--dim)',
+          }}>{t.label}</a>
+        ))}
+      </div>
+
       {/* Header */}
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20, flexWrap:'wrap', gap:10 }}>
         <div>

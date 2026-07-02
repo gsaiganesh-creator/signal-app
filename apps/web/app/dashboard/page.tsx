@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { TreemapHeatmap } from '@/components/TreemapHeatmap';
 import { MarketBrief } from '@/components/MarketBrief';
 import { MarketMoodIndex } from '@/components/MarketMoodIndex';
+import { StockDetailSheet } from '@/components/StockDetailSheet';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -402,18 +403,10 @@ function UsAnalysisSection({ holdings, usPrices, usAnalysis, usdInr }: {
   );
 }
 
-function MarketOverview() {
-  const [data, setData]       = useState<Record<string, { price: number | null; change_pct: number | null }>>({});
-  const [loading, setLoading] = useState(true);
+type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
+type FiiRow   = { fii_net: number; dii_net: number; date: string };
 
-  useEffect(() => {
-    const tickers = MKT_INDICES.map(i => i.ticker).join(',');
-    fetch(`/api/prices?symbols=${encodeURIComponent(tickers)}`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
-
+function MarketOverview({ data, loading }: { data: PriceMap; loading: boolean }) {
   return (
     <div style={{ ...card, marginBottom:16 }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
@@ -449,20 +442,7 @@ function MarketOverview() {
   );
 }
 
-function HomeFIIDII() {
-  const [today, setToday] = useState<{ fii_net: number; dii_net: number; date: string } | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch('/api/fii-dii')
-      .then(r => r.json())
-      .then((d: { rows?: { date: string; fii_net: number; dii_net: number }[] }) => {
-        setToday(d.rows?.[0] ?? null);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
+function HomeFIIDII({ today, loading }: { today: FiiRow | null; loading: boolean }) {
   function cr(n: number) { return `${n>=0?'+':'-'}₹${Math.abs(n).toLocaleString('en-IN',{maximumFractionDigits:0})} Cr`; }
   const maxAbs = today ? Math.max(Math.abs(today.fii_net), Math.abs(today.dii_net), 1) : 1;
   const rows = today
@@ -509,18 +489,7 @@ const SIDEBAR_SECTORS = [
   { name:'Metal',   ticker:'^CNXMETAL' },
 ];
 
-function HomeSectorPerf() {
-  const [data, setData] = useState<Record<string, { change_pct: number | null }>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const t = SIDEBAR_SECTORS.map(s => s.ticker).join(',');
-    fetch(`/api/prices?symbols=${encodeURIComponent(t)}`)
-      .then(r => r.json())
-      .then(d => { setData(d); setLoading(false); })
-      .catch(() => setLoading(false));
-  }, []);
-
+function HomeSectorPerf({ data, loading }: { data: PriceMap; loading: boolean }) {
   return (
     <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)', marginBottom:14 }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
@@ -546,7 +515,7 @@ function HomeSectorPerf() {
   );
 }
 
-function WelcomeEmpty({ name, email }: { name: string; email?: string }) {
+function WelcomeEmpty({ name, email, mktData, mktLoading }: { name: string; email?: string; mktData: PriceMap; mktLoading: boolean }) {
   return (
     <>
       <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(0,212,160,0.08)', border:'1px solid rgba(0,212,160,0.25)', borderRadius:30, padding:'6px 14px', marginBottom:20 }}>
@@ -592,7 +561,7 @@ function WelcomeEmpty({ name, email }: { name: string; email?: string }) {
           </div>
         ))}
       </div>
-      <MarketOverview />
+      <MarketOverview data={mktData} loading={mktLoading} />
     </>
   );
 }
@@ -615,6 +584,27 @@ export default function DashboardPage() {
   const [watchPrices, setWatchPrices] = useState<Record<string, PriceData>>({});
   const [scanPicks, setScanPicks]   = useState<{ symbol: string; exchange: string; price_at: number; rsi14: number | null; scanned_at: string }[]>([]);
   const [usAnalysis, setUsAnalysis] = useState<Record<string, UsTA>>({});
+  const [detailSym, setDetailSym] = useState<{ symbol: string; exchange: string } | null>(null);
+  // Market sidebar data — indices + sectors in one batch call
+  const [mktData,    setMktData]    = useState<PriceMap>({});
+  const [mktLoading, setMktLoading] = useState(true);
+  const [fiiData,    setFiiData]    = useState<FiiRow | null>(null);
+  const [fiiLoading, setFiiLoading] = useState(true);
+
+  // Market sidebar: indices + sectors in ONE price call + FII/DII — fires on mount, no deps
+  useEffect(() => {
+    const mktTickers = [
+      ...MKT_INDICES.map(i => i.ticker),
+      ...SIDEBAR_SECTORS.filter(s => !MKT_INDICES.find(m => m.ticker === s.ticker)).map(s => s.ticker),
+    ].join(',');
+    Promise.all([
+      fetch(`/api/prices?symbols=${encodeURIComponent(mktTickers)}`).then(r => r.json()).catch(() => ({})),
+      fetch('/api/fii-dii').then(r => r.json()).catch(() => ({})),
+    ]).then(([prices, fii]: [PriceMap, { rows?: FiiRow[] }]) => {
+      setMktData(prices);
+      setFiiData(fii?.rows?.[0] ?? null);
+    }).finally(() => { setMktLoading(false); setFiiLoading(false); });
+  }, []);
 
   // All India NSE/BSE holdings across EVERY portfolio
   useEffect(() => {
@@ -799,7 +789,7 @@ export default function DashboardPage() {
     );
   }
 
-  if (portfolios.length === 0) return <WelcomeEmpty name={name} email={user.email} />;
+  if (portfolios.length === 0) return <WelcomeEmpty name={name} email={user.email} mktData={mktData} mktLoading={mktLoading} />;
 
   const fmtL = (n: number) => n >= 1e7 ? `₹${(n/1e7).toFixed(2)}Cr` : n >= 1e5 ? `₹${(n/1e5).toFixed(2)}L` : `₹${n.toLocaleString('en-IN', { maximumFractionDigits:0 })}`;
 
@@ -936,12 +926,6 @@ export default function DashboardPage() {
       </div>
 
 
-      {/* Market overview row */}
-      <div className="g-brief" style={{ display:'grid', gap:14, marginBottom:14 }}>
-        <MarketBrief />
-        <MarketMoodIndex />
-      </div>
-
       {/* KPI strip — India + Net Worth + US all in one row */}
       <div className="g6" style={{ display:'grid', gap:12, marginBottom:14 }}>
         {/* Equity */}
@@ -1047,6 +1031,12 @@ export default function DashboardPage() {
         </Link>
       </div>
 
+      {/* Market brief + MMI — below KPIs */}
+      <div className="g-brief" style={{ display:'grid', gap:14, marginBottom:14 }}>
+        <MarketBrief />
+        <MarketMoodIndex />
+      </div>
+
       {/* Recent scan picks */}
       {scanPicks.length > 0 && (
         <div style={{ ...card, marginBottom:16, borderColor:'rgba(0,212,160,0.22)', background:'linear-gradient(135deg,rgba(0,212,160,0.06),var(--card-bg))' }}>
@@ -1062,8 +1052,8 @@ export default function DashboardPage() {
           </div>
           <div className="g3" style={{ display:'grid', gap:10, marginBottom:10 }}>
             {scanPicks.slice(0, 3).map((p, i) => (
-              <Link key={`${p.symbol}-${i}`} href={`/stocks/${p.symbol.toLowerCase()}`}
-                style={{ textDecoration:'none', background:'rgba(0,212,160,0.07)', border:'1px solid rgba(0,212,160,0.2)', borderRadius:12, padding:'14px 15px', display:'flex', flexDirection:'column', gap:5 }}>
+              <div key={`${p.symbol}-${i}`} onClick={() => setDetailSym({ symbol: p.symbol, exchange: p.exchange })}
+                style={{ cursor:'pointer', background:'rgba(0,212,160,0.07)', border:'1px solid rgba(0,212,160,0.2)', borderRadius:12, padding:'14px 15px', display:'flex', flexDirection:'column', gap:5 }}>
                 <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
                   <div style={{ fontSize:14, fontWeight:900, letterSpacing:-0.3 }}>{p.symbol}</div>
                   <div style={{ fontSize:9, fontWeight:800, color:'var(--grn)', background:'rgba(0,212,160,0.12)', border:'1px solid rgba(0,212,160,0.3)', borderRadius:6, padding:'2px 7px', textTransform:'uppercase' as const, letterSpacing:0.5 }}>Strong</div>
@@ -1076,7 +1066,7 @@ export default function DashboardPage() {
                   </div>
                 )}
                 <div style={{ fontSize:9, color:'var(--dim2)', marginTop:2 }}>{new Date(p.scanned_at).toLocaleDateString('en-IN', { day:'2-digit', month:'short' })}</div>
-              </Link>
+              </div>
             ))}
           </div>
           <div style={{ fontSize:10, color:'var(--dim2)' }}>⚠️ NOT SEBI REGISTERED · Algorithmic scan output — not investment advice · DYOR</div>
@@ -1142,68 +1132,6 @@ export default function DashboardPage() {
           )}
         </div>
       )}
-
-      {/* Analytics: treemap heatmap + cap donut */}
-      <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
-        {/* Treemap heatmap */}
-        <div style={{ ...card, padding:'16px', borderColor:'rgba(0,212,160,0.2)', background:'linear-gradient(160deg,rgba(0,212,160,0.05),var(--card-bg))' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <div style={{ width:30, height:30, borderRadius:9, background:'rgba(0,212,160,0.14)', border:'1px solid rgba(0,212,160,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🔥</div>
-              <div>
-                <div style={{ fontSize:13, fontWeight:800 }}>Portfolio Heatmap</div>
-                <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>
-                  Size = weight · Color = daily Δ · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => prices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
-                </div>
-              </div>
-            </div>
-            <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
-          </div>
-          <TreemapHeatmap
-            height={420}
-            items={heatTiles.map(h => ({
-              symbol:    h.symbol,
-              value:     h.avg_price * h.qty,
-              changePct: prices[h.symbol]?.change_pct ?? null,
-            }))}
-          />
-        </div>
-
-        {/* Market cap donut */}
-        <div style={card}>
-          <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>Market Cap Mix</div>
-          {capSegments.length === 0 ? (
-            <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', padding:'20px 0' }}>—</div>
-          ) : (
-            <>
-              <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:14 }}>
-                <DonutChart segments={capSegments} />
-                <div style={{ fontSize:13, fontWeight:900, marginTop:-4 }}>{mergedIndia.length} holdings</div>
-                <div style={{ fontSize:11, color:'var(--dim)' }}>{portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''}</div>
-              </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-                {capSegments.map(s => {
-                  const pct = capTotal > 0 ? s.value / capTotal * 100 : 0;
-                  return (
-                    <div key={s.label}>
-                      <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:3 }}>
-                        <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                          <div style={{ width:8, height:8, borderRadius:2, background:s.color, flexShrink:0 }}/>
-                          <span style={{ color:'var(--dim)' }}>{s.label}</span>
-                        </div>
-                        <span style={{ fontWeight:700 }}>{pct.toFixed(0)}%</span>
-                      </div>
-                      <div style={{ height:3, background:'rgba(255,255,255,0.06)', borderRadius:2, overflow:'hidden' }}>
-                        <div style={{ height:'100%', width:`${pct}%`, background:s.color, borderRadius:2 }}/>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
-        </div>
-      </div>
 
       {/* Analyst commentary */}
       {insights.length > 0 && (
@@ -1347,8 +1275,8 @@ export default function DashboardPage() {
 
       <div className="g-side" style={{ display:'grid', gap:16 }}>
         <div>
-          <MarketOverview />
-          <HomeFIIDII />
+          <MarketOverview data={mktData} loading={mktLoading} />
+          <HomeFIIDII today={fiiData} loading={fiiLoading} />
         </div>
         <div>
           <div style={{ ...card, marginBottom:14 }}>
@@ -1372,7 +1300,7 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <HomeSectorPerf />
+          <HomeSectorPerf data={mktData} loading={mktLoading} />
 
           {/* Watchlist preview */}
           {watchlist.length > 0 && (
@@ -1387,8 +1315,8 @@ export default function DashboardPage() {
                   const isIndia = w.exchange === 'NSE' || w.exchange === 'BSE';
                   const col = p?.change_pct == null ? 'var(--dim)' : p.change_pct >= 0 ? 'var(--grn)' : 'var(--red)';
                   return (
-                    <Link key={w.id} href={`/stocks/${w.symbol.toLowerCase()}`}
-                      style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', background:'var(--surf2)', borderRadius:9, textDecoration:'none' }}>
+                    <div key={w.id} onClick={() => setDetailSym({ symbol: w.symbol, exchange: w.exchange })}
+                      style={{ cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', background:'var(--surf2)', borderRadius:9 }}>
                       <div>
                         <div style={{ fontSize:12, fontWeight:700 }}>{w.symbol}</div>
                         <div style={{ fontSize:9.5, color:'var(--dim)', marginTop:1 }}>{w.exchange}</div>
@@ -1403,7 +1331,7 @@ export default function DashboardPage() {
                           </div>
                         )}
                       </div>
-                    </Link>
+                    </div>
                   );
                 })}
               </div>
@@ -1413,9 +1341,81 @@ export default function DashboardPage() {
       </div>
 
 
+      {/* Analytics: treemap heatmap + cap donut — at bottom */}
+      {heatTiles.length > 0 && (
+        <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
+          {/* Treemap heatmap */}
+          <div style={{ ...card, padding:'16px', borderColor:'rgba(0,212,160,0.2)', background:'linear-gradient(160deg,rgba(0,212,160,0.05),var(--card-bg))' }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                <div style={{ width:30, height:30, borderRadius:9, background:'rgba(0,212,160,0.14)', border:'1px solid rgba(0,212,160,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🔥</div>
+                <div>
+                  <div style={{ fontSize:13, fontWeight:800 }}>Portfolio Heatmap</div>
+                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>
+                    Size = weight · Color = daily Δ · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => prices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
+                  </div>
+                </div>
+              </div>
+              <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
+            </div>
+            <TreemapHeatmap
+              height={420}
+              items={heatTiles.map(h => ({
+                symbol:    h.symbol,
+                value:     h.avg_price * h.qty,
+                changePct: prices[h.symbol]?.change_pct ?? null,
+              }))}
+            />
+          </div>
+
+          {/* Market cap donut */}
+          <div style={card}>
+            <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>Market Cap Mix</div>
+            {capSegments.length === 0 ? (
+              <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', padding:'20px 0' }}>—</div>
+            ) : (
+              <>
+                <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:14 }}>
+                  <DonutChart segments={capSegments} />
+                  <div style={{ fontSize:13, fontWeight:900, marginTop:-4 }}>{mergedIndia.length} holdings</div>
+                  <div style={{ fontSize:11, color:'var(--dim)' }}>{portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''}</div>
+                </div>
+                <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                  {capSegments.map(s => {
+                    const pct = capTotal > 0 ? s.value / capTotal * 100 : 0;
+                    return (
+                      <div key={s.label}>
+                        <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:3 }}>
+                          <div style={{ display:'flex', alignItems:'center', gap:6 }}>
+                            <div style={{ width:8, height:8, borderRadius:2, background:s.color, flexShrink:0 }}/>
+                            <span style={{ color:'var(--dim)' }}>{s.label}</span>
+                          </div>
+                          <span style={{ fontWeight:700 }}>{pct.toFixed(0)}%</span>
+                        </div>
+                        <div style={{ height:3, background:'rgba(255,255,255,0.06)', borderRadius:2, overflow:'hidden' }}>
+                          <div style={{ height:'100%', width:`${pct}%`, background:s.color, borderRadius:2 }}/>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:14 }}>
         ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · This is a technical screening tool · Scan results are computed indicators, not investment advice · DYOR
       </div>
+
+      {detailSym && (
+        <StockDetailSheet
+          symbol={detailSym.symbol}
+          exchange={detailSym.exchange}
+          onClose={() => setDetailSym(null)}
+        />
+      )}
     </>
   );
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import Link from 'next/link';
+import { StockDetailSheet } from '@/components/StockDetailSheet';
 
 interface IPO {
   company: string;
@@ -45,8 +45,9 @@ function daysTo(d: string): number {
 }
 
 export default function IPOPage() {
-  const [ipos, setIpos]     = useState<IPO[]>(STATIC_IPOS);
-  const [filter, setFilter] = useState<'all'|'mainboard'|'sme'>('all');
+  const [ipos, setIpos]       = useState<IPO[]>(STATIC_IPOS);
+  const [filter, setFilter]   = useState<'all'|'mainboard'|'sme'>('all');
+  const [detailSym, setDetailSym] = useState<{ symbol: string; exchange: string } | null>(null);
 
   // Try live fetch (falls back silently to static)
   useEffect(() => {
@@ -101,9 +102,11 @@ export default function IPOPage() {
 
         {ipo.symbol && (
           <div style={{ marginTop:12, paddingTop:12, borderTop:'1px solid var(--bdr)22' }}>
-            <Link href={`/stocks/${ipo.symbol}`} style={{ fontSize:11, fontWeight:700, color:'var(--bluL)', textDecoration:'none' }}>
+            <button
+              onClick={() => setDetailSym({ symbol: ipo.symbol!, exchange: 'NSE' })}
+              style={{ background:'none', border:'none', padding:0, cursor:'pointer', fontSize:11, fontWeight:700, color:'var(--bluL)', fontFamily:'inherit' }}>
               View technical analysis →
-            </Link>
+            </button>
           </div>
         )}
       </div>
@@ -161,6 +164,14 @@ export default function IPOPage() {
         GMP = Grey Market Premium — unofficial, unlicensed. Not a buy/sell recommendation.
         Subscription data from NSE/BSE. IPO details subject to change. Not SEBI registered · DYOR.
       </div>
+
+      {detailSym && (
+        <StockDetailSheet
+          symbol={detailSym.symbol}
+          exchange={detailSym.exchange}
+          onClose={() => setDetailSym(null)}
+        />
+      )}
     </div>
   );
 }

@@ -7,10 +7,10 @@ import { usePlan } from '@/lib/use-plan';
 
 // 4 primary tabs — mirrors sidebar tab structure
 const PRIMARY_TABS = [
-  { key: 'home',    href: '/dashboard',              icon: '🏠', label: 'Home'    },
-  { key: 'signals', href: '/dashboard/signals',      icon: '📈', label: 'Scan'    },
-  { key: 'india',   href: '/dashboard/portfolio',    icon: '💼', label: 'India'   },
-  { key: 'us',      href: '/dashboard/us-portfolio', icon: '🇺🇸', label: 'US'      },
+  { key: 'home',      href: '/dashboard',           icon: '🏠', label: 'Home',      aliases: [] },
+  { key: 'signals',   href: '/dashboard/signals',   icon: '📈', label: 'Scan',      aliases: [] },
+  { key: 'portfolio', href: '/dashboard/portfolio', icon: '💼', label: 'Portfolio', aliases: ['/dashboard/us-portfolio'] },
+  { key: 'watchlist', href: '/dashboard/watchlist', icon: '👁', label: 'Watchlist', aliases: [] },
 ];
 
 // More drawer grouped by category
@@ -75,7 +75,7 @@ export function MobileBottomNav() {
     <>
       <nav className="dash-mobile-nav">
         {PRIMARY_TABS.map(t => {
-          const active = path === t.href || (t.href !== '/dashboard' && path.startsWith(t.href));
+          const active = path === t.href || (t.href !== '/dashboard' && path.startsWith(t.href)) || t.aliases.some(a => path.startsWith(a));
           return (
             <Link key={t.href} href={t.href} className={active ? 'active' : ''} onClick={() => setMoreOpen(false)}>
               <span className="icon">{t.icon}</span>

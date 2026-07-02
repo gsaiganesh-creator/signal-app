@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { usePlan } from '@/lib/use-plan';
 
-interface NavLink { href: string; icon: string; label: string; badge?: string; danger?: boolean; }
+interface NavLink { href: string; icon: string; label: string; badge?: string; danger?: boolean; aliases?: string[] }
 
 const TABS: { key: string; icon: string; label: string; links: NavLink[] }[] = [
   {
@@ -14,8 +14,7 @@ const TABS: { key: string; icon: string; label: string; links: NavLink[] }[] = [
       { href: '/dashboard/signals',       icon: '📈', label: 'ML Technical Scan' },
       { href: '/dashboard/watchlist',     icon: '👁', label: 'Watchlist', badge: 'NEW' },
       { href: '/stocks/compare',          icon: '⚖️', label: 'Compare Stocks' },
-      { href: '/dashboard/portfolio',     icon: '💼', label: 'Indian Portfolio'    },
-      { href: '/dashboard/us-portfolio',  icon: '🇺🇸', label: 'US Portfolio'   },
+      { href: '/dashboard/portfolio', icon: '💼', label: 'Portfolio', aliases: ['/dashboard/us-portfolio'] },
       { href: '/dashboard/equity-comp',   icon: '📊', label: 'ESPP & RSU', badge: 'NEW' },
       { href: '/dashboard/etf-mf',        icon: '🏦', label: 'ETF & MF'       },
     ],
@@ -57,11 +56,15 @@ const TABS: { key: string; icon: string; label: string; links: NavLink[] }[] = [
   },
 ];
 
+function linkActive(link: NavLink, pathname: string): boolean {
+  if (pathname === link.href) return true;
+  if (link.href !== '/dashboard' && pathname.startsWith(link.href)) return true;
+  return (link.aliases ?? []).some(a => pathname.startsWith(a));
+}
+
 function resolveTab(pathname: string): string {
   for (const tab of TABS) {
-    if (tab.links.some(l => pathname === l.href || (l.href !== '/dashboard' && pathname.startsWith(l.href)))) {
-      return tab.key;
-    }
+    if (tab.links.some(l => linkActive(l, pathname))) return tab.key;
   }
   return 'home';
 }
@@ -107,7 +110,7 @@ export function DashboardSidebar() {
       {/* Links for active tab */}
       <div style={{ flex: 1, overflowY: 'auto', padding: '10px 8px' }}>
         {currentTab.links.map(link => {
-          const active = pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href));
+          const active = linkActive(link, pathname);
           const color  = link.danger ? 'var(--red)' : active ? 'var(--bluL)' : 'var(--nav-inactive)';
           const bg     = link.danger ? 'transparent' : active ? 'rgba(23,64,245,0.1)' : 'transparent';
           return (
