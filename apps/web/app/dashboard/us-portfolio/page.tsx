@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { usePortfolio } from '@/lib/portfolio-context';
-import { StockNews } from '@/components/StockNews';
+import { StockDetailSheet } from '@/components/StockDetailSheet';
 import * as XLSX from 'xlsx';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -180,8 +180,6 @@ export default function USPortfolioPage() {
   const [newPortName, setNewPortName] = useState('');
   const [creatingPort, setCreatingPort] = useState(false);
   const [selectedHolding, setSelected]   = useState<USHolding | null>(null);
-  const [stockDetail,     setDetail]     = useState<StockDetail | null>(null);
-  const [detailLoading,   setDetailLoad] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [uploadPortId, setUploadPortId] = useState<string | null>(null);
   const [manualUSPortIds, setManualUSPortIds] = useState<Set<string>>(() => {
@@ -197,8 +195,7 @@ export default function USPortfolioPage() {
   const [showNewPortInput, setShowNewPortInput] = useState(false);
   const [mlSignals, setMlSignals] = useState<Record<string, MLSignal>>({});
   const [mlLoading, setMlLoading] = useState(false);
-  const [mlExpanded, setMlExpanded] = useState(false);
-  const [contentTab, setContentTab] = useState<'holdings' | 'signals' | 'espp'>('holdings');
+  const [contentTab, setContentTab] = useState<'holdings' | 'espp'>('holdings');
 
   // Close port dropdown on outside click/scroll
   useEffect(() => {
@@ -423,17 +420,6 @@ export default function USPortfolioPage() {
     await fetchHoldings();
   }
 
-  async function selectHolding(h: USHolding) {
-    setSelected(h);
-    setDetail(null);
-    setDetailLoad(true);
-    try {
-      const res = await fetch(`/api/stock-detail?symbol=${h.symbol}&exchange=${h.exchange}`, { signal: AbortSignal.timeout(12000) });
-      if (res.ok) setDetail(await res.json());
-    } catch { /* ignore */ }
-    setDetailLoad(false);
-  }
-
   const fetchAllSignals = useCallback(async (holdings: USHolding[]) => {
     const syms = [...new Set(holdings.map(h => h.symbol))];
     if (!syms.length) return;
@@ -640,9 +626,8 @@ export default function USPortfolioPage() {
       {/* Content-type tabs */}
       <div style={{ display:'flex', gap:6, marginBottom:16, borderBottom:'1px solid var(--bdr)', paddingBottom:0 }}>
         {([
-          { key:'holdings', label:'📋 Holdings', desc:'P&L + table' },
-          { key:'signals',  label:'🤖 ML Signals', desc:'Momentum scan' },
-          { key:'espp',     label:'📊 ESPP & RSU', desc:'Grants tracker' },
+          { key:'holdings', label:'📋 Holdings'  },
+          { key:'espp',     label:'📊 ESPP & RSU' },
         ] as const).map(t => (
           <button key={t.key} onClick={() => setContentTab(t.key)}
             style={{ height:36, padding:'0 16px', borderRadius:0, background:'none', border:'none', cursor:'pointer', fontFamily:'inherit',
@@ -788,114 +773,6 @@ export default function USPortfolioPage() {
         </div>
       )}
 
-      {/* ML What-it-analyzes panel */}
-      {contentTab === 'signals' && merged.length > 0 && (
-        <div style={{ ...card, marginBottom:12, background:'linear-gradient(135deg,rgba(79,111,250,0.07),rgba(139,92,246,0.04))', borderColor:'rgba(79,111,250,0.22)' }}>
-          <button onClick={() => setMlExpanded(v => !v)}
-            style={{ width:'100%', background:'none', border:'none', cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'space-between', padding:0 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-              <div style={{ width:30, height:30, borderRadius:9, background:'rgba(79,111,250,0.16)', border:'1px solid rgba(79,111,250,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🤖</div>
-              <div style={{ textAlign:'left' }}>
-                <div style={{ fontSize:13, fontWeight:800, color:'var(--txt)' }}>ML Technical Scan — US Stocks</div>
-                <div style={{ fontSize:11, color:'var(--dim)' }}>
-                  {mlLoading ? '⏳ Scanning your holdings…' : `Scanning ${Object.keys(mlSignals).length} stocks across 9 technical parameters · Click row for full breakdown`}
-                </div>
-              </div>
-            </div>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              {!mlLoading && Object.keys(mlSignals).length > 0 && (
-                <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
-              )}
-              <span style={{ fontSize:11, color:'var(--dim)' }}>{mlExpanded ? '▲ Hide' : '▼ What does ML look at?'}</span>
-            </div>
-          </button>
-          {mlExpanded && (
-            <div style={{ marginTop:16, display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(230px,1fr))', gap:10 }}>
-              {[
-                { icon:'📊', param:'RSI (14)', desc:'Relative Strength Index — measures momentum. Below 35 = oversold (buy signal), above 70 = overbought (caution). Neutral 35–70.' },
-                { icon:'📈', param:'EMA 20 / 50 / 200', desc:'Exponential Moving Averages. Price above EMA200 = long-term bull. EMA20 > EMA50 = uptrend. Price below all EMAs = downtrend warning.' },
-                { icon:'⚡', param:'MACD', desc:'Momentum oscillator. Positive MACD = bullish momentum building. Negative = bearish. Used to confirm trend direction from EMAs.' },
-                { icon:'🎯', param:'Bollinger Bands %', desc:'BB% shows where price sits within the bands. Near 0% = lower band (oversold), near 100% = upper band (overbought), ~50% = neutral.' },
-                { icon:'📦', param:'Volume Ratio', desc:'Today\'s volume vs 20-day average. >1.5x average = institutional interest or news catalyst. Low volume moves are less reliable.' },
-                { icon:'🏦', param:'Analyst Consensus', desc:'Wall Street price targets from 10–30+ analysts. Upside to target >15% weighted as bullish. Consensus "Buy/Strong Buy" adds signal.' },
-                { icon:'🩳', param:'Short Interest %', desc:'% of float sold short. >10% float shorted = heavy bearish conviction. Can also signal short-squeeze opportunity in a catalyst.' },
-                { icon:'📅', param:'Earnings Risk', desc:'Days to next earnings. Earnings within 7 days flagged as binary risk — stock can gap 10–20%. Signal reduces confidence near events.' },
-                { icon:'💹', param:'Fundamentals', desc:'P/E, Forward P/E, EV/EBITDA, Revenue growth, Net Margin, ROE, Debt/Equity — contextual factors used with technicals for US stocks.' },
-              ].map(m => (
-                <div key={m.param} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:11, padding:'12px 14px' }}>
-                  <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:5 }}>
-                    <span style={{ fontSize:16 }}>{m.icon}</span>
-                    <span style={{ fontSize:11, fontWeight:800, color:'var(--txt)' }}>{m.param}</span>
-                  </div>
-                  <div style={{ fontSize:11, color:'var(--dim)', lineHeight:1.6 }}>{m.desc}</div>
-                </div>
-              ))}
-              <div style={{ gridColumn:'1/-1', fontSize:11, color:'var(--dim2)', borderTop:'1px solid var(--card-bdr)', paddingTop:10 }}>
-                ⚠️ NOT SEC REGISTERED · Signals are algorithmic estimates based on public market data. Not investment advice. DYOR. Click any stock row for full parameter breakdown.
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* ML Signals summary table */}
-      {contentTab === 'signals' && merged.length > 0 && (
-        <div style={{ ...card, marginBottom:20, borderColor:'rgba(79,111,250,0.18)', background:'linear-gradient(160deg,rgba(79,111,250,0.04),var(--card-bg))' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-            <div style={{ fontSize:13, fontWeight:700 }}>🤖 Momentum Zones {mlLoading && <span style={{ fontSize:11, color:'var(--dim)', fontWeight:400 }}>· scanning…</span>}</div>
-            <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
-          </div>
-          <div style={{ overflowX:'auto' }}>
-            <table style={{ width:'100%', borderCollapse:'collapse' }}>
-              <thead>
-                <tr>{['Stock','CMP','RSI','EMA Trend','Momentum Zone','BB%','Vol Ratio'].map((h, i) => (
-                  <th key={i} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'5px 10px', textAlign:'left', borderBottom:'1px solid rgba(79,111,250,0.15)', textTransform:'uppercase' as const, letterSpacing:0.4, whiteSpace:'nowrap' as const }}>{h}</th>
-                ))}</tr>
-              </thead>
-              <tbody>
-                {[...allHoldings].sort((a,b) => a.symbol.localeCompare(b.symbol)).map(h => {
-                  const p   = prices[h.symbol];
-                  const ms  = mlSignals[h.symbol];
-                  const emaTrend = ms?.ema20 && ms?.ema50 ? (ms.ema20 > ms.ema50 ? '↑ Up' : '↓ Down') : '—';
-                  const emaCol   = ms?.ema20 && ms?.ema50 ? (ms.ema20 > ms.ema50 ? 'var(--grn)' : 'var(--red)') : 'var(--dim)';
-                  return (
-                    <tr key={h.id} onClick={() => selectHolding(h)} style={{ cursor:'pointer' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'rgba(79,111,250,0.05)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
-                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontWeight:700, fontSize:13 }}>{h.symbol}</td>
-                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:12, whiteSpace:'nowrap' as const }}>
-                        {p?.price != null ? `$${p.price.toFixed(2)}` : '—'}
-                        {p?.change_pct != null && <div style={{ fontSize:10, color: p.change_pct >= 0 ? 'var(--grn)' : 'var(--red)' }}>{p.change_pct >= 0 ? '+' : ''}{p.change_pct.toFixed(2)}%</div>}
-                      </td>
-                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:12 }}>
-                        {ms?.rsi14 != null ? (
-                          <span style={{ fontWeight:700, color: ms.rsi14 < 35 ? 'var(--grn)' : ms.rsi14 > 70 ? 'var(--red)' : 'var(--ylw)' }}>{ms.rsi14.toFixed(0)}</span>
-                        ) : mlLoading ? '⏳' : '—'}
-                      </td>
-                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:11, fontWeight:700, color:emaCol }}>{ms ? emaTrend : mlLoading ? '⏳' : '—'}</td>
-                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', whiteSpace:'nowrap' as const }}>
-                        {ms ? (
-                          <span style={{ display:'inline-block', padding:'2px 9px', borderRadius:20, fontSize:11, fontWeight:800, background:ms.bg, color:ms.color, border:`1px solid ${ms.bdr}` }}>{ms.label}</span>
-                        ) : mlLoading ? <span style={{ fontSize:11, color:'var(--dim2)' }}>⏳</span> : <span style={{ color:'var(--dim2)', fontSize:11 }}>—</span>}
-                      </td>
-                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:11 }}>
-                        {ms?.bb_pct != null ? `${(ms.bb_pct * 100).toFixed(0)}%` : '—'}
-                      </td>
-                      <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:11 }}>
-                        {ms?.vol_ratio != null ? (
-                          <span style={{ color: ms.vol_ratio > 1.5 ? 'var(--grn)' : 'var(--dim)', fontWeight: ms.vol_ratio > 1.5 ? 700 : 400 }}>{ms.vol_ratio.toFixed(2)}x</span>
-                        ) : '—'}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-          <div style={{ fontSize:10, color:'var(--dim2)', marginTop:10 }}>⚠️ NOT SEC REGISTERED · Algorithmic scan — not investment advice · DYOR</div>
-        </div>
-      )}
-
       {/* Holdings table */}
       {contentTab === 'holdings' && (merged.length > 0 ? (
         <div style={{ ...card, marginBottom:20, borderColor:'rgba(79,111,250,0.18)', background:'linear-gradient(160deg,rgba(79,111,250,0.04),var(--card-bg))' }}>
@@ -937,7 +814,7 @@ export default function USPortfolioPage() {
                   const plPos = pl == null || pl >= 0;
                   const ms = mlSignals[h.symbol];
                   return (
-                    <tr key={h.id} onClick={() => selectHolding(h)} style={{ cursor:'pointer', transition:'background 0.1s' }}
+                    <tr key={h.id} onClick={() => setSelected(h)} style={{ cursor:'pointer', transition:'background 0.1s' }}
                       onMouseEnter={e => (e.currentTarget.style.background = 'rgba(79,111,250,0.05)')}
                       onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>
                       <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.4)' }}>
@@ -1069,231 +946,23 @@ export default function USPortfolioPage() {
         </div>
       )}
 
-      {/* Stock detail modal */}
-      {selectedHolding && (() => {
-        const h   = selectedHolding;
-        const d   = stockDetail;
-        const p   = prices[h.symbol];
-        const cmp = d?.price ?? p?.price ?? null;
-        const chg = d?.change_pct ?? p?.change_pct ?? null;
-        const pl    = (cmp != null && h.avg_price > 0.01) ? (cmp - h.avg_price) * h.qty : null;
-        const plPct = (pl != null && h.avg_price > 0.01) ? (cmp! - h.avg_price) / h.avg_price * 100 : null;
-        const plPos = pl == null || pl >= 0;
+      {/* Stock detail sheet */}
+      {selectedHolding && (
+        <StockDetailSheet
+          symbol={selectedHolding.symbol}
+          exchange={selectedHolding.exchange}
+          onClose={() => setSelected(null)}
+          holding={{
+            qty: selectedHolding.qty,
+            avgPrice: selectedHolding.avg_price,
+            currency: 'USD',
+            usdInr: usdInr,
+            portfolioName: selectedHolding.portfolio_name,
+            onDelete: () => { handleDelete(selectedHolding); setSelected(null); },
+          }}
+        />
+      )}
 
-        // INR-adjusted return (stock % ± forex %)
-        const usdInrReturn = usdInr && h.avg_price > 0 && cmp
-          ? ((cmp / h.avg_price) - 1) * 100 : null;
-
-        function Stat({ label, val, sub, color }: { label:string; val:string; sub?:string; color?:string }) {
-          return (
-            <div style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:9, padding:'9px 12px' }}>
-              <div style={{ fontSize:9, color:'var(--dim)', fontWeight:700, letterSpacing:0.4, marginBottom:3 }}>{label.toUpperCase()}</div>
-              <div style={{ fontSize:13, fontWeight:800, color: color ?? 'var(--txt)' }}>{val}</div>
-              {sub && <div style={{ fontSize:9.5, color:'var(--dim)', marginTop:1 }}>{sub}</div>}
-            </div>
-          );
-        }
-
-        function Section({ title }: { title:string }) {
-          return <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:8, marginTop:4 }}>{title}</div>;
-        }
-
-        const consensusColor = (c: string | null) =>
-          c === 'buy' || c === 'strong_buy' ? 'var(--grn)'
-          : c === 'sell' || c === 'strong_sell' ? 'var(--red)'
-          : 'var(--ylw)';
-
-        function fmt(n: Num, suffix = '', prefix = '') { return n != null ? `${prefix}${n}${suffix}` : '—'; }
-
-        return (
-          <div onClick={() => { setSelected(null); setDetail(null); }}
-            style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16, overflowY:'auto' }}>
-            <div onClick={e => e.stopPropagation()}
-              style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:20, padding:24, width:'min(560px,95vw)', boxShadow:'0 24px 64px rgba(0,0,0,0.5)', maxHeight:'92vh', overflowY:'auto' }}>
-
-              {/* Header */}
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:14 }}>
-                <div>
-                  <div style={{ fontSize:22, fontWeight:900 }}>{h.symbol}</div>
-                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
-                    {d?.name ?? h.symbol} · {h.portfolio_name} · {h.qty} shares
-                  </div>
-                </div>
-                <button onClick={() => { setSelected(null); setDetail(null); }}
-                  style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:8, width:32, height:32, cursor:'pointer', color:'var(--dim)', fontSize:15, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
-              </div>
-
-              {/* Price row */}
-              {cmp != null && (
-                <div style={{ display:'flex', alignItems:'baseline', gap:10, marginBottom:14 }}>
-                  <div style={{ fontSize:28, fontWeight:900 }}>${cmp.toFixed(2)}</div>
-                  {chg != null && (
-                    <div style={{ fontSize:13, fontWeight:700, color: chg >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-                      {chg >= 0 ? '+' : ''}{chg.toFixed(2)}% today
-                    </div>
-                  )}
-                  {detailLoading && <div style={{ fontSize:11, color:'var(--dim)' }}>loading details…</div>}
-                </div>
-              )}
-
-              {/* P&L banner */}
-              {pl != null && (
-                <div style={{ background: plPos ? 'rgba(0,212,160,0.07)' : 'rgba(255,59,92,0.07)', border:`1px solid ${plPos ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`, borderRadius:10, padding:'12px 16px', display:'flex', justifyContent:'space-between', marginBottom:16 }}>
-                  <div>
-                    <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)' }}>UNREALISED P&L</div>
-                    <div style={{ fontSize:22, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)' }}>{plPos ? '+' : '-'}${Math.abs(pl).toFixed(0)}</div>
-                    {usdInr && <div style={{ fontSize:10, color:'var(--dim)' }}>≈ {plPos ? '+' : '-'}₹{(Math.abs(pl)*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}</div>}
-                  </div>
-                  <div style={{ textAlign:'right' }}>
-                    <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)' }}>RETURN</div>
-                    <div style={{ fontSize:22, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)' }}>
-                      {plPct != null ? `${plPct >= 0 ? '+' : ''}${plPct.toFixed(2)}%` : '—'}
-                    </div>
-                    {usdInr && usdInrReturn != null && (
-                      <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>
-                        INR adj.: {usdInrReturn >= 0 ? '+' : ''}{usdInrReturn.toFixed(1)}%
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Position stats */}
-              <Section title="Position" />
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                <Stat label="Avg Cost"      val={`$${h.avg_price.toFixed(2)}`} />
-                <Stat label="Invested"      val={`$${(h.avg_price*h.qty).toFixed(0)}`} sub={usdInr ? `≈ ₹${(h.avg_price*h.qty*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : undefined} />
-                <Stat label="Current Value" val={cmp ? `$${(cmp*h.qty).toFixed(0)}` : '—'} sub={(cmp && usdInr) ? `≈ ₹${(cmp*h.qty*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : undefined} />
-              </div>
-
-              {d && (
-                <>
-                  {/* Valuation */}
-                  {(d.trailing_pe || d.forward_pe || d.ev_ebitda || d.price_to_sales || d.beta || d.market_cap) && (
-                    <>
-                      <Section title="Valuation" />
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                        {d.trailing_pe    != null && <Stat label="P/E (TTM)"   val={fmt(d.trailing_pe)} />}
-                        {d.forward_pe     != null && <Stat label="Forward P/E" val={fmt(d.forward_pe)} />}
-                        {d.ev_ebitda      != null && <Stat label="EV/EBITDA"   val={fmt(d.ev_ebitda)} />}
-                        {d.price_to_sales != null && <Stat label="P/S"         val={fmt(d.price_to_sales, 'x')} />}
-                        {d.beta           != null && <Stat label="Beta"        val={fmt(d.beta)} sub="vs S&P 500" />}
-                        {d.market_cap     != null && <Stat label="Market Cap"  val={d.market_cap >= 1e12 ? `$${(d.market_cap/1e12).toFixed(2)}T` : `$${(d.market_cap/1e9).toFixed(1)}B`} />}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Growth & Profitability */}
-                  {(d.revenue_growth || d.earnings_growth || d.gross_margin || d.operating_margin || d.net_margin || d.roe) && (
-                    <>
-                      <Section title="Growth & Profitability" />
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                        {d.revenue_growth   != null && <Stat label="Revenue Growth"   val={fmt(d.revenue_growth, '%')}   color={d.revenue_growth >= 0 ? 'var(--grn)' : 'var(--red)'} />}
-                        {d.earnings_growth  != null && <Stat label="Earnings Growth"  val={fmt(d.earnings_growth, '%')}  color={d.earnings_growth >= 0 ? 'var(--grn)' : 'var(--red)'} />}
-                        {d.gross_margin     != null && <Stat label="Gross Margin"     val={fmt(d.gross_margin, '%')} />}
-                        {d.operating_margin != null && <Stat label="Op. Margin"       val={fmt(d.operating_margin, '%')} />}
-                        {d.net_margin       != null && <Stat label="Net Margin"       val={fmt(d.net_margin, '%')} />}
-                        {d.roe              != null && <Stat label="ROE"              val={fmt(d.roe, '%')} />}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Analyst & Earnings */}
-                  {(d.analyst_target || d.next_earnings_date) && (
-                    <>
-                      <Section title="Analyst & Earnings" />
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                        {d.analyst_consensus && <Stat label="Consensus" val={d.analyst_consensus.replace('_',' ').toUpperCase()} color={consensusColor(d.analyst_consensus)} />}
-                        {d.analyst_target    != null && <Stat label="Avg Target" val={`$${d.analyst_target}`} sub={d.analyst_count ? `${d.analyst_count} analysts` : undefined} />}
-                        {d.upside_to_target  != null && <Stat label="Upside" val={`${d.upside_to_target >= 0 ? '+' : ''}${d.upside_to_target}%`} color={d.upside_to_target >= 10 ? 'var(--grn)' : d.upside_to_target < -5 ? 'var(--red)' : 'var(--ylw)'} />}
-                        {d.next_earnings_date && (
-                          <Stat label="Next Earnings" val={d.next_earnings_date}
-                            sub={d.days_to_earnings != null ? `${d.days_to_earnings}d away` : undefined}
-                            color={d.days_to_earnings != null && d.days_to_earnings <= 14 ? 'var(--ylw)' : 'var(--txt)'} />
-                        )}
-                        {d.analyst_target_low != null && d.analyst_target_high != null && (
-                          <Stat label="Target Range" val={`$${d.analyst_target_low}–$${d.analyst_target_high}`} />
-                        )}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Dividend & Short */}
-                  {(d.dividend_yield || d.short_pct_float) && (
-                    <>
-                      <Section title="Dividend & Short Interest" />
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                        {d.dividend_yield  != null && <Stat label="Div Yield" val={fmt(d.dividend_yield, '%')} color="var(--grn)" />}
-                        {d.payout_ratio    != null && <Stat label="Payout Ratio" val={fmt(d.payout_ratio, '%')} />}
-                        {d.ex_div_date               && <Stat label="Ex-Div Date" val={d.ex_div_date} />}
-                        {d.short_pct_float != null && <Stat label="Short Float" val={fmt(d.short_pct_float, '%')} color={d.short_pct_float > 20 ? 'var(--ylw)' : 'var(--txt)'} />}
-                        {d.short_ratio     != null && <Stat label="Short Ratio" val={fmt(d.short_ratio, 'd')} sub="days to cover" />}
-                      </div>
-                    </>
-                  )}
-
-                  {/* Technicals */}
-                  <Section title="Technicals" />
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                    {d.rsi14   != null && <Stat label="RSI 14"   val={d.rsi14.toString()} color={d.rsi14 > 70 ? 'var(--red)' : d.rsi14 < 35 ? 'var(--grn)' : 'var(--txt)'} />}
-                    {d.macd    != null && <Stat label="MACD"     val={d.macd.toString()}  color={d.macd >= 0 ? 'var(--grn)' : 'var(--red)'} />}
-                    {d.atr14   != null && <Stat label="ATR 14"   val={`$${d.atr14}`} sub={cmp ? `${(d.atr14/cmp*100).toFixed(1)}% of price` : undefined} />}
-                    {d.bb_pct  != null && <Stat label="BB %"     val={`${d.bb_pct}%`} sub="0=lower 100=upper" />}
-                    {d.vol_ratio != null && <Stat label="Vol Ratio" val={`${d.vol_ratio}x`} sub="vs 10d avg" color={d.vol_ratio > 2 ? 'var(--ylw)' : 'var(--txt)'} />}
-                    {d.from_52h != null && <Stat label="vs 52W High" val={`${d.from_52h}%`} color={d.from_52h > -5 ? 'var(--grn)' : 'var(--dim)'} />}
-                    {d.ema20   != null && <Stat label="EMA 20"   val={`$${d.ema20}`} color={cmp && cmp > d.ema20 ? 'var(--grn)' : 'var(--red)'} />}
-                    {d.ema50   != null && <Stat label="EMA 50"   val={`$${d.ema50}`} color={cmp && cmp > d.ema50 ? 'var(--grn)' : 'var(--red)'} />}
-                    {d.ema200  != null && <Stat label="EMA 200"  val={`$${d.ema200}`} color={cmp && cmp > d.ema200 ? 'var(--grn)' : 'var(--red)'} />}
-                  </div>
-
-                  {/* ATR-based position sizing hint */}
-                  {d.atr14 != null && h.avg_price > 0 && (
-                    <div style={{ background:'rgba(23,64,245,0.06)', border:'1px solid rgba(23,64,245,0.2)', borderRadius:9, padding:'10px 14px', marginBottom:14, fontSize:12 }}>
-                      <span style={{ fontWeight:700, color:'var(--bluL)' }}>Position Sizing (1% portfolio risk):</span>
-                      <span style={{ color:'var(--dim)', marginLeft:6 }}>
-                        Stop 1 ATR below entry → risk ${d.atr14}/share.
-                        For $10K portfolio: hold {Math.floor(100 / d.atr14)} shares max.
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Signals */}
-                  {d.signals.length > 0 && (
-                    <>
-                      <Section title="Signals" />
-                      <div style={{ display:'flex', flexDirection:'column', gap:6, marginBottom:14 }}>
-                        {d.signals.map((s, i) => (
-                          <div key={i} style={{ fontSize:12, padding:'7px 12px', background:'var(--surf2)', borderRadius:8, border:'1px solid var(--card-bdr)',
-                            color: s.startsWith('⚠') ? 'var(--ylw)' : s.includes('bullish') || s.includes('ABOVE') || s.includes('upside') ? 'var(--grn)' : s.includes('bearish') || s.includes('BELOW') || s.includes('elevated') ? 'var(--red)' : 'var(--txt)' }}>
-                            {s}
-                          </div>
-                        ))}
-                      </div>
-                    </>
-                  )}
-                </>
-              )}
-
-              {detailLoading && !d && (
-                <div style={{ display:'flex', flexDirection:'column', gap:8, marginBottom:14 }}>
-                  {[1,2,3].map(i => <div key={i} className="shimmer" style={{ height:60, borderRadius:9 }} />)}
-                </div>
-              )}
-
-              {/* ── Latest News ── */}
-              <Section title="Latest News" />
-              <div style={{ marginBottom:14 }}>
-                <StockNews symbol={h.symbol} exchange="US" />
-              </div>
-
-              <button onClick={() => { handleDelete(h); setSelected(null); setDetail(null); }}
-                style={{ width:'100%', height:38, borderRadius:9, background:'rgba(255,59,92,0.08)', border:'1px solid rgba(255,59,92,0.25)', color:'var(--red)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                🗑️ Remove from Portfolio
-              </button>
-            </div>
-          </div>
-        );
-      })()}
 
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:16 }}>
         ⚠️ Prices from Yahoo Finance · Delayed 15-20 min · NOT SEC registered · Not investment advice · DYOR

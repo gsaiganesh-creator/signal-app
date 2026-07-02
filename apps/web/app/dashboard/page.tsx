@@ -491,7 +491,7 @@ const SIDEBAR_SECTORS = [
 
 function HomeSectorPerf({ data, loading }: { data: PriceMap; loading: boolean }) {
   return (
-    <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)', marginBottom:14 }}>
+    <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
         <div style={{ fontSize:13, fontWeight:700 }}>Sector Performance</div>
         {!loading && <span style={{ fontSize:11, color:'var(--grn)', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span>}
@@ -1277,6 +1277,9 @@ export default function DashboardPage() {
         <div>
           <MarketOverview data={mktData} loading={mktLoading} />
           <HomeFIIDII today={fiiData} loading={fiiLoading} />
+          <div style={{ marginTop:16 }}>
+            <HomeSectorPerf data={mktData} loading={mktLoading} />
+          </div>
         </div>
         <div>
           <div style={{ ...card, marginBottom:14 }}>
@@ -1300,7 +1303,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-          <HomeSectorPerf data={mktData} loading={mktLoading} />
 
           {/* Watchlist preview */}
           {watchlist.length > 0 && (

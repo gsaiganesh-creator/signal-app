@@ -6,11 +6,10 @@ export const TABS = [
   {
     key: 'home', label: 'Home',
     links: [
-      { href: '/dashboard',              label: 'Dashboard'   },
-      { href: '/dashboard/signals',      label: 'Signals'     },
-      { href: '/dashboard/portfolio',    label: 'Portfolio'   },
-      { href: '/dashboard/us-portfolio', label: 'US Stocks'   },
-      { href: '/dashboard/etf-mf',       label: 'ETF & MF'   },
+      { href: '/dashboard',           label: 'Dashboard' },
+      { href: '/dashboard/signals',   label: 'Signals'   },
+      { href: '/dashboard/portfolio', label: 'Portfolio' },
+      { href: '/dashboard/etf-mf',    label: 'ETF & MF'  },
     ],
   },
   {
@@ -49,6 +48,8 @@ export const TABS = [
 ];
 
 export function resolveTab(pathname: string): string {
+  // us-portfolio is part of Portfolio (home tab)
+  if (pathname.startsWith('/dashboard/us-portfolio')) return 'home';
   for (const tab of TABS) {
     if (tab.links.some(l => pathname === l.href || (l.href !== '/dashboard' && pathname.startsWith(l.href)))) {
       return tab.key;

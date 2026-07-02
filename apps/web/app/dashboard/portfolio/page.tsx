@@ -7,12 +7,11 @@ import type { RawHolding } from '@/lib/portfolio-context';
 import type { MlClass } from '@/lib/supabase/types';
 import dynamic from 'next/dynamic';
 
-const StockChart          = dynamic(() => import('@/components/StockChart'), { ssr: false });
 const PortfolioChart      = dynamic(() => import('@/components/PortfolioChart').then(m => ({ default: m.PortfolioChart })), { ssr: false });
 const PortfolioShareCard  = dynamic(() => import('@/components/PortfolioShareCard').then(m => ({ default: m.PortfolioShareCard })), { ssr: false });
 import { PortfolioRiskCard } from '@/components/PortfolioRiskCard';
 import { DividendTracker } from '@/components/DividendTracker';
-import { StockNews } from '@/components/StockNews';
+import { StockDetailSheet } from '@/components/StockDetailSheet';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -772,8 +771,6 @@ export default function PortfolioPage() {
   const [pdfReviewOpen, setPdfReviewOpen] = useState(false);
   const [activeFilter, setActiveFilter] = useState<MlClass | null>(null);
   const [selectedStock, setSelectedStock] = useState<Holding | null>(null);
-  const [detailData, setDetailData] = useState<Record<string, unknown> | null>(null);
-  const [detailLoading, setDetailLoading] = useState(false);
   // 'all' = merged view across all portfolios; any portfolio id = individual view
   const [viewMode, setViewMode] = useState<'all' | string>('all');
   const [allViewHoldings, setAllViewHoldings] = useState<Holding[]>([]);
@@ -856,18 +853,6 @@ export default function PortfolioPage() {
   }
 
   useEffect(() => { enrichHoldings(rawHoldings); setActiveFilter(null); }, [rawHoldings]);
-
-  // Fetch technical detail when a stock is selected in the modal
-  useEffect(() => {
-    if (!selectedStock) { setDetailData(null); return; }
-    setDetailLoading(true);
-    const ex = (selectedStock.exchange === 'BSE') ? 'BSE' : 'NSE';
-    fetch(`/api/stock-detail?symbol=${selectedStock.symbol}&exchange=${ex}`)
-      .then(r => r.json())
-      .then(d => setDetailData(d as Record<string, unknown>))
-      .catch(() => setDetailData(null))
-      .finally(() => setDetailLoading(false));
-  }, [selectedStock]);
 
   // Cache summary for active portfolio once prices load (for the cross-portfolio summary row)
   useEffect(() => {
@@ -1777,350 +1762,28 @@ export default function PortfolioPage() {
         ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · ML classifications for informational purposes only · Not financial advice · DYOR
       </div>
 
-      {/* Stock detail modal — full signals-card style */}
       {selectedStock && (() => {
         const h = selectedStock;
-        const d = detailData as {
-          name?: string; price?: number; change_pct?: number;
-          rsi14?: number; ema20?: number; ema50?: number; ema200?: number; macd?: number;
-          high_52w?: number; low_52w?: number; from_52h?: number;
-          vol_ratio?: number;
-          bb_upper?: number; bb_lower?: number; bb_pct?: number;
-          stop_loss?: number; target1?: number; target2?: number;
-          entry_low?: number; entry_high?: number;
-          signals?: string[];
-          trailing_pe?: number; price_to_book?: number; ev_ebitda?: number;
-          roe?: number; net_margin?: number; debt_to_equity?: number;
-          revenue_growth?: number; dividend_yield?: number; market_cap?: number;
-          analyst_count?: number; analyst_consensus?: string; analyst_target?: number; upside_to_target?: number;
-          next_earnings_date?: string; days_to_earnings?: number;
-          insider_pct?: number; institution_pct?: number; public_pct?: number;
-          quarterly_results?: Array<{ quarter: string; revenue_cr: number | null; net_income_cr: number | null; net_margin: number | null }>;
-        } | null;
         const clsKey = h.ml_class ?? classify(h.signal ?? 'HOLD', h.rsi ?? null, h.pl_pct ?? 0);
-        const cls = BUCKET_META[clsKey];
-        const plPos = (h.pl ?? 0) >= 0;
-        const invested = h.avg_price * h.qty;
-        const price = h.current_price ?? d?.price ?? null;
-        const changePct = h.change_pct ?? d?.change_pct ?? null;
-        const current = price != null ? price * h.qty : null;
-        const fmtRs = (n: number) => `₹${n.toLocaleString('en-IN', { maximumFractionDigits: n < 100 ? 2 : 0 })}`;
-        const fmtL = (n: number) => n >= 1e5 ? `₹${(n/1e5).toFixed(1)}L` : `₹${n.toLocaleString('en-IN', { maximumFractionDigits: 0 })}`;
-
-        // Merge signals: ML signal + detail signals
-        const allSignals: Array<{ text: string; sentiment: 'bull' | 'bear' | 'neutral' }> = [];
-        if (h.signal && !h.is_etf) {
-          const isBuy = h.signal.includes('BUY');
-          const isSell = h.signal.includes('SELL');
-          allSignals.push({ text: `ML: ${h.signal}`, sentiment: isBuy ? 'bull' : isSell ? 'bear' : 'neutral' });
-        }
-        for (const s of d?.signals ?? []) {
-          const isBull = /ABOVE|BULLISH|OVERSOLD/i.test(s);
-          const isBear = /BELOW|BEARISH|OVERBOUGHT/i.test(s);
-          allSignals.push({ text: s, sentiment: isBull ? 'bull' : isBear ? 'bear' : 'neutral' });
-        }
-
         return (
-          <div onClick={() => setSelectedStock(null)}
-            style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.65)', zIndex:600, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
-            <div onClick={e => e.stopPropagation()}
-              style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:20, width:'min(470px,95vw)', boxShadow:'0 24px 80px rgba(0,0,0,0.6)', maxHeight:'92vh', display:'flex', flexDirection:'column', overflow:'hidden' }}>
-
-              {/* ─── HEADER ─── */}
-              <div style={{ padding:'18px 18px 14px', borderBottom:'1px solid var(--bdr)', flexShrink:0 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:10 }}>
-                  <div>
-                    <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5 }}>{h.symbol}</div>
-                    <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>
-                      {d?.name ?? h.symbol} · {h.exchange} · {h.qty.toLocaleString('en-IN')} units
-                    </div>
-                  </div>
-                  <div style={{ display:'flex', gap:8, flexShrink:0 }}>
-                    <button
-                      title="Add to Watchlist"
-                      onClick={async () => {
-                        if (!session) return;
-                        const ex = h.exchange === 'BSE' ? 'BSE' : 'NSE';
-                        const res = await fetch(`${SUPA_URL}/rest/v1/watchlist`, {
-                          method: 'POST',
-                          headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
-                          body: JSON.stringify({ user_id: session.user.id, symbol: h.symbol, exchange: ex }),
-                        });
-                        setUploadMsg(res.status === 409 ? `${h.symbol} already in watchlist` : res.ok ? `✅ ${h.symbol} added to watchlist` : '❌ Could not add to watchlist');
-                      }}
-                      style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--dim)', fontSize:14, flexShrink:0 }}>👁</button>
-                    <button onClick={() => setSelectedStock(null)}
-                      style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:8, width:32, height:32, display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', color:'var(--dim)', fontSize:15, flexShrink:0 }}>✕</button>
-                  </div>
-                </div>
-
-                {/* Live price row */}
-                <div style={{ display:'flex', alignItems:'baseline', gap:10 }}>
-                  {price != null && <div style={{ fontSize:26, fontWeight:900, letterSpacing:-0.8 }}>{fmtRs(price)}</div>}
-                  {changePct != null && (
-                    <div style={{ fontSize:13, fontWeight:700, color: changePct >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-                      {changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}% today
-                    </div>
-                  )}
-                  {detailLoading && <span style={{ fontSize:10, color:'var(--dim)', marginLeft:4 }}>⏳</span>}
-                </div>
-
-                {/* ML class badge */}
-                {!h.is_etf && (
-                  <div style={{ marginTop:10, display:'inline-flex', alignItems:'center', gap:6, padding:'4px 10px', borderRadius:20, background:cls.bg, border:`1px solid ${cls.border}` }}>
-                    <span style={{ fontSize:11, fontWeight:800, color:cls.color }}>{cls.label}</span>
-                    <span style={{ fontSize:10, color:'var(--dim)' }}>{cls.desc}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* ─── SCROLLABLE BODY ─── */}
-              <div style={{ overflowY:'auto', flex:1 }}>
-
-                {/* Portfolio Position */}
-                <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--bdr)' }}>
-                  <div style={{ fontSize:9.5, fontWeight:700, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginBottom:9 }}>Portfolio Position</div>
-                  <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:10 }}>
-                    {[
-                      { label:'Avg Cost', val:fmtRs(h.avg_price), sub:'per unit', subC:'var(--dim)' },
-                      { label:'CMP', val: price != null ? fmtRs(price) : '—', sub: changePct != null ? `${changePct >= 0 ? '+' : ''}${changePct.toFixed(2)}% today` : '', subC: changePct != null ? (changePct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--dim)' },
-                      { label:'Invested', val:fmtL(invested), sub:`${h.qty} units`, subC:'var(--dim)' },
-                      { label:'Current Value', val: current != null ? fmtL(current) : '—', sub:'', subC:'var(--dim)' },
-                    ].map(m => (
-                      <div key={m.label} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:9, padding:'9px 11px' }}>
-                        <div style={{ fontSize:9, color:'var(--dim)', fontWeight:700, letterSpacing:0.5, marginBottom:3 }}>{m.label.toUpperCase()}</div>
-                        <div style={{ fontSize:14, fontWeight:800 }}>{m.val}</div>
-                        {m.sub && <div style={{ fontSize:10, color:m.subC, marginTop:1 }}>{m.sub}</div>}
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* P&L banner */}
-                  {h.pl != null && h.avg_price >= 1 && (
-                    <div style={{ background: plPos ? 'rgba(0,212,160,0.08)' : 'rgba(255,59,92,0.08)', border:`1px solid ${plPos ? 'rgba(0,212,160,0.2)' : 'rgba(255,59,92,0.2)'}`, borderRadius:9, padding:'10px 14px', display:'flex', justifyContent:'space-between' }}>
-                      <div>
-                        <div style={{ fontSize:9, color:'var(--dim)', fontWeight:700, letterSpacing:0.5 }}>UNREALISED P&L</div>
-                        <div style={{ fontSize:20, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)', marginTop:2 }}>
-                          {plPos ? '+' : '-'}₹{Math.abs(h.pl).toLocaleString('en-IN',{maximumFractionDigits:0})}
-                        </div>
-                      </div>
-                      <div style={{ textAlign:'right' }}>
-                        <div style={{ fontSize:9, color:'var(--dim)', fontWeight:700, letterSpacing:0.5 }}>RETURN</div>
-                        <div style={{ fontSize:20, fontWeight:900, color: plPos ? 'var(--grn)' : 'var(--red)', marginTop:2 }}>
-                          {(h.pl_pct ?? 0) >= 0 ? '+' : ''}{(h.pl_pct ?? 0).toFixed(2)}%
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Candlestick chart */}
-                <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--bdr)' }}>
-                  <div style={{ fontSize:9.5, fontWeight:700, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginBottom:4 }}>Price Chart</div>
-                  <StockChart
-                    symbol={h.symbol}
-                    exchange={h.exchange === 'BSE' ? 'BSE' : 'NSE'}
-                    ema20={d?.ema20}
-                    ema50={d?.ema50}
-                  />
-                </div>
-
-                {/* Signals fired */}
-                {allSignals.length > 0 && (
-                  <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--bdr)' }}>
-                    <div style={{ fontSize:9.5, fontWeight:700, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>Signals Fired</div>
-                    <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                      {allSignals.map((sig, i) => {
-                        const [title, ...rest] = sig.text.split(' · ');
-                        const col = sig.sentiment === 'bull' ? 'var(--grn)' : sig.sentiment === 'bear' ? 'var(--red)' : 'var(--ylw)';
-                        const bg  = sig.sentiment === 'bull' ? 'rgba(0,212,160,0.07)' : sig.sentiment === 'bear' ? 'rgba(255,59,92,0.07)' : 'rgba(255,184,0,0.07)';
-                        const bdr = sig.sentiment === 'bull' ? 'rgba(0,212,160,0.22)' : sig.sentiment === 'bear' ? 'rgba(255,59,92,0.22)' : 'rgba(255,184,0,0.22)';
-                        return (
-                          <div key={i} style={{ background:bg, border:`1px solid ${bdr}`, borderRadius:8, padding:'7px 11px' }}>
-                            <span style={{ fontSize:11, fontWeight:800, color:col }}>{title}</span>
-                            {rest.length > 0 && <span style={{ fontSize:11, color:'var(--dim)', marginLeft:6 }}>{rest.join(' · ')}</span>}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-
-                {/* Key Indicators grid */}
-                {d && !detailLoading && (
-                  <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--bdr)' }}>
-                    <div style={{ fontSize:9.5, fontWeight:700, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>Key Indicators</div>
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:7 }}>
-                      {[
-                        { label:'RSI (14)', val: d.rsi14 != null ? d.rsi14.toFixed(1) : '—', color: d.rsi14 != null ? (d.rsi14 < 35 ? 'var(--grn)' : d.rsi14 > 70 ? 'var(--red)' : 'var(--txt)') : 'var(--dim)' },
-                        { label:'Vol Ratio', val: d.vol_ratio != null ? `${d.vol_ratio.toFixed(2)}×` : '—', color: d.vol_ratio != null && d.vol_ratio > 1.5 ? 'var(--grn)' : 'var(--txt)' },
-                        { label:'EMA 20', val: d.ema20 != null ? fmtRs(d.ema20) : '—', color: price != null && d.ema20 != null ? (price > d.ema20 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' },
-                        { label:'EMA 50', val: d.ema50 != null ? fmtRs(d.ema50) : '—', color: price != null && d.ema50 != null ? (price > d.ema50 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' },
-                        { label:'MACD', val: d.macd != null ? d.macd.toFixed(2) : '—', color: d.macd != null ? (d.macd > 0 ? 'var(--grn)' : 'var(--red)') : 'var(--dim)' },
-                        { label:'52W High', val: d.high_52w != null ? fmtRs(d.high_52w) : '—', color:'var(--txt)' },
-                        { label:'52W Low', val: d.low_52w != null ? fmtRs(d.low_52w) : '—', color:'var(--txt)' },
-                        { label:'From 52H', val: d.from_52h != null ? `${d.from_52h.toFixed(1)}%` : '—', color: d.from_52h != null ? (d.from_52h > -8 ? 'var(--grn)' : d.from_52h < -25 ? 'var(--red)' : 'var(--ylw)') : 'var(--dim)' },
-                      ].map(ind => (
-                        <div key={ind.label} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:9, padding:'9px 11px' }}>
-                          <div style={{ fontSize:9, color:'var(--dim)', fontWeight:600, marginBottom:3, letterSpacing:0.3 }}>{ind.label}</div>
-                          <div style={{ fontSize:14, fontWeight:800, color:ind.color }}>{ind.val}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Price Map */}
-                {d && !detailLoading && (d.stop_loss ?? d.target1 ?? d.bb_upper) != null && (
-                  <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--bdr)' }}>
-                    <div style={{ fontSize:9.5, fontWeight:700, color:'var(--dim)', letterSpacing:1, textTransform:'uppercase', marginBottom:8 }}>Price Map</div>
-                    {[
-                      d.stop_loss != null   && { icon:'🔴', label:'Stop Loss',   val:fmtRs(d.stop_loss),   color:'var(--red)' },
-                      (d.entry_low != null && d.entry_high != null) && { icon:'🟢', label:'Entry Zone',  val:`${fmtRs(d.entry_low)} – ${fmtRs(d.entry_high)}`, color:'var(--grn)' },
-                      d.target1 != null     && { icon:'🎯', label:'Target 1',    val:fmtRs(d.target1),     color:'var(--grn)' },
-                      d.target2 != null     && { icon:'🎯', label:'Target 2',    val:fmtRs(d.target2),     color:'var(--grn)' },
-                      d.bb_upper != null    && { icon:'💎', label:'BB Upper',    val:fmtRs(d.bb_upper),    color:'#8B5CF6' },
-                    ].filter(Boolean).map((item, i) => {
-                      const it = item as { icon:string; label:string; val:string; color:string };
-                      return (
-                        <div key={i} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', padding:'6px 0', borderBottom:'1px solid rgba(255,255,255,0.04)' }}>
-                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                            <span style={{ fontSize:12 }}>{it.icon}</span>
-                            <span style={{ fontSize:11, color:'var(--dim)' }}>{it.label}</span>
-                          </div>
-                          <span style={{ fontSize:12, fontWeight:700, color:it.color }}>{it.val}</span>
-                        </div>
-                      );
-                    })}
-
-                    {/* Bollinger Band position slider */}
-                    {d.bb_pct != null && (
-                      <div style={{ marginTop:12 }}>
-                        <div style={{ display:'flex', justifyContent:'space-between', fontSize:9.5, color:'var(--dim)', marginBottom:5 }}>
-                          <span>Lower {d.bb_lower != null ? fmtRs(d.bb_lower) : ''}</span>
-                          <span style={{ color:'var(--txt)', fontWeight:700 }}>BB Position {d.bb_pct.toFixed(0)}%</span>
-                          <span>Upper {d.bb_upper != null ? fmtRs(d.bb_upper) : ''}</span>
-                        </div>
-                        <div style={{ position:'relative', height:6, background:'rgba(255,255,255,0.07)', borderRadius:3 }}>
-                          <div style={{ position:'absolute', inset:0, background:'linear-gradient(to right,var(--red),rgba(255,255,255,0.08) 50%,var(--grn))', borderRadius:3, opacity:0.4 }}/>
-                          <div style={{ position:'absolute', top:'50%', left:`${Math.min(95,Math.max(5,d.bb_pct))}%`, transform:'translate(-50%,-50%)', width:12, height:12, borderRadius:'50%', background:'var(--card-bg)', border:'2px solid #4F6FFA', boxShadow:'0 0 0 2px var(--surf)' }}/>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ── Fundamentals ── */}
-                {!detailLoading && d && (d.trailing_pe != null || d.roe != null || d.market_cap != null) && (
-                  <div style={{ padding:'0 18px 16px' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Fundamentals</div>
-                    <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7 }}>
-                      {[
-                        { l:'P/E',         v: d.trailing_pe   != null ? `${d.trailing_pe}×`  : null, c: d.trailing_pe != null && d.trailing_pe < 20 ? 'var(--grn)' : d.trailing_pe != null && d.trailing_pe > 40 ? 'var(--red)' : 'var(--txt)' },
-                        { l:'P/B',         v: d.price_to_book != null ? `${d.price_to_book}×` : null, c:'var(--txt)' },
-                        { l:'ROE',         v: d.roe           != null ? `${d.roe}%`           : null, c: d.roe != null && d.roe > 15 ? 'var(--grn)' : 'var(--txt)' },
-                        { l:'Net Margin',  v: d.net_margin    != null ? `${d.net_margin}%`    : null, c: d.net_margin != null && d.net_margin > 15 ? 'var(--grn)' : 'var(--txt)' },
-                        { l:'D/E',         v: d.debt_to_equity != null ? `${d.debt_to_equity}` : null, c: d.debt_to_equity != null && d.debt_to_equity > 2 ? 'var(--red)' : 'var(--txt)' },
-                        { l:'Rev Growth',  v: d.revenue_growth != null ? `${d.revenue_growth > 0 ? '+' : ''}${d.revenue_growth}%` : null, c: d.revenue_growth != null && d.revenue_growth > 0 ? 'var(--grn)' : 'var(--txt)' },
-                      ].filter(r => r.v != null).map(row => (
-                        <div key={row.l} style={{ background:'var(--surf2)', borderRadius:8, padding:'8px 10px' }}>
-                          <div style={{ fontSize:9, color:'var(--dim)', marginBottom:2 }}>{row.l}</div>
-                          <div style={{ fontSize:13, fontWeight:800, color:row.c }}>{row.v}</div>
-                        </div>
-                      ))}
-                    </div>
-                    {d.analyst_target != null && d.analyst_count != null && (
-                      <div style={{ marginTop:8, padding:'8px 12px', background:'rgba(23,64,245,0.06)', border:'1px solid rgba(23,64,245,0.18)', borderRadius:9, display:'flex', justifyContent:'space-between', alignItems:'center' }}>
-                        <div style={{ fontSize:10, color:'var(--dim)' }}>Analyst target ({d.analyst_count} analysts)</div>
-                        <div style={{ fontSize:13, fontWeight:800 }}>₹{d.analyst_target.toLocaleString('en-IN')}{d.upside_to_target != null && <span style={{ fontSize:10, color: d.upside_to_target > 0 ? 'var(--grn)' : 'var(--red)', marginLeft:4 }}>{d.upside_to_target > 0 ? '+' : ''}{d.upside_to_target}%</span>}</div>
-                      </div>
-                    )}
-                    {d.quarterly_results && d.quarterly_results.length > 0 && (
-                      <div style={{ marginTop:12 }}>
-                        <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:6 }}>Quarterly Results</div>
-                        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:11 }}>
-                          <thead><tr style={{ borderBottom:'1px solid var(--bdr)' }}>
-                            {['Qtr','Revenue','Net Profit','Margin'].map(h2 => (
-                              <th key={h2} style={{ padding:'4px 6px', textAlign:'right', color:'var(--dim)', fontWeight:600, fontSize:9 }}>{h2}</th>
-                            ))}
-                          </tr></thead>
-                          <tbody>
-                            {d.quarterly_results.map((q, i) => (
-                              <tr key={i} style={{ borderBottom:'1px solid var(--bdr)' }}>
-                                <td style={{ padding:'6px 6px', fontWeight:700, fontSize:10 }}>{q.quarter}</td>
-                                <td style={{ padding:'6px 6px', textAlign:'right', color:'var(--txt)', fontSize:10 }}>{q.revenue_cr != null ? `₹${Number(q.revenue_cr).toLocaleString('en-IN')}Cr` : '—'}</td>
-                                <td style={{ padding:'6px 6px', textAlign:'right', color: q.net_income_cr != null && q.net_income_cr > 0 ? 'var(--grn)' : 'var(--red)', fontSize:10 }}>{q.net_income_cr != null ? `₹${Number(q.net_income_cr).toLocaleString('en-IN')}Cr` : '—'}</td>
-                                <td style={{ padding:'6px 6px', textAlign:'right', color: q.net_margin != null && q.net_margin > 15 ? 'var(--grn)' : 'var(--txt)', fontSize:10 }}>{q.net_margin != null ? `${q.net_margin}%` : '—'}</td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* ── Shareholding ── */}
-                {!detailLoading && d && (d.insider_pct != null || d.institution_pct != null) && (
-                  <div style={{ padding:'0 18px 16px' }}>
-                    <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:8 }}>Shareholding Pattern</div>
-                    <div style={{ display:'flex', flexDirection:'column', gap:7 }}>
-                      {[
-                        { label:'Promoter / Insider', pct: d.insider_pct, color:'var(--bluL)' },
-                        { label:'Institutions', pct: d.institution_pct, color:'var(--grn)' },
-                        { label:'Public', pct: d.public_pct, color:'var(--dim)' },
-                      ].filter(r => r.pct != null).map(row => (
-                        <div key={row.label}>
-                          <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:3 }}>
-                            <span style={{ color:'var(--dim)' }}>{row.label}</span>
-                            <span style={{ fontWeight:700, color: row.color }}>{row.pct}%</span>
-                          </div>
-                          <div style={{ height:5, background:'var(--bdr)', borderRadius:3 }}>
-                            <div style={{ height:'100%', width:`${Math.min(100, row.pct ?? 0)}%`, background: row.color, borderRadius:3 }}/>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* ── Latest News ── */}
-                <div style={{ padding:'0 18px 16px' }}>
-                  <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:4 }}>Latest News</div>
-                  <StockNews symbol={h.symbol} exchange={h.exchange === 'BSE' ? 'BSE' : 'NSE'} />
-                </div>
-
-                {/* Loading skeleton */}
-                {detailLoading && (
-                  <div style={{ padding:'20px 18px', display:'flex', flexDirection:'column', gap:8 }}>
-                    {[90,70,80].map((w,i) => (
-                      <div key={i} style={{ height:10, width:`${w}%`, background:'rgba(255,255,255,0.06)', borderRadius:5, animation:'pulse 1.5s ease-in-out infinite' }}/>
-                    ))}
-                    <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>Loading technical data…</div>
-                  </div>
-                )}
-              </div>
-
-              {/* ─── FOOTER ACTIONS ─── */}
-              <div style={{ padding:'12px 18px', borderTop:'1px solid var(--bdr)', flexShrink:0 }}>
-                <div style={{ fontSize:9.5, color:'var(--dim2)', marginBottom:9, lineHeight:1.4 }}>
-                  ⚠️ NOT SEBI REGISTERED · ML signals are probabilistic · Not financial advice · DYOR
-                </div>
-                <div style={{ display:'flex', gap:7 }}>
-                  <button onClick={e => { e.stopPropagation(); setEditingCostId(h.id); setEditCostVal(String(h.avg_price)); setSelectedStock(null); }}
-                    style={{ flex:1, height:38, borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                    ✏️ Edit Cost
-                  </button>
-                  <button onClick={e => { e.stopPropagation(); handleDelete(h.id); setSelectedStock(null); }}
-                    style={{ height:38, padding:'0 14px', borderRadius:9, background:'rgba(255,59,92,0.08)', border:'1px solid rgba(255,59,92,0.25)', color:'var(--red)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
-                    🗑️
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <StockDetailSheet
+            symbol={h.symbol}
+            exchange={h.exchange === 'BSE' ? 'BSE' : 'NSE'}
+            onClose={() => setSelectedStock(null)}
+            holding={{
+              qty: h.qty,
+              avgPrice: h.avg_price,
+              currency: 'INR',
+              portfolioName: h.exchange,
+              mlBadge: !h.is_etf ? BUCKET_META[clsKey] : undefined,
+              mlSignal: h.signal,
+              isEtf: h.is_etf,
+              onDelete: () => { handleDelete(h.id); setSelectedStock(null); },
+            }}
+          />
         );
       })()}
+
     </>
   );
 }
