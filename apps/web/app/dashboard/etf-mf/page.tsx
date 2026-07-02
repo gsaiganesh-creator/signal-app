@@ -459,6 +459,18 @@ export default function ETFMFPage() {
       {/* ══ TAB: MY HOLDINGS ══ */}
       {tab === 'holdings' && (
         <>
+          {/* CAMS Auto-Import Coming Soon Banner */}
+          <div style={{ background:'linear-gradient(135deg,rgba(139,92,246,0.1),rgba(23,64,245,0.08))', border:'1px solid rgba(139,92,246,0.3)', borderRadius:14, padding:'14px 18px', marginBottom:20, display:'flex', alignItems:'center', gap:14, flexWrap:'wrap' }}>
+            <div style={{ width:38, height:38, borderRadius:10, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:18, flexShrink:0 }}>🔗</div>
+            <div style={{ flex:1, minWidth:180 }}>
+              <div style={{ fontSize:13, fontWeight:800, color:'var(--pur)', marginBottom:2 }}>CAMS Auto-Import — Coming Soon</div>
+              <div style={{ fontSize:11, color:'var(--dim)', lineHeight:1.5 }}>
+                One-tap import of all your MFs via PAN + OTP (no CSV, no upload). In progress with CAMS tech partnership.
+              </div>
+            </div>
+            <span style={{ fontSize:10, fontWeight:800, padding:'4px 10px', borderRadius:20, background:'rgba(139,92,246,0.15)', border:'1px solid rgba(139,92,246,0.3)', color:'var(--pur)', flexShrink:0 }}>COMING SOON</span>
+          </div>
+
           {/* ── MF Holdings (Supabase + MFAPI live NAV) ── */}
           <div style={{ marginBottom: 28 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, flexWrap:'wrap', gap:8 }}>
