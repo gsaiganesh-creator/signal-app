@@ -62,10 +62,10 @@ export function PublicNav() {
         {/* Right actions */}
         <div className="dash-right" style={{ marginLeft:'auto' }}>
           <ThemeToggle style={{ background:'rgba(255,255,255,0.08)', borderColor:'rgba(255,255,255,0.15)', color:'rgba(255,255,255,0.7)' }} />
-          <Link href="/auth" style={{ height:34, padding:'0 14px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.18)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', textDecoration:'none', whiteSpace:'nowrap' }}>
+          <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'transparent', border:'1px solid rgba(255,255,255,0.18)', color:'rgba(255,255,255,0.85)', fontSize:13, fontWeight:600, display:'flex', alignItems:'center', textDecoration:'none', whiteSpace:'nowrap' }}>
             Sign In
           </Link>
-          <Link href="/auth" style={{ height:34, padding:'0 16px', borderRadius:8, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none', whiteSpace:'nowrap' }}>
+          <Link href="/sign-in" style={{ height:34, padding:'0 16px', borderRadius:8, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none', whiteSpace:'nowrap' }}>
             Start Free →
           </Link>
         </div>
