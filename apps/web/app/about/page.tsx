@@ -26,7 +26,7 @@ const TIMELINE = [
 
 export default function AboutPage() {
   return (
-    <div style={{ background: 'var(--bg)', color: 'var(--txt)', fontFamily: 'Inter,system-ui,sans-serif', minHeight: '100vh' }}>
+    <div style={{ background: 'var(--bg)', color: 'var(--txt)', fontFamily: 'Inter,system-ui,sans-serif', minHeight: '100vh', overflowX: 'hidden' }}>
 
       <PublicNav />
 
@@ -76,7 +76,7 @@ export default function AboutPage() {
             <div key={s.val} style={{ background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 16, padding: '22px 20px' }}>
               <div style={{ fontSize: 'clamp(28px,4vw,42px)', fontWeight: 900, letterSpacing: -1.5, color: s.color, lineHeight: 1, marginBottom: 8 }}>{s.val}</div>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{s.label}</div>
-              <div style={{ fontSize: 11, color: 'var(--dim2)' }}>{s.sub}</div>
+              <div style={{ fontSize: 12, color: 'var(--dim2)' }}>{s.sub}</div>
             </div>
           ))}
         </div>
@@ -86,22 +86,22 @@ export default function AboutPage() {
           <div style={{ background: 'linear-gradient(145deg,rgba(23,64,245,0.07),var(--surf))', border: '1px solid rgba(23,64,245,0.28)', borderRadius: 20, padding: 32, position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.14) 0%,transparent 65%)' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--dim)', marginBottom: 16 }}>Co-Founder</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--dim)', marginBottom: 16 }}>Co-Founder</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
                 <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--blu),var(--org))', flexShrink: 0 }}>SG</div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.4, marginBottom: 3 }}>Sai Ganesh Gella</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--bluL)' }}>CEO &amp; Product</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bluL)' }}>CEO &amp; Product</div>
                 </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 7, marginBottom: 18 }}>
                 {[['Product & Strategy','rgba(23,64,245,0.1)','var(--bluL)','rgba(23,64,245,0.25)'],['NSE/BSE Trading','rgba(0,212,160,0.1)','var(--grn)','rgba(0,212,160,0.25)'],['ML Signals','rgba(255,92,26,0.1)','var(--org)','rgba(255,92,26,0.25)']].map(([tag,bg,color,bdr]) => (
-                  <span key={tag} style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: bg, color, border: `1px solid ${bdr}` }}>{tag}</span>
+                  <span key={tag} style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: bg, color, border: `1px solid ${bdr}` }}>{tag}</span>
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 @signal_in</a>
-                <a href="mailto:saiganesh@getsignal.in" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, textDecoration: 'none', background: 'rgba(23,64,245,0.1)', border: '1px solid rgba(23,64,245,0.25)', color: 'var(--bluL)' }}>✉ Email</a>
+                <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 @signal_in</a>
+                <a href="mailto:saiganesh@getsignal.in" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: 'rgba(23,64,245,0.1)', border: '1px solid rgba(23,64,245,0.25)', color: 'var(--bluL)' }}>✉ Email</a>
               </div>
             </div>
           </div>
@@ -109,22 +109,22 @@ export default function AboutPage() {
           <div style={{ background: 'linear-gradient(145deg,rgba(0,212,160,0.06),var(--surf))', border: '1px solid rgba(0,212,160,0.24)', borderRadius: 20, padding: 32, position: 'relative', overflow: 'hidden' }}>
             <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,212,160,0.12) 0%,transparent 65%)' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
-              <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--dim)', marginBottom: 16 }}>Co-Founder</div>
+              <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--dim)', marginBottom: 16 }}>Co-Founder</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
                 <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--grn),#00875A)', flexShrink: 0 }}>SK</div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.4, marginBottom: 3 }}>Sai Kumar Bethala</div>
-                  <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--grn)' }}>CTO &amp; Engineering</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--grn)' }}>CTO &amp; Engineering</div>
                 </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 7, marginBottom: 18 }}>
                 {[['Engineering','rgba(0,212,160,0.1)','var(--grn)','rgba(0,212,160,0.25)'],['Backend & API','rgba(139,92,246,0.1)','var(--pur)','rgba(139,92,246,0.25)'],['Infrastructure','rgba(23,64,245,0.1)','var(--bluL)','rgba(23,64,245,0.25)']].map(([tag,bg,color,bdr]) => (
-                  <span key={tag} style={{ fontSize: 10, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: bg, color, border: `1px solid ${bdr}` }}>{tag}</span>
+                  <span key={tag} style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: bg, color, border: `1px solid ${bdr}` }}>{tag}</span>
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
-                <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 Twitter</a>
-                <a href="mailto:saikumar@getsignal.in" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 32, padding: '0 12px', borderRadius: 8, fontSize: 11, fontWeight: 700, textDecoration: 'none', background: 'rgba(0,212,160,0.1)', border: '1px solid rgba(0,212,160,0.25)', color: 'var(--grn)' }}>✉ Email</a>
+                <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 Twitter</a>
+                <a href="mailto:saikumar@getsignal.in" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: 'rgba(0,212,160,0.1)', border: '1px solid rgba(0,212,160,0.25)', color: 'var(--grn)' }}>✉ Email</a>
               </div>
             </div>
           </div>
@@ -133,8 +133,8 @@ export default function AboutPage() {
         {/* ROW D — Timeline (1/3) + Values 3×2 grid (2/3) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 14, marginBottom: 14 }}>
           <div style={{ background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 20, padding: 28 }}>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--grn)', marginBottom: 6 }}>Origin Story</div>
-            <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: -0.5, marginBottom: 22 }}>Why we built this</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--grn)', marginBottom: 6 }}>Origin Story</div>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 22 }}>Why we built this</div>
             {TIMELINE.map((item, i) => (
               <div key={item.date} style={{ display: 'flex', gap: 14 }}>
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 20, flexShrink: 0 }}>
@@ -142,23 +142,23 @@ export default function AboutPage() {
                   {i < TIMELINE.length - 1 && <div style={{ width: 2, flex: 1, minHeight: 20, background: 'var(--bdr)', margin: '5px 0' }} />}
                 </div>
                 <div style={{ flex: 1, paddingBottom: 20 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--dim)', marginBottom: 3, letterSpacing: 0.5, textTransform: 'uppercase' as const }}>{item.date}</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{item.title}</div>
-                  <div style={{ fontSize: 12, color: 'var(--dim)', lineHeight: 1.6 }}>{item.desc}</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', marginBottom: 3, letterSpacing: 0.5, textTransform: 'uppercase' as const }}>{item.date}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>{item.title}</div>
+                  <div style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.6 }}>{item.desc}</div>
                 </div>
               </div>
             ))}
           </div>
 
           <div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--bluL)', marginBottom: 6 }}>Our Principles</div>
-            <div style={{ fontSize: 17, fontWeight: 900, letterSpacing: -0.5, marginBottom: 14 }}>What we stand for</div>
+            <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--bluL)', marginBottom: 6 }}>Our Principles</div>
+            <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 14 }}>What we stand for</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
               {VALUES.map(v => (
                 <div key={v.title} style={{ background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 14, padding: 18 }}>
                   <div style={{ fontSize: 22, marginBottom: 10 }}>{v.icon}</div>
-                  <div style={{ fontSize: 12, fontWeight: 800, marginBottom: 6, color: v.color }}>{v.title}</div>
-                  <div style={{ fontSize: 11, color: 'var(--dim)', lineHeight: 1.65 }}>{v.desc}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6, color: v.color }}>{v.title}</div>
+                  <div style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.65 }}>{v.desc}</div>
                 </div>
               ))}
             </div>
@@ -174,9 +174,9 @@ export default function AboutPage() {
           ].map(c => (
             <div key={c.label} style={{ background: c.accent, border: `1px solid ${c.bdr}`, borderRadius: 16, padding: '24px 20px', textAlign: 'center' as const }}>
               <div style={{ fontSize: 28, marginBottom: 12 }}>{c.icon}</div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 8 }}>{c.label}</div>
-              <a href={c.href} style={{ fontSize: 13, fontWeight: 700, color: c.color, textDecoration: 'none' }}>{c.val}</a>
-              <div style={{ fontSize: 11, color: 'var(--dim2)', marginTop: 5 }}>{c.sub}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 8 }}>{c.label}</div>
+              <a href={c.href} style={{ fontSize: 14, fontWeight: 700, color: c.color, textDecoration: 'none' }}>{c.val}</a>
+              <div style={{ fontSize: 12, color: 'var(--dim2)', marginTop: 5 }}>{c.sub}</div>
             </div>
           ))}
         </div>
@@ -188,7 +188,7 @@ export default function AboutPage() {
             <h2 style={{ fontSize: 'clamp(22px,3vw,36px)', fontWeight: 900, letterSpacing: -1, marginBottom: 10 }}>Ready to trade smarter?</h2>
             <p style={{ fontSize: 15, color: 'var(--dim)', marginBottom: 28, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>Join traders who use data and accountability over expensive, unverified Telegram calls.</p>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' as const, marginBottom: 20 }}>
-              <a href="/auth" style={{ display: 'inline-flex', alignItems: 'center', height: 50, padding: '0 30px', borderRadius: 13, background: 'linear-gradient(135deg,var(--blu),var(--bluL))', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 8px 24px rgba(23,64,245,0.35)' }}>Start Free — No Card Needed →</a>
+              <a href="/sign-in" style={{ display: 'inline-flex', alignItems: 'center', height: 50, padding: '0 30px', borderRadius: 13, background: 'linear-gradient(135deg,var(--blu),var(--bluL))', color: '#fff', fontSize: 15, fontWeight: 700, textDecoration: 'none', boxShadow: '0 8px 24px rgba(23,64,245,0.35)' }}>Start Free — No Card Needed →</a>
               <a href="/track-record" style={{ display: 'inline-flex', alignItems: 'center', height: 50, padding: '0 26px', borderRadius: 13, background: 'transparent', border: '1px solid var(--bdr)', color: 'var(--txt)', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>View Track Record</a>
               <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 50, padding: '0 22px', borderRadius: 13, background: '#000', border: '1px solid #333', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>𝕏 @signal_in</a>
             </div>
