@@ -6,10 +6,10 @@ import { useTheme } from '@/components/ThemeProvider';
 
 // ── Pricing ───────────────────────────────────────────────────────────────────
 const PRICE: Record<string, { s:string; p:string; e:string; cy:string; note:string }> = {
-  mo:   { s:'₹199',   p:'₹599',    e:'₹1,499',  cy:'per month · cancel anytime',        note:'' },
-  qtr:  { s:'₹540',   p:'₹1,620',  e:'₹4,050',  cy:'per quarter · save 10%',            note:'🎉 Quarterly saves 10% vs monthly.' },
-  half: { s:'₹999',   p:'₹2,995',  e:'₹7,495',  cy:'per 6 months · save 17%',           note:'💰 Half-yearly saves 17%.' },
-  yr:   { s:'₹1,790', p:'₹5,388',  e:'₹13,490', cy:'per year · save 25%',               note:'🏆 Annual plan = 3 months free. Billed once.' },
+  mo:   { s:'₹299',   p:'₹799',    e:'₹1,999',  cy:'per month · cancel anytime',        note:'' },
+  qtr:  { s:'₹810',   p:'₹2,160',  e:'₹5,400',  cy:'per quarter · save 10%',            note:'🎉 Quarterly saves 10% vs monthly.' },
+  half: { s:'₹1,490', p:'₹3,980',  e:'₹9,950',  cy:'per 6 months · save 17%',           note:'💰 Half-yearly saves 17%.' },
+  yr:   { s:'₹2,690', p:'₹7,190',  e:'₹17,990', cy:'per year · save 25%',               note:'🏆 Annual plan = 3 months free. Billed once.' },
 };
 const COUPONS: Record<string, string> = {
   SIGNAL20:  '20% off your first payment',
@@ -737,19 +737,19 @@ export default function LandingPage() {
               { name:'Free',    tag:'var(--dim)',  price:'₹0',  cycle:'forever · no card', href:'/sign-in',
                 cardStyle:{ ...GLS, background:'var(--surf)', borderColor:'var(--bdr)' },
                 btnStyle:{ background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)' },
-                feats:['5 stocks tracking','3 ML scans/week','NIFTY 50 prices'], nope:['No real-time alerts','No broker sync','No Algo Builder'], pro:false },
+                feats:['India portfolio (NSE/BSE)','5 screener scans/day','Market Brief + FII/DII'], nope:['No RSU/ESPP tracker','No push alerts','No algo builder'], pro:false },
               { name:'Starter', tag:'var(--bluL)', price:pr.s,  cycle:pr.cy, href:'/sign-in?plan=starter',
                 cardStyle:{ ...GC.blu },
                 btnStyle:{ background:'linear-gradient(135deg,rgba(79,111,250,0.4),rgba(23,64,245,0.25))', border:'1px solid rgba(79,111,250,0.5)', color:'#fff' },
-                feats:['25 stocks · ML scan','🐦 Twitter sentiment','RF Screener of the Day','Real-time alerts','ETF & MF (20 funds)'], nope:['No broker/AA sync'], pro:false },
+                feats:['Unlimited screener scans','Watchlist + push alerts','Paper trading (full)','Track record (accuracy)','Capital gains report'], nope:['No RSU/ESPP tracker','No algo builder'], pro:false },
               { name:'Pro',     tag:'var(--ylw)',  price:pr.p,  cycle:pr.cy, href:'/sign-in?plan=pro',
                 cardStyle:{ ...GLS, background:'linear-gradient(145deg,rgba(255,184,0,0.22),rgba(255,130,0,0.12),rgba(23,64,245,0.1))', borderColor:'rgba(255,184,0,0.52)' },
                 btnStyle:{ background:'linear-gradient(135deg,#FFB800,#FF8C00)', border:'none', color:'#0a0f1a' },
-                feats:['Unlimited stocks · NSE/BSE','AA sync · stocks, MF, FD, NPS','Live broker sync · 6 brokers','Full Algo Builder + code gen','Paper Trading (unlimited)','WhatsApp + push alerts'], nope:[], pro:true },
+                feats:['RSU & ESPP tracker (E*Trade, Schwab, Shareworks)','US multi-portfolio · combined INR net worth','Algo builder + backtesting','Everything in Starter'], nope:[], pro:true },
               { name:'Elite',   tag:'var(--pur)',  price:pr.e,  cycle:pr.cy, href:'/sign-in?plan=elite',
                 cardStyle:{ ...GC.pur },
                 btnStyle:{ background:'linear-gradient(135deg,rgba(139,92,246,0.45),rgba(100,40,200,0.3))', border:'1px solid rgba(139,92,246,0.5)', color:'#fff' },
-                feats:['Everything in Pro','API access (500 req/day)','Custom ML model','US markets early access','Priority 24/7 support','Dedicated AI portfolio mgr'], nope:[], pro:false },
+                feats:['Everything in Pro','API access (500 req/day)','Priority support','Early access to new features'], nope:[], pro:false },
             ] as const).map(plan => (
               <div key={plan.name} className={`lp-plan-card${plan.pro ? ' lp-plan-pro' : ''}`}
                 style={{ ...plan.cardStyle, padding:'28px 24px', borderRadius:22, position:'relative', transform: plan.pro ? 'scale(1.04)' : 'none' }}>
