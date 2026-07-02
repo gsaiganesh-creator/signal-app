@@ -450,7 +450,7 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
             {/* ── Latest News ── */}
             <div style={{ marginTop: (!loading && !error) ? 4 : 0 }}>
               <SecHead title="Latest News" />
-              <StockNews symbol={symbol} exchange={exchange} />
+              <StockNews symbol={symbol} exchange={exchange} name={data?.name ?? undefined} />
             </div>
 
             {/* ── Disclaimer ── */}

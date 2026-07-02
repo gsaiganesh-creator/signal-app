@@ -20,13 +20,15 @@ function relTime(iso: string | null): string {
   return `${d}d ago`;
 }
 
-export function StockNews({ symbol, exchange = 'NSE' }: { symbol: string; exchange?: string }) {
+export function StockNews({ symbol, exchange = 'NSE', name }: { symbol: string; exchange?: string; name?: string }) {
   const [items, setItems] = useState<NewsItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [empty, setEmpty]    = useState(false);
 
   useEffect(() => {
-    fetch(`/api/stock-news?symbol=${symbol}&exchange=${exchange}`)
+    const params = new URLSearchParams({ symbol, exchange });
+    if (name) params.set('name', name);
+    fetch(`/api/stock-news?${params}`)
       .then(r => r.ok ? r.json() : { news: [] })
       .then(({ news }: { news: NewsItem[] }) => {
         setItems(news ?? []);
@@ -34,7 +36,7 @@ export function StockNews({ symbol, exchange = 'NSE' }: { symbol: string; exchan
       })
       .catch(() => setEmpty(true))
       .finally(() => setLoading(false));
-  }, [symbol, exchange]);
+  }, [symbol, exchange, name]);
 
   if (loading) return (
     <div style={{ padding:'16px 0', fontSize:13, color:'var(--dim)' }}>Loading news…</div>

@@ -450,7 +450,7 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
           {/* ── Latest News ── */}
           <div style={{ marginBottom:8 }}>
             <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:6 }}>Latest News</div>
-            <StockNews symbol={sig.symbol.replace(/\.(NS|BO)$/i, '')} exchange={sig.symbol.endsWith('.BO') ? 'BSE' : 'NSE'} />
+            <StockNews symbol={sig.symbol.replace(/\.(NS|BO)$/i, '')} exchange={sig.symbol.endsWith('.BO') ? 'BSE' : 'NSE'} name={sig.name} />
           </div>
         </div>
         <div style={{ padding:'14px 24px', borderTop:'1px solid var(--bdr)', background:'var(--surf2)' }}>

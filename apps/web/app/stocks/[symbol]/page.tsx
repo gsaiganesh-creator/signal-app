@@ -28,13 +28,13 @@ export async function generateMetadata({ params }: { params: Promise<{ symbol: s
   const rsi   = d.rsi14 ? `RSI 14: ${d.rsi14.toFixed(1)}.` : '';
   const ema   = d.ema20  ? `EMA 20: ₹${d.ema20.toFixed(0)}.` : '';
   const chg   = d.change_pct != null ? ` ${d.change_pct >= 0 ? '+' : ''}${d.change_pct.toFixed(2)}% today.` : '';
-  const title       = `${sym} Share Price${price ? ` ${price}` : ''} — NSE Technical Analysis | SIGNAL`;
+  const title       = `${sym} Share Price${price ? ` ${price}` : ''} — NSE Technical Analysis | SignalGenie`;
   const description = `${d.name} (NSE: ${sym}) live price${price ? ` ${price}` : ''}${chg} ${rsi} ${ema} Free ML-powered technical scan. 15-min delayed. Not SEBI advice.`.trim();
   return {
     title,
     description,
     keywords: [`${sym} share price`, `${sym} NSE`, `${sym} RSI`, `${sym} technical analysis`, `${sym} EMA`, `${d.name} stock`],
-    openGraph: { title, description, type: 'website', siteName: 'SIGNAL' },
+    openGraph: { title, description, type: 'website', siteName: 'SignalGenie' },
     twitter:   { card: 'summary', title, description },
     alternates: { canonical: `/stocks/${sym}` },
   };
@@ -89,7 +89,7 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
       <nav style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 24px', borderBottom:'1px solid var(--bdr)', background:'var(--bg)', position:'sticky', top:0, zIndex:50 }}>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
           <div style={{ width:28, height:28, borderRadius:7, background:'var(--blu)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:900, color:'#fff' }}>S</div>
-          <span style={{ fontSize:15, fontWeight:900, color:'var(--txt)', letterSpacing:-0.3 }}>SIGNAL</span>
+          <span style={{ fontSize:15, fontWeight:900, color:'var(--txt)', letterSpacing:-0.3 }}>SignalGenie</span>
         </Link>
         <div style={{ display:'flex', gap:8 }}>
           <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:700, textDecoration:'none', display:'flex', alignItems:'center' }}>Sign in</Link>
@@ -213,12 +213,12 @@ export default async function StockPage({ params }: { params: Promise<{ symbol: 
         {/* ── Latest News ── */}
         <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px', marginBottom:20 }}>
           <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:12 }}>Latest News</div>
-          <StockNews symbol={sym} exchange="NSE" />
+          <StockNews symbol={sym} exchange="NSE" name={d.name ?? undefined} />
         </div>
 
         {/* ── CTA ── */}
         <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.10),rgba(139,92,246,0.06))', border:'1px solid rgba(23,64,245,0.25)', borderRadius:16, padding:'24px', textAlign:'center' }}>
-          <div style={{ fontSize:18, fontWeight:900, marginBottom:8, letterSpacing:-0.3 }}>Get the full SIGNAL analysis for {sym}</div>
+          <div style={{ fontSize:18, fontWeight:900, marginBottom:8, letterSpacing:-0.3 }}>Get the full SignalGenie analysis for {sym}</div>
           <div style={{ fontSize:13, color:'var(--dim)', marginBottom:20, lineHeight:1.7 }}>
             Unlock price alerts, portfolio tracking, ML scan across 500+ stocks,<br/>SIP calculator, earnings impact, and more — free to start.
           </div>
