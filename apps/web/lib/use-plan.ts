@@ -10,6 +10,8 @@ export type PlanFeature =
   | 'signals-detail'
   | 'signals-portfolio'
   | 'signals-custom-universe'
+  | 'signals-us'
+  | 'signals-ai-narrative'
   | 'us-portfolio-multi'
   | 'algo-builder'
   | 'backtest'
@@ -27,6 +29,8 @@ const PLAN_GATES: Record<PlanFeature, Plan[]> = {
   'signals-detail':           ['starter', 'pro', 'elite', 'admin'],
   'signals-portfolio':        ['starter', 'pro', 'elite', 'admin'],
   'signals-custom-universe':  ['pro', 'elite', 'admin'],
+  'signals-us':               ['elite', 'admin'],
+  'signals-ai-narrative':     ['elite', 'admin'],
   'us-portfolio-multi':       ['pro', 'elite', 'admin'],
   'algo-builder':             ['pro', 'elite', 'admin'],
   'backtest':                 ['pro', 'elite', 'admin'],

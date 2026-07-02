@@ -8,6 +8,8 @@ const FEATURE_LABELS: Record<PlanFeature, { name: string; tier: string; desc: st
   'signals-detail':          { name: 'Signal Detail View',      tier: 'Starter+', desc: 'Entry range, targets, stop-loss for each signal' },
   'signals-portfolio':       { name: 'Portfolio Universe Scan', tier: 'Starter+', desc: 'Scan signals only for your holdings' },
   'signals-custom-universe': { name: 'Custom Universe Scan',    tier: 'Pro',      desc: 'Build a custom stock list for scanning' },
+  'signals-us':              { name: 'US Market Signals',       tier: 'Elite',    desc: 'NYSE/NASDAQ technical scan — Elite only' },
+  'signals-ai-narrative':    { name: 'AI Signal Narrative',     tier: 'Elite',    desc: 'Grok-powered "why now" context per signal' },
   'us-portfolio-multi':      { name: 'Multiple US Portfolios',  tier: 'Pro',      desc: 'Track multiple broker accounts' },
   'algo-builder':            { name: 'Algo Builder',            tier: 'Pro',      desc: 'Build and save custom trading strategies' },
   'backtest':                { name: 'Backtest Engine',         tier: 'Pro',      desc: 'Run strategies against historical data' },

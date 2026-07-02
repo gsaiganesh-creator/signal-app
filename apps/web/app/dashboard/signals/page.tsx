@@ -180,13 +180,16 @@ const ZONE_STYLE = {
 function zs(z: USSignal['zone']) { return ZONE_STYLE[z] ?? ZONE_STYLE['N/A']; }
 
 // ── India Detail Drawer ───────────────────────────────────────────────────────
-function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) {
+function DetailDrawer({ sig, onClose, isElite }: { sig: MLSignal; onClose: () => void; isElite: boolean }) {
   const [ta, setTA] = useState<TADetail | null>(null);
   const [fund, setFund] = useState<FundDetail | null>(null);
   const [peers, setPeers] = useState<PeerRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [narrative, setNarrative] = useState<string | null>(null);
+  const [narrativeLoading, setNarrativeLoading] = useState(false);
+
   useEffect(() => {
-    setLoading(true); setFund(null); setPeers([]);
+    setLoading(true); setFund(null); setPeers([]); setNarrative(null);
     const sym = sig.symbol.replace(/\.(NS|BO)$/i, '');
     const ex  = sig.symbol.endsWith('.BO') ? 'BSE' : 'NSE';
     Promise.all([
@@ -198,7 +201,16 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
       setPeers((peerData as { peers?: PeerRow[] } | null)?.peers ?? []);
       setLoading(false);
     });
-  }, [sig.symbol]);
+    // AI narrative for Elite users
+    if (isElite) {
+      setNarrativeLoading(true);
+      fetch(`/api/signal-narrative?symbol=${encodeURIComponent(sym)}&name=${encodeURIComponent(sig.name)}&sector=${encodeURIComponent(sig.sector)}&rsi=${sig.rsi}&ema_dist=${sig.ema_dist_pct}&signal=${encodeURIComponent(sig.signal)}&confidence=${sig.confidence}`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => setNarrative(d?.narrative ?? null))
+        .catch(() => {})
+        .finally(() => setNarrativeLoading(false));
+    }
+  }, [sig.symbol, isElite]); // eslint-disable-line react-hooks/exhaustive-deps
   const rr = ta
     ? ((ta.target_1 - ta.entry_hi) / (ta.entry_hi - ta.stop)).toFixed(1)
     : ((sig.target - sig.cmp) / (sig.cmp - sig.sl)).toFixed(1);
@@ -234,6 +246,24 @@ function DetailDrawer({ sig, onClose }: { sig: MLSignal; onClose: () => void }) 
               <div style={{ fontSize:10, color:'var(--dim)', marginTop:4 }}>Risk : Reward</div>
             </div>
           </div>
+          {/* ── AI Narrative (Elite) ── */}
+          {isElite && (
+            <div style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.07),rgba(139,92,246,0.05))', border:'1px solid rgba(255,184,0,0.22)', borderRadius:14, padding:'14px 18px', marginBottom:18 }}>
+              <div style={{ fontSize:10, fontWeight:800, color:'var(--ylw)', letterSpacing:1.2, textTransform:'uppercase', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
+                ✨ AI Analysis <span style={{ fontSize:9, background:'rgba(255,184,0,0.15)', border:'1px solid rgba(255,184,0,0.3)', borderRadius:4, padding:'1px 5px' }}>Elite · Grok</span>
+              </div>
+              {narrativeLoading ? (
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {[1,2,3].map(i => <div key={i} style={{ height:14, borderRadius:4, background:'rgba(255,255,255,0.06)', animation:'pulse 1.4s infinite', width: i === 3 ? '60%' : '100%' }}/>)}
+                </div>
+              ) : narrative ? (
+                <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.75, whiteSpace:'pre-line' }}>{narrative}</div>
+              ) : (
+                <div style={{ fontSize:12, color:'var(--dim2)' }}>Narrative unavailable — try refreshing.</div>
+              )}
+            </div>
+          )}
+
           {loading && <div style={{ textAlign:'center', padding:'40px', color:'var(--dim)' }}><div style={{ fontSize:24, marginBottom:8 }}>⏳</div>Loading technical analysis…</div>}
           {!loading && ta && (
             <>
@@ -682,9 +712,14 @@ const PLAN_DETAILS = {
     price:'₹799/mo',
     perks:['Everything in Starter','Custom universe (any NSE stock)','Price alerts from signal rows','Export signals CSV'],
   },
+  elite: {
+    color:'var(--ylw)', bg:'rgba(255,184,0,0.10)', bdr:'rgba(255,184,0,0.28)',
+    price:'₹1,999/mo',
+    perks:['Everything in Pro','🇺🇸 US market signals (NYSE/NASDAQ)','✨ AI narrative per signal — Grok-powered','Intraday scan refresh (coming soon)'],
+  },
 } as const;
 
-function UpgradeModal({ feature, minPlan, onClose }: { feature: string; minPlan: 'starter' | 'pro'; onClose: () => void }) {
+function UpgradeModal({ feature, minPlan, onClose }: { feature: string; minPlan: 'starter' | 'pro' | 'elite'; onClose: () => void }) {
   const d = PLAN_DETAILS[minPlan];
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.65)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
@@ -723,7 +758,7 @@ function UpgradeModal({ feature, minPlan, onClose }: { feature: string; minPlan:
 
 export default function SignalsPage() {
   const { symbols: portfolioSymbols, portfolios, session } = usePortfolio();
-  const { isStarter, loading: planLoading } = usePlan();
+  const { isStarter, isElite, loading: planLoading } = usePlan();
   const [market, setMarket] = useState<Market>('india');
 
   // Deep-link: /dashboard/signals?tab=fundamental|us|india
@@ -766,7 +801,7 @@ export default function SignalsPage() {
   const [usPortSyms,   setUsPortSyms]   = useState<string[]>([]);
 
   // Upgrade modal
-  const [upgradeModal, setUpgradeModal] = useState<{ feature: string; minPlan: 'starter' | 'pro' } | null>(null);
+  const [upgradeModal, setUpgradeModal] = useState<{ feature: string; minPlan: 'starter' | 'pro' | 'elite' } | null>(null);
 
   // Fundamental screener state
   type FundStock = { symbol:string; sector:string; name:string; price:number|null; change_pct:number|null;
@@ -1032,7 +1067,13 @@ export default function SignalsPage() {
           <Link href="/dashboard/track-record" style={{ height:34, padding:'0 14px', borderRadius:9, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.28)', color:'var(--grn)', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
             📊 Track Record →
           </Link>
-          <MarketToggle market={market} onChange={m => setMarket(m)} />
+          <MarketToggle market={market} onChange={m => {
+            if (m === 'us' && !isElite) {
+              setUpgradeModal({ feature: 'US Market Signals — NYSE/NASDAQ technical scan', minPlan: 'elite' });
+              return;
+            }
+            setMarket(m);
+          }} />
         </div>
       </div>
 
@@ -1606,7 +1647,7 @@ export default function SignalsPage() {
         );
       })()}
 
-      {selected  && <DetailDrawer   sig={selected}   onClose={() => setSelected(null)}  />}
+      {selected  && <DetailDrawer   sig={selected}   onClose={() => setSelected(null)} isElite={isElite} />}
       {selectedUS && <USDetailDrawer sig={selectedUS} onClose={() => setSelectedUS(null)} />}
       {upgradeModal && <UpgradeModal feature={upgradeModal.feature} minPlan={upgradeModal.minPlan} onClose={() => setUpgradeModal(null)} />}
     </>
