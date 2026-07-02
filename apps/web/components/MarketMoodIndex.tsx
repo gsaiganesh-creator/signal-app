@@ -1,46 +1,70 @@
 'use client';
-
 import { useEffect, useState, useCallback } from 'react';
 
-interface MmiComponent {
-  label: string;
-  score: number;
-  max: number;
-  signal: string;
-  level?: number | null;
-  pct_vs_ema?: number | null;
-  net_5d_cr?: number | null;
+interface Sub {
+  key: string; label: string; score: number; weight: number;
+  raw: number | null; rawUnit: string; ok: boolean;
 }
-
 interface MmiData {
-  score: number;
-  label: string;
-  components: { nifty: MmiComponent; vix: MmiComponent; fii: MmiComponent };
-  computed_at: string;
+  score: number; zone: string; zoneColor: string; hint: string;
+  subScores: Sub[]; asOf: string;
+  sources: Record<string, boolean>;
 }
 
-function scoreColor(s: number): string {
-  if (s <= 20) return '#FF3B5C';
-  if (s <= 40) return '#FF5C1A';
-  if (s <= 60) return '#FFB800';
-  if (s <= 80) return '#7EC8A4';
-  return '#00D4A0';
+function rawLabel(s: Sub): string {
+  if (!s.ok || s.raw == null) return '—';
+  const r = s.raw;
+  if (s.key === 'momentum') return `${r >= 0 ? '+' : ''}${r.toFixed(1)}%`;
+  if (s.key === 'fii')      return `${r >= 0 ? '+' : '−'}₹${Math.abs(r/100).toFixed(0)}Cr`;
+  if (s.key === 'breadth')  return `${Math.round(r * 100)}% ↑`;
+  return `${r.toFixed(1)}`;
 }
 
-function signalText(c: MmiComponent): string {
-  if (c.pct_vs_ema != null) return `${c.pct_vs_ema >= 0 ? '+' : ''}${c.pct_vs_ema}% vs EMA`;
-  if (c.level != null)       return `VIX ${c.level}`;
-  if (c.net_5d_cr != null)   return `${c.net_5d_cr >= 0 ? '+' : ''}₹${Math.abs(c.net_5d_cr).toLocaleString('en-IN')} Cr`;
-  return c.signal;
-}
+// SVG semicircular gauge — 180° arc, score 0-100 maps left→right
+function Gauge({ score, color }: { score: number; color: string }) {
+  const CX = 100, CY = 108, R = 72;
+  const toRad = (d: number) => (d * Math.PI) / 180;
+  const pt = (deg: number) => ({
+    x: CX + R * Math.cos(toRad(180 - deg)),
+    y: CY - R * Math.sin(toRad(180 - deg)),
+  });
+  const bands = [
+    { from: 0,  to: 24,  col: '#FF3B5C' },
+    { from: 24, to: 44,  col: '#FF5C1A' },
+    { from: 44, to: 55,  col: '#FFB800' },
+    { from: 55, to: 74,  col: '#7FD957' },
+    { from: 74, to: 100, col: '#00D4A0' },
+  ];
+  const arcPath = (from: number, to: number) => {
+    const s = pt(from * 1.8), e = pt(to * 1.8);
+    const large = (to - from) * 1.8 > 180 ? 1 : 0;
+    return `M ${s.x} ${s.y} A ${R} ${R} 0 ${large} 1 ${e.x} ${e.y}`;
+  };
+  const angle = score * 1.8;
+  const tip = pt(angle);
+  const base1 = { x: CX + 7 * Math.cos(toRad(180 - angle + 90)), y: CY - 7 * Math.sin(toRad(180 - angle + 90)) };
+  const base2 = { x: CX + 7 * Math.cos(toRad(180 - angle - 90)), y: CY - 7 * Math.sin(toRad(180 - angle - 90)) };
 
-const ZONE_LABELS = ['Extreme Fear', 'Fear', 'Neutral', 'Greed', 'Extreme Greed'];
-const ZONE_COLORS = ['#FF3B5C', '#FF5C1A', '#FFB800', '#7EC8A4', '#00D4A0'];
+  return (
+    <svg width={200} height={120} viewBox="0 0 200 120" style={{ display:'block', margin:'0 auto' }}>
+      <path d={arcPath(0, 100)} fill="none" stroke="var(--bdr)" strokeWidth={10} strokeLinecap="round"/>
+      {bands.map(b => (
+        <path key={b.from} d={arcPath(b.from, b.to)} fill="none" stroke={b.col} strokeWidth={10}
+          strokeLinecap={b.from === 0 || b.to === 100 ? 'round' : 'butt'} opacity={0.85}/>
+      ))}
+      <polygon points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`}
+        fill={color} opacity={0.95}/>
+      <circle cx={CX} cy={CY} r={7} fill={color} stroke="var(--surf)" strokeWidth={2}/>
+      <text x={CX} y={CY + 22} textAnchor="middle" fontSize={28} fontWeight={900} fill={color}
+        style={{ fontFamily:'inherit' }}>{score}</text>
+    </svg>
+  );
+}
 
 export function MarketMoodIndex() {
-  const [data, setData]     = useState<MmiData | null>(null);
+  const [data,    setData]  = useState<MmiData | null>(null);
   const [loading, setLoad]  = useState(true);
-  const [error, setError]   = useState(false);
+  const [error,   setError] = useState(false);
 
   const load = useCallback(async () => {
     try {
@@ -53,82 +77,64 @@ export function MarketMoodIndex() {
 
   useEffect(() => {
     load();
-    const t = setInterval(load, 5 * 60_000); // refresh every 5 min
+    const t = setInterval(load, 15 * 60_000);
     return () => clearInterval(t);
   }, [load]);
 
   const score = data?.score ?? 50;
-  const color = scoreColor(score);
+  const color = data?.zoneColor ?? '#FFB800';
 
   return (
-    <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' }}>
-      {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16 }}>
-        <div>
-          <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5 }}>SIGNAL Market Mood</div>
-          <div style={{ fontSize:10, color:'var(--dim2)', marginTop:2 }}>Nifty EMA · India VIX · FII Flow</div>
-        </div>
-        {data && (
-          <div style={{ textAlign:'right' }}>
-            <div style={{ fontSize:28, fontWeight:900, color, lineHeight:1 }}>{score}</div>
-            <div style={{ fontSize:11, fontWeight:700, color, marginTop:2 }}>{data.label}</div>
+    <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px', minWidth:220 }}>
+      <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.8, marginBottom:2 }}>
+        SIGNAL-MMI
+      </div>
+      <div style={{ fontSize:10, color:'var(--dim2)', marginBottom:12 }}>Proprietary composite · 5 inputs</div>
+
+      {loading ? (
+        <div style={{ height:130, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--dim)', fontSize:12 }}>Loading…</div>
+      ) : error ? (
+        <div style={{ height:130, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--red)', fontSize:11 }}>Unavailable</div>
+      ) : (
+        <>
+          <Gauge score={score} color={color}/>
+
+          <div style={{ textAlign:'center', marginTop:4 }}>
+            <div style={{ fontSize:13, fontWeight:800, color, letterSpacing:0.5 }}>{data?.zone}</div>
+            <div style={{ fontSize:10, color:'var(--dim)', marginTop:3, lineHeight:1.4, maxWidth:180, margin:'4px auto 0' }}>{data?.hint}</div>
           </div>
-        )}
-        {loading && <div style={{ fontSize:13, color:'var(--dim)' }}>Loading…</div>}
-        {error   && <div style={{ fontSize:11, color:'var(--red)' }}>Unavailable</div>}
-      </div>
 
-      {/* Gradient bar */}
-      <div style={{ position:'relative', marginBottom:18 }}>
-        <div style={{
-          height:10, borderRadius:5,
-          background:'linear-gradient(to right,#FF3B5C,#FF5C1A,#FFB800,#7EC8A4,#00D4A0)',
-        }} />
-        {/* Score tick */}
-        <div style={{
-          position:'absolute', left:`${score}%`, top:-4,
-          transform:'translateX(-50%)',
-          width:4, height:18, background:'#fff', borderRadius:2,
-          boxShadow:'0 0 6px rgba(0,0,0,0.6)',
-          pointerEvents:'none',
-        }} />
-        {/* Zone labels */}
-        <div style={{ display:'flex', justifyContent:'space-between', marginTop:5 }}>
-          {ZONE_LABELS.map((l, i) => (
-            <div key={l} style={{
-              fontSize:9, color: Math.floor(score / 20) === i ? ZONE_COLORS[i] : 'var(--dim2)',
-              fontWeight: Math.floor(score / 20) === i ? 700 : 400,
-              textAlign: i === 0 ? 'left' : i === ZONE_LABELS.length - 1 ? 'right' : 'center',
-              flex:1,
-            }}>{l.split(' ').join('\n')}</div>
-          ))}
-        </div>
-      </div>
-
-      {/* Component pills */}
-      {data && (
-        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
-          {([data.components.nifty, data.components.vix, data.components.fii] as MmiComponent[]).map(c => {
-            const pct   = Math.round((c.score / c.max) * 100);
-            const clr   = scoreColor(Math.round((c.score / c.max) * 100));
-            return (
-              <div key={c.label} style={{ background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:8, padding:'8px 10px' }}>
-                <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.4, marginBottom:4 }}>{c.label}</div>
-                {/* Mini bar */}
-                <div style={{ height:3, borderRadius:2, background:'var(--bdr)', marginBottom:5, overflow:'hidden' }}>
-                  <div style={{ height:'100%', width:`${pct}%`, background:clr, borderRadius:2 }} />
+          {data?.subScores && (
+            <div style={{ marginTop:14, display:'flex', flexDirection:'column', gap:7 }}>
+              {data.subScores.map(s => (
+                <div key={s.key}>
+                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, marginBottom:2 }}>
+                    <span style={{ color: s.ok ? 'var(--txt)' : 'var(--dim2)', fontWeight:600 }}>{s.label}</span>
+                    <span style={{ color:'var(--dim)', fontFamily:'monospace', fontSize:9 }}>{rawLabel(s)}</span>
+                  </div>
+                  <div style={{ height:5, background:'var(--bdr)', borderRadius:3, overflow:'hidden' }}>
+                    <div style={{
+                      height:'100%', borderRadius:3, transition:'width 0.6s ease',
+                      width:`${s.ok ? s.score : 0}%`,
+                      background: s.ok ? (s.score < 35 ? '#FF3B5C' : s.score < 50 ? '#FF5C1A' : s.score < 65 ? '#FFB800' : '#00D4A0') : 'var(--dim2)',
+                    }}/>
+                  </div>
+                  <div style={{ fontSize:9, color:'var(--dim2)', marginTop:1.5, display:'flex', justifyContent:'space-between' }}>
+                    <span>Wt {s.weight}%</span>
+                    <span>{s.ok ? `${s.score}/100` : 'unavailable'}</span>
+                  </div>
                 </div>
-                <div style={{ fontSize:11, fontWeight:700, color:clr }}>{signalText(c)}</div>
-                <div style={{ fontSize:9, color:'var(--dim)', marginTop:1 }}>{c.score}/{c.max} pts</div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              ))}
+            </div>
+          )}
 
-      <div style={{ marginTop:10, fontSize:9, color:'var(--dim2)' }}>
-        Refreshes every 15 min · Not SEBI advice
-      </div>
+          {data?.asOf && (
+            <div style={{ fontSize:9, color:'var(--dim2)', marginTop:10, borderTop:'1px solid var(--bdr)', paddingTop:6 }}>
+              {new Date(data.asOf).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })} · Not SEBI advice · DYOR
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

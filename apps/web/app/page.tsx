@@ -745,11 +745,11 @@ export default function LandingPage() {
               { name:'Pro',     tag:'var(--ylw)',  price:pr.p,  cycle:pr.cy, href:'/sign-in?plan=pro',
                 cardStyle:{ ...GLS, background:'linear-gradient(145deg,rgba(255,184,0,0.22),rgba(255,130,0,0.12),rgba(23,64,245,0.1))', borderColor:'rgba(255,184,0,0.52)' },
                 btnStyle:{ background:'linear-gradient(135deg,#FFB800,#FF8C00)', border:'none', color:'#0a0f1a' },
-                feats:['RSU & ESPP tracker (E*Trade, Schwab, Shareworks)','US multi-portfolio · combined INR net worth','Algo builder + backtesting','Everything in Starter'], nope:[], pro:true },
+                feats:['RSU & ESPP tracker (E*Trade, Schwab, Shareworks)','US multi-portfolio · combined INR net worth','Algo builder + backtesting','Everything in Starter','Broker sync · coming soon','WhatsApp alerts · coming soon'], nope:[], pro:true },
               { name:'Elite',   tag:'var(--pur)',  price:pr.e,  cycle:pr.cy, href:'/sign-in?plan=elite',
                 cardStyle:{ ...GC.pur },
                 btnStyle:{ background:'linear-gradient(135deg,rgba(139,92,246,0.45),rgba(100,40,200,0.3))', border:'1px solid rgba(139,92,246,0.5)', color:'#fff' },
-                feats:['Everything in Pro','API access (500 req/day)','Priority support','Early access to new features'], nope:[], pro:false },
+                feats:['Everything in Pro','API access (500 req/day)','Priority support','Custom ML model · coming soon','AA account sync · coming soon'], nope:[], pro:false },
             ] as const).map(plan => (
               <div key={plan.name} className={`lp-plan-card${plan.pro ? ' lp-plan-pro' : ''}`}
                 style={{ ...plan.cardStyle, padding:'28px 24px', borderRadius:22, position:'relative', transform: plan.pro ? 'scale(1.04)' : 'none' }}>
