@@ -965,40 +965,50 @@ export default function DashboardPage() {
           </div>
         </Link>
         {/* Total Invested */}
-        <div style={colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)')}>
-          <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-            <div style={{ width:26, height:26, borderRadius:7, background:'rgba(0,212,160,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>💼</div>
-            <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Total Invested</div>
+        <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
+          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
+          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
+          <div style={colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)')}>
+            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+              <div style={{ width:26, height:26, borderRadius:7, background:'rgba(0,212,160,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>💼</div>
+              <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Total Invested</div>
+            </div>
+            <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{fmtL(invested)}</div>
+            <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
+              {portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''} · India
+            </div>
           </div>
-          <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{fmtL(invested)}</div>
-          <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
-            {portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''} · India
-          </div>
-        </div>
+        </Link>
         {/* Combined Return */}
         {(() => {
           const up = !hasPrices || totalPLPct >= 0;
           return (
-            <div style={colorCard(
-              up ? 'linear-gradient(135deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))' : 'linear-gradient(135deg,rgba(255,59,92,0.12),rgba(255,59,92,0.03))',
-              up ? 'rgba(0,212,160,0.3)' : 'rgba(255,59,92,0.28)'
-            )}>
-              <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-                <div style={{ width:26, height:26, borderRadius:7, background:up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.14)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>{up?'🚀':'📉'}</div>
-                <div style={{ fontSize:10, fontWeight:700, color:up?'var(--grn)':'var(--red)', letterSpacing:0.5, textTransform:'uppercase' }}>Combined Return</div>
+            <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
+              onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow=`0 6px 24px ${up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.18)'}`;}}
+              onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
+              <div style={colorCard(
+                up ? 'linear-gradient(135deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))' : 'linear-gradient(135deg,rgba(255,59,92,0.12),rgba(255,59,92,0.03))',
+                up ? 'rgba(0,212,160,0.3)' : 'rgba(255,59,92,0.28)'
+              )}>
+                <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+                  <div style={{ width:26, height:26, borderRadius:7, background:up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.14)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>{up?'🚀':'📉'}</div>
+                  <div style={{ fontSize:10, fontWeight:700, color:up?'var(--grn)':'var(--red)', letterSpacing:0.5, textTransform:'uppercase' }}>Combined Return</div>
+                </div>
+                <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color: hasPrices ? (totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
+                  {hasPrices ? `${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(1)}%` : '—'}
+                </div>
+                <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
+                  {hasPrices && totalPL !== 0 ? `${totalPL >= 0 ? '+' : ''}${fmtL(Math.abs(totalPL))}` : pricesLoading ? 'loading…' : '—'}
+                </div>
               </div>
-              <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color: hasPrices ? (totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
-                {hasPrices ? `${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(1)}%` : '—'}
-              </div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
-                {hasPrices && totalPL !== 0 ? `${totalPL >= 0 ? '+' : ''}${fmtL(Math.abs(totalPL))}` : pricesLoading ? 'loading…' : '—'}
-              </div>
-            </div>
+            </Link>
           );
         })()}
 
         {/* Combined Net Worth */}
-        <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none' }}>
+        <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
+          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
+          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
           <div style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.16),rgba(23,64,245,0.07))','rgba(0,212,160,0.32)'), height:'100%' }}>
             <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
               <div style={{ width:26, height:26, borderRadius:7, background:'rgba(0,212,160,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🌐</div>
@@ -1014,7 +1024,9 @@ export default function DashboardPage() {
         </Link>
 
         {/* US Stocks */}
-        <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none' }}>
+        <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
+          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(79,111,250,0.18)';}}
+          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
           {hasUSHoldings ? (
             <div style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.14),rgba(23,64,245,0.05))','rgba(79,111,250,0.30)'), height:'100%' }}>
               <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
