@@ -1,6 +1,5 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import * as XLSX from 'xlsx';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
@@ -749,12 +748,11 @@ export default function PortfolioPage() {
   const [sortCol, setSortCol] = useState<'symbol'|'avg_price'|'current_price'|'pl'|'pl_pct'>('symbol');
   const [sortDir, setSortDir] = useState<'asc'|'desc'>('asc');
   const [menuId, setMenuId] = useState<string | null>(null);
-  const [menuPos, setMenuPos] = useState<{top:number;left:number}|null>(null);
 
   // Close portfolio dropdown on outside click or scroll (bubble phase — capture fires before inner onClick)
   useEffect(() => {
     if (!menuId) return;
-    const close = () => { setMenuId(null); setMenuPos(null); };
+    const close = () => { setMenuId(null); };
     document.addEventListener('click', close);
     window.addEventListener('scroll', close);
     return () => { document.removeEventListener('click', close); window.removeEventListener('scroll', close); };
@@ -1283,78 +1281,120 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      {/* Portfolio tabs + management */}
-      <div style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
-        {/* All Portfolios tab — default */}
-        <button
-          onClick={() => { setViewMode('all'); setMenuId(null); }}
-          style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:13, fontWeight: viewMode === 'all' ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: viewMode === 'all' ? '1px solid var(--grn)' : '1px solid var(--tab-inactive-bdr)', background: viewMode === 'all' ? 'rgba(0,212,160,0.10)' : 'var(--tab-inactive-bg)', color: viewMode === 'all' ? 'var(--grn)' : 'var(--tab-inactive-txt)', whiteSpace:'nowrap' }}>
-          📊 All Portfolios
-        </button>
-        {portfolios.filter(p => !usOnlyPortfolioIds.has(p.id)).map(p => {
-          const isActive = viewMode === p.id;
-          const isRenaming = renamingId === p.id;
-          return (
-            <div key={p.id} style={{ position:'relative', display:'inline-flex', alignItems:'center', gap:0 }}>
-              {isRenaming ? (
-                <>
-                  <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') handleRename(); if (e.key === 'Escape') setRenamingId(null); }}
-                    style={{ height:34, borderRadius:'8px 0 0 8px', background:'var(--surf2)', border:'1px solid var(--blu)', borderRight:'none', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:140 }}/>
-                  <button onClick={handleRename}
-                    style={{ height:34, padding:'0 10px', borderRadius:'0 8px 8px 0', background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>✓</button>
-                  <button onClick={() => setRenamingId(null)}
-                    style={{ height:34, padding:'0 8px', marginLeft:4, borderRadius:8, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
-                </>
-              ) : (
-                <>
-                  <button onClick={() => { setViewMode(p.id); setActiveId(p.id); setMenuId(null); }}
-                    style={{ height:34, padding:'0 12px 0 16px', borderRadius:'8px 0 0 8px', fontSize:13, fontWeight: isActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderRight:'none', background: isActive ? 'rgba(23,64,245,0.1)' : 'var(--tab-inactive-bg)', color: isActive ? 'var(--bluL)' : 'var(--tab-inactive-txt)' }}>
-                    📂 {p.name}
-                  </button>
-                  <button onClick={e => { e.stopPropagation(); const r=e.currentTarget.getBoundingClientRect(); setMenuPos({top:r.bottom+4,left:r.left}); setMenuId(m=>m===p.id?null:p.id); }}
-                    style={{ height:34, padding:'0 8px', borderRadius:'0 8px 8px 0', border: isActive ? '1px solid var(--blu)' : '1px solid var(--tab-inactive-bdr)', borderLeft:'1px solid rgba(79,111,250,0.15)', background: isActive ? 'rgba(23,64,245,0.08)' : 'var(--tab-inactive-bg)', color: isActive ? 'var(--bluL)' : 'var(--dim)', cursor:'pointer', fontFamily:'inherit', fontSize:16, lineHeight:1 }}>
-                    ⋯
-                  </button>
-                </>
-              )}
-              {/* Dropdown menu — portal to body to escape parent overflow/transform clipping */}
-              {menuId === p.id && menuPos && typeof document !== 'undefined' && createPortal(
-                <div onClick={e => e.stopPropagation()} style={{ position:'fixed', top:menuPos.top, left:menuPos.left, zIndex:99999, background:'#0E1628', border:'1px solid #1740F5', borderRadius:10, boxShadow:'0 8px 32px rgba(0,0,0,0.6),0 0 0 1px rgba(23,64,245,0.4)', minWidth:160, padding:'4px 0' }}>
-                  <button onClick={() => { setRenamingId(p.id); setRenameVal(p.name); setMenuId(null); }}
-                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'#fff', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
-                    ✏️ Rename
-                  </button>
-                  <div style={{ height:1, background:'#1C2E4A', margin:'2px 0' }}/>
-                  <button onClick={() => { setConfirmDeleteId(p.id); setMenuId(null); }}
-                    style={{ width:'100%', height:36, padding:'0 14px', background:'none', border:'none', color:'#FF3B5C', fontSize:13, fontWeight:500, cursor:'pointer', fontFamily:'inherit', textAlign:'left', display:'flex', alignItems:'center', gap:8 }}>
-                    🗑️ Delete portfolio
-                  </button>
-                </div>,
-                document.body
-              )}
-            </div>
-          );
-        })}
-        {showNewPortfolio ? (
-          <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-            <input autoFocus placeholder="Portfolio name…" value={newPortfolioName} onChange={e => setNewPortfolioName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleCreatePortfolio(); if (e.key === 'Escape') { setShowNewPortfolio(false); setNewPortfolioName(''); } }}
-              style={{ height:34, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--blu)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit', outline:'none', width:160 }}/>
-            <button onClick={handleCreatePortfolio} disabled={!newPortfolioName.trim() || creatingPortfolio}
-              style={{ height:34, padding:'0 14px', borderRadius:8, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
-              {creatingPortfolio ? '…' : 'Create'}
+      {/* Portfolio widgets */}
+      {(() => {
+        const fmtI = (n: number) => n >= 1e7 ? `₹${(n/1e7).toFixed(2)}Cr` : n >= 1e5 ? `₹${(n/1e5).toFixed(2)}L` : `₹${n.toLocaleString('en-IN',{maximumFractionDigits:0})}`;
+        const indiaPortfolios = portfolios.filter(p => !usOnlyPortfolioIds.has(p.id));
+        const allTots = Object.values(portfolioTotals);
+        const grandInvested = allTots.reduce((s,t)=>s+t.invested,0);
+        const grandHoldings = allTots.reduce((s,t)=>s+t.holdings,0);
+        const isAllActive = viewMode === 'all';
+        return (
+          <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(190px, 1fr))', gap:10, marginBottom:18 }}>
+
+            {/* All portfolios aggregate card */}
+            <button onClick={() => { setViewMode('all'); setMenuId(null); }}
+              style={{ border: isAllActive ? '1.5px solid var(--grn)' : '1px solid var(--bdr)',
+                background: isAllActive ? 'linear-gradient(135deg,rgba(0,212,160,0.10),var(--surf))' : 'var(--surf)',
+                borderRadius:14, padding:'14px 16px', cursor:'pointer', textAlign:'left', fontFamily:'inherit',
+                boxShadow: isAllActive ? '0 0 0 3px rgba(0,212,160,0.12)' : 'none', transition:'box-shadow 0.2s' }}>
+              <div style={{ fontSize:11, fontWeight:700, color: isAllActive ? 'var(--grn)' : 'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>
+                📊 All Portfolios
+              </div>
+              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)' }}>
+                {grandInvested > 0 ? fmtI(grandInvested) : '—'}
+              </div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>invested</div>
+              <div style={{ fontSize:10, color:'var(--dim2)', marginTop:5 }}>{grandHoldings} holdings · {indiaPortfolios.length} accounts</div>
             </button>
-            <button onClick={() => { setShowNewPortfolio(false); setNewPortfolioName(''); }}
-              style={{ height:34, padding:'0 10px', borderRadius:8, background:'transparent', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+
+            {/* Per-portfolio cards */}
+            {indiaPortfolios.map(p => {
+              const tot = portfolioTotals[p.id];
+              const isActive = viewMode === p.id;
+              const isRenaming = renamingId === p.id;
+              const isCorrupt = tot && tot.invested > 1e9;
+              return (
+                <div key={p.id} style={{
+                  border: isActive ? '1.5px solid var(--blu)' : '1px solid var(--bdr)',
+                  background: isActive ? 'linear-gradient(135deg,rgba(23,64,245,0.09),var(--surf))' : 'var(--surf)',
+                  borderRadius:14, padding:'14px 16px', position:'relative',
+                  boxShadow: isActive ? '0 0 0 3px rgba(23,64,245,0.12)' : 'none', transition:'box-shadow 0.2s' }}>
+
+                  {/* Header: name + action icons */}
+                  <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:6, gap:4 }}>
+                    {isRenaming ? (
+                      <div style={{ display:'flex', gap:4, flex:1 }}>
+                        <input autoFocus value={renameVal} onChange={e => setRenameVal(e.target.value)}
+                          onKeyDown={e => { if (e.key==='Enter') handleRename(); if (e.key==='Escape') setRenamingId(null); }}
+                          style={{ flex:1, height:26, borderRadius:6, background:'var(--surf2)', border:'1px solid var(--blu)', color:'var(--txt)', fontSize:12, padding:'0 8px', fontFamily:'inherit', outline:'none', minWidth:0 }}/>
+                        <button onClick={handleRename} style={{ height:26, padding:'0 8px', borderRadius:6, background:'var(--blu)', border:'none', color:'#fff', fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>✓</button>
+                        <button onClick={() => setRenamingId(null)} style={{ height:26, padding:'0 6px', borderRadius:6, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:11, cursor:'pointer', fontFamily:'inherit', flexShrink:0 }}>✕</button>
+                      </div>
+                    ) : (
+                      <>
+                        <button onClick={() => { setViewMode(p.id); setActiveId(p.id); setMenuId(null); }}
+                          style={{ flex:1, background:'none', border:'none', padding:0, cursor:'pointer', textAlign:'left', fontFamily:'inherit', minWidth:0 }}>
+                          <div style={{ fontSize:11, fontWeight:700, color: isActive ? 'var(--bluL)' : 'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>
+                            📂 {p.name}
+                          </div>
+                        </button>
+                        <div style={{ display:'flex', gap:3, flexShrink:0 }}>
+                          <button onClick={e => { e.stopPropagation(); setRenamingId(p.id); setRenameVal(p.name); setMenuId(null); }}
+                            title="Rename"
+                            style={{ width:22, height:22, borderRadius:5, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:10, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            ✏️
+                          </button>
+                          <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(p.id); setMenuId(null); }}
+                            title="Delete"
+                            style={{ width:22, height:22, borderRadius:5, background:'transparent', border:'1px solid rgba(255,59,92,0.2)', color:'var(--red)', fontSize:10, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center' }}>
+                            🗑
+                          </button>
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Amounts */}
+                  <div onClick={() => { setViewMode(p.id); setActiveId(p.id); setMenuId(null); }} style={{ cursor:'pointer' }}>
+                    <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.5, color: isCorrupt ? 'var(--red)' : 'var(--txt)' }}>
+                      {tot && tot.invested >= 1 ? fmtI(tot.invested) : '—'}
+                    </div>
+                    <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>invested</div>
+                    {isCorrupt && <div style={{ fontSize:10, color:'var(--red)', marginTop:4 }}>⚠️ corrupt — delete &amp; re-upload</div>}
+                    <div style={{ fontSize:10, color:'var(--dim2)', marginTop:5 }}>{tot ? tot.holdings : '—'} holdings</div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Add new portfolio card */}
+            {showNewPortfolio ? (
+              <div style={{ border:'1px dashed var(--blu)', borderRadius:14, padding:'14px 16px', display:'flex', flexDirection:'column', gap:8 }}>
+                <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5 }}>New Portfolio</div>
+                <input autoFocus placeholder="Portfolio name…" value={newPortfolioName} onChange={e => setNewPortfolioName(e.target.value)}
+                  onKeyDown={e => { if (e.key==='Enter') handleCreatePortfolio(); if (e.key==='Escape') { setShowNewPortfolio(false); setNewPortfolioName(''); } }}
+                  style={{ height:32, borderRadius:7, background:'var(--surf2)', border:'1px solid var(--blu)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' }}/>
+                <div style={{ display:'flex', gap:6 }}>
+                  <button onClick={handleCreatePortfolio} disabled={!newPortfolioName.trim()||creatingPortfolio}
+                    style={{ flex:1, height:30, borderRadius:7, background:'var(--blu)', border:'none', color:'#fff', fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
+                    {creatingPortfolio ? '…' : 'Create'}
+                  </button>
+                  <button onClick={() => { setShowNewPortfolio(false); setNewPortfolioName(''); }}
+                    style={{ height:30, padding:'0 10px', borderRadius:7, background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit' }}>✕</button>
+                </div>
+              </div>
+            ) : (
+              <button onClick={() => { setShowNewPortfolio(true); setMenuId(null); }}
+                style={{ border:'1px dashed var(--bdr)', borderRadius:14, padding:'14px 16px', cursor:'pointer', fontFamily:'inherit',
+                  background:'transparent', color:'var(--dim)', fontSize:13, display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', gap:6, minHeight:120 }}>
+                <span style={{ fontSize:22 }}>+</span>
+                <span style={{ fontSize:11, fontWeight:600 }}>New Portfolio</span>
+              </button>
+            )}
           </div>
-        ) : (
-          <button onClick={() => { setShowNewPortfolio(true); setMenuId(null); }}
-            style={{ height:34, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', border:'1px dashed var(--tab-inactive-bdr)', background:'var(--tab-inactive-bg)', color:'var(--tab-inactive-txt)' }}>
-            + New Portfolio
-          </button>
-        )}
-      </div>
+        );
+      })()}
 
       {/* Delete confirmation modal */}
       {confirmDeleteId && (
@@ -1459,68 +1499,6 @@ export default function PortfolioPage() {
         </div>
       )}
 
-      {/* Cross-portfolio summary — only in 'all' mode, as a breakdown */}
-      {viewMode === 'all' && portfolios.length > 1 && (
-        <div style={{ ...card, marginBottom:16 }}>
-          <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:12 }}>All Portfolios Summary</div>
-          <table className="port-table" style={{ width:'100%', borderCollapse:'collapse' }}>
-            <thead>
-              <tr>
-                {['Portfolio','Holdings','Invested',''].map(h => (
-                  <th key={h} style={{ fontSize:10, fontWeight:700, color:'var(--dim)', padding:'5px 10px', textAlign:'left', borderBottom:'1px solid var(--bdr)', textTransform:'uppercase', letterSpacing:0.4 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {portfolios.map(p => {
-                const tot = portfolioTotals[p.id];
-                const isActive = p.id === activeId;
-                // > ₹10Cr invested = almost certainly corrupt data (Investment_Value used as avg_price)
-                const isCorrupt = tot && tot.invested > 1e9;
-                return (
-                  <tr key={p.id} onClick={() => setActiveId(p.id)} style={{ cursor:'pointer', opacity: isActive ? 1 : 0.7 }}>
-                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)' }}>
-                      <div style={{ display:'flex', alignItems:'center', gap:7 }}>
-                        {isActive && <span style={{ width:6, height:6, borderRadius:'50%', background:'var(--blu)', display:'inline-block', flexShrink:0 }}/>}
-                        <span style={{ fontSize:13, fontWeight: isActive ? 700 : 500 }}>{p.name}</span>
-                        {isCorrupt && <span style={{ fontSize:10, fontWeight:700, color:'var(--red)', background:'rgba(255,59,92,0.1)', border:'1px solid rgba(255,59,92,0.3)', borderRadius:4, padding:'1px 6px' }}>⚠️ corrupt — delete &amp; re-upload</span>}
-                      </div>
-                    </td>
-                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:13, color: tot ? 'var(--txt)' : 'var(--dim)' }}>
-                      {tot ? tot.holdings : '—'}
-                    </td>
-                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', fontSize:13, fontWeight:600, color: isCorrupt ? 'var(--red)' : tot ? 'var(--txt)' : 'var(--dim)' }}>
-                      {tot && tot.invested >= 1 ? (tot.invested >= 1e7 ? `₹${(tot.invested/1e7).toFixed(2)}Cr` : tot.invested >= 1e5 ? `₹${(tot.invested/1e5).toFixed(2)}L` : `₹${tot.invested.toLocaleString('en-IN',{maximumFractionDigits:0})}`) : '—'}
-                    </td>
-                    <td style={{ padding:'9px 10px', borderBottom:'1px solid rgba(28,46,74,0.4)', textAlign:'right' }}
-                      onClick={e => e.stopPropagation()}>
-                      <button onClick={() => { setConfirmDeleteId(p.id); setMenuId(null); }}
-                        style={{ background:'none', border:'none', color:'var(--dim2)', cursor:'pointer', fontSize:13, padding:'2px 6px', borderRadius:6 }}
-                        title="Delete portfolio">🗑️</button>
-                    </td>
-                  </tr>
-                );
-              })}
-              {(() => {
-                const allTots = Object.values(portfolioTotals);
-                if (allTots.length < 2) return null;
-                const totalH = allTots.reduce((s,t)=>s+t.holdings,0);
-                const totalI = allTots.reduce((s,t)=>s+t.invested,0);
-                return (
-                  <tr style={{ background:'rgba(23,64,245,0.04)' }}>
-                    <td style={{ padding:'9px 10px', fontSize:12, fontWeight:700, color:'var(--dim)' }}>Total across {allTots.length} portfolios</td>
-                    <td style={{ padding:'9px 10px', fontSize:13, fontWeight:700 }}>{totalH}</td>
-                    <td style={{ padding:'9px 10px', fontSize:13, fontWeight:800, color:'var(--blu)' }}>
-                      {totalI >= 1e7 ? `₹${(totalI/1e7).toFixed(2)}Cr` : totalI >= 1e5 ? `₹${(totalI/1e5).toFixed(2)}L` : `₹${totalI.toLocaleString('en-IN',{maximumFractionDigits:0})}`}
-                    </td>
-                  </tr>
-                );
-              })()}
-            </tbody>
-          </table>
-          <div style={{ fontSize:11, color:'var(--dim)', marginTop:10 }}>Click a row to switch portfolio</div>
-        </div>
-      )}
 
       {displayedHoldings.length > 0 && (
         <>
