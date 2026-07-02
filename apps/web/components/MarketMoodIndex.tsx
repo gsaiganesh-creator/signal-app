@@ -20,9 +20,16 @@ function rawLabel(s: Sub): string {
   return `${r.toFixed(1)}`;
 }
 
-// SVG semicircular gauge — 180° arc, score 0-100 maps left→right
+function barColor(score: number): string {
+  if (score < 35) return '#FF3B5C';
+  if (score < 50) return '#FF5C1A';
+  if (score < 65) return '#FFB800';
+  return '#00D4A0';
+}
+
+// Compact semicircular gauge
 function Gauge({ score, color }: { score: number; color: string }) {
-  const CX = 100, CY = 108, R = 72;
+  const CX = 80, CY = 86, R = 58;
   const toRad = (d: number) => (d * Math.PI) / 180;
   const pt = (deg: number) => ({
     x: CX + R * Math.cos(toRad(180 - deg)),
@@ -42,22 +49,57 @@ function Gauge({ score, color }: { score: number; color: string }) {
   };
   const angle = score * 1.8;
   const tip = pt(angle);
-  const base1 = { x: CX + 7 * Math.cos(toRad(180 - angle + 90)), y: CY - 7 * Math.sin(toRad(180 - angle + 90)) };
-  const base2 = { x: CX + 7 * Math.cos(toRad(180 - angle - 90)), y: CY - 7 * Math.sin(toRad(180 - angle - 90)) };
+  const base1 = { x: CX + 6 * Math.cos(toRad(180 - angle + 90)), y: CY - 6 * Math.sin(toRad(180 - angle + 90)) };
+  const base2 = { x: CX + 6 * Math.cos(toRad(180 - angle - 90)), y: CY - 6 * Math.sin(toRad(180 - angle - 90)) };
 
   return (
-    <svg width={200} height={120} viewBox="0 0 200 120" style={{ display:'block', margin:'0 auto' }}>
-      <path d={arcPath(0, 100)} fill="none" stroke="var(--bdr)" strokeWidth={10} strokeLinecap="round"/>
+    <svg width={160} height={100} viewBox="0 0 160 100" style={{ display:'block' }}>
+      <path d={arcPath(0, 100)} fill="none" stroke="var(--bdr)" strokeWidth={9} strokeLinecap="round"/>
       {bands.map(b => (
-        <path key={b.from} d={arcPath(b.from, b.to)} fill="none" stroke={b.col} strokeWidth={10}
+        <path key={b.from} d={arcPath(b.from, b.to)} fill="none" stroke={b.col} strokeWidth={9}
           strokeLinecap={b.from === 0 || b.to === 100 ? 'round' : 'butt'} opacity={0.85}/>
       ))}
-      <polygon points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`}
-        fill={color} opacity={0.95}/>
-      <circle cx={CX} cy={CY} r={7} fill={color} stroke="var(--surf)" strokeWidth={2}/>
-      <text x={CX} y={CY + 22} textAnchor="middle" fontSize={28} fontWeight={900} fill={color}
+      <polygon points={`${tip.x},${tip.y} ${base1.x},${base1.y} ${base2.x},${base2.y}`} fill={color} opacity={0.95}/>
+      <circle cx={CX} cy={CY} r={6} fill={color} stroke="var(--surf)" strokeWidth={2}/>
+      <text x={CX} y={CY + 18} textAnchor="middle" fontSize={26} fontWeight={900} fill={color}
         style={{ fontFamily:'inherit' }}>{score}</text>
     </svg>
+  );
+}
+
+// Vertical bar chart for sub-scores
+function BarChart({ subs }: { subs: Sub[] }) {
+  const BAR_H = 90;
+  const SHORT: Record<string, string> = {
+    momentum: 'Momo', fii: 'FII', vix: 'VIX', breadth: 'A/D', delivery: 'Delvr'
+  };
+  return (
+    <div style={{ display:'flex', alignItems:'flex-end', gap:8, height: BAR_H + 52, paddingTop:4 }}>
+      {subs.map(s => {
+        const h = s.ok ? Math.max(4, (s.score / 100) * BAR_H) : 4;
+        const col = s.ok ? barColor(s.score) : 'var(--dim2)';
+        return (
+          <div key={s.key} style={{ flex:1, display:'flex', flexDirection:'column', alignItems:'center', gap:3 }}>
+            {/* value label above bar */}
+            <div style={{ fontSize:10, fontWeight:700, color: s.ok ? col : 'var(--dim2)', minHeight:14, lineHeight:1 }}>
+              {s.ok ? s.score : '—'}
+            </div>
+            {/* bar track */}
+            <div style={{ width:'100%', height: BAR_H, display:'flex', alignItems:'flex-end', background:'var(--bdr)', borderRadius:6, overflow:'hidden', position:'relative' }}>
+              <div style={{ width:'100%', height:`${h}px`, background:col, borderRadius:6, transition:'height 0.6s ease' }}/>
+            </div>
+            {/* short label */}
+            <div style={{ fontSize:9, fontWeight:700, color:'var(--dim)', textAlign:'center', lineHeight:1.2 }}>
+              {SHORT[s.key] ?? s.key}
+            </div>
+            {/* raw value */}
+            <div style={{ fontSize:8, color:'var(--dim2)', textAlign:'center', lineHeight:1 }}>
+              {rawLabel(s)}
+            </div>
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
@@ -85,55 +127,45 @@ export function MarketMoodIndex() {
   const color = data?.zoneColor ?? '#FFB800';
 
   return (
-    <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px', minWidth:220, height:'100%', boxSizing:'border-box' }}>
-      <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.8, marginBottom:2 }}>
-        SIGNAL-MMI
+    <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'16px 20px', height:'100%', boxSizing:'border-box' }}>
+
+      {/* Header */}
+      <div style={{ display:'flex', alignItems:'baseline', gap:8, marginBottom:14 }}>
+        <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.8 }}>SIGNAL-MMI</div>
+        <div style={{ fontSize:10, color:'var(--dim2)' }}>Proprietary · 5 inputs</div>
       </div>
-      <div style={{ fontSize:10, color:'var(--dim2)', marginBottom:12 }}>Proprietary composite · 5 inputs</div>
 
       {loading ? (
-        <div style={{ height:130, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--dim)', fontSize:12 }}>Loading…</div>
+        <div style={{ height:140, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--dim)', fontSize:12 }}>Loading…</div>
       ) : error ? (
-        <div style={{ height:130, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--red)', fontSize:11 }}>Unavailable</div>
+        <div style={{ height:140, display:'flex', alignItems:'center', justifyContent:'center', color:'var(--red)', fontSize:12 }}>Unavailable</div>
       ) : (
-        <>
-          <Gauge score={score} color={color}/>
+        /* TWO-COLUMN LAYOUT */
+        <div style={{ display:'flex', gap:16, alignItems:'flex-start' }}>
 
-          <div style={{ textAlign:'center', marginTop:4 }}>
-            <div style={{ fontSize:13, fontWeight:800, color, letterSpacing:0.5 }}>{data?.zone}</div>
-            <div style={{ fontSize:10, color:'var(--dim)', marginTop:3, lineHeight:1.4, maxWidth:180, margin:'4px auto 0' }}>{data?.hint}</div>
+          {/* LEFT — gauge + zone */}
+          <div style={{ flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center' }}>
+            <Gauge score={score} color={color}/>
+            <div style={{ textAlign:'center', marginTop:6 }}>
+              <div style={{ fontSize:13, fontWeight:800, color, letterSpacing:0.4 }}>{data?.zone}</div>
+              <div style={{ fontSize:10, color:'var(--dim)', marginTop:4, lineHeight:1.45, maxWidth:140 }}>{data?.hint}</div>
+            </div>
           </div>
 
-          {data?.subScores && (
-            <div style={{ marginTop:14, display:'flex', flexDirection:'column', gap:7 }}>
-              {data.subScores.map(s => (
-                <div key={s.key}>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:10, marginBottom:2 }}>
-                    <span style={{ color: s.ok ? 'var(--txt)' : 'var(--dim2)', fontWeight:600 }}>{s.label}</span>
-                    <span style={{ color:'var(--dim)', fontFamily:'monospace', fontSize:9 }}>{rawLabel(s)}</span>
-                  </div>
-                  <div style={{ height:5, background:'var(--bdr)', borderRadius:3, overflow:'hidden' }}>
-                    <div style={{
-                      height:'100%', borderRadius:3, transition:'width 0.6s ease',
-                      width:`${s.ok ? s.score : 0}%`,
-                      background: s.ok ? (s.score < 35 ? '#FF3B5C' : s.score < 50 ? '#FF5C1A' : s.score < 65 ? '#FFB800' : '#00D4A0') : 'var(--dim2)',
-                    }}/>
-                  </div>
-                  <div style={{ fontSize:9, color:'var(--dim2)', marginTop:1.5, display:'flex', justifyContent:'space-between' }}>
-                    <span>Wt {s.weight}%</span>
-                    <span>{s.ok ? `${s.score}/100` : 'unavailable'}</span>
-                  </div>
-                </div>
-              ))}
+          {/* RIGHT — vertical bar chart */}
+          <div style={{ flex:1, minWidth:0 }}>
+            <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:0.5, marginBottom:6 }}>
+              Input Signals
             </div>
-          )}
+            {data?.subScores && <BarChart subs={data.subScores}/>}
+            {data?.asOf && (
+              <div style={{ fontSize:9, color:'var(--dim2)', marginTop:8, borderTop:'1px solid var(--bdr)', paddingTop:5 }}>
+                {new Date(data.asOf).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })} · Not SEBI advice
+              </div>
+            )}
+          </div>
 
-          {data?.asOf && (
-            <div style={{ fontSize:9, color:'var(--dim2)', marginTop:10, borderTop:'1px solid var(--bdr)', paddingTop:6 }}>
-              {new Date(data.asOf).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })} · Not SEBI advice · DYOR
-            </div>
-          )}
-        </>
+        </div>
       )}
     </div>
   );

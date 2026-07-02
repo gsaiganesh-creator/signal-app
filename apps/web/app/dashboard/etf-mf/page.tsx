@@ -571,22 +571,31 @@ export default function ETFMFPage() {
 
             {casStep === 'pan' && casFiles.length > 0 && (
               <div>
-                <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:8 }}>Found {casFiles.length} CAS file{casFiles.length > 1 ? 's' : ''} in Gmail</div>
-                {casFiles.length > 1 && (
-                  <select value={casSelected?.url ?? ''} onChange={e => setCasSelected(casFiles.find(f => f.url === e.target.value) ?? null)}
-                    style={{ width:'100%', height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 10px', marginBottom:10, fontFamily:'inherit' }}>
-                    {casFiles.map(f => <option key={f.message_id} value={f.url}>{f.original_filename} · {f.message_date}</option>)}
-                  </select>
-                )}
+                <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', marginBottom:6 }}>
+                  Found {casFiles.length} CAS statement{casFiles.length > 1 ? 's' : ''} in Gmail — select one to import
+                </div>
+                {/* Always show file selector */}
+                <select value={casSelected?.url ?? ''} onChange={e => setCasSelected(casFiles.find(f => f.url === e.target.value) ?? null)}
+                  style={{ width:'100%', height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, padding:'0 10px', marginBottom:8, fontFamily:'inherit' }}>
+                  {casFiles.map(f => (
+                    <option key={f.message_id} value={f.url}>
+                      {new Date(f.message_date).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })} — {f.original_filename}
+                    </option>
+                  ))}
+                </select>
+                {/* Tip for missing funds */}
+                <div style={{ fontSize:11, color:'var(--ylw)', background:'rgba(255,184,0,0.08)', border:'1px solid rgba(255,184,0,0.2)', borderRadius:8, padding:'7px 10px', marginBottom:10, lineHeight:1.55 }}>
+                  💡 <strong>Missing funds (e.g. Zerodha Coin)?</strong> Each CAS covers only one RTA (CAMS or KFintech). To get all holdings, visit <strong>camsonline.com</strong> → request CAS → it'll email you a PDF → re-import here.
+                </div>
                 <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
                   <input value={casPan} onChange={e => setCasPan(e.target.value.toUpperCase())} placeholder="Enter PAN (used to decrypt CAS)" maxLength={10}
                     style={{ flex:'1 1 160px', height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:13, padding:'0 12px', fontFamily:'inherit' }} />
-                  <button onClick={handleParseAndImport} disabled={!casPan.trim() || casPan.length < 10}
-                    style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--pur)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor: casPan.length < 10 ? 'not-allowed' : 'pointer', fontFamily:'inherit', opacity: casPan.length < 10 ? 0.5 : 1 }}>
+                  <button onClick={handleParseAndImport} disabled={!casSelected || !casPan.trim() || casPan.length < 10}
+                    style={{ height:36, padding:'0 18px', borderRadius:9, background:'var(--pur)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor: (!casSelected || casPan.length < 10) ? 'not-allowed' : 'pointer', fontFamily:'inherit', opacity: (!casSelected || casPan.length < 10) ? 0.5 : 1 }}>
                     Import →
                   </button>
                 </div>
-                <div style={{ fontSize:10, color:'var(--dim2)', marginTop:6 }}>PAN is used only to decrypt the CAS PDF · never stored</div>
+                <div style={{ fontSize:10, color:'var(--dim2)', marginTop:6 }}>PAN used only to decrypt PDF · never stored · read-only Gmail access</div>
               </div>
             )}
 
