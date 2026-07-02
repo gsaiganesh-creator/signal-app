@@ -756,6 +756,13 @@ export default function SignalsPage() {
   const [advMinConf,setAdvMinConf]= useState('');
   const [advMaxEma, setAdvMaxEma] = useState(''); // max abs % from EMA20
 
+  // Portfolio universe scan mode
+  const [portMode,        setPortMode]        = useState<'ml'|'portfolio'>('ml');
+  const [portScanResults, setPortScanResults] = useState<(MLSignal & {invested:number})[]>([]);
+  const [portScanLoading, setPortScanLoading] = useState(false);
+  const [portScanProgress,setPortScanProgress]= useState(0);
+  const [portScanLoaded,  setPortScanLoaded]  = useState(false);
+
   // US state
   const [usSignals,    setUsSignals]    = useState<USSignal[]>([]);
   const [usLoading,    setUsLoading]    = useState(false);
@@ -877,17 +884,84 @@ export default function SignalsPage() {
     setFundLoaded(true);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const loadPortfolioScan = useCallback(async () => {
+    if (!session || !portfolios.length || portScanLoading) return;
+    setPortScanLoading(true); setPortScanProgress(0); setPortScanResults([]);
+    try {
+      const ids = portfolios.map(p => p.id).join(',');
+      const res = await fetch(
+        `${SUPA_URL}/rest/v1/holdings?portfolio_id=in.(${ids})&exchange=in.(NSE,BSE)&select=symbol,exchange,qty,avg_price`,
+        { headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` } }
+      );
+      if (!res.ok) return;
+      const rows: { symbol:string; exchange:string; qty:number; avg_price:number }[] = await res.json();
+
+      // Deduplicate by symbol, sum invested
+      const map = new Map<string, {exchange:string; invested:number}>();
+      for (const h of rows) {
+        const inv = (h.qty || 0) * (h.avg_price || 0);
+        if (map.has(h.symbol)) { map.get(h.symbol)!.invested += inv; }
+        else { map.set(h.symbol, { exchange: h.exchange, invested: inv }); }
+      }
+      const universe = [...map.entries()]
+        .map(([symbol, v]) => ({ symbol, ...v }))
+        .sort((a, b) => b.invested - a.invested);
+
+      // Batch fetch stock-detail, stream results in as batches complete
+      const BATCH = 8;
+      const results: (MLSignal & { invested:number })[] = [];
+      for (let i = 0; i < universe.length; i += BATCH) {
+        const batch = universe.slice(i, i + BATCH);
+        const settled = await Promise.allSettled(
+          batch.map(async u => {
+            const r = await fetch(`/api/stock-detail?symbol=${u.symbol}&exchange=${u.exchange}`);
+            if (!r.ok) return null;
+            const d = await r.json();
+            return {
+              symbol: `${u.symbol}.${u.exchange === 'NSE' ? 'NS' : 'BO'}`,
+              name: d.name ?? u.symbol, sector: d.sector ?? 'Unknown',
+              cmp: d.price ?? 0, chg: d.change_pct ?? 0,
+              rsi: d.rsi14 ?? 50, ema20: d.ema20 ?? 0,
+              ema_dist_pct: (d.ema20 && d.price) ? +((d.price - d.ema20) / d.ema20 * 100).toFixed(1) : 0,
+              entry_low: d.entry_low ?? 0, entry_high: d.entry_high ?? 0,
+              target: d.target1 ?? 0, sl: d.stop_loss ?? 0,
+              signal: d.signals?.[0] ?? 'HOLD',
+              confidence: d.rsi14 ? Math.min(99, Math.round(50 + Math.abs(50 - d.rsi14))) : 60,
+              score: 0, invested: u.invested,
+            } as MLSignal & { invested:number };
+          })
+        );
+        results.push(...settled.flatMap(r => r.status === 'fulfilled' && r.value ? [r.value] : []));
+        setPortScanResults([...results]);
+        setPortScanProgress(Math.min(99, Math.round((i + BATCH) / universe.length * 100)));
+      }
+      setPortScanProgress(100);
+      setPortScanLoaded(true);
+    } finally {
+      setPortScanLoading(false);
+    }
+  }, [session, portfolios, portScanLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
   useEffect(() => { loadIndia(); }, [loadIndia]);
   useEffect(() => { localStorage.setItem('signal_visited_signals', '1'); }, []);
   useEffect(() => { if (market === 'us') loadUS(); }, [market, loadUS]);
 
-  // India derived
+  // Auto-switch to portfolio mode when holdings load
+  useEffect(() => {
+    if (session && portfolios.length > 0 && !portScanLoaded && !portScanLoading) {
+      setPortMode('portfolio');
+      loadPortfolioScan();
+    }
+  }, [session, portfolios.length]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // India derived — use portScanResults in portfolio mode, mlSignals in ml mode
+  const activeSignals = portMode === 'portfolio' ? portScanResults : mlSignals;
   const hasPortfolio  = portfolioSymbols.length > 0;
   const portfolioCnt  = mlSignals.filter(s => portfolioSymbols.includes(s.symbol.replace('.NS',''))).length;
-  const buyCnt        = mlSignals.filter(s => scoreSig(s) === 'buy').length;
-  const accumulateCnt = mlSignals.filter(s => scoreSig(s) === 'accumulate').length;
-  const holdCnt       = mlSignals.filter(s => scoreSig(s) === 'hold').length;
-  const sellCnt       = mlSignals.filter(s => scoreSig(s) === 'sell').length;
+  const buyCnt        = activeSignals.filter(s => scoreSig(s) === 'buy').length;
+  const accumulateCnt = activeSignals.filter(s => scoreSig(s) === 'accumulate').length;
+  const holdCnt       = activeSignals.filter(s => scoreSig(s) === 'hold').length;
+  const sellCnt       = activeSignals.filter(s => scoreSig(s) === 'sell').length;
   const FILTERS = [
     { key:'all',        label:`All (${mlSignals.length})` },
     ...(hasPortfolio ? [{ key:'portfolio', label:`💼 My Portfolio (${portfolioCnt})` }] : []),
@@ -900,9 +974,10 @@ export default function SignalsPage() {
   const sectors = Array.from(new Set(mlSignals.map(s => s.sector).filter(Boolean))).sort();
   const advActive = !!(advSector || advMinRsi || advMaxRsi || advMinConf || advMaxEma);
 
-  const shown = mlSignals
+  const shown = activeSignals
     .filter(s => {
-      if (filter === 'portfolio')  return portfolioSymbols.includes(s.symbol.replace('.NS',''));
+      // In portfolio mode, universe IS already portfolio — skip portfolio filter
+      if (portMode !== 'portfolio' && filter === 'portfolio') return portfolioSymbols.includes(s.symbol.replace('.NS',''));
       if (filter === 'buy')        return scoreSig(s) === 'buy';
       if (filter === 'accumulate') return scoreSig(s) === 'accumulate';
       if (filter === 'hold')       return scoreSig(s) === 'hold';
@@ -994,8 +1069,43 @@ export default function SignalsPage() {
       {/* ── INDIA CONTENT ────────────────────────────────────────────────── */}
       {market === 'india' && (
         <>
+          {/* Universe mode toggle — visible only when user has portfolios */}
+          {portfolios.length > 0 && (
+            <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:14, flexWrap:'wrap' }}>
+              <button onClick={() => setPortMode('ml')}
+                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  background: portMode==='ml' ? 'rgba(255,184,0,0.12)' : 'var(--surf2)',
+                  border: portMode==='ml' ? '1px solid rgba(255,184,0,0.35)' : '1px solid var(--bdr)',
+                  color: portMode==='ml' ? 'var(--ylw)' : 'var(--dim)' }}>
+                📡 ML Top 20
+              </button>
+              <button onClick={() => { setPortMode('portfolio'); if (!portScanLoaded && !portScanLoading) loadPortfolioScan(); }}
+                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  background: portMode==='portfolio' ? 'rgba(23,64,245,0.12)' : 'var(--surf2)',
+                  border: portMode==='portfolio' ? '1px solid rgba(23,64,245,0.35)' : '1px solid var(--bdr)',
+                  color: portMode==='portfolio' ? 'var(--bluL)' : 'var(--dim)' }}>
+                💼 My Portfolio{portScanLoading ? ` — scanning… ${portScanProgress}%` : portScanResults.length > 0 ? ` (${portScanResults.length})` : ''}
+              </button>
+              {portScanLoading && (
+                <div style={{ flex:1, height:4, background:'var(--bdr)', borderRadius:99, overflow:'hidden', minWidth:80, maxWidth:200 }}>
+                  <div style={{ height:'100%', width:`${portScanProgress}%`, background:'var(--blu)', borderRadius:99, transition:'width 0.3s' }}/>
+                </div>
+              )}
+              {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
+                <span style={{ fontSize:11, color:'var(--dim)' }}>sorted by ₹ invested · click to refresh</span>
+              )}
+              {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
+                <button onClick={() => { setPortScanLoaded(false); loadPortfolioScan(); }}
+                  style={{ height:26, padding:'0 10px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
+                    background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)' }}>
+                  ↺ Refresh
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Zone KPIs */}
-          {!mlLoading && mlSignals.length > 0 && (
+          {!(portMode === 'portfolio' ? portScanLoading : mlLoading) && activeSignals.length > 0 && (
             <div className="g4" style={{ display:'grid', gap:12, marginBottom:18 }}>
               {[
                 { label:'Strong Momentum', cnt:buyCnt,        grad:'linear-gradient(135deg,rgba(0,212,160,0.13),rgba(0,212,160,0.03))',  bdr:'rgba(0,212,160,0.30)',  color:'var(--grn)' },
@@ -1102,13 +1212,13 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {mlLoading && (
+          {(portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : mlLoading) && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {[1,2,3,4].map(i => <div key={i} style={{ height:88, borderRadius:14, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', animation:'pulse 1.5s infinite', opacity:0.7 }}/>)}
             </div>
           )}
 
-          {!mlLoading && mlError && (
+          {portMode === 'ml' && !mlLoading && mlError && (
             <div style={{ background:'rgba(255,184,0,0.08)', border:'1px solid rgba(255,184,0,0.25)', borderRadius:14, padding:'20px 24px' }}>
               <div style={{ fontWeight:700, marginBottom:6 }}>⚠️ ML Signals unavailable</div>
               <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.6 }}>
@@ -1117,7 +1227,7 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {!mlLoading && shown.length > 0 && (
+          {!(portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : mlLoading) && shown.length > 0 && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {shown.map(sig => {
                 const inPortfolio = portfolioSymbols.includes(sig.symbol.replace('.NS',''));
