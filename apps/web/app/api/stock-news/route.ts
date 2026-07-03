@@ -1,117 +1,89 @@
-// Stock-specific news via Yahoo Finance — all sources title-filtered.
-// Yahoo v2 tags generic sector news to NSE tickers, so we filter everything by keyword.
+// Stock news via Google News RSS — aggregates ET, MoneyControl, Business Today, LiveMint.
+// Replaced Yahoo Finance v2 which returned generic world/sector news for NSE tickers.
 export const runtime = 'edge';
 
-interface YNewsItem {
-  title?: string; link?: string; url?: string;
-  providerPublishTime?: number; publisher?: string; type?: string;
-}
-interface SearchNewsItem {
-  title?: string; link?: string;
-  providerPublishTime?: number; publisher?: string; type?: string;
-}
 type MappedItem = { title: string; url: string; publisher: string; published_at: string | null };
+
+function parseRSS(xml: string): MappedItem[] {
+  const items: MappedItem[] = [];
+  const blocks = xml.matchAll(/<item>([\s\S]*?)<\/item>/g);
+  for (const m of blocks) {
+    const b = m[1];
+    const title = (
+      b.match(/<title><!\[CDATA\[([\s\S]*?)\]\]><\/title>/)?.[1] ??
+      b.match(/<title>([\s\S]*?)<\/title>/)?.[1] ?? ''
+    ).replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
+
+    // Google News wraps actual URL in <link> before closing tag OR after <title>
+    const link = (
+      b.match(/<link>(https?:\/\/[^\s<]+)<\/link>/)?.[1] ??
+      b.match(/<link\/>([^<]+)/)?.[1] ??
+      b.match(/<guid[^>]*>(https?:\/\/[^\s<]+)<\/guid>/)?.[1] ?? ''
+    ).trim();
+
+    const pubDate = b.match(/<pubDate>([\s\S]*?)<\/pubDate>/)?.[1]?.trim() ?? '';
+    const source  = (
+      b.match(/<source[^>]*>([\s\S]*?)<\/source>/)?.[1] ??
+      b.match(/<dc:creator>([\s\S]*?)<\/dc:creator>/)?.[1] ?? 'News'
+    ).replace(/<!\[CDATA\[(.*?)\]\]>/g, '$1').trim();
+
+    if (!title || !link) continue;
+    items.push({
+      title,
+      url: link,
+      publisher: source,
+      published_at: pubDate ? new Date(pubDate).toISOString() : null,
+    });
+  }
+  return items;
+}
+
+function dedupe(arr: MappedItem[]): MappedItem[] {
+  const seen = new Set<string>();
+  return arr.filter(n => { if (seen.has(n.title)) return false; seen.add(n.title); return true; });
+}
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const symbol   = (searchParams.get('symbol') ?? '').trim().toUpperCase();
-  const exchange = (searchParams.get('exchange') ?? 'NSE').toUpperCase();
   const name     = (searchParams.get('name') ?? '').trim();
   if (!symbol) return Response.json({ error: 'symbol required' }, { status: 400 });
 
-  const ySym = exchange === 'NSE' ? `${symbol}.NS` : exchange === 'BSE' ? `${symbol}.BO` : symbol;
+  // Build clean company name — strip legal suffixes for better search
+  const cleanName = name
+    ? name.replace(/\s+(ltd\.?|limited|india|industries|enterprises?|corp\.?|inc\.?|pvt\.?|solutions?|technologies?|services?)$/gi, '').trim()
+    : symbol;
 
-  // Build relevance keywords: symbol + first two meaningful words of company name
-  const shortSym = symbol.replace(/\.(NS|BO)$/i, '');
-  const trimmedName = name
-    ? name.replace(/\s+(ltd\.?|limited|india|industries|enterprises?|corp\.?|inc\.?|pvt\.?)$/gi, '').trim()
-    : '';
-  const nameWords = trimmedName ? trimmedName.split(/\s+/).slice(0, 2) : [];
-  const kws = [...new Set([shortSym, ...nameWords].map(k => k.toLowerCase()))].filter(k => k.length > 2);
+  // Two Google News RSS queries — run in parallel
+  // Q1: exact company name + NSE context
+  // Q2: symbol fallback in case name query is too narrow
+  const q1 = `"${cleanName}" NSE stock`;
+  const q2 = `${cleanName} NSE India share`;
 
-  function relevant(title: string): boolean {
-    if (kws.length === 0) return true;
-    const t = title.toLowerCase();
-    return kws.some(k => t.includes(k));
-  }
+  const gnUrl = (q: string) =>
+    `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-IN&gl=IN&ceid=IN:en`;
 
   const hdrs = {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    Accept: 'application/json',
+    'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+    Accept: 'application/rss+xml, application/xml, text/xml',
   };
 
-  function mapItem(n: { title?: string; link?: string; url?: string; providerPublishTime?: number; publisher?: string }): MappedItem {
-    return {
-      title:        n.title ?? '',
-      url:          n.link ?? n.url ?? '',
-      publisher:    n.publisher ?? '',
-      published_at: n.providerPublishTime
-        ? new Date(n.providerPublishTime * 1000).toISOString()
-        : null,
-    };
-  }
-
-  function dedupe(arr: MappedItem[]): MappedItem[] {
-    const seen = new Set<string>();
-    return arr.filter(n => { if (seen.has(n.url)) return false; seen.add(n.url); return true; });
-  }
-
   try {
-    const filtered: MappedItem[] = [];
-    const unfiltered: MappedItem[] = []; // last resort pool
+    const [r1, r2] = await Promise.allSettled([
+      fetch(gnUrl(q1), { headers: hdrs, signal: AbortSignal.timeout(6000) }).then(r => r.ok ? r.text() : ''),
+      fetch(gnUrl(q2), { headers: hdrs, signal: AbortSignal.timeout(6000) }).then(r => r.ok ? r.text() : ''),
+    ]);
 
-    // Source 1: v2 ticker-tagged — title filter required (returns generic sector news otherwise)
-    try {
-      const v2res = await fetch(
-        `https://query1.finance.yahoo.com/v2/finance/news?symbol=${encodeURIComponent(ySym)}&count=12`,
-        { headers: hdrs, signal: AbortSignal.timeout(5000) }
-      );
-      if (v2res.ok) {
-        const data = await v2res.json() as { items?: { result?: YNewsItem[] } };
-        for (const n of (data?.items?.result ?? [])) {
-          if (!n.title || !(n.link ?? n.url)) continue;
-          const item = mapItem(n);
-          unfiltered.push(item);
-          if (relevant(item.title)) filtered.push(item);
-        }
-      }
-    } catch { /* timeout ok */ }
+    const xml1 = r1.status === 'fulfilled' ? r1.value : '';
+    const xml2 = r2.status === 'fulfilled' ? r2.value : '';
 
-    // Source 2: company name search — always run to supplement v2
-    const searchQ = trimmedName || ySym;
-    try {
-      const sres = await fetch(
-        `https://query1.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(searchQ)}&lang=en-US&region=IN&quotesCount=1&newsCount=12&enableFuzzyQuery=false`,
-        { headers: hdrs, signal: AbortSignal.timeout(5000) }
-      );
-      if (sres.ok) {
-        const sdata = await sres.json() as { news?: SearchNewsItem[] };
-        for (const n of (sdata?.news ?? [])) {
-          if ((n.type !== 'STORY' && n.type) || !n.title || !n.link) continue;
-          const item = mapItem(n);
-          unfiltered.push(item);
-          if (relevant(item.title)) filtered.push(item);
-        }
-      }
-    } catch { /* timeout ok */ }
-
-    // Return title-filtered results sorted by recency
-    const news = dedupe(filtered)
+    const all = dedupe([...parseRSS(xml1), ...parseRSS(xml2)])
       .sort((a, b) => (b.published_at ?? '').localeCompare(a.published_at ?? ''))
       .slice(0, 6);
 
-    if (news.length >= 1) {
-      return Response.json({ symbol, news }, {
-        headers: { 'Cache-Control': 'public, max-age=900, stale-while-revalidate=1800' },
-      });
-    }
-
-    // Last resort: unfiltered — at least query was company-related, better than empty
-    const fallback = dedupe(unfiltered).slice(0, 5);
-    return Response.json({ symbol, news: fallback }, {
+    return Response.json({ symbol, news: all }, {
       headers: { 'Cache-Control': 'public, max-age=900, stale-while-revalidate=1800' },
     });
-
   } catch (e) {
     return Response.json({ symbol, news: [], error: String(e) });
   }
