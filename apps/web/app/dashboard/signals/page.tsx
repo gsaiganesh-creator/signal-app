@@ -994,7 +994,7 @@ export default function SignalsPage() {
   const holdCnt       = activeSignals.filter(s => scoreSig(s) === 'hold').length;
   const sellCnt       = activeSignals.filter(s => scoreSig(s) === 'sell').length;
   const FILTERS = [
-    { key:'all',        label:`All (${mlSignals.length})` },
+    { key:'all',        label:`All (${activeSignals.length})` },
     ...(hasPortfolio ? [{ key:'portfolio', label:`💼 My Portfolio (${portfolioCnt})` }] : []),
     { key:'buy',        label:`🟢 Strong (${buyCnt})` },
     { key:'accumulate', label:`📈 Building (${accumulateCnt})` },
