@@ -114,7 +114,7 @@ export default function AboutPage() {
                 ))}
               </div>
               <p style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.78, marginBottom: 20 }}>
-                Data Architect with 18 years in tech — most recently at <strong style={{ color: 'var(--txt)' }}>Qualcomm</strong>, where this partnership began. B.E. from <strong style={{ color: 'var(--txt)' }}>KITS Warangal</strong> (2007), Hyderabad. Investing in Indian equities since 2016. After a decade of watching Telegram tipsters charge ₹5,000/month for unverifiable calls, applied his AI/ML expertise to build SignalGenie&apos;s signal model from scratch. Leads product, design, and go-to-market.
+                Data Architect with 18 years in tech — most recently at <strong style={{ color: 'var(--txt)' }}>Qualcomm</strong>, where this partnership began. B.Tech from <strong style={{ color: 'var(--txt)' }}>KITS Warangal</strong> (2007), Hyderabad. Investing in Indian equities since 2016. After a decade of watching Telegram tipsters charge ₹5,000/month for unverifiable calls, applied his AI/ML expertise to build SignalGenie&apos;s signal model from scratch. Leads product, design, and go-to-market.
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                 <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 @signal_in</a>
