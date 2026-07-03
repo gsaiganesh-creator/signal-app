@@ -469,6 +469,46 @@ const COMPANY_NAME_NSE: Record<string, string> = {
   'BHARTI AIRTEL':                 'BHARTIARTL',
   'INDUS TOWERS':                  'INDUSTOWER',
   'VODAFONE IDEA':                 'IDEA',
+  // Additional DP-statement company names (CDSL/NSDL format uses full registered names)
+  'AAVAS FINANCIERS':              'AAVAS',
+  'APTUS VALUE HSG FIN':           'APTUS',
+  'APTUS VALUE':                   'APTUS',
+  'BIRLASOFT':                     'BSOFT',
+  'COMPUTER AGE MNGT':             'CAMS',
+  'COMPUTER AGE MANAGEMENT':       'CAMS',
+  'CYIENT':                        'CYIENT',
+  'ETERNAL':                       'ETERNAL',
+  'GENSOL ENGINEERING':            'GENSOL',
+  'GO DIGIT GENERAL INS':          'GODIGIT',
+  'GO DIGIT':                      'GODIGIT',
+  'IDFC FIRST':                    'IDFCFIRSTB',
+  'INDIAN ENERGY EXC':             'IEX',
+  'INTERGLOBE AVIATION':           'INDIGO',
+  'JIO FIN':                       'JIOFIN',
+  'JYOTI RESINS':                  'JYOTIRESN',
+  'KAJARIA CERAMICS':              'KAJARIACER',
+  'LEMON TREE HOTELS':             'LEMONTREE',
+  'LEMON TREE':                    'LEMONTREE',
+  'NARAYANA HRUDAYALAYA':          'NH',
+  'NIP IND ETF BANK BEES':         'BANKBEES',
+  'NIP IND ETF IT':                'ITBEES',
+  'NIP IND ETF NIFTY BEES':        'NIFTYBEES',
+  'NIPPON INDIA ETF NIFTY BEES':   'NIFTYBEES',
+  'NIPPON INDIA ETF BANK BEES':    'BANKBEES',
+  'NIVA BUPA HEALTH':              'NIVABUPA',
+  'PB FINTECH':                    'POLICYBZR',
+  'PG ELECTROPLAST':               'PGEL',
+  'PVR INOX':                      'PVRINOX',
+  'SBI CARDS':                     'SBICARD',
+  'SHAKTI PUMPS':                  'SHAKTIPUMP',
+  'STERLING AND WILSON':           'SWSOLAR',
+  'STRLNG & WIL':                  'SWSOLAR',
+  'TEJAS NETWORKS':                'TEJASNET',
+  'TITAGARH RAIL':                 'TITAGARH',
+  'UGRO CAPITAL':                  'UGROCAP',
+  'VARUN BEVERAGES':               'VBL',
+  'VISHNU PRAKASH':                'VPHL',
+  'ZEN TECHNOLOGIES':              'ZENTEC',
 };
 
 // Best-effort NSE ticker from full company name (fallback when ISIN not in table)
@@ -680,23 +720,33 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
       }
       return { result: [], debug: `${hdr} — 0 valid data rows` };
     }
-    // DP statement: has scrip name + qty but NO avg buy price (CDSL/NSDL custody report)
-    // Use CMP as avg_price placeholder — user prompted to edit
+    // DP statement: scrip names + qty cols, no avg price (CDSL/NSDL custody report)
     if (symIdx >= 0 && qtyIdx >= 0 && priceIdx < 0) {
+      const freeQtyIdx   = headers.findIndex(h => h === 'free quantity'   || h === 'free qty');
+      const pledgeQtyIdx = headers.findIndex(h => h === 'pledge quantity' || h === 'pledge qty' || h === 'pledged quantity');
+      const lockinQtyIdx = headers.findIndex(h => h === 'lock-in quantity'|| h === 'lock in quantity' || h === 'lock-in qty');
       const parsed = rows
         .slice(headerIdx + 1)
-        .filter(r => r.length > Math.max(symIdx, qtyIdx))
+        .filter(r => r.length > symIdx)           // only require scrip col
         .map(r => {
           const rawName = String(r[symIdx] ?? '').trim();
+          if (!rawName || rawName.length < 3) return null;
           const sym = cleanSymbol(rawName) || companyNameToTicker(rawName);
-          const qty = parseInt(String(r[qtyIdx] ?? '0').replace(/,/g, ''), 10);
-          if (!sym || sym.length < 2 || isNaN(qty) || qty <= 0) return null;
-          return { symbol: sym, qty, avg_price: 0, exchange: 'NSE' as Exchange };
+          if (!sym || sym.length < 2) return null;
+          const toQty = (idx: number) =>
+            idx >= 0 && idx < r.length ? parseFloat(String(r[idx] ?? '').replace(/,/g, '')) || 0 : 0;
+          let qty = toQty(qtyIdx);
+          // if total qty is 0, try summing free + pledge + lock-in
+          if (qty <= 0) qty = toQty(freeQtyIdx) + toQty(pledgeQtyIdx) + toQty(lockinQtyIdx);
+          if (qty <= 0) return null;
+          return { symbol: sym, qty: Math.round(qty), avg_price: 0, exchange: 'NSE' as Exchange };
         })
         .filter(Boolean) as ParsedRow[];
       if (parsed.length) {
         return { result: parsed, debug: `DP_FORMAT: ${parsed.length} holdings imported with avg price = 0 (not in DP statement). Enter your actual buy price for each holding.` };
       }
+      const hdr = `hdr@${headerIdx}:[${headers.slice(0,8).join('|')}] sym=${symIdx} qty=${qtyIdx} price=${priceIdx}`;
+      return { result: [], debug: `${hdr} — DP_FORMAT detected but all quantities are zero (account empty or historical statement)` };
     }
     const hdr = `hdr@${headerIdx}:[${headers.slice(0,8).join('|')}] sym=${symIdx} qty=${qtyIdx} price=${priceIdx}`;
     return { result: [], debug: `${hdr} — missing column` };
@@ -885,12 +935,13 @@ export default function PortfolioPage() {
 
   useEffect(() => { enrichHoldings(rawHoldings); setActiveFilter(null); }, [rawHoldings]);
 
-  // Cache summary for active portfolio once prices load (for the cross-portfolio summary row)
+  // Cache summary for active portfolio — use rawHoldings (Supabase-fresh, always for activeId)
+  // NOT enriched holdings: enriched state lags behind activeId switch and writes stale data
   useEffect(() => {
-    if (!activeId || holdings.length === 0) return;
-    const invested = holdings.reduce((s, h) => s + (h.avg_price >= 1 ? h.avg_price * h.qty : 0), 0);
-    setPortfolioTotals(prev => ({ ...prev, [activeId]: { holdings: holdings.length, invested } }));
-  }, [holdings, activeId]);
+    if (!activeId) return;
+    const invested = rawHoldings.reduce((s, h) => s + ((h.avg_price ?? 0) >= 1 ? h.avg_price * h.qty : 0), 0);
+    setPortfolioTotals(prev => ({ ...prev, [activeId]: { holdings: rawHoldings.length, invested } }));
+  }, [rawHoldings, activeId]);
 
   // Pre-fetch lightweight totals for ALL portfolios so summary shows immediately on load
   useEffect(() => {
