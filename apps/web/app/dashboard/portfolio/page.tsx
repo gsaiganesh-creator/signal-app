@@ -64,26 +64,33 @@ interface Holding extends RawHolding {
 type MLBucket = { label: string; key: MlClass; color: string; bg: string; border: string; desc: string };
 
 const BUCKET_META: Record<MlClass, MLBucket> = {
-  Momentum:   { key:'Momentum',   label:'🚀 Momentum',  color:'var(--grn)',  bg:'rgba(0,212,160,0.10)', border:'rgba(0,212,160,0.25)',  desc:'Strong trend — ride or add more' },
-  Swing:      { key:'Swing',      label:'🔄 Swing',     color:'var(--bluL)', bg:'rgba(23,64,245,0.10)', border:'rgba(23,64,245,0.25)',  desc:'Short-term opportunity — good entry' },
-  Accumulate: { key:'Accumulate', label:'📦 Accumulate',color:'var(--pur)',  bg:'rgba(139,92,246,0.10)',border:'rgba(139,92,246,0.25)', desc:'Oversold + quality — good to add SIPs' },
-  Hold:       { key:'Hold',       label:'🏛️ Hold',      color:'var(--txt)',  bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.1)', desc:'Long-term winner — hold, no action' },
-  Exit:       { key:'Exit',       label:'⚠️ Exit',      color:'var(--red)',  bg:'rgba(255,59,92,0.10)', border:'rgba(255,59,92,0.25)',  desc:'Sell signal — exit or trail SL' },
-  Dead:       { key:'Dead',       label:'💀 Dead',       color:'var(--dim)',  bg:'rgba(100,100,100,0.08)',border:'rgba(100,100,100,0.2)', desc:'Stuck in loss, no signal — review' },
-  Watch:      { key:'Watch',      label:'⏳ Watch',      color:'var(--ylw)',  bg:'rgba(255,184,0,0.08)', border:'rgba(255,184,0,0.2)',   desc:'Neutral zone — monitor before acting' },
+  Momentum:      { key:'Momentum',      label:'🚀 Trending',      color:'var(--grn)',  bg:'rgba(0,212,160,0.10)', border:'rgba(0,212,160,0.25)',  desc:'Strong upward momentum — technical scan result' },
+  Swing:         { key:'Swing',         label:'🔄 Pullback',      color:'var(--bluL)', bg:'rgba(23,64,245,0.10)', border:'rgba(23,64,245,0.25)',  desc:'Short-term pullback within uptrend — scan result' },
+  Consolidating: { key:'Consolidating', label:'📦 Consolidating', color:'var(--pur)',  bg:'rgba(139,92,246,0.10)',border:'rgba(139,92,246,0.25)', desc:'Price consolidating at support — technical pattern' },
+  Hold:          { key:'Hold',          label:'🏛️ Ranging',       color:'var(--txt)',  bg:'rgba(255,255,255,0.04)',border:'rgba(255,255,255,0.1)', desc:'Price ranging — no clear trend signal' },
+  Declining:     { key:'Declining',     label:'⚠️ Declining',     color:'var(--red)',  bg:'rgba(255,59,92,0.10)', border:'rgba(255,59,92,0.25)',  desc:'Bearish technical pattern — scan result' },
+  Stagnant:      { key:'Stagnant',      label:'💀 Stagnant',      color:'var(--dim)',  bg:'rgba(100,100,100,0.08)',border:'rgba(100,100,100,0.2)', desc:'No momentum, weak price action — review' },
+  Watch:         { key:'Watch',         label:'⏳ Watch',          color:'var(--ylw)',  bg:'rgba(255,184,0,0.08)', border:'rgba(255,184,0,0.2)',   desc:'Neutral — no clear technical signal' },
 };
 
 function classify(signal: string, rsi: number | null, plPct: number): MlClass {
   const r = rsi ?? 50;
   if (signal === 'STRONG_BUY') return 'Momentum';
-  if (signal === 'BUY' && r < 44) return 'Accumulate';
+  if (signal === 'BUY' && r < 44) return 'Consolidating';
   if (signal === 'BUY' && r <= 62) return 'Swing';
   if (signal === 'BUY') return 'Momentum';
-  if (signal === 'STRONG_SELL' || signal === 'SELL') return 'Exit';
-  if (r > 70 && plPct < 0) return 'Exit';
+  if (signal === 'STRONG_SELL' || signal === 'SELL') return 'Declining';
+  if (r > 70 && plPct < 0) return 'Declining';
   if (plPct > 15 && signal === 'HOLD') return 'Hold';
-  if (plPct < -15 && signal === 'HOLD') return 'Dead';
+  if (plPct < -15 && signal === 'HOLD') return 'Stagnant';
   return 'Watch';
+}
+
+function sigLabel(s?: string | null): string {
+  if (!s || s === 'HOLD') return 'Neutral';
+  if (s.includes('BUY')) return 'Bullish';
+  if (s.includes('SELL')) return 'Bearish';
+  return 'Neutral';
 }
 
 type ParsedRow = { symbol: string; qty: number; avg_price: number; exchange: Exchange; is_etf?: boolean; isin?: string };
@@ -1768,7 +1775,7 @@ export default function PortfolioPage() {
                     <span style={{ fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:5, whiteSpace:'nowrap',
                       background: h.signal?.includes('BUY') ? 'rgba(0,212,160,0.12)' : h.signal?.includes('SELL') ? 'rgba(255,59,92,0.12)' : 'rgba(255,184,0,0.12)',
                       color: h.signal?.includes('BUY') ? 'var(--grn)' : h.signal?.includes('SELL') ? 'var(--red)' : 'var(--ylw)' }}>
-                      {h.signal ?? 'HOLD'}
+                      {sigLabel(h.signal)}
                     </span>
                   )}
                 </td>
@@ -1787,7 +1794,7 @@ export default function PortfolioPage() {
               <TH label="CMP"       col="current_price" />
               <TH label="P&L ₹"     col="pl"            />
               <TH label="P&L %"     col="pl_pct"        />
-              <TH label="Signal"    col={null}          />
+              <TH label="Technical" col={null}          />
               <TH label=""          col={null}          />
             </tr>
           );

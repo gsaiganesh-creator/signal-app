@@ -1,5 +1,5 @@
 export type Plan = 'free' | 'starter' | 'pro' | 'elite' | 'admin';
-export type MlClass = 'Momentum' | 'Swing' | 'Accumulate' | 'Hold' | 'Exit' | 'Dead' | 'Watch';
+export type MlClass = 'Momentum' | 'Swing' | 'Consolidating' | 'Hold' | 'Declining' | 'Stagnant' | 'Watch';
 export type SignalType = 'BUY' | 'SELL' | 'HOLD';
 export type TradeStatus = 'open' | 'win' | 'sl' | 'hold';
 export type PaperTradeStatus = 'running' | 'completed' | 'stopped';
