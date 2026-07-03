@@ -40,7 +40,7 @@ export default function AboutPage() {
       <PublicNav />
 
       {/* HERO */}
-      <section style={{ padding: '88px 40px 56px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
+      <section className="ab-hero" style={{ padding: '88px 40px 56px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', top: -180, left: '50%', transform: 'translateX(-50%)', width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.12) 0%,transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 99, border: '1px solid rgba(23,64,245,0.3)', background: 'rgba(23,64,245,0.08)', fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--bluL)', marginBottom: 20 }}>Our Story</div>
@@ -55,10 +55,10 @@ export default function AboutPage() {
       </section>
 
       {/* BENTO GRID */}
-      <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 40px 80px' }}>
+      <div className="ab-outer" style={{ maxWidth: 1100, margin: '0 auto', padding: '0 40px 80px' }}>
 
         {/* ROW A — Mission (2/3) + vs-Telegram card (1/3) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div className="ab-row-a" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
           <div style={{ gridColumn: 'span 2', ...GLS, background: 'linear-gradient(145deg,rgba(23,64,245,0.16),rgba(139,92,246,0.08))', border: '1px solid rgba(23,64,245,0.30)', borderRadius: 20, padding: 36, position: 'relative', overflow: 'hidden', boxShadow: '0 8px 56px rgba(23,64,245,0.18), inset 0 1px 0 rgba(255,255,255,0.10)' }}>
             <div style={{ position: 'absolute', top: -80, right: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.16) 0%,transparent 65%)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
@@ -85,7 +85,7 @@ export default function AboutPage() {
         </div>
 
         {/* ROW B — 4 stat chips */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 14 }}>
+        <div className="ab-row-b" style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 14 }}>
           {STATS.map(s => (
             <div key={s.val} style={{ ...GLS, background: s.grad, border: `1px solid ${s.bdr}`, borderRadius: 16, padding: '22px 20px', boxShadow: `0 8px 40px ${s.glow}, inset 0 1px 0 rgba(255,255,255,0.11)` }}>
               <div style={{ fontSize: 'clamp(28px,4vw,42px)', fontWeight: 900, letterSpacing: -1.5, color: s.c, lineHeight: 1, marginBottom: 8 }}>{s.val}</div>
@@ -96,12 +96,12 @@ export default function AboutPage() {
         </div>
 
         {/* ROW C — Founders */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div className="ab-row-c" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
           <div style={{ ...GLS, background: 'linear-gradient(145deg,rgba(23,64,245,0.16),rgba(23,64,245,0.05))', border: '1px solid rgba(23,64,245,0.32)', borderRadius: 20, padding: 32, position: 'relative', overflow: 'hidden', boxShadow: '0 8px 48px rgba(23,64,245,0.20), inset 0 1px 0 rgba(255,255,255,0.10)' }}>
             <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.18) 0%,transparent 65%)' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--dim)', marginBottom: 16 }}>Co-Founder</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
+              <div className="ab-founder-row" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
                 <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--blu),var(--org))', flexShrink: 0, boxShadow: '0 4px 20px rgba(23,64,245,0.35)' }}>SG</div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.4, marginBottom: 3 }}>Sai Ganesh Gella</div>
@@ -128,7 +128,7 @@ export default function AboutPage() {
             <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,212,160,0.16) 0%,transparent 65%)' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--dim)', marginBottom: 16 }}>Co-Founder</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
+              <div className="ab-founder-row" style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
                 <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--grn),#00875A)', flexShrink: 0, boxShadow: '0 4px 20px rgba(0,212,160,0.30)' }}>SK</div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.4, marginBottom: 3 }}>Sai Kumar Bethala</div>
@@ -152,7 +152,7 @@ export default function AboutPage() {
         </div>
 
         {/* ROW D — Timeline (1/3) + Values 3×2 grid (2/3) */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 14, marginBottom: 14 }}>
+        <div className="ab-row-d" style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 14, marginBottom: 14 }}>
           <div style={{ ...GLS, background: 'linear-gradient(145deg,rgba(79,111,250,0.10),rgba(8,14,42,0.60))', border: '1px solid rgba(79,111,250,0.20)', borderRadius: 20, padding: 28, boxShadow: '0 8px 40px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--grn)', marginBottom: 6 }}>Origin Story</div>
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 22 }}>Why we built this</div>
@@ -174,7 +174,7 @@ export default function AboutPage() {
           <div>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--bluL)', marginBottom: 6 }}>Our Principles</div>
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 14 }}>What we stand for</div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+            <div className="ab-vals" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
               {VALUES.map(v => (
                 <div key={v.title} style={{ ...GLS, background: v.grad, border: `1px solid ${v.bdr}`, borderRadius: 14, padding: 18 }}>
                   <div style={{ fontSize: 22, marginBottom: 10 }}>{v.icon}</div>
@@ -187,7 +187,7 @@ export default function AboutPage() {
         </div>
 
         {/* ROW E — Contact */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 14 }}>
+        <div className="ab-row-e" style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 14 }}>
           {[
             { icon: '✉️', label: 'General enquiries',    val: 'hello@signalgenie.ai',        sub: 'Response within 24 hours',    href: 'mailto:hello@signalgenie.ai',        grad: 'linear-gradient(145deg,rgba(23,64,245,0.16),rgba(23,64,245,0.04))',    bdr: 'rgba(23,64,245,0.30)',   glow: 'rgba(23,64,245,0.18)',   color: 'var(--blu)' },
             { icon: '🛟', label: 'Customer support',     val: 'support@signalgenie.ai',      sub: 'Pro users: WhatsApp support', href: 'mailto:support@signalgenie.ai',      grad: 'linear-gradient(145deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))',    bdr: 'rgba(0,212,160,0.28)',   glow: 'rgba(0,212,160,0.16)',   color: 'var(--grn)' },
@@ -203,7 +203,7 @@ export default function AboutPage() {
         </div>
 
         {/* ROW F — CTA */}
-        <div style={{ ...GLS, background: 'linear-gradient(135deg,rgba(23,64,245,0.18),rgba(0,212,160,0.08))', border: '1px solid rgba(23,64,245,0.28)', borderRadius: 20, padding: '44px 48px', textAlign: 'center' as const, position: 'relative', overflow: 'hidden', boxShadow: '0 8px 60px rgba(23,64,245,0.22), inset 0 1px 0 rgba(255,255,255,0.10)' }}>
+        <div className="ab-cta" style={{ ...GLS, background: 'linear-gradient(135deg,rgba(23,64,245,0.18),rgba(0,212,160,0.08))', border: '1px solid rgba(23,64,245,0.28)', borderRadius: 20, padding: '44px 48px', textAlign: 'center' as const, position: 'relative', overflow: 'hidden', boxShadow: '0 8px 60px rgba(23,64,245,0.22), inset 0 1px 0 rgba(255,255,255,0.10)' }}>
           <div style={{ position: 'absolute', top: -100, left: '50%', transform: 'translateX(-50%)', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.10) 0%,transparent 65%)', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
             <h2 style={{ fontSize: 'clamp(22px,3vw,36px)', fontWeight: 900, letterSpacing: -1, marginBottom: 10 }}>Ready to trade smarter?</h2>
@@ -220,15 +220,23 @@ export default function AboutPage() {
       </div>
 
       <style>{`
+        /* ── About page responsive — tablet ≤900px ── */
         @media (max-width: 900px) {
-          .ab-row-a  > *:first-child { grid-column: span 1 !important; }
+          .ab-hero  { padding: 64px 20px 40px !important; }
+          .ab-outer { padding-left: 20px !important; padding-right: 20px !important; }
+          .ab-row-a > *:first-child { grid-column: span 1 !important; }
           .ab-row-a, .ab-row-c, .ab-row-d, .ab-row-e { grid-template-columns: 1fr !important; }
-          .ab-row-b  { grid-template-columns: repeat(2,1fr) !important; }
-          .ab-vals   { grid-template-columns: 1fr 1fr !important; }
+          .ab-row-b { grid-template-columns: repeat(2,1fr) !important; }
+          .ab-vals  { grid-template-columns: 1fr 1fr !important; }
         }
+        /* ── About page responsive — phone ≤480px ── */
         @media (max-width: 480px) {
-          .ab-row-b  { grid-template-columns: 1fr 1fr !important; }
-          .ab-vals   { grid-template-columns: 1fr !important; }
+          .ab-hero  { padding: 56px 16px 32px !important; }
+          .ab-outer { padding-left: 16px !important; padding-right: 16px !important; padding-bottom: 48px !important; }
+          .ab-row-b { grid-template-columns: 1fr 1fr !important; }
+          .ab-vals  { grid-template-columns: 1fr !important; }
+          .ab-cta   { padding: 32px 24px !important; }
+          .ab-founder-row { flex-direction: column !important; gap: 12px !important; }
         }
       `}</style>
 
