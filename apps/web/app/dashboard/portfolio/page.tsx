@@ -916,14 +916,14 @@ export default function PortfolioPage() {
           });
           clearTimeout(timer);
           if (!res.ok) return;
-          const q = await res.json() as { signal?: string; rsi?: number | null; current_price?: number | null; change_pct?: number | null };
-          const rawMlPrice = q.current_price ?? enriched[idx].current_price;
+          const q = await res.json() as { signal?: string; bias?: string; rsi?: number | null; current_price?: number | null; price?: number | null; change_pct?: number | null };
+          const rawMlPrice = q.current_price ?? q.price ?? enriched[idx].current_price;
           const cur = (rawMlPrice != null && h.avg_price >= 1)
             ? (rawMlPrice / h.avg_price > 50 || h.avg_price / rawMlPrice > 50 ? null : rawMlPrice)
             : rawMlPrice;
           const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : enriched[idx].pl;
           const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : enriched[idx].pl_pct ?? 0;
-          const signal = q.signal ?? 'HOLD';
+          const signal = q.signal ?? (q.bias === 'BULLISH' ? 'BUY' : q.bias === 'BEARISH' ? 'SELL' : 'HOLD');
           enriched[idx] = { ...enriched[idx], current_price: cur, change_pct: q.change_pct ?? enriched[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
         } catch { /* timeout or offline — keep Yahoo price, keep HOLD */ }
       }));
@@ -1039,13 +1039,13 @@ export default function PortfolioPage() {
             const r = await fetch(`/api/ml/signals/${h.symbol}${suffix}`, { signal: ctrl.signal });
             clearTimeout(t);
             if (!r.ok) return;
-            const q = await r.json() as { signal?: string; rsi?: number | null; current_price?: number | null; change_pct?: number | null };
-            const rawMlP = q.current_price ?? ec[idx].current_price;
+            const q = await r.json() as { signal?: string; bias?: string; rsi?: number | null; current_price?: number | null; price?: number | null; change_pct?: number | null };
+            const rawMlP = q.current_price ?? q.price ?? ec[idx].current_price;
             const cur = (rawMlP != null && h.avg_price >= 1)
               ? (rawMlP / h.avg_price > 50 || h.avg_price / rawMlP > 50 ? null : rawMlP) : rawMlP;
             const pl     = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : ec[idx].pl;
             const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (ec[idx].pl_pct ?? 0);
-            const signal = q.signal ?? 'HOLD';
+            const signal = q.signal ?? (q.bias === 'BULLISH' ? 'BUY' : q.bias === 'BEARISH' ? 'SELL' : 'HOLD');
             ec[idx] = { ...ec[idx], current_price: cur, change_pct: q.change_pct ?? ec[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
           } catch { /* timeout — keep Yahoo price */ }
         }));
