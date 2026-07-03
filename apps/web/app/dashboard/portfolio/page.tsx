@@ -524,6 +524,8 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   const EXCH_NAMES  = ['exchange','market','exch','nse/bse'];
 
   // Scan ALL rows — Mstocks/Mirae Asset has 30+ rows of registration text before headers
+  // SELL_COLS: column names present in Realised/trade sections but NOT in current-holdings sections
+  const SELL_COLS = ['avg sell price','sell price','sell value','realised p&l','realised p&l %','avg sell rate'];
   let headerIdx = -1;
   let headers: string[] = [];
   let tradeHistoryDetected = false;
@@ -541,6 +543,17 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   }
   if (tradeHistoryDetected && headerIdx < 0) {
     return { result: [], debug: 'TRADE_HISTORY: This is a Trade History file, not Holdings. Download the Holdings/Portfolio export from Mstocks/Mirae Asset app instead.' };
+  }
+  // Groww puts Realised + Unrealised as two sections on one sheet, each with own header row.
+  // If first header is a Realised section (has sell columns), scan forward for the Unrealised
+  // holdings header — that is the one with current positions (closing price, no sell columns).
+  if (headerIdx >= 0 && headers.some(h => SELL_COLS.includes(h))) {
+    for (let j = headerIdx + 1; j < rows.length; j++) {
+      const r = rows[j].map(c => (c ?? '').toString().toLowerCase().replace(/[\s\u00a0]+/g, ' ').trim());
+      if (r.some(h => SYM_NAMES.includes(h)) && !r.some(h => SELL_COLS.includes(h))) {
+        headerIdx = j; headers = r; break;
+      }
+    }
   }
 
   // Column finder: exact match then fuzzy (strips periods/spaces)
