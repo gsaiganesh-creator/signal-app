@@ -1,19 +1,28 @@
 import { PublicNav } from '@/components/PublicNav';
 
+const GLS: React.CSSProperties = {
+  backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+  boxShadow: '0 8px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.09)',
+};
+
+const grd = (g: string): React.CSSProperties => ({
+  background: g, WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent', backgroundClip: 'text',
+});
+
 const STATS = [
-  { val: '71.4%', color: 'var(--grn)',  label: 'Signal accuracy', sub: '90-day public track record' },
-  { val: '142',   color: 'var(--txt)',  label: 'Signals fired',   sub: 'All posted publicly before outcome' },
-  { val: '15',    color: 'var(--blu)',  label: 'ML parameters',   sub: 'RSI · MACD · EMA · FII/DII · more' },
-  { val: '₹199',  color: 'var(--org)', label: 'Starting price',  sub: 'Per month — 10× cheaper than Telegram' },
+  { val: '71.4%', label: 'Signal accuracy', sub: '90-day public track record',   grad: 'linear-gradient(145deg,rgba(0,212,160,0.28),rgba(0,130,95,0.10))',    bdr: 'rgba(0,212,160,0.45)',   glow: 'rgba(0,212,160,0.22)',   c: 'var(--grn)' },
+  { val: '142',   label: 'Signals fired',   sub: 'All posted publicly on Twitter', grad: 'linear-gradient(145deg,rgba(79,111,250,0.30),rgba(23,64,245,0.10))',  bdr: 'rgba(79,111,250,0.48)',  glow: 'rgba(23,64,245,0.22)',   c: 'var(--txt)' },
+  { val: '15',    label: 'ML parameters',   sub: 'RSI · MACD · EMA · FII/DII',   grad: 'linear-gradient(145deg,rgba(139,92,246,0.28),rgba(100,40,200,0.10))', bdr: 'rgba(139,92,246,0.48)',  glow: 'rgba(139,92,246,0.22)',  c: 'var(--blu)' },
+  { val: '₹199',  label: 'Starting price',  sub: 'Per month — 10× cheaper',       grad: 'linear-gradient(145deg,rgba(255,92,26,0.28),rgba(200,50,0,0.10))',    bdr: 'rgba(255,92,26,0.45)',   glow: 'rgba(255,92,26,0.20)',   c: 'var(--org)' },
 ];
 
 const VALUES = [
-  { icon: '📊', title: 'Radical transparency',  color: 'var(--blu)',  desc: "Every signal posted before outcome. Every week's accuracy published — wins and losses." },
-  { icon: '🤖', title: 'Data over opinion',     color: 'var(--pur)',  desc: 'No human calls. No gut feel. Every signal from the same quantitative model, every time.' },
-  { icon: '💰', title: 'Accessible pricing',    color: 'var(--grn)',  desc: "₹199/month. Not ₹5,000. Great tools shouldn't be reserved for deep-pocket traders." },
-  { icon: '🛡️', title: 'User-first data',       color: 'var(--bluL)', desc: 'Your portfolio belongs to you. Consent-based, revokable anytime. We never see broker passwords.' },
-  { icon: '⚠️', title: 'Honest about limits',   color: 'var(--ylw)',  desc: 'We are NOT SEBI registered — and we say it everywhere. No ML model is perfect. Trade carefully.' },
-  { icon: '🇮🇳', title: 'Built for India first', color: 'var(--org)',  desc: 'Delivery %, FII/DII, NSE circuit limits — India-specific data global algo platforms ignore.' },
+  { icon: '📊', title: 'Radical transparency',  color: 'var(--blu)',  grad: 'linear-gradient(145deg,rgba(23,64,245,0.14),rgba(23,64,245,0.04))',    bdr: 'rgba(23,64,245,0.28)',   desc: "Every signal posted before outcome. Every week's accuracy published — wins and losses." },
+  { icon: '🤖', title: 'Data over opinion',     color: 'var(--pur)',  grad: 'linear-gradient(145deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))',  bdr: 'rgba(139,92,246,0.28)',  desc: 'No human calls. No gut feel. Every signal from the same quantitative model, every time.' },
+  { icon: '💰', title: 'Accessible pricing',    color: 'var(--grn)',  grad: 'linear-gradient(145deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))',    bdr: 'rgba(0,212,160,0.28)',   desc: "₹199/month. Not ₹5,000. Great tools shouldn't be reserved for deep-pocket traders." },
+  { icon: '🛡️', title: 'User-first data',       color: 'var(--bluL)', grad: 'linear-gradient(145deg,rgba(79,111,250,0.12),rgba(79,111,250,0.04))',  bdr: 'rgba(79,111,250,0.25)',  desc: 'Your portfolio belongs to you. Consent-based, revokable anytime. We never see broker passwords.' },
+  { icon: '⚠️', title: 'Honest about limits',   color: 'var(--ylw)',  grad: 'linear-gradient(145deg,rgba(255,184,0,0.14),rgba(255,184,0,0.04))',    bdr: 'rgba(255,184,0,0.28)',   desc: 'We are NOT SEBI registered — and we say it everywhere. No ML model is perfect. Trade carefully.' },
+  { icon: '🇮🇳', title: 'Built for India first', color: 'var(--org)',  grad: 'linear-gradient(145deg,rgba(255,92,26,0.14),rgba(255,92,26,0.04))',    bdr: 'rgba(255,92,26,0.28)',   desc: 'Delivery %, FII/DII, NSE circuit limits — India-specific data global algo platforms ignore.' },
 ];
 
 const TIMELINE = [
@@ -32,11 +41,14 @@ export default function AboutPage() {
 
       {/* HERO */}
       <section style={{ padding: '88px 40px 56px', textAlign: 'center', position: 'relative', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', top: -180, left: '50%', transform: 'translateX(-50%)', width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.10) 0%,transparent 65%)', pointerEvents: 'none' }} />
+        <div style={{ position: 'absolute', top: -180, left: '50%', transform: 'translateX(-50%)', width: 800, height: 800, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.12) 0%,transparent 65%)', pointerEvents: 'none' }} />
         <div style={{ position: 'relative', zIndex: 1, maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '5px 14px', borderRadius: 99, border: '1px solid rgba(23,64,245,0.3)', background: 'rgba(23,64,245,0.08)', fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--bluL)', marginBottom: 20 }}>Our Story</div>
           <h1 style={{ fontSize: 'clamp(36px,6vw,72px)', fontWeight: 900, letterSpacing: -2.5, lineHeight: 1.0, marginBottom: 22 }}>
-            Built by a trader,<br /><span style={{ color: 'var(--blu)' }}>for traders</span> who are <span style={{ color: 'var(--org)' }}>done overpaying.</span>
+            Built by a trader,<br />
+            <span style={grd('linear-gradient(135deg,#4F6FFA,#8B5CF6)')}>for traders</span>
+            {' '}who are{' '}
+            <span style={grd('linear-gradient(135deg,#FF5C1A,#FFB800)')}>done overpaying.</span>
           </h1>
           <p style={{ fontSize: 17, color: 'var(--dim)', lineHeight: 1.7, maxWidth: 580, margin: '0 auto' }}>SignalGenie started as a frustration — paying ₹5,000/month to a Telegram channel with zero accountability, zero accuracy data, and zero personalisation. So we built the alternative.</p>
         </div>
@@ -47,34 +59,36 @@ export default function AboutPage() {
 
         {/* ROW A — Mission (2/3) + vs-Telegram card (1/3) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 14, marginBottom: 14 }}>
-          <div style={{ gridColumn: 'span 2', background: 'linear-gradient(145deg,rgba(23,64,245,0.08),rgba(139,92,246,0.04))', border: '1px solid rgba(23,64,245,0.22)', borderRadius: 20, padding: 36, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: -80, right: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.12) 0%,transparent 65%)', pointerEvents: 'none' }} />
+          <div style={{ gridColumn: 'span 2', ...GLS, background: 'linear-gradient(145deg,rgba(23,64,245,0.16),rgba(139,92,246,0.08))', border: '1px solid rgba(23,64,245,0.30)', borderRadius: 20, padding: 36, position: 'relative', overflow: 'hidden', boxShadow: '0 8px 56px rgba(23,64,245,0.18), inset 0 1px 0 rgba(255,255,255,0.10)' }}>
+            <div style={{ position: 'absolute', top: -80, right: -80, width: 280, height: 280, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.16) 0%,transparent 65%)', pointerEvents: 'none' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase' as const, color: 'var(--org)', marginBottom: 14 }}>Our Mission</div>
               <div style={{ fontSize: 'clamp(17px,2vw,24px)', fontWeight: 800, letterSpacing: -0.5, lineHeight: 1.35, marginBottom: 18 }}>
-                &ldquo;Give every Indian trader access to <span style={{ color: 'var(--blu)' }}>institutional-grade</span> ML signals — transparently, affordably, and accountably.&rdquo;
+                &ldquo;Give every Indian trader access to{' '}
+                <span style={grd('linear-gradient(135deg,#4F6FFA,#8B5CF6)')}>institutional-grade</span>
+                {' '}ML signals — transparently, affordably, and accountably.&rdquo;
               </div>
               <p style={{ color: 'var(--dim)', fontSize: 14, lineHeight: 1.75, marginBottom: 14 }}>The Indian stock market has 10 crore+ retail investors. Most pay for Telegram calls with no track record. SignalGenie changes that — ML-powered signals, public accuracy stats, prices starting at ₹199/month.</p>
               <p style={{ color: 'var(--dim)', fontSize: 14, lineHeight: 1.75 }}>Every signal SignalGenie fires is posted publicly on Twitter. Every week&apos;s accuracy is published. Nothing hidden, nothing deleted. That&apos;s the standard we hold ourselves to.</p>
             </div>
           </div>
 
-          <div style={{ background: 'linear-gradient(145deg,rgba(255,92,26,0.08),rgba(255,184,0,0.04))', border: '1px solid rgba(255,92,26,0.22)', borderRadius: 20, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+          <div style={{ ...GLS, background: 'linear-gradient(145deg,rgba(255,92,26,0.22),rgba(255,184,0,0.08))', border: '1px solid rgba(255,92,26,0.40)', borderRadius: 20, padding: 28, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', boxShadow: '0 8px 56px rgba(255,92,26,0.22), inset 0 1px 0 rgba(255,255,255,0.12)' }}>
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2.5px', textTransform: 'uppercase' as const, color: 'var(--org)', marginBottom: 14 }}>vs Telegram</div>
-              <div style={{ fontSize: 'clamp(52px,6vw,72px)', fontWeight: 900, letterSpacing: -3, color: 'var(--org)', lineHeight: 1, marginBottom: 8 }}>10×</div>
+              <div style={{ fontSize: 'clamp(52px,6vw,72px)', fontWeight: 900, letterSpacing: -3, lineHeight: 1, marginBottom: 8, ...grd('linear-gradient(135deg,#FF5C1A,#FFB800)') }}>10×</div>
               <div style={{ fontSize: 17, fontWeight: 800, marginBottom: 10 }}>Cheaper</div>
               <div style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.65 }}>Premium Telegram channels charge ₹2,000–₹8,000/month. SignalGenie starts at ₹199 — with a published track record they&apos;ll never show you.</div>
             </div>
-            <a href="/dashboard/upgrade" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 40, borderRadius: 10, background: 'rgba(255,92,26,0.12)', border: '1px solid rgba(255,92,26,0.3)', color: 'var(--org)', fontSize: 13, fontWeight: 700, textDecoration: 'none', marginTop: 20 }}>See Pricing →</a>
+            <a href="/dashboard/upgrade" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', height: 40, borderRadius: 10, background: 'rgba(255,92,26,0.15)', border: '1px solid rgba(255,92,26,0.35)', color: 'var(--org)', fontSize: 13, fontWeight: 700, textDecoration: 'none', marginTop: 20 }}>See Pricing →</a>
           </div>
         </div>
 
         {/* ROW B — 4 stat chips */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 14 }}>
           {STATS.map(s => (
-            <div key={s.val} style={{ background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 16, padding: '22px 20px' }}>
-              <div style={{ fontSize: 'clamp(28px,4vw,42px)', fontWeight: 900, letterSpacing: -1.5, color: s.color, lineHeight: 1, marginBottom: 8 }}>{s.val}</div>
+            <div key={s.val} style={{ ...GLS, background: s.grad, border: `1px solid ${s.bdr}`, borderRadius: 16, padding: '22px 20px', boxShadow: `0 8px 40px ${s.glow}, inset 0 1px 0 rgba(255,255,255,0.11)` }}>
+              <div style={{ fontSize: 'clamp(28px,4vw,42px)', fontWeight: 900, letterSpacing: -1.5, color: s.c, lineHeight: 1, marginBottom: 8 }}>{s.val}</div>
               <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>{s.label}</div>
               <div style={{ fontSize: 12, color: 'var(--dim2)' }}>{s.sub}</div>
             </div>
@@ -83,12 +97,12 @@ export default function AboutPage() {
 
         {/* ROW C — Founders */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
-          <div style={{ background: 'linear-gradient(145deg,rgba(23,64,245,0.07),var(--surf))', border: '1px solid rgba(23,64,245,0.28)', borderRadius: 20, padding: 32, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.14) 0%,transparent 65%)' }} />
+          <div style={{ ...GLS, background: 'linear-gradient(145deg,rgba(23,64,245,0.16),rgba(23,64,245,0.05))', border: '1px solid rgba(23,64,245,0.32)', borderRadius: 20, padding: 32, position: 'relative', overflow: 'hidden', boxShadow: '0 8px 48px rgba(23,64,245,0.20), inset 0 1px 0 rgba(255,255,255,0.10)' }}>
+            <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.18) 0%,transparent 65%)' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--dim)', marginBottom: 16 }}>Co-Founder</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
-                <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--blu),var(--org))', flexShrink: 0 }}>SG</div>
+                <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--blu),var(--org))', flexShrink: 0, boxShadow: '0 4px 20px rgba(23,64,245,0.35)' }}>SG</div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.4, marginBottom: 3 }}>Sai Ganesh Gella</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bluL)' }}>CEO &amp; Product</div>
@@ -101,17 +115,17 @@ export default function AboutPage() {
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                 <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 @signal_in</a>
-                <a href="mailto:saiganesh@getsignal.in" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: 'rgba(23,64,245,0.1)', border: '1px solid rgba(23,64,245,0.25)', color: 'var(--bluL)' }}>✉ Email</a>
+                <a href="mailto:saiganesh@signalgenie.ai" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: 'rgba(23,64,245,0.1)', border: '1px solid rgba(23,64,245,0.25)', color: 'var(--bluL)' }}>✉ Email</a>
               </div>
             </div>
           </div>
 
-          <div style={{ background: 'linear-gradient(145deg,rgba(0,212,160,0.06),var(--surf))', border: '1px solid rgba(0,212,160,0.24)', borderRadius: 20, padding: 32, position: 'relative', overflow: 'hidden' }}>
-            <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,212,160,0.12) 0%,transparent 65%)' }} />
+          <div style={{ ...GLS, background: 'linear-gradient(145deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))', border: '1px solid rgba(0,212,160,0.30)', borderRadius: 20, padding: 32, position: 'relative', overflow: 'hidden', boxShadow: '0 8px 48px rgba(0,212,160,0.18), inset 0 1px 0 rgba(255,255,255,0.10)' }}>
+            <div style={{ position: 'absolute', top: -60, right: -60, width: 220, height: 220, borderRadius: '50%', background: 'radial-gradient(circle,rgba(0,212,160,0.16) 0%,transparent 65%)' }} />
             <div style={{ position: 'relative', zIndex: 1 }}>
               <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--dim)', marginBottom: 16 }}>Co-Founder</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 18 }}>
-                <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--grn),#00875A)', flexShrink: 0 }}>SK</div>
+                <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--grn),#00875A)', flexShrink: 0, boxShadow: '0 4px 20px rgba(0,212,160,0.30)' }}>SK</div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.4, marginBottom: 3 }}>Sai Kumar Bethala</div>
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--grn)' }}>CTO &amp; Engineering</div>
@@ -124,7 +138,7 @@ export default function AboutPage() {
               </div>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                 <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 Twitter</a>
-                <a href="mailto:saikumar@getsignal.in" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: 'rgba(0,212,160,0.1)', border: '1px solid rgba(0,212,160,0.25)', color: 'var(--grn)' }}>✉ Email</a>
+                <a href="mailto:saikumar@signalgenie.ai" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: 'rgba(0,212,160,0.1)', border: '1px solid rgba(0,212,160,0.25)', color: 'var(--grn)' }}>✉ Email</a>
               </div>
             </div>
           </div>
@@ -132,7 +146,7 @@ export default function AboutPage() {
 
         {/* ROW D — Timeline (1/3) + Values 3×2 grid (2/3) */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: 14, marginBottom: 14 }}>
-          <div style={{ background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 20, padding: 28 }}>
+          <div style={{ ...GLS, background: 'linear-gradient(145deg,rgba(79,111,250,0.10),rgba(8,14,42,0.60))', border: '1px solid rgba(79,111,250,0.20)', borderRadius: 20, padding: 28, boxShadow: '0 8px 40px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.08)' }}>
             <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase' as const, color: 'var(--grn)', marginBottom: 6 }}>Origin Story</div>
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 22 }}>Why we built this</div>
             {TIMELINE.map((item, i) => (
@@ -155,7 +169,7 @@ export default function AboutPage() {
             <div style={{ fontSize: 22, fontWeight: 900, letterSpacing: -0.5, marginBottom: 14 }}>What we stand for</div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
               {VALUES.map(v => (
-                <div key={v.title} style={{ background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 14, padding: 18 }}>
+                <div key={v.title} style={{ ...GLS, background: v.grad, border: `1px solid ${v.bdr}`, borderRadius: 14, padding: 18 }}>
                   <div style={{ fontSize: 22, marginBottom: 10 }}>{v.icon}</div>
                   <div style={{ fontSize: 13, fontWeight: 800, marginBottom: 6, color: v.color }}>{v.title}</div>
                   <div style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.65 }}>{v.desc}</div>
@@ -168,11 +182,11 @@ export default function AboutPage() {
         {/* ROW E — Contact */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 14, marginBottom: 14 }}>
           {[
-            { icon: '✉️', label: 'General enquiries',    val: 'hello@getsignal.in',        sub: 'Response within 24 hours',    href: 'mailto:hello@getsignal.in',        color: 'var(--blu)', accent: 'rgba(23,64,245,0.08)',   bdr: 'rgba(23,64,245,0.2)' },
-            { icon: '🛟', label: 'Customer support',     val: 'support@getsignal.in',      sub: 'Pro users: WhatsApp support', href: 'mailto:support@getsignal.in',      color: 'var(--grn)', accent: 'rgba(0,212,160,0.07)',   bdr: 'rgba(0,212,160,0.2)' },
-            { icon: '🤝', label: 'Partnerships & press', val: 'partnerships@getsignal.in', sub: 'Broker integrations, media',  href: 'mailto:partnerships@getsignal.in', color: 'var(--pur)', accent: 'rgba(139,92,246,0.07)', bdr: 'rgba(139,92,246,0.2)' },
+            { icon: '✉️', label: 'General enquiries',    val: 'hello@signalgenie.ai',        sub: 'Response within 24 hours',    href: 'mailto:hello@signalgenie.ai',        grad: 'linear-gradient(145deg,rgba(23,64,245,0.16),rgba(23,64,245,0.04))',    bdr: 'rgba(23,64,245,0.30)',   glow: 'rgba(23,64,245,0.18)',   color: 'var(--blu)' },
+            { icon: '🛟', label: 'Customer support',     val: 'support@signalgenie.ai',      sub: 'Pro users: WhatsApp support', href: 'mailto:support@signalgenie.ai',      grad: 'linear-gradient(145deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))',    bdr: 'rgba(0,212,160,0.28)',   glow: 'rgba(0,212,160,0.16)',   color: 'var(--grn)' },
+            { icon: '🤝', label: 'Partnerships & press', val: 'partnerships@signalgenie.ai', sub: 'Broker integrations, media',  href: 'mailto:partnerships@signalgenie.ai', grad: 'linear-gradient(145deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))',  bdr: 'rgba(139,92,246,0.28)',  glow: 'rgba(139,92,246,0.16)',  color: 'var(--pur)' },
           ].map(c => (
-            <div key={c.label} style={{ background: c.accent, border: `1px solid ${c.bdr}`, borderRadius: 16, padding: '24px 20px', textAlign: 'center' as const }}>
+            <div key={c.label} style={{ ...GLS, background: c.grad, border: `1px solid ${c.bdr}`, borderRadius: 16, padding: '24px 20px', textAlign: 'center' as const, boxShadow: `0 8px 40px ${c.glow}, inset 0 1px 0 rgba(255,255,255,0.09)` }}>
               <div style={{ fontSize: 28, marginBottom: 12 }}>{c.icon}</div>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', textTransform: 'uppercase' as const, letterSpacing: 1, marginBottom: 8 }}>{c.label}</div>
               <a href={c.href} style={{ fontSize: 14, fontWeight: 700, color: c.color, textDecoration: 'none' }}>{c.val}</a>
@@ -182,8 +196,8 @@ export default function AboutPage() {
         </div>
 
         {/* ROW F — CTA */}
-        <div style={{ background: 'linear-gradient(135deg,rgba(23,64,245,0.10),rgba(0,212,160,0.05))', border: '1px solid rgba(23,64,245,0.22)', borderRadius: 20, padding: '44px 48px', textAlign: 'center' as const, position: 'relative', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', top: -100, left: '50%', transform: 'translateX(-50%)', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.08) 0%,transparent 65%)', pointerEvents: 'none' }} />
+        <div style={{ ...GLS, background: 'linear-gradient(135deg,rgba(23,64,245,0.18),rgba(0,212,160,0.08))', border: '1px solid rgba(23,64,245,0.28)', borderRadius: 20, padding: '44px 48px', textAlign: 'center' as const, position: 'relative', overflow: 'hidden', boxShadow: '0 8px 60px rgba(23,64,245,0.22), inset 0 1px 0 rgba(255,255,255,0.10)' }}>
+          <div style={{ position: 'absolute', top: -100, left: '50%', transform: 'translateX(-50%)', width: 500, height: 500, borderRadius: '50%', background: 'radial-gradient(circle,rgba(23,64,245,0.10) 0%,transparent 65%)', pointerEvents: 'none' }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
             <h2 style={{ fontSize: 'clamp(22px,3vw,36px)', fontWeight: 900, letterSpacing: -1, marginBottom: 10 }}>Ready to trade smarter?</h2>
             <p style={{ fontSize: 15, color: 'var(--dim)', marginBottom: 28, maxWidth: 460, marginLeft: 'auto', marginRight: 'auto' }}>Join traders who use data and accountability over expensive, unverified Telegram calls.</p>
