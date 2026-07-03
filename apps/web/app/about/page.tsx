@@ -11,7 +11,7 @@ const grd = (g: string): React.CSSProperties => ({
 
 const STATS = [
   { val: '71.4%', label: 'Signal accuracy', sub: '90-day public track record',    grad: 'linear-gradient(145deg,rgba(0,212,160,0.28),rgba(0,130,95,0.10))',    bdr: 'rgba(0,212,160,0.45)',   glow: 'rgba(0,212,160,0.22)',   c: 'var(--grn)' },
-  { val: '36+',   label: 'Yrs combined exp',sub: 'Qualcomm · Amazon · NSE/BSE',   grad: 'linear-gradient(145deg,rgba(79,111,250,0.30),rgba(23,64,245,0.10))',  bdr: 'rgba(79,111,250,0.48)',  glow: 'rgba(23,64,245,0.22)',   c: 'var(--txt)' },
+  { val: '36+',   label: 'Yrs combined exp',sub: 'Data Architects · Qualcomm · Amazon', grad: 'linear-gradient(145deg,rgba(79,111,250,0.30),rgba(23,64,245,0.10))',  bdr: 'rgba(79,111,250,0.48)',  glow: 'rgba(23,64,245,0.22)',   c: 'var(--txt)' },
   { val: '15',    label: 'ML parameters',   sub: 'RSI · MACD · EMA · FII/DII',   grad: 'linear-gradient(145deg,rgba(139,92,246,0.28),rgba(100,40,200,0.10))', bdr: 'rgba(139,92,246,0.48)',  glow: 'rgba(139,92,246,0.22)',  c: 'var(--blu)' },
   { val: '₹199',  label: 'Starting price',  sub: 'Per month — 10× cheaper',       grad: 'linear-gradient(145deg,rgba(255,92,26,0.28),rgba(200,50,0,0.10))',    bdr: 'rgba(255,92,26,0.45)',   glow: 'rgba(255,92,26,0.20)',   c: 'var(--org)' },
 ];
@@ -26,7 +26,7 @@ const VALUES = [
 ];
 
 const TIMELINE = [
-  { dot: 'var(--dim)',  date: '2023 — The frustration',          title: '₹54,000/yr on Telegram calls',       desc: '6 months · 52% accuracy · zero published track record. Started building own ML model on weekends.' },
+  { dot: 'var(--dim)',  date: '2016 — Started investing',         title: 'Two Data Architects enter the market', desc: 'Both started building equity portfolios from Hyderabad. A decade of markets — bull runs, COVID crash, SEBI crackdowns, Telegram tipsters — lived through all of it.' },
   { dot: 'var(--org)',  date: 'Jan 2024 — First model',          title: 'Random Forest v1 — 61% accuracy',    desc: 'Trained on 3Y NSE data · 8 indicators · First signal posted publicly on Twitter.' },
   { dot: 'var(--blu)',  date: 'Jul 2024 — v2 model',             title: 'Added Delivery % · FII/DII flow',    desc: 'Accuracy improved to 68%. First DMs asking "how do I get your signals?"' },
   { dot: 'var(--grn)',  date: 'Mar 2025 — v3 model',             title: '71.4% accuracy · 15 parameters',    desc: 'Added sentiment, sector momentum. Backtested 5 years. Decided to build a proper product.' },
@@ -50,7 +50,7 @@ export default function AboutPage() {
             {' '}who are{' '}
             <span style={grd('linear-gradient(135deg,#FF5C1A,#FFB800)')}>done overpaying.</span>
           </h1>
-          <p style={{ fontSize: 17, color: 'var(--dim)', lineHeight: 1.7, maxWidth: 640, margin: '0 auto' }}>Two engineers with 18 years each in tech — Qualcomm and Amazon — who were also tired retail investors. Paid too much for Telegram signals with no track record. Built the ML model they wished existed, then turned it into a platform.</p>
+          <p style={{ fontSize: 17, color: 'var(--dim)', lineHeight: 1.7, maxWidth: 680, margin: '0 auto' }}>Two Data Architects from Hyderabad — 18 years each in AI & ML, Qualcomm and Amazon — who&apos;ve been investing in Indian equities since 2016. Paid too much for Telegram calls with no track record. Built the ML model they wished existed, then turned it into a platform.</p>
         </div>
       </section>
 
@@ -105,16 +105,16 @@ export default function AboutPage() {
                 <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--blu),var(--org))', flexShrink: 0, boxShadow: '0 4px 20px rgba(23,64,245,0.35)' }}>SG</div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.4, marginBottom: 3 }}>Sai Ganesh Gella</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bluL)' }}>CEO &amp; Product</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bluL)' }}>Co-Founder · Data Architect · Product</div>
                 </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 7, marginBottom: 16 }}>
-                {[['Qualcomm Alum','rgba(255,92,26,0.12)','var(--org)','rgba(255,92,26,0.28)'],['NSE/BSE Trader','rgba(0,212,160,0.10)','var(--grn)','rgba(0,212,160,0.25)'],['18 Yrs in Tech','rgba(23,64,245,0.10)','var(--bluL)','rgba(23,64,245,0.25)']].map(([tag,bg,color,bdr]) => (
+                {[['Data Architect','rgba(255,92,26,0.12)','var(--org)','rgba(255,92,26,0.28)'],['AI & ML','rgba(139,92,246,0.12)','var(--pur)','rgba(139,92,246,0.28)'],['Investor since 2016','rgba(0,212,160,0.10)','var(--grn)','rgba(0,212,160,0.25)']].map(([tag,bg,color,bdr]) => (
                   <span key={tag} style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: bg, color, border: `1px solid ${bdr}` }}>{tag}</span>
                 ))}
               </div>
               <p style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.78, marginBottom: 20 }}>
-                18 years in tech, most recently at <strong style={{ color: 'var(--txt)' }}>Qualcomm</strong> — building at the intersection of hardware and software. An NSE/BSE investor who got tired of paying ₹4,500/month for Telegram signals with zero track record. Built the first ML model for his own trades, then turned it into SignalGenie. Leads product, design, and go-to-market.
+                Data Architect with 18 years in tech — most recently at <strong style={{ color: 'var(--txt)' }}>Qualcomm</strong>, where this partnership began. A Hyderabad native who started investing in Indian equities in 2016. After 10 years of watching Telegram tipsters charge ₹5,000/month for unverifiable calls, applied his AI/ML expertise to build SignalGenie&apos;s signal model from scratch. Leads product, design, and go-to-market.
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                 <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 @signal_in</a>
@@ -131,16 +131,16 @@ export default function AboutPage() {
                 <div style={{ width: 72, height: 72, borderRadius: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 900, color: '#fff', background: 'linear-gradient(135deg,var(--grn),#00875A)', flexShrink: 0, boxShadow: '0 4px 20px rgba(0,212,160,0.30)' }}>SK</div>
                 <div>
                   <div style={{ fontSize: 20, fontWeight: 900, letterSpacing: -0.4, marginBottom: 3 }}>Sai Kumar Bethala</div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--grn)' }}>CTO &amp; Engineering</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--grn)' }}>Co-Founder · Data Architect · Engineering</div>
                 </div>
               </div>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 7, marginBottom: 16 }}>
-                {[['Amazon Engineer','rgba(255,184,0,0.14)','var(--ylw)','rgba(255,184,0,0.30)'],['US & India Markets','rgba(0,212,160,0.10)','var(--grn)','rgba(0,212,160,0.25)'],['18 Yrs in Tech','rgba(139,92,246,0.10)','var(--pur)','rgba(139,92,246,0.25)']].map(([tag,bg,color,bdr]) => (
+                {[['Data Architect','rgba(255,184,0,0.14)','var(--ylw)','rgba(255,184,0,0.30)'],['AI & ML','rgba(139,92,246,0.12)','var(--pur)','rgba(139,92,246,0.28)'],['Investor since 2016','rgba(0,212,160,0.10)','var(--grn)','rgba(0,212,160,0.25)']].map(([tag,bg,color,bdr]) => (
                   <span key={tag} style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: bg, color, border: `1px solid ${bdr}` }}>{tag}</span>
                 ))}
               </div>
               <p style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.78, marginBottom: 20 }}>
-                MS in CS (2009, US), 18 years engineering large-scale distributed systems — currently at <strong style={{ color: 'var(--txt)' }}>Amazon</strong>. Brings the engineering rigour of running systems at global scale to every line of SignalGenie&apos;s backend. Invests in both US and Indian markets. Leads infrastructure, data pipelines, and platform architecture.
+                Data Architect with 18 years in tech — from Qualcomm (where the friendship was forged) to currently at <strong style={{ color: 'var(--txt)' }}>Amazon</strong>. MS in CS (2009, US). A Hyderabad native based in the US, investing in both Indian and US markets since 2016. Brings AI/ML and large-scale data engineering expertise to SignalGenie&apos;s backend. Leads ML infrastructure, data pipelines, and platform architecture.
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                 <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 Twitter</a>
