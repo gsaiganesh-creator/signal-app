@@ -10,8 +10,8 @@ const grd = (g: string): React.CSSProperties => ({
 });
 
 const STATS = [
-  { val: '71.4%', label: 'Signal accuracy', sub: '90-day public track record',   grad: 'linear-gradient(145deg,rgba(0,212,160,0.28),rgba(0,130,95,0.10))',    bdr: 'rgba(0,212,160,0.45)',   glow: 'rgba(0,212,160,0.22)',   c: 'var(--grn)' },
-  { val: '142',   label: 'Signals fired',   sub: 'All posted publicly on Twitter', grad: 'linear-gradient(145deg,rgba(79,111,250,0.30),rgba(23,64,245,0.10))',  bdr: 'rgba(79,111,250,0.48)',  glow: 'rgba(23,64,245,0.22)',   c: 'var(--txt)' },
+  { val: '71.4%', label: 'Signal accuracy', sub: '90-day public track record',    grad: 'linear-gradient(145deg,rgba(0,212,160,0.28),rgba(0,130,95,0.10))',    bdr: 'rgba(0,212,160,0.45)',   glow: 'rgba(0,212,160,0.22)',   c: 'var(--grn)' },
+  { val: '36+',   label: 'Yrs combined exp',sub: 'Qualcomm · Amazon · NSE/BSE',   grad: 'linear-gradient(145deg,rgba(79,111,250,0.30),rgba(23,64,245,0.10))',  bdr: 'rgba(79,111,250,0.48)',  glow: 'rgba(23,64,245,0.22)',   c: 'var(--txt)' },
   { val: '15',    label: 'ML parameters',   sub: 'RSI · MACD · EMA · FII/DII',   grad: 'linear-gradient(145deg,rgba(139,92,246,0.28),rgba(100,40,200,0.10))', bdr: 'rgba(139,92,246,0.48)',  glow: 'rgba(139,92,246,0.22)',  c: 'var(--blu)' },
   { val: '₹199',  label: 'Starting price',  sub: 'Per month — 10× cheaper',       grad: 'linear-gradient(145deg,rgba(255,92,26,0.28),rgba(200,50,0,0.10))',    bdr: 'rgba(255,92,26,0.45)',   glow: 'rgba(255,92,26,0.20)',   c: 'var(--org)' },
 ];
@@ -50,7 +50,7 @@ export default function AboutPage() {
             {' '}who are{' '}
             <span style={grd('linear-gradient(135deg,#FF5C1A,#FFB800)')}>done overpaying.</span>
           </h1>
-          <p style={{ fontSize: 17, color: 'var(--dim)', lineHeight: 1.7, maxWidth: 580, margin: '0 auto' }}>SignalGenie started as a frustration — paying ₹5,000/month to a Telegram channel with zero accountability, zero accuracy data, and zero personalisation. So we built the alternative.</p>
+          <p style={{ fontSize: 17, color: 'var(--dim)', lineHeight: 1.7, maxWidth: 640, margin: '0 auto' }}>Two engineers with 18 years each in tech — Qualcomm and Amazon — who were also tired retail investors. Paid too much for Telegram signals with no track record. Built the ML model they wished existed, then turned it into a platform.</p>
         </div>
       </section>
 
@@ -108,11 +108,14 @@ export default function AboutPage() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--bluL)' }}>CEO &amp; Product</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 7, marginBottom: 18 }}>
-                {[['Product & Strategy','rgba(23,64,245,0.1)','var(--bluL)','rgba(23,64,245,0.25)'],['NSE/BSE Trading','rgba(0,212,160,0.1)','var(--grn)','rgba(0,212,160,0.25)'],['ML Signals','rgba(255,92,26,0.1)','var(--org)','rgba(255,92,26,0.25)']].map(([tag,bg,color,bdr]) => (
+              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 7, marginBottom: 16 }}>
+                {[['Qualcomm Alum','rgba(255,92,26,0.12)','var(--org)','rgba(255,92,26,0.28)'],['NSE/BSE Trader','rgba(0,212,160,0.10)','var(--grn)','rgba(0,212,160,0.25)'],['18 Yrs in Tech','rgba(23,64,245,0.10)','var(--bluL)','rgba(23,64,245,0.25)']].map(([tag,bg,color,bdr]) => (
                   <span key={tag} style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: bg, color, border: `1px solid ${bdr}` }}>{tag}</span>
                 ))}
               </div>
+              <p style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.78, marginBottom: 20 }}>
+                18 years in tech, most recently at <strong style={{ color: 'var(--txt)' }}>Qualcomm</strong> — building at the intersection of hardware and software. An NSE/BSE investor who got tired of paying ₹4,500/month for Telegram signals with zero track record. Built the first ML model for his own trades, then turned it into SignalGenie. Leads product, design, and go-to-market.
+              </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                 <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 @signal_in</a>
                 <a href="mailto:saiganesh@signalgenie.ai" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: 'rgba(23,64,245,0.1)', border: '1px solid rgba(23,64,245,0.25)', color: 'var(--bluL)' }}>✉ Email</a>
@@ -131,11 +134,14 @@ export default function AboutPage() {
                   <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--grn)' }}>CTO &amp; Engineering</div>
                 </div>
               </div>
-              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 7, marginBottom: 18 }}>
-                {[['Engineering','rgba(0,212,160,0.1)','var(--grn)','rgba(0,212,160,0.25)'],['Backend & API','rgba(139,92,246,0.1)','var(--pur)','rgba(139,92,246,0.25)'],['Infrastructure','rgba(23,64,245,0.1)','var(--bluL)','rgba(23,64,245,0.25)']].map(([tag,bg,color,bdr]) => (
+              <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 7, marginBottom: 16 }}>
+                {[['Amazon Engineer','rgba(255,184,0,0.14)','var(--ylw)','rgba(255,184,0,0.30)'],['US & India Markets','rgba(0,212,160,0.10)','var(--grn)','rgba(0,212,160,0.25)'],['18 Yrs in Tech','rgba(139,92,246,0.10)','var(--pur)','rgba(139,92,246,0.25)']].map(([tag,bg,color,bdr]) => (
                   <span key={tag} style={{ fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 5, background: bg, color, border: `1px solid ${bdr}` }}>{tag}</span>
                 ))}
               </div>
+              <p style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.78, marginBottom: 20 }}>
+                MS in CS (2009, US), 18 years engineering large-scale distributed systems — currently at <strong style={{ color: 'var(--txt)' }}>Amazon</strong>. Brings the engineering rigour of running systems at global scale to every line of SignalGenie&apos;s backend. Invests in both US and Indian markets. Leads infrastructure, data pipelines, and platform architecture.
+              </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' as const }}>
                 <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: '#000', border: '1px solid #333', color: '#fff' }}>𝕏 Twitter</a>
                 <a href="mailto:saikumar@signalgenie.ai" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, height: 34, padding: '0 14px', borderRadius: 8, fontSize: 12, fontWeight: 700, textDecoration: 'none', background: 'rgba(0,212,160,0.1)', border: '1px solid rgba(0,212,160,0.25)', color: 'var(--grn)' }}>✉ Email</a>
@@ -206,7 +212,7 @@ export default function AboutPage() {
               <a href="/track-record" style={{ display: 'inline-flex', alignItems: 'center', height: 50, padding: '0 26px', borderRadius: 13, background: 'transparent', border: '1px solid var(--bdr)', color: 'var(--txt)', fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>View Track Record</a>
               <a href="https://twitter.com/signal_in" target="_blank" rel="noopener noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 7, height: 50, padding: '0 22px', borderRadius: 13, background: '#000', border: '1px solid #333', color: '#fff', fontSize: 14, fontWeight: 700, textDecoration: 'none' }}>𝕏 @signal_in</a>
             </div>
-            <div style={{ fontSize: 11, color: 'var(--dim2)' }}>Built by Sai Ganesh Gella &amp; Sai Kumar Bethala &nbsp;·&nbsp; ⚠️ NOT SEBI registered · Not financial advice · Trade at your own risk</div>
+            <div style={{ fontSize: 11, color: 'var(--dim2)' }}>Built by <strong style={{ color: 'var(--dim)' }}>Sai Ganesh (ex-Qualcomm)</strong> &amp; <strong style={{ color: 'var(--dim)' }}>Sai Kumar Bethala (Amazon)</strong> &nbsp;·&nbsp; ⚠️ NOT SEBI registered · Not financial advice · Trade at your own risk</div>
           </div>
         </div>
 
