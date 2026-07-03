@@ -3,8 +3,8 @@ import { PublicNav } from '@/components/PublicNav';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-  title: 'Risk Disclosure | SIGNAL',
-  description: 'Important risk disclosures for SIGNAL — algorithmic scan results, not SEBI-registered investment advice. Read before using the platform.',
+  title: 'Risk Disclosure | SignalGenie',
+  description: 'Important risk disclosures for SignalGenie — algorithmic scan results, not SEBI-registered investment advice. Read before using the platform.',
   alternates: { canonical: '/risk-disclosure' },
 };
 
@@ -28,7 +28,7 @@ export default function RiskDisclosurePage() {
           </div>
           <h1 style={{ fontSize: 'clamp(28px,5vw,42px)', fontWeight: 900, letterSpacing: -1, lineHeight: 1.1, marginBottom: 16 }}>Risk Disclosure</h1>
           <p style={{ fontSize: 15, color: 'var(--dim)', lineHeight: 1.7 }}>
-            Please read this disclosure carefully before using SIGNAL. By accessing or using this platform, you acknowledge that you have read, understood, and agreed to the terms described below.
+            Please read this disclosure carefully before using SignalGenie. By accessing or using this platform, you acknowledge that you have read, understood, and agreed to the terms described below.
           </p>
           <p style={{ fontSize: 12, color: 'var(--dim2)', marginTop: 10 }}>Last updated: June 2026</p>
         </div>
@@ -36,13 +36,13 @@ export default function RiskDisclosurePage() {
         <div style={{ background: 'rgba(255,59,92,0.07)', border: '1px solid rgba(255,59,92,0.25)', borderRadius: 14, padding: '18px 22px', marginBottom: 40 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--red)', marginBottom: 6 }}>SEBI Registration Status</div>
           <div style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.7 }}>
-            SIGNAL is <strong style={{ color: 'var(--txt)' }}>NOT registered</strong> with the Securities and Exchange Board of India (SEBI) as a Research Analyst, Investment Adviser, or any other regulated intermediary. Nothing on this platform constitutes investment advice, stock recommendations, or financial planning services under SEBI regulations.
+            SignalGenie is <strong style={{ color: 'var(--txt)' }}>NOT registered</strong> with the Securities and Exchange Board of India (SEBI) as a Research Analyst, Investment Adviser, or any other regulated intermediary. Nothing on this platform constitutes investment advice, stock recommendations, or financial planning services under SEBI regulations.
           </div>
         </div>
 
         <Section title="1. Nature of Content">
           <p style={{ marginBottom: 10 }}>
-            All content on SIGNAL — including scan results, technical indicator outputs, momentum scores, and algorithmic screener results — is <strong style={{ color: 'var(--txt)' }}>educational and informational only</strong>. It is not a solicitation, recommendation, endorsement, or offer to buy or sell any security.
+            All content on SignalGenie — including scan results, technical indicator outputs, momentum scores, and algorithmic screener results — is <strong style={{ color: 'var(--txt)' }}>educational and informational only</strong>. It is not a solicitation, recommendation, endorsement, or offer to buy or sell any security.
           </p>
           <p>
             Our algorithmic scans compute technical indicators (RSI, EMA, MACD, Supertrend, Bollinger Bands, etc.) from publicly available market data. The output represents mathematical calculations — not investment advice. The platform labels these as "scan results" and "technical screener outputs," not "buy/sell recommendations."
@@ -51,16 +51,16 @@ export default function RiskDisclosurePage() {
 
         <Section title="2. No Guarantee of Returns">
           <p style={{ marginBottom: 10 }}>
-            Past scan accuracy statistics displayed on SIGNAL (Track Record page) do <strong style={{ color: 'var(--txt)' }}>not guarantee future returns</strong>. Stock markets are inherently unpredictable. Historical scan performance under specific market conditions may not repeat.
+            Past scan accuracy statistics displayed on SignalGenie (Track Record page) do <strong style={{ color: 'var(--txt)' }}>not guarantee future returns</strong>. Stock markets are inherently unpredictable. Historical scan performance under specific market conditions may not repeat.
           </p>
           <p>
-            You may lose part or all of the capital you invest in any stock. Never invest money you cannot afford to lose. SIGNAL is a study and screening tool — not a portfolio manager or asset management service.
+            You may lose part or all of the capital you invest in any stock. Never invest money you cannot afford to lose. SignalGenie is a study and screening tool — not a portfolio manager or asset management service.
           </p>
         </Section>
 
         <Section title="3. Do Your Own Research (DYOR)">
           <p style={{ marginBottom: 10 }}>
-            Any stock identified by SIGNAL&apos;s technical screener requires <strong style={{ color: 'var(--txt)' }}>independent verification</strong> before you act on it. Consider:
+            Any stock identified by SignalGenie&apos;s technical screener requires <strong style={{ color: 'var(--txt)' }}>independent verification</strong> before you act on it. Consider:
           </p>
           <ul style={{ paddingLeft: 20, display: 'flex', flexDirection: 'column', gap: 6 }}>
             <li>Company fundamentals, earnings, and balance sheet</li>
@@ -72,46 +72,46 @@ export default function RiskDisclosurePage() {
 
         <Section title="4. Paper Trading">
           <p>
-            The Paper Trading feature on SIGNAL simulates trades using virtual capital. <strong style={{ color: 'var(--txt)' }}>No real orders are placed</strong> on any exchange or broker. Paper trading results do not reflect real market execution, slippage, brokerage fees, or liquidity constraints. Paper trading performance is not indicative of live trading performance.
+            The Paper Trading feature on SignalGenie simulates trades using virtual capital. <strong style={{ color: 'var(--txt)' }}>No real orders are placed</strong> on any exchange or broker. Paper trading results do not reflect real market execution, slippage, brokerage fees, or liquidity constraints. Paper trading performance is not indicative of live trading performance.
           </p>
         </Section>
 
         <Section title="5. US Securities Disclosure">
           <p>
-            SIGNAL is <strong style={{ color: 'var(--txt)' }}>not registered</strong> with the U.S. Securities and Exchange Commission (SEC) or FINRA. Content related to US-listed stocks is provided for informational and educational purposes only and does not constitute advice regulated under US securities law.
+            SignalGenie is <strong style={{ color: 'var(--txt)' }}>not registered</strong> with the U.S. Securities and Exchange Commission (SEC) or FINRA. Content related to US-listed stocks is provided for informational and educational purposes only and does not constitute advice regulated under US securities law.
           </p>
         </Section>
 
         <Section title="6. Forex & Commodity Data">
           <p>
-            Forex and commodity prices shown on SIGNAL are sourced from publicly available data (Yahoo Finance futures) and are <strong style={{ color: 'var(--txt)' }}>not official MCX, NSE, or exchange-certified prices</strong>. MCX commodity prices are proxied from COMEX/NYMEX futures with currency conversion — not official MCX settlement prices. Use these for reference only. Do not use them as the basis for derivative or commodity trades.
+            Forex and commodity prices shown on SignalGenie are sourced from publicly available data (Yahoo Finance futures) and are <strong style={{ color: 'var(--txt)' }}>not official MCX, NSE, or exchange-certified prices</strong>. MCX commodity prices are proxied from COMEX/NYMEX futures with currency conversion — not official MCX settlement prices. Use these for reference only. Do not use them as the basis for derivative or commodity trades.
           </p>
         </Section>
 
         <Section title="7. Data Accuracy & Delays">
           <p style={{ marginBottom: 10 }}>
-            Market data displayed on SIGNAL may be delayed by up to 15 minutes. SIGNAL makes no representation as to the accuracy, completeness, or timeliness of any data. Data is sourced from third-party providers (Yahoo Finance, NSE, Supabase) and may occasionally be incorrect, stale, or unavailable.
+            Market data displayed on SignalGenie may be delayed by up to 15 minutes. SignalGenie makes no representation as to the accuracy, completeness, or timeliness of any data. Data is sourced from third-party providers (Yahoo Finance, NSE, Supabase) and may occasionally be incorrect, stale, or unavailable.
           </p>
           <p>
-            SIGNAL is not liable for trading losses, missed opportunities, or any other damages arising from reliance on data displayed on the platform.
+            SignalGenie is not liable for trading losses, missed opportunities, or any other damages arising from reliance on data displayed on the platform.
           </p>
         </Section>
 
         <Section title="8. Limitation of Liability">
           <p>
-            To the maximum extent permitted by applicable law, SIGNAL, its founders, employees, and affiliates shall not be liable for any direct, indirect, incidental, special, or consequential damages arising from your use of this platform or reliance on any content, scan result, or data displayed herein. Your use of SIGNAL is entirely at your own risk.
+            To the maximum extent permitted by applicable law, SignalGenie, its founders, employees, and affiliates shall not be liable for any direct, indirect, incidental, special, or consequential damages arising from your use of this platform or reliance on any content, scan result, or data displayed herein. Your use of SignalGenie is entirely at your own risk.
           </p>
         </Section>
 
         <Section title="9. Regulatory Compliance (User Obligation)">
           <p>
-            You are responsible for ensuring that your use of SIGNAL complies with all applicable laws and regulations in your jurisdiction, including SEBI regulations, RBI guidelines for forex, and any local tax obligations on securities transactions (STCG/LTCG).
+            You are responsible for ensuring that your use of SignalGenie complies with all applicable laws and regulations in your jurisdiction, including SEBI regulations, RBI guidelines for forex, and any local tax obligations on securities transactions (STCG/LTCG).
           </p>
         </Section>
 
         <Section title="10. Changes to This Disclosure">
           <p>
-            SIGNAL reserves the right to update this disclosure at any time. Continued use of the platform after changes constitutes acceptance of the revised terms.
+            SignalGenie reserves the right to update this disclosure at any time. Continued use of the platform after changes constitutes acceptance of the revised terms.
           </p>
         </Section>
 
@@ -128,7 +128,7 @@ export default function RiskDisclosurePage() {
         <div style={{ marginTop: 32, textAlign: 'center' }}>
           <Link href="/dashboard" style={{ fontSize: 13, color: 'var(--dim)', textDecoration: 'none' }}>← Back to Dashboard</Link>
           <span style={{ color: 'var(--dim2)', margin: '0 12px' }}>·</span>
-          <Link href="/about" style={{ fontSize: 13, color: 'var(--dim)', textDecoration: 'none' }}>About SIGNAL</Link>
+          <Link href="/about" style={{ fontSize: 13, color: 'var(--dim)', textDecoration: 'none' }}>About SignalGenie</Link>
         </div>
       </main>
     </div>

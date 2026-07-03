@@ -253,7 +253,7 @@ function CompareContent() {
           {/* CTA */}
           <div style={{ background: 'linear-gradient(135deg,rgba(23,64,245,0.10),rgba(139,92,246,0.06))', border: '1px solid rgba(23,64,245,0.25)', borderRadius: 14, padding: '20px', textAlign: 'center', marginBottom: 20 }}>
             <div style={{ fontSize: 15, fontWeight: 900, marginBottom: 6 }}>Track {symA} & {symB} in your portfolio</div>
-            <div style={{ fontSize: 12, color: 'var(--dim)', marginBottom: 14 }}>Set price alerts, monitor P&L, get ML signals — free on SIGNAL</div>
+            <div style={{ fontSize: 12, color: 'var(--dim)', marginBottom: 14 }}>Set price alerts, monitor P&L, get ML signals — free on SignalGenie</div>
             <Link href="/sign-in" style={{ height: 40, padding: '0 24px', borderRadius: 9, background: 'var(--blu)', color: '#fff', fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>
               Get started free →
             </Link>
@@ -289,7 +289,7 @@ export default function ComparePage() {
       <nav style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 24px', borderBottom:'1px solid var(--bdr)', background:'var(--bg)', position:'sticky', top:0, zIndex:50 }}>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
           <div style={{ width:28, height:28, borderRadius:7, background:'var(--blu)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:900, color:'#fff' }}>S</div>
-          <span style={{ fontSize:15, fontWeight:900, color:'var(--txt)', letterSpacing:-0.3 }}>SIGNAL</span>
+          <span style={{ fontSize:15, fontWeight:900, color:'var(--txt)', letterSpacing:-0.3 }}>SignalGenie</span>
         </Link>
         <div style={{ display:'flex', gap:8 }}>
           <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:700, textDecoration:'none', display:'flex', alignItems:'center' }}>Sign in</Link>

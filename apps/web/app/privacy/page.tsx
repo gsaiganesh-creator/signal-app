@@ -18,7 +18,7 @@ export default function PrivacyPage() {
         <p style={{ color: 'var(--dim)', fontSize: 13, marginBottom: 40 }}>Last updated: {updated}</p>
 
         <Section title="1. Who We Are">
-          <p>SIGNAL (signalgenie.ai) is a portfolio tracking and technical analysis tool built for Indian retail investors. It is operated by Sai Ganesh and Sai Kumar Bethala (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;). Contact us at <a href="mailto:gsaiganesh@gmail.com" style={{ color: 'var(--bluL)' }}>gsaiganesh@gmail.com</a>.</p>
+          <p>SignalGenie (signalgenie.ai) is a portfolio tracking and technical analysis tool built for Indian retail investors. It is operated by Sai Ganesh and Sai Kumar Bethala (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;). Contact us at <a href="mailto:gsaiganesh@gmail.com" style={{ color: 'var(--bluL)' }}>gsaiganesh@gmail.com</a>.</p>
         </Section>
 
         <Section title="2. What Data We Collect">
@@ -104,7 +104,7 @@ export default function PrivacyPage() {
         </Section>
 
         <Section title="10. Children">
-          <p>SIGNAL is not directed at anyone under 18. We do not knowingly collect data from minors. If you believe a minor has created an account, contact us for immediate deletion.</p>
+          <p>SignalGenie is not directed at anyone under 18. We do not knowingly collect data from minors. If you believe a minor has created an account, contact us for immediate deletion.</p>
         </Section>
 
         <Section title="11. Changes to This Policy">
@@ -118,7 +118,7 @@ export default function PrivacyPage() {
         </Section>
 
         <div style={{ marginTop: 48, padding: '16px 20px', background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 12, fontSize: 12, color: 'var(--dim)', lineHeight: 1.6 }}>
-          ⚠️ <strong style={{ color: 'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · SIGNAL is an informational tool only. Nothing on this platform constitutes investment advice, a recommendation to buy or sell securities, or financial planning guidance. Past scan accuracy does not guarantee future results. Invest at your own risk. DYOR.
+          ⚠️ <strong style={{ color: 'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · SignalGenie is an informational tool only. Nothing on this platform constitutes investment advice, a recommendation to buy or sell securities, or financial planning guidance. Past scan accuracy does not guarantee future results. Invest at your own risk. DYOR.
         </div>
       </div>
     </div>

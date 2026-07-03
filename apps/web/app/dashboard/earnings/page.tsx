@@ -153,7 +153,7 @@ export default function EarningsCalendarPage() {
       {/* Earnings flag notice */}
       <div style={{ background:'rgba(255,184,0,0.06)', border:'1px solid rgba(255,184,0,0.2)', borderRadius:12, padding:'13px 16px', marginBottom:20 }}>
         <div style={{ fontSize:13, color:'rgba(255,184,0,0.9)', lineHeight:1.6 }}>
-          ⚠️ <strong>Earnings flag active:</strong> SIGNAL reduces signal confidence 15–30% for stocks with results due within 5 days.
+          ⚠️ <strong>Earnings flag active:</strong> SignalGenie reduces signal confidence 15–30% for stocks with results due within 5 days.
           <span style={{ display:'block', marginTop:4, fontSize:11, color:'var(--dim)' }}>📋 Illustrative schedule — verify actual dates at nseindia.com</span>
         </div>
       </div>
@@ -236,7 +236,7 @@ export default function EarningsCalendarPage() {
           </div>
           <div style={{ padding:12, background:'rgba(255,59,92,0.05)', border:'1px solid rgba(255,59,92,0.15)', borderRadius:10 }}>
             <div style={{ fontSize:12, fontWeight:700, color:'var(--red)', marginBottom:3 }}>High-beta / NBFC — volatile</div>
-            <div style={{ fontSize:11, color:'var(--dim)', lineHeight:1.55 }}>BAJFINANCE, ZOMATO: avg swing ±6–8% post-result. SIGNAL applies -25% confidence. Avoid new entries 3 days before.</div>
+            <div style={{ fontSize:11, color:'var(--dim)', lineHeight:1.55 }}>BAJFINANCE, ZOMATO: avg swing ±6–8% post-result. SignalGenie applies -25% confidence. Avoid new entries 3 days before.</div>
           </div>
         </div>
       </div>

@@ -1,0 +1,9 @@
+# Intermediate graphify files (regeneratable)
+.graphify_ast.json
+.graphify_extract.json
+.graphify_extract_filtered.json
+.graphify_graph_raw.json
+.graphify_clustered.json
+.graphify_chunk_*.json
+.graphify_cached.json
+.graphify_uncached.txt

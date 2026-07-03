@@ -125,7 +125,7 @@ export default function AIPromptsPage() {
         <div>
           <div style={{ fontSize:13, fontWeight:700 }}>In-app AI chat — Coming to Pro</div>
           <div style={{ fontSize:12, color:'var(--dim)', marginTop:2 }}>
-            These prompts will run directly inside SIGNAL with real-time NSE/BSE data — no copy-pasting needed. For now, copy and use with any AI.
+            These prompts will run directly inside SignalGenie with real-time NSE/BSE data — no copy-pasting needed. For now, copy and use with any AI.
           </div>
         </div>
       </div>

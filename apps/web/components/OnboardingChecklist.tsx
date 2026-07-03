@@ -56,7 +56,7 @@ export function OnboardingChecklist() {
       <div style={{ display:'flex', alignItems:'center', gap:12, marginBottom: minimised ? 0 : 14 }}>
         <div style={{ flex:1 }}>
           <div style={{ fontSize:13, fontWeight:800, marginBottom:minimised ? 0 : 4 }}>
-            Get started with SIGNAL
+            Get started with SignalGenie
             <span style={{ marginLeft:8, fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:6, background:'rgba(23,64,245,0.12)', color:'var(--bluL)' }}>
               {doneCount}/{steps.length} done
             </span>

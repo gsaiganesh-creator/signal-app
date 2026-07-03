@@ -48,11 +48,11 @@ export default function ReferPage() {
     setTimeout(() => setCopied(false), 3000);
   }
 
-  const SHORT_MSG = `Try SIGNAL — free NSE/BSE technical screener. Use my link and get 5% off your first plan: ${refLink}`;
-  const LONG_MSG  = `Hey! I've been using SIGNAL for NSE/BSE stock scans — RSI + EMA momentum zones, public accuracy track record. Free to start, and if you sign up with my link you get 5% off your first subscription.\n\nSign up here: ${refLink}`;
+  const SHORT_MSG = `Try SignalGenie — free NSE/BSE technical screener. Use my link and get 5% off your first plan: ${refLink}`;
+  const LONG_MSG  = `Hey! I've been using SignalGenie for NSE/BSE stock scans — RSI + EMA momentum zones, public accuracy track record. Free to start, and if you sign up with my link you get 5% off your first subscription.\n\nSign up here: ${refLink}`;
 
   function shareX() {
-    const text = encodeURIComponent(`Try SIGNAL — ML-powered NSE/BSE technical screener. Free to start. Use my link & get 5% off your first plan 👇`);
+    const text = encodeURIComponent(`Try SignalGenie — ML-powered NSE/BSE technical screener. Free to start. Use my link & get 5% off your first plan 👇`);
     window.open(`https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(refLink)}`, '_blank');
   }
 
@@ -61,7 +61,7 @@ export default function ReferPage() {
   }
 
   function shareTelegram() {
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('Try SIGNAL — free NSE/BSE technical screener with ML scan accuracy.')}`, '_blank');
+    window.open(`https://t.me/share/url?url=${encodeURIComponent(refLink)}&text=${encodeURIComponent('Try SignalGenie — free NSE/BSE technical screener with ML scan accuracy.')}`, '_blank');
   }
 
   function shareSMS() {
@@ -69,14 +69,14 @@ export default function ReferPage() {
   }
 
   function shareEmail() {
-    const subject = encodeURIComponent('Try SIGNAL — free stock screener I use');
+    const subject = encodeURIComponent('Try SignalGenie — free stock screener I use');
     const body    = encodeURIComponent(`${LONG_MSG}\n\nDisclosure: I get a discount if you sign up using this link.`);
     window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
   }
 
   function shareNative() {
     if (navigator.share) {
-      navigator.share({ title:'SIGNAL', text: SHORT_MSG, url: refLink }).catch(() => {});
+      navigator.share({ title:'SignalGenie', text: SHORT_MSG, url: refLink }).catch(() => {});
     }
   }
 
@@ -299,7 +299,7 @@ export default function ReferPage() {
       </div>
 
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:14, textAlign:'center' }}>
-        ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · Referral discounts apply to SIGNAL subscriptions only · Not financial advice · DYOR
+        ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · Referral discounts apply to SignalGenie subscriptions only · Not financial advice · DYOR
       </div>
     </>
   );

@@ -24,7 +24,7 @@ const INDS = [
 ];
 
 const CODE_LINES: [string, string][] = [
-  ['#68D391','# SIGNAL Algo · Momentum: RSI + EMA Crossover'],
+  ['#68D391','# SignalGenie Algo · Momentum: RSI + EMA Crossover'],
   ['#68D391','# Auto-generated · NSE · Equity · Jun 2026'],
   ['',''],
   ['#79C0FF','import pandas as pd, numpy as np'],
@@ -88,7 +88,7 @@ export default function AlgoBuilderPage() {
         <span style={{ fontSize:16, flexShrink:0, marginTop:1 }}>⚠️</span>
         <div style={{ fontSize:12, color:'rgba(255,184,0,0.85)', lineHeight:1.7 }}>
           <strong style={{ color:'var(--ylw)' }}>Educational &amp; paper trading use only.</strong>{' '}
-          Code generated here is for research, backtesting, and virtual paper trading. SIGNAL is not an order execution service and does not place trades on your behalf.
+          Code generated here is for research, backtesting, and virtual paper trading. SignalGenie is not an order execution service and does not place trades on your behalf.
           For live deployment, you are responsible for your broker&apos;s algo approval process and all SEBI regulations applicable to algorithmic trading.
           {' '}<strong style={{ color:'var(--ylw)' }}>Not SEBI registered · Not investment advice · DYOR.</strong>
         </div>
@@ -102,7 +102,7 @@ export default function AlgoBuilderPage() {
             Build it once.<br/><span style={{ color:'var(--pur)' }}>Test it thoroughly.</span>
           </div>
           <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.7, maxWidth:440 }}>
-            Pick your strategy type, configure indicators, set SL/Target — SIGNAL generates the Python code, backtests on 10 years of NSE data, and lets you paper trade it risk-free.
+            Pick your strategy type, configure indicators, set SL/Target — SignalGenie generates the Python code, backtests on 10 years of NSE data, and lets you paper trade it risk-free.
           </div>
         </div>
         <div style={{ textAlign:'center', flexShrink:0 }}>
@@ -192,7 +192,7 @@ export default function AlgoBuilderPage() {
           {/* Step 3 */}
           <div style={{ background:'var(--card-bg)', border:`1px solid ${step===3 ? 'rgba(23,64,245,0.3)' : 'var(--bdr)'}`, borderRadius:14, padding:20, marginBottom:16 }}>
             <div style={{ fontSize:14, fontWeight:700, marginBottom:8 }}>Step 3 — Entry &amp; Exit Conditions</div>
-            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.55, marginBottom:16 }}>Define when SIGNAL should trigger a BUY or SELL. All conditions must be true simultaneously.</div>
+            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.55, marginBottom:16 }}>Define when SignalGenie should trigger a BUY or SELL. All conditions must be true simultaneously.</div>
             <div style={{ fontSize:12, fontWeight:700, color:'var(--grn)', marginBottom:8 }}>🟢 BUY when ALL of these are true:</div>
             {[
               { label:'RSI (14)', op:'<', val:'35', note:'oversold', dc:'var(--grn)', c:'rgba(0,212,160,0.06)', bc:'rgba(0,212,160,0.2)' },

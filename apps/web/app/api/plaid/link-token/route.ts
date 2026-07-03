@@ -22,7 +22,7 @@ export async function POST() {
   try {
     const params: Parameters<typeof plaidClient.linkTokenCreate>[0] = {
       user:          { client_user_id: user.id },
-      client_name:   'SIGNAL',
+      client_name:   'SignalGenie',
       products:      [Products.Investments],
       country_codes: [CountryCode.Us],
       language:      'en',

@@ -13,13 +13,13 @@ export function generateStaticParams() {
 export async function generateMetadata({ params }: { params: Promise<{ sector: string }> }): Promise<Metadata> {
   const { sector } = await params;
   const def = SLUG_MAP[sector];
-  if (!def) return { title: 'Sector | SIGNAL' };
-  const title = `${def.label} Stocks NSE — Live Prices & Technical Analysis | SIGNAL`;
+  if (!def) return { title: 'Sector | SignalGenie' };
+  const title = `${def.label} Stocks NSE — Live Prices & Technical Analysis | SignalGenie`;
   return {
     title,
     description: `${def.description} Free ML-powered RSI, EMA scan. ${def.stocks.slice(0,5).join(', ')} and more. 15-min delayed. Not SEBI advice.`,
     keywords: [`${def.label} stocks NSE`, `${def.label} sector India`, ...def.stocks.slice(0,6).map(s => `${s} share price`)],
-    openGraph: { title, description: def.description, type: 'website', siteName: 'SIGNAL' },
+    openGraph: { title, description: def.description, type: 'website', siteName: 'SignalGenie' },
     alternates: { canonical: `/sectors/${sector}` },
   };
 }
@@ -35,7 +35,7 @@ export default async function SectorPage({ params }: { params: Promise<{ sector:
       <nav style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 24px', borderBottom:'1px solid var(--bdr)', background:'var(--bg)', position:'sticky', top:0, zIndex:50 }}>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
           <div style={{ width:28, height:28, borderRadius:7, background:'var(--blu)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:900, color:'#fff' }}>S</div>
-          <span style={{ fontSize:15, fontWeight:900, color:'var(--txt)', letterSpacing:-0.3 }}>SIGNAL</span>
+          <span style={{ fontSize:15, fontWeight:900, color:'var(--txt)', letterSpacing:-0.3 }}>SignalGenie</span>
         </Link>
         <div style={{ display:'flex', gap:8 }}>
           <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:700, textDecoration:'none', display:'flex', alignItems:'center' }}>Sign in</Link>

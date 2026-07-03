@@ -21,14 +21,14 @@ function fmtDate(iso: string): string {
 function mlImpact(fiiNet: number, diiNet: number): { text: string; color: string } {
   const net = fiiNet + diiNet;
   if (fiiNet > 1000 && diiNet > 0)
-    return { text: `FII + DII both buying — strong institutional support. SIGNAL applies +8% confidence boost to large-cap and banking BUY signals.`, color: 'var(--grn)' };
+    return { text: `FII + DII both buying — strong institutional support. SignalGenie applies +8% confidence boost to large-cap and banking BUY signals.`, color: 'var(--grn)' };
   if (fiiNet < -1500)
-    return { text: `Heavy FII selling (${crore(fiiNet)}) — SIGNAL applies -10% confidence penalty on large-cap BUY signals. DII ${diiNet >= 0 ? 'buying absorbs some pressure' : 'also selling — double headwind'}.`, color: 'var(--red)' };
+    return { text: `Heavy FII selling (${crore(fiiNet)}) — SignalGenie applies -10% confidence penalty on large-cap BUY signals. DII ${diiNet >= 0 ? 'buying absorbs some pressure' : 'also selling — double headwind'}.`, color: 'var(--red)' };
   if (fiiNet < -500)
-    return { text: `Moderate FII selling — SIGNAL applies -6% confidence penalty on banking stocks. DII buying (${crore(diiNet)}) provides partial support.`, color: 'var(--ylw)' };
+    return { text: `Moderate FII selling — SignalGenie applies -6% confidence penalty on banking stocks. DII buying (${crore(diiNet)}) provides partial support.`, color: 'var(--ylw)' };
   if (net > 2000)
-    return { text: `Strong combined institutional buying (${crore(net)} net) — SIGNAL boosts confidence on broad market BUY signals.`, color: 'var(--grn)' };
-  return { text: `Neutral institutional flow — SIGNAL applies no directional adjustment. Watch tomorrow's data for trend confirmation.`, color: 'var(--dim)' };
+    return { text: `Strong combined institutional buying (${crore(net)} net) — SignalGenie boosts confidence on broad market BUY signals.`, color: 'var(--grn)' };
+  return { text: `Neutral institutional flow — SignalGenie applies no directional adjustment. Watch tomorrow's data for trend confirmation.`, color: 'var(--dim)' };
 }
 
 export default function FIIDIIPage() {
@@ -135,7 +135,7 @@ export default function FIIDIIPage() {
           {/* ML impact box */}
           {impact && (
             <div style={{ background:'rgba(23,64,245,0.06)', border:'1px solid rgba(23,64,245,0.2)', borderRadius:12, padding:16, marginBottom:20 }}>
-              <div style={{ fontSize:13, fontWeight:700, marginBottom:6 }}>📊 SIGNAL ML — institutional flow impact</div>
+              <div style={{ fontSize:13, fontWeight:700, marginBottom:6 }}>📊 SignalGenie ML — institutional flow impact</div>
               <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.7 }}>
                 <span style={{ color:impact.color, fontWeight:600 }}>◉ </span>{impact.text}
               </div>

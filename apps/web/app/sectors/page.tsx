@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { SECTORS } from '@/lib/sectors';
 
 export const metadata: Metadata = {
-  title: 'NSE Sector Analysis — Banking, IT, Pharma, Auto & More | SIGNAL',
+  title: 'NSE Sector Analysis — Banking, IT, Pharma, Auto & More | SignalGenie',
   description: 'Browse NSE stocks by sector. Live prices, RSI, EMA20/50 technical scan for Banking, IT, Pharma, Auto, FMCG, Metal, Infra and 7 more sectors. Free. 15-min delayed.',
   alternates: { canonical: '/sectors' },
 };
@@ -20,7 +20,7 @@ export default function SectorsIndexPage() {
       <nav style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'14px 24px', borderBottom:'1px solid var(--bdr)', background:'var(--bg)', position:'sticky', top:0, zIndex:50 }}>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:8, textDecoration:'none' }}>
           <div style={{ width:28, height:28, borderRadius:7, background:'var(--blu)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13, fontWeight:900, color:'#fff' }}>S</div>
-          <span style={{ fontSize:15, fontWeight:900, color:'var(--txt)', letterSpacing:-0.3 }}>SIGNAL</span>
+          <span style={{ fontSize:15, fontWeight:900, color:'var(--txt)', letterSpacing:-0.3 }}>SignalGenie</span>
         </Link>
         <div style={{ display:'flex', gap:8 }}>
           <Link href="/sign-in" style={{ height:34, padding:'0 14px', borderRadius:8, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:700, textDecoration:'none', display:'flex', alignItems:'center' }}>Sign in</Link>

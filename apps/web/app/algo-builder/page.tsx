@@ -23,7 +23,7 @@ const INDS = [
 ];
 
 const CODE_LINES: [string, string][] = [
-  ['#68D391','# SIGNAL Algo · Momentum: RSI + EMA Crossover'],
+  ['#68D391','# SignalGenie Algo · Momentum: RSI + EMA Crossover'],
   ['#68D391','# Auto-generated · NSE · Equity · Jun 2026'],
   ['',''],
   ['#79C0FF','import pandas as pd, numpy as np'],
@@ -155,7 +155,7 @@ export default function AlgoBuilderPage() {
           {/* Step 3 */}
           <div style={{ background:'var(--surf)', border:`1px solid ${step===3 ? 'rgba(23,64,245,0.3)' : 'var(--bdr)'}`, borderRadius:14, padding:20, marginBottom:16 }}>
             <div style={{ fontSize:14, fontWeight:700, marginBottom:8 }}>Step 3 — Entry &amp; Exit Conditions</div>
-            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.55, marginBottom:16 }}>Define when SIGNAL should trigger a BUY or SELL. All conditions must be true simultaneously.</div>
+            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.55, marginBottom:16 }}>Define when SignalGenie should trigger a BUY or SELL. All conditions must be true simultaneously.</div>
             <div style={{ fontSize:12, fontWeight:700, color:'var(--grn)', marginBottom:8 }}>🟢 BUY when ALL of these are true:</div>
             {[
               { label:'RSI (14)', op:'<', val:'35', note:'oversold', dc:'var(--grn)', c:'rgba(0,212,160,0.06)', bc:'rgba(0,212,160,0.2)' },

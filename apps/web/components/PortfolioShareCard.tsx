@@ -61,7 +61,7 @@ export function PortfolioShareCard({ totalInvested, totalCurrent, totalPL, total
         const blob = await res.blob();
         const file = new File([blob], 'portfolio-snapshot.png', { type: 'image/png' });
         if (navigator.canShare({ files: [file] })) {
-          await navigator.share({ files: [file], title: 'My Portfolio — SIGNAL', text: `Portfolio ${up ? '+' : ''}${totalPLPct.toFixed(1)}% · Powered by SIGNAL` });
+          await navigator.share({ files: [file], title: 'My Portfolio — SignalGenie', text: `Portfolio ${up ? '+' : ''}${totalPLPct.toFixed(1)}% · Powered by SignalGenie` });
           setBusy(false); return;
         }
       }
@@ -98,7 +98,7 @@ export function PortfolioShareCard({ totalInvested, totalCurrent, totalPL, total
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ width: 32, height: 32, borderRadius: 8, background: C.blu, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 900, color: '#fff' }}>S</div>
               <div>
-                <div style={{ fontSize: 16, fontWeight: 900, color: C.txt, letterSpacing: -0.3 }}>SIGNAL</div>
+                <div style={{ fontSize: 16, fontWeight: 900, color: C.txt, letterSpacing: -0.3 }}>SignalGenie</div>
                 <div style={{ fontSize: 10, color: C.dim, marginTop: -1 }}>Portfolio Snapshot</div>
               </div>
             </div>

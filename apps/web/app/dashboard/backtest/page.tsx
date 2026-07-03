@@ -29,7 +29,7 @@ export default function BacktestPage() {
               <span style={{ color:'var(--pur)' }}>Before you risk a rupee.</span>
             </div>
             <div style={{ fontSize:14, color:'var(--dim)', lineHeight:1.7, marginBottom:20 }}>
-              Replay any SIGNAL strategy against historical NSE data. See exactly how it would have performed — drawdowns, win rate, best/worst trades — before committing real capital.
+              Replay any SignalGenie strategy against historical NSE data. See exactly how it would have performed — drawdowns, win rate, best/worst trades — before committing real capital.
             </div>
             <div style={{ display:'inline-flex', alignItems:'center', gap:8, padding:'8px 16px', borderRadius:8, background:'rgba(139,92,246,0.12)', border:'1px solid rgba(139,92,246,0.3)', fontSize:13, fontWeight:600, color:'var(--pur)' }}>
               🛠️ &nbsp;Engine in development · Launching Q3 2026

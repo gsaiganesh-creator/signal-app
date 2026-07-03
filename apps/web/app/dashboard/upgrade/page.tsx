@@ -104,7 +104,7 @@ const COMPARISON: { category: string; rows: { label: string; free: string; start
 
 const FAQS = [
   { q: 'Can I cancel anytime?', a: 'Yes. Cancel from Account settings — no questions asked. You keep access till the billing period ends.' },
-  { q: 'Is this SEBI registered?', a: 'No. SIGNAL is a technical analysis and screener tool, not a SEBI Research Analyst. All outputs are "scan results", not investment advice. We are working toward RA registration — until then, use your own judgment.' },
+  { q: 'Is this SEBI registered?', a: 'No. SignalGenie is a technical analysis and screener tool, not a SEBI Research Analyst. All outputs are "scan results", not investment advice. We are working toward RA registration — until then, use your own judgment.' },
   { q: 'What payment methods are accepted?', a: 'UPI, Net Banking, Credit/Debit cards, Wallets via Razorpay. All INR payments.' },
   { q: 'Do you offer a free trial?', a: 'The Free tier is unlimited in time — no credit card required. Upgrade when you need more signals or tools.' },
   { q: 'What is the Referral discount?', a: 'Refer a friend and you both get 15% off your first paid month. Referral link is in Account → Refer & Earn.' },
@@ -172,7 +172,7 @@ export default function UpgradePage() {
         key:         order.key_id,
         amount:      order.amount,
         currency:    order.currency,
-        name:        'SIGNAL',
+        name:        'SignalGenie',
         description: `${plan.name} — ${billing === 'annual' ? 'Annual' : 'Monthly'} subscription`,
         order_id:    order.order_id,
         prefill:     { email: user.email ?? '' },
@@ -254,7 +254,7 @@ export default function UpgradePage() {
           <div>
             <div style={{ fontSize:15, fontWeight:800, marginBottom:3 }}>You have a <span style={{ color:'var(--grn)' }}>{welcomeDisc}% welcome discount!</span></div>
             <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>
-              A friend invited you to SIGNAL — your first subscription is {welcomeDisc}% off. Applied automatically at checkout. One-time use.
+              A friend invited you to SignalGenie — your first subscription is {welcomeDisc}% off. Applied automatically at checkout. One-time use.
             </div>
           </div>
         </div>
