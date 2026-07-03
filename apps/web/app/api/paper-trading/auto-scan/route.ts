@@ -205,6 +205,7 @@ const exitOps: PromiseLike<any>[] = [];
       entryOps.push(
         db.from('paper_trades').insert({
           strategy_id: strategy.id,
+          user_id:     strategy.user_id,
           symbol:      sym,
           signal:      'BUY',
           entry_price: +detail.price.toFixed(2),
