@@ -130,7 +130,7 @@ export async function GET(req: NextRequest) {
     NSE_UNIVERSE.map(async sym => {
       try {
         const r = await fetch(
-          `${APP_URL}/api/stock-detail?symbol=${sym}.NS&exchange=NSE`,
+          `${APP_URL}/api/stock-detail?symbol=${sym}&exchange=NSE`,
           { signal: AbortSignal.timeout(9000) }
         );
         if (!r.ok) return null;
