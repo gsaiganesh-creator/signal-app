@@ -543,12 +543,12 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
     return { result: [], debug: 'TRADE_HISTORY: This is a Trade History file, not Holdings. Download the Holdings/Portfolio export from Mstocks/Mirae Asset app instead.' };
   }
 
-  // Column finder: exact match then partial contains
+  // Column finder: exact match then fuzzy (strips periods/spaces)
   const col = (names: string[]) => {
     const exact = names.map(n => headers.indexOf(n)).find(i => i >= 0);
     if (exact !== undefined) return exact;
-    // strip periods for fuzzy match — handles "avg. cost price" vs "avg cost price"
     return headers.findIndex(h => {
+      if (!h) return false; // never match empty/blank column headers
       const hn = h.replace(/\./g,'').replace(/\s+/g,' ').trim();
       return names.some(n => {
         const nn = n.replace(/\./g,'').replace(/\s+/g,' ').trim();
@@ -666,6 +666,24 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
         return { result: parsed, debug: hdr };
       }
       return { result: [], debug: `${hdr} — 0 valid data rows` };
+    }
+    // DP statement: has scrip name + qty but NO avg buy price (CDSL/NSDL custody report)
+    // Use CMP as avg_price placeholder — user prompted to edit
+    if (symIdx >= 0 && qtyIdx >= 0 && priceIdx < 0) {
+      const parsed = rows
+        .slice(headerIdx + 1)
+        .filter(r => r.length > Math.max(symIdx, qtyIdx))
+        .map(r => {
+          const rawName = String(r[symIdx] ?? '').trim();
+          const sym = cleanSymbol(rawName) || companyNameToTicker(rawName);
+          const qty = parseInt(String(r[qtyIdx] ?? '0').replace(/,/g, ''), 10);
+          if (!sym || sym.length < 2 || isNaN(qty) || qty <= 0) return null;
+          return { symbol: sym, qty, avg_price: 0, exchange: 'NSE' as Exchange };
+        })
+        .filter(Boolean) as ParsedRow[];
+      if (parsed.length) {
+        return { result: parsed, debug: `DP_FORMAT: ${parsed.length} holdings imported with avg price = 0 (not in DP statement). Enter your actual buy price for each holding.` };
+      }
     }
     const hdr = `hdr@${headerIdx}:[${headers.slice(0,8).join('|')}] sym=${symIdx} qty=${qtyIdx} price=${priceIdx}`;
     return { result: [], debug: `${hdr} — missing column` };
