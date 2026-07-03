@@ -1,6 +1,5 @@
 // Per-stock ML signal: RSI14 + EMA20/50/200 + MACD → BUY/SELL/HOLD/STRONG_BUY/STRONG_SELL
 export const runtime = 'edge';
-export const dynamic = 'force-dynamic';
 
 function calcEma(prices: number[], period: number): number | null {
   if (prices.length < period) return null;
@@ -64,7 +63,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ticker:
   if (!ticker) return Response.json({ signal: 'HOLD', rsi: null, current_price: null, change_pct: null });
 
   try {
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=3mo`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1d&range=1y`;
     const res = await fetch(url, {
       headers: { 'User-Agent': 'Mozilla/5.0 (compatible; signal-app/1.0)', Accept: 'application/json' },
       signal: AbortSignal.timeout(6000),
@@ -96,7 +95,7 @@ export async function GET(_req: Request, { params }: { params: Promise<{ ticker:
 
     return Response.json(
       { signal, rsi: rsi != null ? +rsi.toFixed(1) : null, current_price, change_pct },
-      { headers: { 'Cache-Control': 'public, max-age=300, stale-while-revalidate=900' } },
+      { headers: { 'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=900' } },
     );
   } catch {
     return Response.json({ signal: 'HOLD', rsi: null, current_price: null, change_pct: null });

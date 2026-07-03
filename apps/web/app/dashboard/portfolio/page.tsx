@@ -512,11 +512,12 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   const SYM_NAMES   = ['instrument','tradingsymbol','trading symbol','stock symbol','scrip name','scrip code','script name','script','scrip','symbol','ticker','security name','security','stock name','isin name'];
   const QTY_NAMES   = ['net qty','net quantity','holdingqty','total qty','total quantity','free qty','qty','quantity','shares','units'];
   const PRICE_NAMES = [
-    'avg. buy rate','avg buy rate',                         // HDFC Securities
-    'avg. cost price','avg cost price','average cost price',// Angel One (with/without period)
-    'avg. cost','avg cost',                                 // Zerodha Kite / Upstox
-    'average price','average cost',                         // Zerodha Console / Groww
-    'avg price','avg rate','average rate',                  // 5paisa / generic
+    'avg. buy rate','avg buy rate',                              // HDFC Securities
+    'avg. cost price','avg cost price','average cost price',     // Angel One (with/without period)
+    'avg. cost','avg cost',                                      // Zerodha Kite / Upstox
+    'average price','average cost',                              // Zerodha Console / Groww (old)
+    'avg buy price','avg. buy price',                            // Groww (Scrip Level sheet)
+    'avg price','avg rate','average rate',                       // 5paisa / generic
     'vwap','average buy price','ltp at buy',
     'buy price','purchase price','cost price','cost',
   ];
@@ -817,8 +818,9 @@ export default function PortfolioPage() {
     setHoldings(withPrices);
     setLoading(false);
 
-    // Step 2: try ML signals in background (3s timeout per stock, batched 10 at a time)
-    const BATCH = 10;
+    // Step 2: ML signals in background — small batches with delay to avoid Yahoo rate-limit
+    // 5 stocks per batch, 200ms between batches → ~8s for 183 stocks vs hammering 183 at once
+    const BATCH = 5;
     const enriched = [...withPrices];
     for (let i = 0; i < raw.length; i += BATCH) {
       const batch = raw.slice(i, i + BATCH);
@@ -827,11 +829,10 @@ export default function PortfolioPage() {
         try {
           const suffix = h.exchange === 'NSE' ? '.NS' : h.exchange === 'BSE' ? '.BO' : '';
           const controller = new AbortController();
-          const timer = setTimeout(() => controller.abort(), 3000);
+          const timer = setTimeout(() => controller.abort(), 7000);
           const res = await fetch(`/api/ml/signals/${h.symbol}${suffix}`, {
             signal: controller.signal,
-            next: { revalidate: 300 },
-          } as RequestInit);
+          });
           clearTimeout(timer);
           if (!res.ok) return;
           const q = await res.json() as { signal?: string; rsi?: number | null; current_price?: number | null; change_pct?: number | null };
@@ -845,8 +846,9 @@ export default function PortfolioPage() {
           enriched[idx] = { ...enriched[idx], current_price: cur, change_pct: q.change_pct ?? enriched[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
         } catch { /* timeout or offline — keep Yahoo price, keep HOLD */ }
       }));
-      // Update UI after each batch
+      // Update UI after each batch, then wait before hitting Yahoo again
       setHoldings([...enriched]);
+      if (i + BATCH < raw.length) await new Promise(r => setTimeout(r, 200));
     }
   }
 
@@ -942,17 +944,17 @@ export default function PortfolioPage() {
       setAllViewHoldings(enriched);
       setAllLoading(false);
 
-      // Background ML pass
-      const BATCH = 10;
+      // Background ML pass — batch 5, 200ms delay to avoid Yahoo rate-limit
+      const ML_BATCH = 5;
       const ec = [...enriched];
-      for (let i = 0; i < merged.length; i += BATCH) {
-        await Promise.allSettled(merged.slice(i, i + BATCH).map(async (h, bi) => {
+      for (let i = 0; i < merged.length; i += ML_BATCH) {
+        await Promise.allSettled(merged.slice(i, i + ML_BATCH).map(async (h, bi) => {
           const idx = i + bi;
           try {
             const suffix = h.exchange === 'NSE' ? '.NS' : '.BO';
             const ctrl = new AbortController();
-            const t = setTimeout(() => ctrl.abort(), 3000);
-            const r = await fetch(`/api/ml/signals/${h.symbol}${suffix}`, { signal: ctrl.signal } as RequestInit);
+            const t = setTimeout(() => ctrl.abort(), 7000);
+            const r = await fetch(`/api/ml/signals/${h.symbol}${suffix}`, { signal: ctrl.signal });
             clearTimeout(t);
             if (!r.ok) return;
             const q = await r.json() as { signal?: string; rsi?: number | null; current_price?: number | null; change_pct?: number | null };
@@ -966,6 +968,7 @@ export default function PortfolioPage() {
           } catch { /* timeout — keep Yahoo price */ }
         }));
         setAllViewHoldings([...ec]);
+        if (i + ML_BATCH < merged.length) await new Promise(res => setTimeout(res, 200));
       }
     } catch { setAllLoading(false); }
   }
