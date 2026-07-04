@@ -107,13 +107,22 @@ export function MobileBottomNav() {
       {/* More sheet */}
       {moreOpen && (
         <>
-          <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 190 }} />
-          <div style={{ position: 'fixed', bottom: 'calc(60px + env(safe-area-inset-bottom))', left: 0, right: 0, zIndex: 195, background: 'linear-gradient(180deg,rgba(17,36,80,0.92),rgba(8,14,42,0.96))', backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)', borderTop: '1px solid rgba(79,111,250,0.25)', borderRadius: '16px 16px 0 0', padding: '4px 0 4px', maxHeight: '75vh', overflowY: 'auto' }}>
+          <div onClick={() => setMoreOpen(false)} style={{ position: 'fixed', inset: 0, background: theme === 'dark' ? 'rgba(0,0,0,0.45)' : 'rgba(0,0,0,0.25)', zIndex: 190 }} />
+          <div style={{
+            position: 'fixed', bottom: 'calc(60px + env(safe-area-inset-bottom))', left: 0, right: 0, zIndex: 195,
+            background: theme === 'dark'
+              ? 'linear-gradient(180deg,rgba(17,36,80,0.96),rgba(8,14,42,0.98))'
+              : 'var(--surf)',
+            backdropFilter: 'blur(28px)', WebkitBackdropFilter: 'blur(28px)',
+            borderTop: `1px solid ${theme === 'dark' ? 'rgba(79,111,250,0.25)' : 'var(--bdr)'}`,
+            borderRadius: '16px 16px 0 0', padding: '4px 0 4px', maxHeight: '75vh', overflowY: 'auto',
+            boxShadow: theme === 'dark' ? 'none' : '0 -4px 24px rgba(0,0,0,0.12)',
+          }}>
 
             {/* Theme toggle */}
             <button
               onClick={toggle}
-              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', fontSize: 13, fontWeight: 600, width: '100%', background: 'none', border: 'none', borderBottom: '1px solid rgba(28,46,74,0.4)', color: 'var(--txt)', cursor: 'pointer', fontFamily: 'inherit' }}>
+              style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 16px', fontSize: 13, fontWeight: 600, width: '100%', background: 'none', border: 'none', borderBottom: `1px solid var(--bdr)`, color: 'var(--txt)', cursor: 'pointer', fontFamily: 'inherit' }}>
               <span style={{ fontSize: 16, width: 20, textAlign: 'center' }}>{theme === 'dark' ? '☀️' : '🌙'}</span>
               {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
               <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--dim)', background: 'var(--surf2)', borderRadius: 10, padding: '2px 8px' }}>
@@ -137,7 +146,7 @@ export function MobileBottomNav() {
                         href={l.href}
                         prefetch={isDanger ? false : undefined}
                         onClick={() => setMoreOpen(false)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', fontSize: 13, fontWeight: 600, color: isDanger ? 'var(--red)' : active ? 'var(--bluL)' : 'var(--txt)', borderBottom: '1px solid rgba(28,46,74,0.3)', background: active ? 'rgba(79,111,250,0.06)' : 'transparent', textDecoration: 'none' }}>
+                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', fontSize: 13, fontWeight: 600, color: isDanger ? 'var(--red)' : active ? 'var(--bluL)' : 'var(--txt)', borderBottom: `1px solid var(--bdr)`, background: active ? 'rgba(79,111,250,0.08)' : 'transparent', textDecoration: 'none' }}>
                         <span style={{ fontSize: 15, width: 20, textAlign: 'center' }}>{l.icon}</span>
                         {l.label}
                       </Link>
