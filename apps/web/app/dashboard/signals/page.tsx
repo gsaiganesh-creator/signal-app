@@ -995,13 +995,13 @@ export default function SignalsPage() {
   const holdCnt       = activeSignals.filter(s => scoreSig(s) === 'hold').length;
   const sellCnt       = activeSignals.filter(s => scoreSig(s) === 'sell').length;
   const FILTERS = [
-    { key:'all',        label:`All (${activeSignals.length})` },
-    ...(hasPortfolio ? [{ key:'portfolio', label:`💼 My Portfolio (${portfolioCnt})` }] : []),
-    { key:'buy',        label:`🟢 Strong (${buyCnt})` },
-    { key:'accumulate', label:`📈 Building (${accumulateCnt})` },
-    { key:'hold',       label:`⏸ Sideways (${holdCnt})` },
-    { key:'sell',       label:`🔴 Weak (${sellCnt})` },
-    { key:'high',       label:'🔥 80%+' },
+    { key:'all',        label:`All (${activeSignals.length})`,        shortLabel:`All ${activeSignals.length}` },
+    ...(hasPortfolio ? [{ key:'portfolio', label:`💼 My Portfolio (${portfolioCnt})`, shortLabel:`💼 ${portfolioCnt}` }] : []),
+    { key:'buy',        label:`🟢 Strong (${buyCnt})`,                shortLabel:`🟢 ${buyCnt}` },
+    { key:'accumulate', label:`📈 Building (${accumulateCnt})`,       shortLabel:`📈 ${accumulateCnt}` },
+    { key:'hold',       label:`⏸ Sideways (${holdCnt})`,              shortLabel:`⏸ ${holdCnt}` },
+    { key:'sell',       label:`🔴 Weak (${sellCnt})`,                 shortLabel:`🔴 ${sellCnt}` },
+    { key:'high',       label:'🔥 High Conf 80%+',                    shortLabel:'🔥 80%+' },
   ];
   const sectors = Array.from(new Set(mlSignals.map(s => s.sector).filter(Boolean))).sort();
   const advActive = !!(advSector || advMinRsi || advMaxRsi || advMinConf || advMaxEma);
@@ -1118,7 +1118,7 @@ export default function SignalsPage() {
                   </div>
                 )}
                 {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
-                  <span style={{ fontSize:11, color:'var(--dim)' }}>sorted by ₹ invested · click to refresh</span>
+                  <span className="sig-sort-hint" style={{ fontSize:11, color:'var(--dim)' }}>sorted by ₹ invested · click to refresh</span>
                 )}
                 {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
                   <button onClick={() => { setPortScanLoaded(false); loadPortfolioScan(); }}
@@ -1155,41 +1155,42 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {/* Controls */}
-          <div className="signals-filters" style={{ display:'flex', gap:8, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
-            <div style={{ position:'relative', flex:'1 1 200px', maxWidth:320 }}>
-              <span style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', fontSize:13, opacity:0.5 }}>{analysing ? '⏳' : searchLoading ? '⌛' : '🔍'}</span>
-              <input value={search} onChange={e => onSearchChange(e.target.value)}
-                onFocus={() => searchResults.length && setShowDropdown(true)}
-                onBlur={() => setTimeout(() => setShowDropdown(false), 300)}
-                placeholder="Search any NSE stock…"
-                style={{ width:'100%', height:36, paddingLeft:34, paddingRight:10, borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--txt)', fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }}/>
-              {showDropdown && searchResults.length > 0 && (
-                <div style={{ position:'absolute', top:40, left:0, right:0, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:10, zIndex:200, boxShadow:'0 8px 32px rgba(0,0,0,0.3)', overflow:'hidden' }}>
-                  {searchResults.map(item => (
-                    <button key={item.ticker} onPointerDown={() => analyseStock(item)}
-                      style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'none', border:'none', borderBottom:'1px solid var(--bdr)', cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}
-                      onMouseEnter={e => (e.currentTarget.style.background = 'var(--surf2)')}
-                      onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
-                      <span style={{ fontSize:11, fontWeight:800, background:'rgba(23,64,245,0.12)', color:'var(--bluL)', borderRadius:5, padding:'2px 6px', flexShrink:0 }}>{item.symbol}</span>
-                      <span style={{ fontSize:12, color:'var(--txt)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</span>
-                      <span style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto', flexShrink:0 }}>{item.exchange}</span>
-                    </button>
-                  ))}
-                  <div style={{ padding:'7px 13px', fontSize:11, color:'var(--dim)' }}>Select to analyse →</div>
-                </div>
-              )}
-            </div>
+          {/* Controls — search on own row, pills scrollable below */}
+          <div style={{ position:'relative', marginBottom:10 }}>
+            <span style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', fontSize:13, opacity:0.5 }}>{analysing ? '⏳' : searchLoading ? '⌛' : '🔍'}</span>
+            <input value={search} onChange={e => onSearchChange(e.target.value)}
+              onFocus={() => searchResults.length && setShowDropdown(true)}
+              onBlur={() => setTimeout(() => setShowDropdown(false), 300)}
+              placeholder="Search any NSE stock…"
+              style={{ width:'100%', height:36, paddingLeft:34, paddingRight:10, borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--txt)', fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }}/>
+            {showDropdown && searchResults.length > 0 && (
+              <div style={{ position:'absolute', top:40, left:0, right:0, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:10, zIndex:200, boxShadow:'0 8px 32px rgba(0,0,0,0.3)', overflow:'hidden' }}>
+                {searchResults.map(item => (
+                  <button key={item.ticker} onPointerDown={() => analyseStock(item)}
+                    style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'none', border:'none', borderBottom:'1px solid var(--bdr)', cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}
+                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--surf2)')}
+                    onMouseLeave={e => (e.currentTarget.style.background = 'none')}>
+                    <span style={{ fontSize:11, fontWeight:800, background:'rgba(23,64,245,0.12)', color:'var(--bluL)', borderRadius:5, padding:'2px 6px', flexShrink:0 }}>{item.symbol}</span>
+                    <span style={{ fontSize:12, color:'var(--txt)', overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{item.name}</span>
+                    <span style={{ fontSize:10, color:'var(--dim)', marginLeft:'auto', flexShrink:0 }}>{item.exchange}</span>
+                  </button>
+                ))}
+                <div style={{ padding:'7px 13px', fontSize:11, color:'var(--dim)' }}>Select to analyse →</div>
+              </div>
+            )}
+          </div>
+          <div className="signals-filters" style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
             {FILTERS.map(f => (
               <button key={f.key} onClick={() => setFilter(f.key)}
-                style={{ height:36, padding:'0 14px', borderRadius:9, border:`1px solid ${filter===f.key ? 'var(--grn)' : 'var(--bdr)'}`, background: filter===f.key ? 'rgba(0,212,160,0.12)' : 'var(--surf)', color: filter===f.key ? 'var(--grn)' : 'var(--dim)', fontSize:12, fontWeight: filter===f.key ? 700 : 500, cursor:'pointer', fontFamily:'inherit' }}>
-                {f.label}
+                style={{ height:34, padding:'0 12px', borderRadius:9, border:`1px solid ${filter===f.key ? 'var(--grn)' : 'var(--bdr)'}`, background: filter===f.key ? 'rgba(0,212,160,0.12)' : 'var(--surf)', color: filter===f.key ? 'var(--grn)' : 'var(--dim)', fontSize:12, fontWeight: filter===f.key ? 700 : 500, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
+                <span className="pill-full">{f.label}</span>
+                <span className="pill-short">{f.shortLabel}</span>
               </button>
             ))}
-            <button onClick={loadIndia} style={{ height:36, padding:'0 14px', borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto' }}>🔄</button>
+            <button onClick={loadIndia} style={{ height:34, padding:'0 12px', borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto', flexShrink:0 }}>🔄</button>
             <button onClick={() => setShowAdv(v => !v)}
-              style={{ height:36, padding:'0 14px', borderRadius:9, border:`1px solid ${advActive ? 'var(--pur)' : 'var(--bdr)'}`, background: advActive ? 'rgba(139,92,246,0.12)' : 'var(--surf)', color: advActive ? 'var(--pur)' : 'var(--dim)', fontSize:12, fontWeight: advActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap' }}>
-              ⚙ Filters{advActive ? ' •' : ''}
+              style={{ height:34, padding:'0 12px', borderRadius:9, border:`1px solid ${advActive ? 'var(--pur)' : 'var(--bdr)'}`, background: advActive ? 'rgba(139,92,246,0.12)' : 'var(--surf)', color: advActive ? 'var(--pur)' : 'var(--dim)', fontSize:12, fontWeight: advActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap', flexShrink:0 }}>
+              ⚙{advActive ? ' •' : ''}
             </button>
           </div>
 

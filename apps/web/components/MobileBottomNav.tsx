@@ -8,7 +8,7 @@ import { usePlan } from '@/lib/use-plan';
 // 4 primary tabs — mirrors sidebar tab structure
 const PRIMARY_TABS = [
   { key: 'home',      href: '/dashboard',           icon: '🏠', label: 'Home',      aliases: [] },
-  { key: 'signals',   href: '/dashboard/signals',   icon: '📈', label: 'Scan',      aliases: [] },
+  { key: 'signals',   href: '/dashboard/signals',   icon: '__logo__', label: 'Signals',   aliases: [] },
   { key: 'portfolio', href: '/dashboard/portfolio', icon: '💼', label: 'Portfolio', aliases: ['/dashboard/us-portfolio'] },
   { key: 'watchlist', href: '/dashboard/watchlist', icon: '👁', label: 'Watchlist', aliases: [] },
 ];
@@ -79,7 +79,16 @@ export function MobileBottomNav() {
           const active = path === t.href || (t.href !== '/dashboard' && path.startsWith(t.href)) || t.aliases.some(a => path.startsWith(a));
           return (
             <Link key={t.href} href={t.href} className={active ? 'active' : ''} onClick={() => setMoreOpen(false)}>
-              <span className="icon">{t.icon}</span>
+              <span className="icon">
+                {t.icon === '__logo__' ? (
+                  <svg width="20" height="20" viewBox="0 0 26 26" fill="none" style={{ display:'block' }}>
+                    <rect width="26" height="26" rx="7" fill={active ? 'rgba(79,111,250,0.25)' : 'rgba(79,111,250,0.1)'}/>
+                    <polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke={active ? '#4F6FFA' : '#7A8BAA'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <circle cx="22" cy="4" r="3.6" stroke={active ? '#8B5CF6' : '#7A8BAA'} strokeWidth="0.6" opacity="0.7"/>
+                    <path d="M22 2.2 L22.45 3.55 L23.8 4 L22.45 4.45 L22 5.8 L21.55 4.45 L20.2 4 L21.55 3.55 Z" fill={active ? '#FF5C1A' : '#7A8BAA'}/>
+                  </svg>
+                ) : t.icon}
+              </span>
               {t.label}
             </Link>
           );

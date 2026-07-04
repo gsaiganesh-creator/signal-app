@@ -336,30 +336,52 @@ button:active:not(:disabled) { transform: scale(0.97); }
    SIGNALS PAGE — mobile layout fixes
    ===================================================== */
 
-/* Show short label on mobile, hide on desktop */
+/* ── Signals page — desktop defaults ─────────────────── */
 .mkt-label-short { display: none; }
 .mkt-label-full  { display: inline; }
-
-/* Track Record link: show full text on desktop */
-.sig-track-icon { display: none; }
-.sig-track-text { display: inline; }
+.sig-track-icon  { display: none; }
+.sig-track-text  { display: inline; }
+/* Filter pills: show full label on desktop, short on mobile */
+.pill-full  { display: inline; }
+.pill-short { display: none; }
 
 @media (max-width: 600px) {
-  /* Header: stack cleanly on mobile */
+  /* Header: stack cleanly */
   .sig-header { gap: 10px !important; }
   .sig-header-right { width: 100%; justify-content: space-between; }
 
-  /* Shorten market toggle tabs — swap labels */
+  /* Market toggle: short labels + compact */
   .mkt-label-full  { display: none !important; }
   .mkt-label-short { display: inline !important; }
-
-  /* Market toggle buttons: compact */
   .sig-mkt-toggle button { height: 32px !important; padding: 0 10px !important; font-size: 12px !important; }
 
-  /* Track Record: icon only on mobile */
+  /* Track Record: icon only */
   .sig-track-text { display: none !important; }
   .sig-track-icon { display: inline !important; }
   .sig-track-link { padding: 0 10px !important; }
+
+  /* Sort hint: hide on mobile (saves a full line) */
+  .sig-sort-hint { display: none !important; }
+
+  /* Filter pills: compact + short labels + scroll */
+  .signals-filters { flex-wrap: nowrap !important; overflow-x: auto !important; padding-bottom: 4px; scrollbar-width: none; }
+  .signals-filters::-webkit-scrollbar { display: none; }
+  .signals-filters button { height: 30px !important; padding: 0 9px !important; font-size: 11px !important; }
+  .pill-full  { display: none !important; }
+  .pill-short { display: inline !important; }
+}
+
+/* ── US Portfolio — responsive KPI grids ─────────────── */
+.us-kpi-grid { display: grid; }
+.us-rsu-grid { display: grid; }
+
+@media (max-width: 900px) {
+  .us-kpi-grid { grid-template-columns: repeat(3, 1fr) !important; }
+  .us-rsu-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 600px) {
+  .us-kpi-grid { grid-template-columns: repeat(2, 1fr) !important; }
+  .us-rsu-grid { grid-template-columns: repeat(2, 1fr) !important; }
 }
 
 /* =====================================================

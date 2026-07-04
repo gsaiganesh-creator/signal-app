@@ -734,7 +734,7 @@ export default function USPortfolioPage() {
           </Link>
         </div>
         {rsuCount > 0 && (
-          <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
+          <div className="us-rsu-grid" style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:10 }}>
             {[
               { label:'RSU Invested', val:`$${rsuInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `≈ ₹${(rsuInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--pur)' },
               { label:'RSU Current', val: rsuHasPrices ? `$${rsuCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: (rsuHasPrices&&usdInr) ? `≈ ₹${(rsuCurrentUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '', color:'var(--txt)' },
@@ -807,7 +807,7 @@ export default function USPortfolioPage() {
 
       {/* Key metrics */}
       {contentTab === 'holdings' && merged.length > 0 && (
-        <div style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12, marginBottom:20 }}>
+        <div className="us-kpi-grid" style={{ display:'grid', gridTemplateColumns:'repeat(5,1fr)', gap:12, marginBottom:20 }}>
           {[
             { label:'Total Invested', val:`$${totalInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`, sub: usdInr ? `₹${(totalInvestedUSD*usdInr).toLocaleString('en-IN',{maximumFractionDigits:0})} equiv` : '', color:'var(--txt)' },
             { label:'Current Value',  val: totalCurrentUSD > 0 ? `$${totalCurrentUSD.toLocaleString('en-US',{maximumFractionDigits:0})}` : '—', sub: inrEquiv ? `₹${inrEquiv.toLocaleString('en-IN',{maximumFractionDigits:0})} equiv` : '', color:'var(--txt)' },
