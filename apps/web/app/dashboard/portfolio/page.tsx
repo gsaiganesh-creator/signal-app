@@ -73,6 +73,46 @@ const BUCKET_META: Record<MlClass, MLBucket> = {
   Watch:         { key:'Watch',         label:'⏳ Watch',          color:'var(--ylw)',  bg:'rgba(255,184,0,0.08)', border:'rgba(255,184,0,0.2)',   desc:'Neutral — no clear technical signal' },
 };
 
+/* ── Signal cache helpers ──────────────────────────────────────────────── */
+interface CachedSignal {
+  symbol: string; exchange: string; bias: string | null; signal: string | null;
+  rsi14: number | null; ml_class: string | null; price: number | null;
+  change_pct: number | null; fetched_at: string;
+}
+
+function isMarketOpen(): boolean {
+  const now = new Date();
+  const ist = new Date(now.getTime() + 5.5 * 60 * 60 * 1000);
+  const day = ist.getUTCDay(); // 0=Sun, 6=Sat
+  if (day === 0 || day === 6) return false;
+  const mins = ist.getUTCHours() * 60 + ist.getUTCMinutes();
+  return mins >= 9 * 60 + 15 && mins < 15 * 60 + 30;
+}
+
+async function loadSignalCache(symbols: string[], exchange: 'NSE' | 'BSE'): Promise<Map<string, CachedSignal>> {
+  try {
+    const list = symbols.map(s => `"${s}"`).join(',');
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/signal_cache?symbol=in.(${list})&exchange=eq.${exchange}&select=*`,
+      { headers: { apikey: SUPA_KEY } }
+    );
+    if (!res.ok) return new Map();
+    const rows: CachedSignal[] = await res.json();
+    return new Map(rows.map(r => [r.symbol, r]));
+  } catch { return new Map(); }
+}
+
+async function upsertSignalCache(rows: CachedSignal[]): Promise<void> {
+  if (!rows.length) return;
+  try {
+    await fetch(`${SUPA_URL}/rest/v1/signal_cache`, {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
+      body: JSON.stringify(rows),
+    });
+  } catch { /* non-critical */ }
+}
+
 function classify(signal: string, rsi: number | null, plPct: number): MlClass {
   const r = rsi ?? 50;
   if (signal === 'STRONG_BUY') return 'Momentum';
@@ -906,10 +946,31 @@ export default function PortfolioPage() {
     setHoldings(withPrices);
     setLoading(false);
 
-    // Step 2: ML signals in background — small batches with delay to avoid Yahoo rate-limit
-    // 5 stocks per batch, 200ms between batches → ~8s for 183 stocks vs hammering 183 at once
-    const BATCH = 5;
-    const enriched = [...withPrices];
+    // Step 2: Load cached signals first (instant, works on weekends/holidays)
+    const nseSymbols = raw.filter(h => h.exchange === 'NSE').map(h => h.symbol);
+    const bseSymbols = raw.filter(h => h.exchange === 'BSE').map(h => h.symbol);
+    const [nseCache, bseCache] = await Promise.all([
+      nseSymbols.length ? loadSignalCache(nseSymbols, 'NSE') : Promise.resolve(new Map<string, CachedSignal>()),
+      bseSymbols.length ? loadSignalCache(bseSymbols, 'BSE') : Promise.resolve(new Map<string, CachedSignal>()),
+    ]);
+
+    const enriched = withPrices.map(h => {
+      const cached = h.exchange === 'NSE' ? nseCache.get(h.symbol) : bseCache.get(h.symbol);
+      if (!cached) return h;
+      const sig = cached.signal ?? (cached.bias === 'BULLISH' ? 'BUY' : cached.bias === 'BEARISH' ? 'SELL' : 'HOLD');
+      const cur = cached.price ?? h.current_price;
+      const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : h.pl;
+      const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (h.pl_pct ?? 0);
+      return { ...h, current_price: cur, change_pct: cached.change_pct ?? h.change_pct, signal: sig, rsi: cached.rsi14 ?? null, pl, pl_pct, ml_class: classify(sig, cached.rsi14 ?? null, pl_pct) };
+    });
+    setHoldings([...enriched]);
+
+    // Step 3: Refresh from live API only when market is open, then update cache
+    if (!isMarketOpen()) return;
+
+    const BATCH = 3;
+    const live = [...enriched];
+    const toUpsert: CachedSignal[] = [];
     for (let i = 0; i < raw.length; i += BATCH) {
       const batch = raw.slice(i, i + BATCH);
       await Promise.allSettled(batch.map(async (h, bi) => {
@@ -918,26 +979,25 @@ export default function PortfolioPage() {
           const suffix = h.exchange === 'NSE' ? '.NS' : h.exchange === 'BSE' ? '.BO' : '';
           const controller = new AbortController();
           const timer = setTimeout(() => controller.abort(), 7000);
-          const res = await fetch(`/api/ml/signals/${h.symbol}${suffix}`, {
-            signal: controller.signal,
-          });
+          const res = await fetch(`/api/ml/signals/${h.symbol}${suffix}`, { signal: controller.signal });
           clearTimeout(timer);
           if (!res.ok) return;
           const q = await res.json() as { signal?: string; bias?: string; rsi?: number | null; current_price?: number | null; price?: number | null; change_pct?: number | null };
-          const rawMlPrice = q.current_price ?? q.price ?? enriched[idx].current_price;
+          const rawMlPrice = q.current_price ?? q.price ?? live[idx].current_price;
           const cur = (rawMlPrice != null && h.avg_price >= 1)
             ? (rawMlPrice / h.avg_price > 50 || h.avg_price / rawMlPrice > 50 ? null : rawMlPrice)
             : rawMlPrice;
-          const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : enriched[idx].pl;
-          const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : enriched[idx].pl_pct ?? 0;
+          const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : live[idx].pl;
+          const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (live[idx].pl_pct ?? 0);
           const signal = q.signal ?? (q.bias === 'BULLISH' ? 'BUY' : q.bias === 'BEARISH' ? 'SELL' : 'HOLD');
-          enriched[idx] = { ...enriched[idx], current_price: cur, change_pct: q.change_pct ?? enriched[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
-        } catch { /* timeout or offline — keep Yahoo price, keep HOLD */ }
+          live[idx] = { ...live[idx], current_price: cur, change_pct: q.change_pct ?? live[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
+          toUpsert.push({ symbol: h.symbol, exchange: h.exchange, bias: q.bias ?? null, signal, rsi14: q.rsi ?? null, ml_class: classify(signal, q.rsi ?? null, pl_pct), price: cur ?? null, change_pct: q.change_pct ?? null, fetched_at: new Date().toISOString() });
+        } catch { /* timeout — keep cached */ }
       }));
-      // Update UI after each batch, then wait before hitting Yahoo again
-      setHoldings([...enriched]);
-      if (i + BATCH < raw.length) await new Promise(r => setTimeout(r, 200));
+      setHoldings([...live]);
+      if (i + BATCH < raw.length) await new Promise(r => setTimeout(r, 350));
     }
+    upsertSignalCache(toUpsert);
   }
 
   useEffect(() => { enrichHoldings(rawHoldings); setActiveFilter(null); }, [rawHoldings]);
@@ -1030,16 +1090,34 @@ export default function PortfolioPage() {
           signal: 'HOLD', rsi: null, pl, pl_pct, exchange: h.exchange as Exchange,
           ml_class: 'Watch' as MlClass, is_etf: detectEtf(h.symbol) } as Holding;
       });
-      setAllViewHoldings(enriched);
+      // Load cached signals → apply immediately (works on weekends/holidays)
+      const allNse = merged.filter(h => h.exchange === 'NSE').map(h => h.symbol);
+      const allBse = merged.filter(h => h.exchange === 'BSE').map(h => h.symbol);
+      const [nCache, bCache] = await Promise.all([
+        allNse.length ? loadSignalCache(allNse, 'NSE') : Promise.resolve(new Map<string, CachedSignal>()),
+        allBse.length ? loadSignalCache(allBse, 'BSE') : Promise.resolve(new Map<string, CachedSignal>()),
+      ]);
+      const withCache = enriched.map(h => {
+        const cached = h.exchange === 'NSE' ? nCache.get(h.symbol) : bCache.get(h.symbol);
+        if (!cached) return h;
+        const sig = cached.signal ?? (cached.bias === 'BULLISH' ? 'BUY' : cached.bias === 'BEARISH' ? 'SELL' : 'HOLD');
+        const cur = cached.price ?? h.current_price;
+        const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : h.pl;
+        const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (h.pl_pct ?? 0);
+        return { ...h, current_price: cur, change_pct: cached.change_pct ?? h.change_pct, signal: sig, rsi: cached.rsi14 ?? null, pl, pl_pct, ml_class: classify(sig, cached.rsi14 ?? null, pl_pct) };
+      });
+      setAllViewHoldings(withCache);
       setAllLoading(false);
 
-      // Background ML pass — top 40 by invested value only (rate-limit guard for large portfolios)
+      // Live API refresh — top 40 by value, only during market hours
+      if (!isMarketOpen()) return;
+
       const ML_BATCH = 3;
       const ML_DELAY = 350;
       const ML_CAP   = 40;
-      const ec = [...enriched];
-      // Sort indices by invested value descending, cap at ML_CAP
-      const mlIndices = enriched
+      const ec = [...withCache];
+      const toUpsertAll: CachedSignal[] = [];
+      const mlIndices = withCache
         .map((h, i) => ({ i, val: (h.current_price ?? h.avg_price) * h.qty }))
         .sort((a, b) => b.val - a.val)
         .slice(0, ML_CAP)
@@ -1062,11 +1140,13 @@ export default function PortfolioPage() {
             const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (ec[idx].pl_pct ?? 0);
             const signal = q.signal ?? (q.bias === 'BULLISH' ? 'BUY' : q.bias === 'BEARISH' ? 'SELL' : 'HOLD');
             ec[idx] = { ...ec[idx], current_price: cur, change_pct: q.change_pct ?? ec[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
-          } catch { /* timeout — keep Yahoo price */ }
+            toUpsertAll.push({ symbol: h.symbol, exchange: h.exchange, bias: q.bias ?? null, signal, rsi14: q.rsi ?? null, ml_class: classify(signal, q.rsi ?? null, pl_pct), price: cur ?? null, change_pct: q.change_pct ?? null, fetched_at: new Date().toISOString() });
+          } catch { /* timeout — keep cached */ }
         }));
         setAllViewHoldings([...ec]);
         if (b + ML_BATCH < mlIndices.length) await new Promise(res => setTimeout(res, ML_DELAY));
       }
+      upsertSignalCache(toUpsertAll);
     } catch { setAllLoading(false); }
   }
 
