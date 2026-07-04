@@ -25,7 +25,7 @@ export default function SignInPage() {
   }
 
   // ── OAuth ──────────────────────────────────────────────────────────────────
-  async function doOAuth(provider: 'google' | 'twitter') {
+  async function doOAuth(provider: 'google') {
     setLoading(true);
     const isCapacitor = typeof window !== 'undefined' && !!(window as { Capacitor?: unknown }).Capacitor;
     const redirectTo = isCapacitor
@@ -329,11 +329,6 @@ export default function SignInPage() {
                   <path d="M9 3.6c1.2 0 2.3.4 3.2 1.2l2.4-2.4C13 .9 11.2 0 9 0 5.6 0 2.6 2 1.1 5l3.2 2.3C5 5.1 6.8 3.6 9 3.6z" fill="#EA4335"/>
                 </svg>
                 {screen === 'signin' ? 'Continue' : 'Sign up'} with Google
-              </button>
-              <button onClick={() => doOAuth('twitter')} disabled={loading}
-                style={{ width:'100%', height:48, borderRadius:12, fontSize:14, fontWeight:700, cursor:loading?'not-allowed':'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:10, marginBottom:10, background:'#000', border:'1px solid #333', color:'#fff', opacity:loading?0.6:1 }}>
-                <span style={{ fontSize:18, fontWeight:900 }}>𝕏</span>
-                {screen === 'signin' ? 'Continue' : 'Sign up'} with Twitter / X
               </button>
               <button onClick={() => go('magic')} disabled={loading}
                 style={{ width:'100%', height:48, borderRadius:12, fontSize:14, fontWeight:600, cursor:'pointer', fontFamily:'inherit', display:'flex', alignItems:'center', justifyContent:'center', gap:8, marginBottom:10, background:'rgba(23,64,245,0.06)', border:'1px solid rgba(23,64,245,0.25)', color:'var(--bluL)', opacity:loading?0.6:1 }}>
