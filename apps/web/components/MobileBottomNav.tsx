@@ -10,7 +10,7 @@ const PRIMARY_TABS = [
   { key: 'home',      href: '/dashboard',           icon: '🏠', label: 'Home',      aliases: [] },
   { key: 'signals',   href: '/dashboard/signals',   icon: '__logo__', label: 'Signals',   aliases: [] },
   { key: 'portfolio', href: '/dashboard/portfolio', icon: '💼', label: 'Portfolio', aliases: ['/dashboard/us-portfolio'] },
-  { key: 'watchlist', href: '/dashboard/watchlist', icon: '👁', label: 'Watchlist', aliases: [] },
+  { key: 'dividends', href: '/dashboard/dividends', icon: '💰', label: 'Dividends', aliases: [] },
 ];
 
 // More drawer grouped by category
