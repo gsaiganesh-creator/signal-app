@@ -677,14 +677,14 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
 
 // ── Market Toggle ─────────────────────────────────────────────────────────────
 type Market = 'india' | 'us' | 'fundamental';
-const MARKET_OPTS: Array<{ key: Market; label: string; activeColor: string; activeBorder: string }> = [
-  { key:'india',       label:'🇮🇳 India (NSE)',      activeColor:'var(--ylw)',  activeBorder:'rgba(255,184,0,0.35)' },
-  { key:'us',          label:'🇺🇸 US (NYSE/NASDAQ)', activeColor:'var(--bluL)', activeBorder:'rgba(79,111,250,0.35)' },
-  { key:'fundamental', label:'📊 Fundamentals',       activeColor:'var(--grn)',  activeBorder:'rgba(0,212,160,0.35)' },
+const MARKET_OPTS: Array<{ key: Market; label: string; shortLabel: string; activeColor: string; activeBorder: string }> = [
+  { key:'india',       label:'🇮🇳 India (NSE)',      shortLabel:'🇮🇳 India', activeColor:'var(--ylw)',  activeBorder:'rgba(255,184,0,0.35)' },
+  { key:'us',          label:'🇺🇸 US (NYSE/NASDAQ)', shortLabel:'🇺🇸 US',    activeColor:'var(--bluL)', activeBorder:'rgba(79,111,250,0.35)' },
+  { key:'fundamental', label:'📊 Fundamentals',       shortLabel:'📊 Fund',   activeColor:'var(--grn)',  activeBorder:'rgba(0,212,160,0.35)' },
 ];
 function MarketToggle({ market, onChange }: { market: Market; onChange: (m: Market) => void }) {
   return (
-    <div style={{ display:'inline-flex', background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:12, padding:3, gap:2 }}>
+    <div className="sig-mkt-toggle" style={{ display:'inline-flex', background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:12, padding:3, gap:2 }}>
       {MARKET_OPTS.map(opt => (
         <button key={opt.key} onClick={() => onChange(opt.key)}
           style={{ height:34, padding:'0 14px', borderRadius:9, border:'none', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit', transition:'all 0.15s',
@@ -693,7 +693,8 @@ function MarketToggle({ market, onChange }: { market: Market; onChange: (m: Mark
             color: market === opt.key ? opt.activeColor : 'var(--dim)',
             boxShadow: market === opt.key ? `0 0 0 1px ${opt.activeBorder}` : 'none',
           }}>
-          {opt.label}
+          <span className="mkt-label-full">{opt.label}</span>
+          <span className="mkt-label-short">{opt.shortLabel}</span>
         </button>
       ))}
     </div>
@@ -1054,7 +1055,7 @@ export default function SignalsPage() {
   return (
     <>
       {/* Header row — title + market toggle */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
+      <div className="sig-header" style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div>
           <div style={{ fontSize:11, fontWeight:800, letterSpacing:2, color: market === 'india' ? 'var(--ylw)' : market === 'fundamental' ? 'var(--grn)' : 'var(--bluL)', textTransform:'uppercase', marginBottom:4 }}>
             {market === 'india' ? 'ML Technical Scan · NSE Screener' : market === 'fundamental' ? 'Fundamental Screener · NSE' : 'Technical Scan · NYSE / NASDAQ'}
@@ -1063,9 +1064,10 @@ export default function SignalsPage() {
             {market === 'india' ? '🇮🇳 India Signals' : market === 'fundamental' ? '📊 Fundamental Scan' : '🇺🇸 US Signals'}
           </div>
         </div>
-        <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <Link href="/dashboard/track-record" style={{ height:34, padding:'0 14px', borderRadius:9, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.28)', color:'var(--grn)', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
-            📊 Track Record →
+        <div className="sig-header-right" style={{ display:'flex', gap:8, alignItems:'center' }}>
+          <Link href="/dashboard/track-record" className="sig-track-link" style={{ height:34, padding:'0 14px', borderRadius:9, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.28)', color:'var(--grn)', fontSize:12, fontWeight:700, display:'flex', alignItems:'center', textDecoration:'none' }}>
+            <span className="sig-track-text">📊 Track Record →</span>
+            <span className="sig-track-icon">📊</span>
           </Link>
           <MarketToggle market={market} onChange={m => {
             if (m === 'us' && !isElite) {

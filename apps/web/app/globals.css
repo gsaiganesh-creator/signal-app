@@ -333,13 +333,33 @@ button:active:not(:disabled) { transform: scale(0.97); }
 }
 
 /* =====================================================
-   SIGNALS PAGE — hero banner compact on mobile
+   SIGNALS PAGE — mobile layout fixes
    ===================================================== */
+
+/* Show short label on mobile, hide on desktop */
+.mkt-label-short { display: none; }
+.mkt-label-full  { display: inline; }
+
+/* Track Record link: show full text on desktop */
+.sig-track-icon { display: none; }
+.sig-track-text { display: inline; }
+
 @media (max-width: 600px) {
-  .signals-hero { padding: 18px 20px !important; flex-direction: column !important; align-items: flex-start !important; }
-  .signals-hero-count { display: none !important; }
-  .signals-filters { flex-wrap: wrap !important; gap: 6px !important; }
-  .signals-filters button { height: 34px !important; padding: 0 10px !important; font-size: 12px !important; }
+  /* Header: stack cleanly on mobile */
+  .sig-header { gap: 10px !important; }
+  .sig-header-right { width: 100%; justify-content: space-between; }
+
+  /* Shorten market toggle tabs — swap labels */
+  .mkt-label-full  { display: none !important; }
+  .mkt-label-short { display: inline !important; }
+
+  /* Market toggle buttons: compact */
+  .sig-mkt-toggle button { height: 32px !important; padding: 0 10px !important; font-size: 12px !important; }
+
+  /* Track Record: icon only on mobile */
+  .sig-track-text { display: none !important; }
+  .sig-track-icon { display: inline !important; }
+  .sig-track-link { padding: 0 10px !important; }
 }
 
 /* =====================================================
