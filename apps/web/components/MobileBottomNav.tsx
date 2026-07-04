@@ -126,6 +126,7 @@ export function MobileBottomNav() {
                       <Link
                         key={l.href}
                         href={l.href}
+                        prefetch={isDanger ? false : undefined}
                         onClick={() => setMoreOpen(false)}
                         style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', fontSize: 13, fontWeight: 600, color: isDanger ? 'var(--red)' : active ? 'var(--bluL)' : 'var(--txt)', borderBottom: '1px solid rgba(28,46,74,0.3)', background: active ? 'rgba(79,111,250,0.06)' : 'transparent', textDecoration: 'none' }}>
                         <span style={{ fontSize: 15, width: 20, textAlign: 'center' }}>{l.icon}</span>

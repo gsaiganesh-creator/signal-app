@@ -42,7 +42,6 @@ export const TABS = [
       { href: '/dashboard/upgrade', label: 'Upgrade'      },
       { href: '/dashboard/brokers', label: 'Broker'       },
       { href: '/dashboard/refer',   label: 'Refer & Earn' },
-      { href: '/sign-out',          label: 'Sign Out'     },
     ],
   },
 ];
