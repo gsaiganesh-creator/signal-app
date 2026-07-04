@@ -104,6 +104,36 @@ Convert `app/dashboard/feed/page.tsx` to a client component (same session-fetch 
    ```
 4. `CRON_SECRET` already exists as a planned env var (per push-alerts cron) — reuse it, don't create a second secret
 
+## Addendum (added same day): accuracy tracking
+
+`sentiment_scores` overwrites one row per symbol daily — no history, so there's no way to check later whether a "bullish" call actually played out. Add a decoupled accuracy-tracking layer, mirroring the existing `scan_log`/`track-record` pattern already proven in this codebase:
+
+```sql
+CREATE TABLE IF NOT EXISTS public.sentiment_scan_log (
+  id          uuid primary key default gen_random_uuid(),
+  scanned_at  date not null,
+  symbol      text not null,
+  exchange    text not null default 'NSE',
+  label       text not null,
+  price_at    numeric not null,
+  price_7d    numeric,
+  return_7d   numeric,
+  price_30d   numeric,
+  return_30d  numeric,
+  created_at  timestamptz default now(),
+  UNIQUE(scanned_at, symbol)
+);
+ALTER TABLE public.sentiment_scan_log ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "public_read_sentiment_log" ON public.sentiment_scan_log FOR SELECT USING (true);
+CREATE POLICY "anon_insert_sentiment_log" ON public.sentiment_scan_log FOR INSERT WITH CHECK (true);
+CREATE POLICY "anon_update_sentiment_log" ON public.sentiment_scan_log FOR UPDATE USING (true);
+```
+
+- The daily `sentiment-scan` cron additionally fetches each symbol's current price (same direct-Yahoo-chart approach as `scan-log/backfill`) and inserts one `sentiment_scan_log` row per symbol scanned, alongside the existing `sentiment_scores` upsert. This is one extra fetch + one extra insert per symbol in the same loop — doesn't add a new blocking dependency, doesn't gate the rest of the platform's scans/crons.
+- A separate daily backfill cron (`/api/cron/sentiment-scan/backfill`, same shape as `/api/scan-log/backfill`) fills `price_7d`/`return_7d` after 7 days and `price_30d`/`return_30d` after 30 days, for rows where those columns are still null. Fully decoupled — runs on its own schedule, failure here never blocks the sentiment-scan cron or the feed page.
+- A lightweight `/api/sentiment-log` route aggregates: total logged, closed count (7d), bullish accuracy % (bullish calls where `return_7d > 0`), bearish accuracy % (bearish calls where `return_7d < 0`).
+- Feed page hero shows a small accuracy chip (e.g. "58% accuracy · 12 calls") once ≥1 closed outcome exists, sourced from `/api/sentiment-log`. Hidden/omitted while no closed outcomes exist yet — no fake "N/A" states cluttering the hero.
+
 ## Out of scope / explicitly deferred
 
 - Sentiment on stock detail pages
