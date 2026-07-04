@@ -238,6 +238,9 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .dash-username { display: none; }
   /* Hide Pro badge on tablet — space is tight */
   .dash-pro-badge { display: none; }
+  /* Force nav to flex so right icons always reach the right edge */
+  .dash-topnav { display: flex !important; justify-content: space-between !important; }
+  .dash-topnav .dash-right { margin-left: 0 !important; }
 }
 
 /* ---- Phone (≤ 600px) ---- */
