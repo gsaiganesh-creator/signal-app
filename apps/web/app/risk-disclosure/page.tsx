@@ -120,7 +120,7 @@ export default function RiskDisclosurePage() {
           <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--txt)', marginBottom: 8 }}>Questions?</div>
           <div style={{ fontSize: 13, color: 'var(--dim)', lineHeight: 1.7 }}>
             For questions about this risk disclosure or the platform, contact us at{' '}
-            <a href="mailto:gsaiganesh@gmail.com" style={{ color: 'var(--bluL)', textDecoration: 'none' }}>gsaiganesh@gmail.com</a>.
+            <a href="mailto:support@signalgenie.ai" style={{ color: 'var(--bluL)', textDecoration: 'none' }}>support@signalgenie.ai</a>.
           </div>
         </div>
 

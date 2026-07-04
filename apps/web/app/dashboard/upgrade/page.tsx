@@ -333,7 +333,7 @@ export default function UpgradePage() {
 
       {/* Trust row */}
       <div style={{ display:'flex', gap:20, flexWrap:'wrap', justifyContent:'center', marginBottom:16 }}>
-        {['🔒 Secure payments via Razorpay','📄 GST invoice on request','↩️ Cancel anytime','🎁 Referral discounts stack','📞 Support: signal@gsaiganesh.in'].map(t => (
+        {['🔒 Secure payments via Razorpay','📄 GST invoice on request','↩️ Cancel anytime','🎁 Referral discounts stack','📞 Support: support@signalgenie.ai'].map(t => (
           <span key={t} style={{ fontSize:12, color:'var(--dim)' }}>{t}</span>
         ))}
       </div>

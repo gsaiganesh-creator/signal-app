@@ -18,7 +18,7 @@ export default function PrivacyPage() {
         <p style={{ color: 'var(--dim)', fontSize: 13, marginBottom: 40 }}>Last updated: {updated}</p>
 
         <Section title="1. Who We Are">
-          <p>SignalGenie (signalgenie.ai) is a portfolio tracking and technical analysis tool built for Indian retail investors. It is operated by Sai Ganesh and Sai Kumar Bethala (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;). Contact us at <a href="mailto:gsaiganesh@gmail.com" style={{ color: 'var(--bluL)' }}>gsaiganesh@gmail.com</a>.</p>
+          <p>SignalGenie (signalgenie.ai) is a portfolio tracking and technical analysis tool built for Indian retail investors. It is operated by Sai Ganesh and Sai Kumar Bethala (&quot;we&quot;, &quot;us&quot;, &quot;our&quot;). Contact us at <a href="mailto:support@signalgenie.ai" style={{ color: 'var(--bluL)' }}>support@signalgenie.ai</a>.</p>
         </Section>
 
         <Section title="2. What Data We Collect">
@@ -92,7 +92,7 @@ export default function PrivacyPage() {
             <li><strong>Erasure</strong> — request deletion of your account and associated data.</li>
             <li><strong>Grievance redressal</strong> — raise a complaint about how your data is handled.</li>
           </ul>
-          <p>To exercise any right, email us at <a href="mailto:gsaiganesh@gmail.com" style={{ color: 'var(--bluL)' }}>gsaiganesh@gmail.com</a>. We will respond within 30 days.</p>
+          <p>To exercise any right, email us at <a href="mailto:support@signalgenie.ai" style={{ color: 'var(--bluL)' }}>support@signalgenie.ai</a>. We will respond within 30 days.</p>
         </Section>
 
         <Section title="9. Cookies &amp; Local Storage">
@@ -113,7 +113,7 @@ export default function PrivacyPage() {
 
         <Section title="12. Contact">
           <p>For any privacy-related queries or requests:<br />
-          Email: <a href="mailto:gsaiganesh@gmail.com" style={{ color: 'var(--bluL)' }}>gsaiganesh@gmail.com</a><br />
+          Email: <a href="mailto:support@signalgenie.ai" style={{ color: 'var(--bluL)' }}>support@signalgenie.ai</a><br />
           Address: India</p>
         </Section>
 

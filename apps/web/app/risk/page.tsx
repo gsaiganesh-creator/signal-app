@@ -160,7 +160,7 @@ export default function RiskDisclosurePage() {
         {/* Contact */}
         <div style={S}>
           <div style={H2}>11. Contact</div>
-          <p style={P}>Questions about this disclosure: <a href="mailto:gsaiganesh@gmail.com" style={{ color:'#4F6FFA', textDecoration:'none' }}>gsaiganesh@gmail.com</a></p>
+          <p style={P}>Questions about this disclosure: <a href="mailto:support@signalgenie.ai" style={{ color:'#4F6FFA', textDecoration:'none' }}>support@signalgenie.ai</a></p>
           <p style={P}>Grievance Officer: Sai Ganesh · SignalGenie · Bengaluru, India</p>
         </div>
 
