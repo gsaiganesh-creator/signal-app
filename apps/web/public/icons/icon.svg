@@ -1,27 +1,70 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="512" y2="512" gradientUnits="userSpaceOnUse">
-      <stop offset="0%" stop-color="#0E1628"/>
-      <stop offset="100%" stop-color="#070D1A"/>
+    <linearGradient id="bg" x1="0" y1="0" x2="256" y2="512" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#0B1530"/>
+      <stop offset="100%" stop-color="#050912"/>
     </linearGradient>
+    <radialGradient id="glow1" cx="75%" cy="20%" r="45%">
+      <stop offset="0%" stop-color="#1740F5" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#1740F5" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow2" cx="20%" cy="80%" r="40%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#8B5CF6" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="white" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="white" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="white" stop-opacity="0.28"/>
+      <stop offset="60%" stop-color="white" stop-opacity="0.03"/>
+      <stop offset="100%" stop-color="#4F6FFA" stop-opacity="0.12"/>
+    </linearGradient>
+    <filter id="cglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="18" result="blur"/>
+    </filter>
+    <filter id="oglow" x="-200%" y="-200%" width="500%" height="500%">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="22" result="blur"/>
+    </filter>
+    <clipPath id="shape">
+      <rect width="512" height="512" rx="115"/>
+    </clipPath>
   </defs>
-  <!-- Background -->
-  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
-  <!-- Blue tint overlay matching opacity:0.2 -->
-  <rect width="512" height="512" rx="96" fill="#1740F5" opacity="0.2"/>
-  <!-- Rising chart line -->
-  <polyline points="59,394 157,256 236,335 335,138 413,217 472,98"
-    stroke="#4F6FFA" stroke-width="28" fill="none"
-    stroke-linecap="round" stroke-linejoin="round"/>
-  <!-- Orbiting ring at top-right -->
-  <circle cx="422" cy="79" r="71" stroke="#8B5CF6" stroke-width="11" opacity="0.7" fill="none"/>
-  <!-- 6 orbs around ring -->
-  <circle cx="422" cy="8"   r="10.8" fill="#8B5CF6" opacity="0.8"/>
-  <circle cx="483" cy="43"  r="10.8" fill="#8B5CF6" opacity="0.8"/>
-  <circle cx="483" cy="115" r="10.8" fill="#8B5CF6" opacity="0.8"/>
-  <circle cx="422" cy="150" r="10.8" fill="#8B5CF6" opacity="0.8"/>
-  <circle cx="361" cy="115" r="10.8" fill="#8B5CF6" opacity="0.8"/>
-  <circle cx="361" cy="43"  r="10.8" fill="#8B5CF6" opacity="0.8"/>
-  <!-- 4-point orange star at ring center -->
-  <path d="M422 43 L430.9 70.1 L458 79 L430.9 87.9 L422 115 L413.1 87.9 L386 79 L413.1 70.1 Z" fill="#FF5C1A"/>
+
+  <g clip-path="url(#shape)">
+    <!-- Base -->
+    <rect width="512" height="512" fill="url(#bg)"/>
+    <!-- Ambient glows -->
+    <rect width="512" height="512" fill="url(#glow1)"/>
+    <rect width="512" height="512" fill="url(#glow2)"/>
+    <!-- Ghost S monogram -->
+    <text x="256" y="340" text-anchor="middle"
+      font-family="-apple-system, SF Pro Display, Helvetica Neue, sans-serif"
+      font-size="300" font-weight="900"
+      fill="#1740F5" opacity="0.06">S</text>
+    <!-- Chart glow (blur) -->
+    <polyline points="48,430 148,290 230,355 340,148 428,224 476,100"
+      stroke="#4F6FFA" stroke-width="44" fill="none"
+      stroke-linecap="round" stroke-linejoin="round"
+      filter="url(#cglow)" opacity="0.6"/>
+    <!-- Chart line (white) -->
+    <polyline points="48,430 148,290 230,355 340,148 428,224 476,100"
+      stroke="white" stroke-width="22" fill="none"
+      stroke-linecap="round" stroke-linejoin="round" opacity="0.85"/>
+    <!-- Orb glow -->
+    <circle cx="476" cy="100" r="50" fill="#FFB800" filter="url(#oglow)" opacity="0.55"/>
+    <!-- Orb ring -->
+    <circle cx="476" cy="100" r="28" fill="none" stroke="#FFB800" stroke-width="3" opacity="0.4"/>
+    <!-- Orb fill -->
+    <circle cx="476" cy="100" r="22" fill="#FFD166"/>
+    <!-- Orb inner highlight -->
+    <ellipse cx="469" cy="93" rx="9" ry="7" fill="white" opacity="0.55"/>
+    <!-- Gloss ellipse -->
+    <ellipse cx="256" cy="60" rx="215" ry="105" fill="url(#gloss)" opacity="0.22"/>
+    <!-- Top edge rim highlight -->
+    <rect x="80" y="1.5" width="352" height="2.5" rx="1.25" fill="white" fill-opacity="0.25"/>
+  </g>
+  <!-- Outer rim border -->
+  <rect width="512" height="512" rx="115" fill="none" stroke="url(#rim)" stroke-width="2"/>
 </svg>
