@@ -1033,12 +1033,20 @@ export default function PortfolioPage() {
       setAllViewHoldings(enriched);
       setAllLoading(false);
 
-      // Background ML pass — batch 5, 200ms delay to avoid Yahoo rate-limit
-      const ML_BATCH = 5;
+      // Background ML pass — top 40 by invested value only (rate-limit guard for large portfolios)
+      const ML_BATCH = 3;
+      const ML_DELAY = 350;
+      const ML_CAP   = 40;
       const ec = [...enriched];
-      for (let i = 0; i < merged.length; i += ML_BATCH) {
-        await Promise.allSettled(merged.slice(i, i + ML_BATCH).map(async (h, bi) => {
-          const idx = i + bi;
+      // Sort indices by invested value descending, cap at ML_CAP
+      const mlIndices = enriched
+        .map((h, i) => ({ i, val: (h.current_price ?? h.avg_price) * h.qty }))
+        .sort((a, b) => b.val - a.val)
+        .slice(0, ML_CAP)
+        .map(x => x.i);
+      for (let b = 0; b < mlIndices.length; b += ML_BATCH) {
+        await Promise.allSettled(mlIndices.slice(b, b + ML_BATCH).map(async idx => {
+          const h = merged[idx];
           try {
             const suffix = h.exchange === 'NSE' ? '.NS' : '.BO';
             const ctrl = new AbortController();
@@ -1057,7 +1065,7 @@ export default function PortfolioPage() {
           } catch { /* timeout — keep Yahoo price */ }
         }));
         setAllViewHoldings([...ec]);
-        if (i + ML_BATCH < merged.length) await new Promise(res => setTimeout(res, 200));
+        if (b + ML_BATCH < mlIndices.length) await new Promise(res => setTimeout(res, ML_DELAY));
       }
     } catch { setAllLoading(false); }
   }
