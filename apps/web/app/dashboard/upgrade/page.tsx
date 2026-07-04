@@ -127,7 +127,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export default function UpgradePage() {
   const { user, session } = usePortfolio();
-  const { plan: currentPlan } = usePlan();
+  const { plan: currentPlan, isFounder } = usePlan();
   const [billing,      setBilling]      = useState<'monthly'|'annual'>('monthly');
   const [loading,      setLoading]      = useState<string | null>(null);
   const [success,      setSuccess]      = useState<string | null>(null);
@@ -312,22 +312,24 @@ export default function UpgradePage() {
         })}
       </div>
 
-      {/* Razorpay not configured notice */}
-      <div style={{ background:'rgba(255,184,0,0.06)', border:'1px solid rgba(255,184,0,0.2)', borderRadius:12, padding:'16px 20px', marginBottom:20 }}>
-        <div style={{ fontSize:13, fontWeight:700, color:'var(--ylw)', marginBottom:6 }}>🔧 Razorpay setup required</div>
-        <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.7 }}>
-          To enable payments, add these to Vercel environment variables:<br/>
-          <code style={{ color:'var(--grn)', background:'rgba(0,0,0,0.2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>RAZORPAY_KEY_ID</code> and{' '}
-          <code style={{ color:'var(--grn)', background:'rgba(0,0,0,0.2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>RAZORPAY_KEY_SECRET</code>
-          {' '}from <strong>razorpay.com → Settings → API Keys</strong>. Use test keys (rzp_test_…) for sandbox.
+      {/* Razorpay setup notice — founders only */}
+      {isFounder && (
+        <div style={{ background:'rgba(255,184,0,0.06)', border:'1px solid rgba(255,184,0,0.2)', borderRadius:12, padding:'16px 20px', marginBottom:20 }}>
+          <div style={{ fontSize:13, fontWeight:700, color:'var(--ylw)', marginBottom:6 }}>🔧 Razorpay setup required</div>
+          <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.7 }}>
+            To enable payments, add these to Vercel environment variables:<br/>
+            <code style={{ color:'var(--grn)', background:'rgba(0,0,0,0.2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>RAZORPAY_KEY_ID</code> and{' '}
+            <code style={{ color:'var(--grn)', background:'rgba(0,0,0,0.2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>RAZORPAY_KEY_SECRET</code>
+            {' '}from <strong>razorpay.com → Settings → API Keys</strong>. Use test keys (rzp_test_…) for sandbox.
+          </div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginTop:8 }}>
+            Also run in Supabase SQL editor:{' '}
+            <code style={{ color:'var(--grn)', background:'rgba(0,0,0,0.2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>
+              ALTER TABLE profiles ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT &apos;free&apos;, ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMPTZ, ADD COLUMN IF NOT EXISTS plan_billing TEXT, ADD COLUMN IF NOT EXISTS plan_payment_id TEXT;
+            </code>
+          </div>
         </div>
-        <div style={{ fontSize:12, color:'var(--dim)', marginTop:8 }}>
-          Also run in Supabase SQL editor:{' '}
-          <code style={{ color:'var(--grn)', background:'rgba(0,0,0,0.2)', padding:'2px 6px', borderRadius:4, fontSize:11 }}>
-            ALTER TABLE profiles ADD COLUMN IF NOT EXISTS plan TEXT DEFAULT &apos;free&apos;, ADD COLUMN IF NOT EXISTS plan_expires_at TIMESTAMPTZ, ADD COLUMN IF NOT EXISTS plan_billing TEXT, ADD COLUMN IF NOT EXISTS plan_payment_id TEXT;
-          </code>
-        </div>
-      </div>
+      )}
 
       {/* Trust row */}
       <div style={{ display:'flex', gap:20, flexWrap:'wrap', justifyContent:'center', marginBottom:16 }}>
