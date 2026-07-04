@@ -35,7 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           <DashboardTopNav />
 
           <div className="dash-right" style={{ marginLeft: 0, justifySelf:'end' }}>
-            <ThemeToggle />
+            <div className="dash-theme-wrap"><ThemeToggle /></div>
             <div className="dash-bell" style={{ width:34, height:34, borderRadius:9, background:'transparent', border:'1px solid var(--card-bdr)', display:'flex', alignItems:'center', justifyContent:'center', cursor:'pointer', position:'relative', flexShrink:0 }}>
               <span style={{ fontSize:14 }}>🔔</span>
               <div style={{ position:'absolute', top:6, right:6, width:7, height:7, borderRadius:'50%', background:'var(--red)', border:'1.5px solid var(--surf)' }}/>
