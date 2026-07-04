@@ -4,6 +4,7 @@ import { usePortfolio } from '@/lib/portfolio-context';
 import { StockNews } from '@/components/StockNews';
 import { usePlan } from '@/lib/use-plan';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -180,13 +181,40 @@ const ZONE_STYLE = {
 function zs(z: USSignal['zone']) { return ZONE_STYLE[z] ?? ZONE_STYLE['N/A']; }
 
 // ── India Detail Drawer ───────────────────────────────────────────────────────
-function DetailDrawer({ sig, onClose, isElite }: { sig: MLSignal; onClose: () => void; isElite: boolean }) {
+function DetailDrawer({ sig, onClose, isElite, session }: { sig: MLSignal; onClose: () => void; isElite: boolean; session: ReturnType<typeof usePortfolio>['session'] }) {
+  const router = useRouter();
   const [ta, setTA] = useState<TADetail | null>(null);
   const [fund, setFund] = useState<FundDetail | null>(null);
   const [peers, setPeers] = useState<PeerRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [narrative, setNarrative] = useState<string | null>(null);
   const [narrativeLoading, setNarrativeLoading] = useState(false);
+  const [wlState, setWlState] = useState<'idle'|'adding'|'done'|'exists'|'err'>('idle');
+
+  async function handleAddWatchlist() {
+    if (!session) return;
+    setWlState('adding');
+    const sym = sig.symbol.replace(/\.(NS|BO)$/i, '');
+    const ex  = sig.symbol.endsWith('.BO') ? 'BSE' : 'NSE';
+    const res = await fetch(`${SUPA_URL}/rest/v1/watchlist`, {
+      method: 'POST',
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify({ user_id: session.user.id, symbol: sym, exchange: ex }),
+    });
+    if (res.status === 409) setWlState('exists');
+    else if (res.ok) setWlState('done');
+    else setWlState('err');
+    setTimeout(() => setWlState('idle'), 2500);
+  }
+
+  function handlePaperTrade() {
+    const sym  = sig.symbol.replace(/\.(NS|BO)$/i, '');
+    const ex   = sig.symbol.endsWith('.BO') ? 'BSE' : 'NSE';
+    const dir  = scoreSig(sig) === 'sell' ? 'SELL' : 'BUY';
+    const p    = new URLSearchParams({ symbol: sym, price: sig.cmp.toString(), exchange: ex, signal: dir, rsi: sig.rsi.toString(), name: encodeURIComponent(sig.name) });
+    onClose();
+    router.push(`/dashboard/paper-trading?${p.toString()}`);
+  }
 
   useEffect(() => {
     setLoading(true); setFund(null); setPeers([]); setNarrative(null);
@@ -486,8 +514,14 @@ function DetailDrawer({ sig, onClose, isElite }: { sig: MLSignal; onClose: () =>
         <div style={{ padding:'14px 24px', borderTop:'1px solid var(--bdr)', background:'var(--surf2)' }}>
           <div style={{ fontSize:10, color:'var(--dim2)', marginBottom:8 }}>⚠️ NOT SEBI REGISTERED · ML signals are probabilistic · Not financial advice · DYOR</div>
           <div style={{ display:'flex', gap:8 }}>
-            <button style={{ flex:1, height:40, borderRadius:10, background:'var(--grn)', border:'none', color:'#000', fontWeight:800, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>🧪 Paper Trade</button>
-            <button style={{ flex:1, height:40, borderRadius:10, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>📋 Add to Watchlist</button>
+            <button onClick={handlePaperTrade}
+              style={{ flex:1, height:40, borderRadius:10, background:'var(--grn)', border:'none', color:'#000', fontWeight:800, fontSize:13, cursor:'pointer', fontFamily:'inherit' }}>
+              🧪 Paper Trade
+            </button>
+            <button onClick={handleAddWatchlist} disabled={wlState === 'adding'}
+              style={{ flex:1, height:40, borderRadius:10, background: wlState === 'done' ? 'rgba(0,212,160,0.12)' : wlState === 'exists' ? 'rgba(255,184,0,0.12)' : 'var(--card-bg)', border: wlState === 'done' ? '1px solid var(--grn)' : wlState === 'exists' ? '1px solid var(--ylw)' : '1px solid var(--card-bdr)', color: wlState === 'done' ? 'var(--grn)' : wlState === 'exists' ? 'var(--ylw)' : wlState === 'err' ? 'var(--red)' : 'var(--txt)', fontWeight:700, fontSize:13, cursor:'pointer', fontFamily:'inherit', transition:'all 0.2s' }}>
+              {wlState === 'adding' ? '…' : wlState === 'done' ? '✓ Added to Watchlist' : wlState === 'exists' ? '✓ Already in Watchlist' : wlState === 'err' ? '✗ Failed' : '📋 Add to Watchlist'}
+            </button>
           </div>
         </div>
       </div>
@@ -1650,7 +1684,7 @@ export default function SignalsPage() {
         );
       })()}
 
-      {selected  && <DetailDrawer   sig={selected}   onClose={() => setSelected(null)} isElite={isElite} />}
+      {selected  && <DetailDrawer   sig={selected}   onClose={() => setSelected(null)} isElite={isElite} session={session} />}
       {selectedUS && <USDetailDrawer sig={selectedUS} onClose={() => setSelectedUS(null)} />}
       {upgradeModal && <UpgradeModal feature={upgradeModal.feature} minPlan={upgradeModal.minPlan} onClose={() => setUpgradeModal(null)} />}
     </>

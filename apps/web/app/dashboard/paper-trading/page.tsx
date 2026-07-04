@@ -275,11 +275,11 @@ function AlgoPickerModal({ token, userId, existing, onDone, onClose }: {
   );
 }
 
-function NewTradeModal({ strategy, token, userId, onDone, onClose }: { strategy: Strategy; token: string; userId: string; onDone(): void; onClose(): void }) {
-  const [sym, setSym] = useState('');
-  const [signal, setSig] = useState<'BUY'|'SELL'>('BUY');
+function NewTradeModal({ strategy, token, userId, onDone, onClose, initialSym = '', initialPrice = '', initialSignal = 'BUY' }: { strategy: Strategy; token: string; userId: string; onDone(): void; onClose(): void; initialSym?: string; initialPrice?: string; initialSignal?: 'BUY'|'SELL' }) {
+  const [sym, setSym] = useState(initialSym);
+  const [signal, setSig] = useState<'BUY'|'SELL'>(initialSignal);
   const [qty, setQty] = useState('10');
-  const [price, setPrice] = useState('');
+  const [price, setPrice] = useState(initialPrice);
   const [fetching, setFetching] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState('');
@@ -313,8 +313,14 @@ function NewTradeModal({ strategy, token, userId, onDone, onClose }: { strategy:
   return (
     <div style={{ position:'fixed', inset:0, zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', background:'rgba(0,0,0,0.6)' }}>
       <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:18, padding:28, width:'min(400px,90vw)' }}>
-        <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>Add Paper Trade</div>
-        <div style={{ fontSize:12, color:'var(--dim)', marginBottom:20 }}>{strategy.name} · Virtual only — no real orders placed</div>
+        <div style={{ fontSize:16, fontWeight:800, marginBottom:4 }}>Add Paper Trade</div>
+        <div style={{ fontSize:12, color:'var(--dim)', marginBottom: initialSym ? 10 : 20 }}>{strategy.name} · Virtual only — no real orders placed</div>
+        {initialSym && (
+          <div style={{ background:'rgba(0,212,160,0.08)', border:'1px solid rgba(0,212,160,0.25)', borderRadius:9, padding:'8px 12px', marginBottom:16, display:'flex', alignItems:'center', gap:8, fontSize:12 }}>
+            <span>🧪</span>
+            <span>Pre-filled from <strong>{initialSym}</strong> signal · Edit fields if needed</span>
+          </div>
+        )}
 
         <div style={{ display:'flex', gap:8, marginBottom:14 }}>
           {(['BUY','SELL'] as const).map(s => (
@@ -449,6 +455,31 @@ export default function PaperTradingPage() {
   const [duplicating, setDupl]      = useState(false);
   const activeAlgoTypes = strategies.map(s => s.algo_type ?? 'custom');
 
+  // Pre-fill from signals page deep-link (?symbol=RECLTD&price=365&signal=BUY&rsi=59)
+  const [quickSym,    setQuickSym]    = useState('');
+  const [quickPrice,  setQuickPrice]  = useState('');
+  const [quickSignal, setQuickSignal] = useState<'BUY'|'SELL'>('BUY');
+  const [quickOpened, setQuickOpened] = useState(false);
+
+  useEffect(() => {
+    const p   = new URLSearchParams(window.location.search);
+    const sym = p.get('symbol');
+    if (sym) {
+      setQuickSym(sym);
+      setQuickPrice(p.get('price') ?? '');
+      setQuickSignal(p.get('signal') === 'SELL' ? 'SELL' : 'BUY');
+    }
+  }, []);
+
+  // Once strategies load and we have a quick-symbol, auto-open the right modal
+  useEffect(() => {
+    if (!loading && quickSym && !quickOpened) {
+      setQuickOpened(true);
+      if (strategies.length > 0) setShowTrade(true);
+      else setShowNew(true);
+    }
+  }, [loading, quickSym, quickOpened, strategies.length]);
+
   async function duplicateStrategy() {
     if (!st || !user) return;
     setDupl(true);
@@ -573,7 +604,7 @@ export default function PaperTradingPage() {
             ▶ Select Strategies
           </button>
         </div>
-        {showNew && <AlgoPickerModal token={token} userId={user.id} existing={activeAlgoTypes} onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
+        {showNew && <AlgoPickerModal token={token} userId={user.id} existing={activeAlgoTypes} onDone={async () => { setShowNew(false); await loadStrategies(); if (quickSym) setShowTrade(true); }} onClose={() => setShowNew(false)} />}
       </div>
     );
   }
@@ -800,7 +831,7 @@ export default function PaperTradingPage() {
 
       {/* Modals */}
       {showNew     && <AlgoPickerModal token={token} userId={user.id} existing={activeAlgoTypes} onDone={async () => { setShowNew(false); await loadStrategies(); }} onClose={() => setShowNew(false)} />}
-      {showTrade   && st && <NewTradeModal strategy={st} token={token} userId={user.id} onDone={async () => { setShowTrade(false); await loadTrades(); }} onClose={() => setShowTrade(false)} />}
+      {showTrade   && st && <NewTradeModal strategy={st} token={token} userId={user.id} initialSym={quickSym} initialPrice={quickPrice} initialSignal={quickSignal} onDone={async () => { setShowTrade(false); setQuickSym(''); await loadTrades(); }} onClose={() => { setShowTrade(false); setQuickSym(''); }} />}
       {closingTrade && <CloseTradeModal trade={closingTrade} token={token} onDone={async () => { setClosing(null); await loadTrades(); }} onClose={() => setClosing(null)} />}
     </div>
   );
