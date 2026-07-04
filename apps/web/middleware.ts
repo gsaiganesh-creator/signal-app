@@ -22,11 +22,9 @@ export async function middleware(request: NextRequest) {
     },
   );
 
-  // getSession() decodes JWT locally — no network call, no hang.
-  // getUser() makes a live Supabase API call and can fail/slow causing redirect loops.
-  // RLS on Supabase enforces actual data security; middleware just guards the route.
-  const { data: { session } } = await supabase.auth.getSession();
-  const user = session?.user ?? null;
+  // getUser() validates session with Supabase and refreshes expired tokens automatically.
+  // getSession() only decodes JWT locally and returns null on expiry, causing logout loops.
+  const { data: { user } } = await supabase.auth.getUser();
 
   const { pathname } = request.nextUrl;
 
