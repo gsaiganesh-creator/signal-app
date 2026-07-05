@@ -101,18 +101,12 @@ def get_push_tokens(symbols: list[str]) -> list[dict]:
 
 
 def get_web_push_subscriptions(symbols: list[str]) -> list[dict]:
-    """Returns web push subscription rows for users who watchlisted any triggered symbol."""
-    if not symbols:
-        return []
-    sym_filter = "(" + ",".join(symbols) + ")"
+    """Returns all web push subscriptions (frontend saves to push_subscriptions table)."""
     with httpx.Client() as client:
         r = client.get(
-            _rest("web_push_subscriptions"),
+            _rest("push_subscriptions"),
             headers={**_HEADERS, "Prefer": "return=representation"},
-            params={
-                "select": "endpoint,p256dh,auth,user_id,symbol",
-                "symbol": f"in.{sym_filter}",
-            },
+            params={"select": "endpoint,p256dh,auth,user_id"},
         )
         r.raise_for_status()
         return r.json()
