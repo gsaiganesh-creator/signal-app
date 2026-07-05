@@ -59,7 +59,7 @@ export default function ForexPage() {
   const fetchTechnicals = useCallback(async () => {
     try {
       const syms = LIVE_PAIRS.map(p => p.sym).join(',');
-      const res = await fetch(`/api/forex-technical?symbols=${encodeURIComponent(syms)}`);
+      const res = await fetch(`/api/technical?symbols=${encodeURIComponent(syms)}`);
       if (res.ok) setTechnicals(await res.json());
     } catch { /* offline */ }
   }, []);

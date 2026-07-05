@@ -1,5 +1,6 @@
-// apps/web/app/api/forex-technical/route.ts
-// RSI/EMA/Supertrend for FX pairs, reusing the same math as /api/stock-detail.
+// apps/web/app/api/technical/route.ts
+// RSI/EMA/Supertrend for any Yahoo Finance symbol (FX pairs, commodity futures, etc.),
+// reusing the same math as /api/stock-detail. Consumed by the forex and commodities pages.
 import { rsi, ema, supertrend } from '@/lib/technicals';
 
 export const runtime = 'edge';
