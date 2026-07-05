@@ -10,7 +10,7 @@ export interface MoveDecomposition {
   narrative: string;
 }
 
-const FLAT_THRESHOLD = 0.05; // % — below this, treat a factor as negligible
+const FLAT_THRESHOLD = 0.05; // % — typical daily USDINR/futures noise floor; below this, treat a factor as negligible
 
 export function decomposeMove(usdPct: number | null, fxPct: number | null): MoveDecomposition | null {
   if (usdPct == null || fxPct == null) return null;
@@ -22,11 +22,11 @@ export function decomposeMove(usdPct: number | null, fxPct: number | null): Move
     return { dominant: 'flat', narrative: 'Flat — no significant move today' };
   }
 
+  // Tie (usdAbs === fxAbs) defaults to 'commodity' via >= — near-zero-probability case, intentional, not a bug.
   const dominant: MoveDriver = usdAbs >= fxAbs ? 'commodity' : 'rupee';
-  const usdSign = usdPct >= 0 ? '+' : '';
-  const fxSign = fxPct >= 0 ? '+' : '';
-  const usdStr = `global ${usdSign}${usdPct.toFixed(2)}%`;
-  const fxStr = `₹ ${fxSign}${fxPct.toFixed(2)}%`;
+  const fmtPct = (v: number) => `${v >= 0 ? '+' : ''}${v.toFixed(2)}%`;
+  const usdStr = `global ${fmtPct(usdPct)}`;
+  const fxStr = `₹ ${fmtPct(fxPct)}`;
 
   const narrative = dominant === 'commodity'
     ? `Mostly commodity-driven (${usdStr}, ${fxStr})`
