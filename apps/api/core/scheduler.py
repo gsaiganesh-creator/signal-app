@@ -5,6 +5,10 @@ import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
+from core.price_alerts import run_price_alerts_check
+from core.scan_log_backfill import run_scan_log_backfill
+from core.sentiment_scan import run_sentiment_backfill, run_sentiment_scan
+
 logger = logging.getLogger(__name__)
 
 IST = pytz.timezone("Asia/Kolkata")
@@ -97,6 +101,45 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # 7:30 AM IST — sentiment scan for holdings+watchlist symbols, Mon–Fri
+    scheduler.add_job(
+        run_sentiment_scan,
+        CronTrigger(day_of_week="mon-fri", hour=7, minute=30, timezone=IST),
+        id="sentiment_scan",
+        name="Sentiment Scan",
+        replace_existing=True,
+    )
+
+    # 9:30 AM IST — sentiment 7d/30d outcome backfill, daily
+    scheduler.add_job(
+        run_sentiment_backfill,
+        CronTrigger(hour=9, minute=30, timezone=IST),
+        id="sentiment_backfill",
+        name="Sentiment Backfill",
+        replace_existing=True,
+    )
+
+    # 5:30 PM IST — ML scan 30d/60d outcome backfill, daily
+    scheduler.add_job(
+        run_scan_log_backfill,
+        CronTrigger(hour=17, minute=30, timezone=IST),
+        id="scan_log_backfill",
+        name="Scan Log Backfill",
+        replace_existing=True,
+    )
+
+    # Every 15 min, 8:30 AM–3:45 PM IST — price alert check, Mon–Fri
+    scheduler.add_job(
+        run_price_alerts_check,
+        CronTrigger(day_of_week="mon-fri", hour="8-15", minute="*/15", timezone=IST),
+        id="price_alerts_check",
+        name="Price Alerts Check",
+        replace_existing=True,
+    )
+
     scheduler.start()
-    logger.info("scheduler: started (morning_scan, intraday_check, eod_cleanup)")
+    logger.info(
+        "scheduler: started (morning_scan, intraday_check, eod_cleanup, "
+        "sentiment_scan, sentiment_backfill, scan_log_backfill, price_alerts_check)"
+    )
     return scheduler
