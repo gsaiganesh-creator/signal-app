@@ -11,6 +11,11 @@ apps/web/out/
 apps/signal-mobile/.expo/
 apps/signal-mobile/dist/
 
+# Python
+apps/api/.venv/
+__pycache__/
+*.pyc
+
 # env files — NEVER commit real keys
 .env
 .env.local
