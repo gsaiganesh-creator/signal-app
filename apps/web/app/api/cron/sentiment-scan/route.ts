@@ -1,5 +1,8 @@
 // Vercel Cron: daily before market open, scans distinct symbols from holdings+watchlist
 // and stores an AI sentiment take per symbol (Grok, no live search — not real-time tweets).
+// Also appends a row to sentiment_scan_log for later accuracy backfill — see
+// /api/cron/sentiment-scan/backfill. That backfill is fully decoupled: it never
+// blocks or is blocked by this cron.
 // Requires env: SUPABASE_SERVICE_ROLE_KEY, XAI_API_KEY, CRON_SECRET
 // Add to vercel.json crons: { "path": "/api/cron/sentiment-scan", "schedule": "0 2 * * 1-5" }
 // (2:00 UTC = 7:30 AM IST, Mon–Fri, before market open)
@@ -49,6 +52,20 @@ async function grokSentiment(symbol: string, exchange: string): Promise<Sentimen
   }
 }
 
+async function fetchCurrentPrice(symbol: string, exchange: string): Promise<number | null> {
+  const suffix = exchange === 'BSE' ? '.BO' : exchange === 'NYSE' || exchange === 'NASDAQ' ? '' : '.NS';
+  const ySym = `${symbol}${suffix}`;
+  try {
+    const r = await fetch(
+      `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=1d`,
+      { headers: { 'User-Agent': 'Mozilla/5.0' }, signal: AbortSignal.timeout(6000) },
+    );
+    if (!r.ok) return null;
+    const d = await r.json() as { chart?: { result?: Array<{ meta?: { regularMarketPrice?: number } }> } };
+    return d?.chart?.result?.[0]?.meta?.regularMarketPrice ?? null;
+  } catch { return null; }
+}
+
 export async function GET(req: Request) {
   const secret = new URL(req.url).searchParams.get('secret');
   if (CRON_SECRET && secret !== CRON_SECRET) return Response.json({ error: 'forbidden' }, { status: 403 });
@@ -64,8 +81,6 @@ export async function GET(req: Request) {
   const holdings: Row[]  = holdingsRes.ok  ? await holdingsRes.json()  : [];
   const watchlist: Row[] = watchlistRes.ok ? await watchlistRes.json() : [];
 
-  // Dedupe by symbol (table PK is symbol alone); count occurrences to prioritize
-  // most-held/watched symbols first when over the daily cap.
   const counts = new Map<string, { symbol: string; exchange: string; count: number }>();
   for (const r of [...holdings, ...watchlist]) {
     const existing = counts.get(r.symbol);
@@ -74,7 +89,9 @@ export async function GET(req: Request) {
   }
   const ranked = [...counts.values()].sort((a, b) => b.count - a.count).slice(0, MAX_SYMBOLS);
 
-  let scanned = 0, failed = 0;
+  const today = new Date().toISOString().split('T')[0];
+  let scanned = 0, failed = 0, logged = 0;
+
   for (const { symbol, exchange } of ranked) {
     const result = await grokSentiment(symbol, exchange);
     if (result) {
@@ -84,11 +101,21 @@ export async function GET(req: Request) {
         body: JSON.stringify({ symbol, exchange, label: result.label, blurb: result.blurb, scanned_at: new Date().toISOString() }),
       });
       if (upsertRes.ok) scanned++; else failed++;
+
+      const price = await fetchCurrentPrice(symbol, exchange);
+      if (price != null) {
+        const logRes = await fetch(`${SUPA_URL}/rest/v1/sentiment_scan_log`, {
+          method: 'POST',
+          headers: { ...headers, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+          body: JSON.stringify({ scanned_at: today, symbol, exchange, label: result.label, price_at: price }),
+        });
+        if (logRes.ok) logged++;
+      }
     } else {
       failed++;
     }
     await sleep(200);
   }
 
-  return Response.json({ candidates: ranked.length, scanned, failed });
+  return Response.json({ candidates: ranked.length, scanned, failed, logged });
 }
