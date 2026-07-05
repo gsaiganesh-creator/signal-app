@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useTrackerPositions } from '@/lib/use-tracker-positions';
 import { TechTiles } from '@/components/TechTiles';
 import type { TechMap } from '@/lib/technical-types';
+import { decomposeMove } from '@/lib/move-decomposition';
 
 const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
 const inp:  React.CSSProperties = { height:36, borderRadius:8, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, padding:'0 10px', fontFamily:'inherit', outline:'none' };
@@ -233,7 +234,19 @@ export default function CommoditiesPage() {
                   per {com.inrUnit}
                   {usdPrice ? ` · $${usdPrice.toFixed(2)}/${com.unit}` : ''}
                 </div>
-                {isOpen && <TechTiles tech={tech} />}
+                {isOpen && (
+                  <>
+                    <TechTiles tech={tech} />
+                    {(() => {
+                      const decomp = decomposeMove(chg ?? null, prices[USDINR_SYM]?.change_pct ?? null);
+                      return decomp && (
+                        <div style={{ marginTop:8, fontSize:11, color:'var(--dim)' }}>
+                          {decomp.narrative}
+                        </div>
+                      );
+                    })()}
+                  </>
+                )}
               </div>
             );
           })}
