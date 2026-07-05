@@ -1,5 +1,5 @@
 // Shared technical-indicator math — pure functions over price arrays.
-// Used by /api/stock-detail (stocks) and /api/forex-technical (currency pairs).
+// Used by /api/stock-detail (stocks) and /api/technical (currency pairs, commodity futures, ...).
 
 export function ema(prices: number[], period: number): number {
   if (!prices.length) return 0;
