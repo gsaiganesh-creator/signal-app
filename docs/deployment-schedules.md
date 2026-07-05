@@ -1,61 +1,78 @@
-# Dokploy Schedules — signalgenie.ai
+# Scheduled Jobs — signalgenie.ai
 
-Reference for every scheduled job across both Dokploy apps. Set these up in the
-Dokploy UI (https://dok.texcrux.com → app → Schedules tab), not in `vercel.json`
-(that file is dead — this deployment runs on a VPS via Dokploy, not Vercel).
+All scheduled jobs run inside **Signal_BackEnd** (`apps/api`), via a single
+`APScheduler` `BackgroundScheduler` instance in `core/scheduler.py`. There is
+no Dokploy "Schedules" UI configuration for any of these — they're plain
+Python `cron`-style jobs registered at FastAPI startup, version-controlled
+in this repo.
 
-Schedules run as a shell command **inside the target app's own running container**
-(not an external HTTP hit), so commands use `localhost` and there's no Cloudflare
-proxy timeout to worry about. The container has no `curl`, so use `wget -qO-`.
+(Earlier on 2026-07-05 this ran differently — as Next.js routes on
+Signal_FrontEnd, triggered via Dokploy Schedules shell commands. That
+approach hit Cloudflare's ~100s proxy timeout on the 200-symbol sentiment
+scan and required an awkward self-batching workaround. Migrated to Python
+the same day specifically to remove that constraint — see
+`docs/superpowers/specs/2026-07-05-python-backend-scheduler-design.md`.)
 
----
+## Jobs (all times IST, `core/scheduler.py`)
 
-## App: Signal_FrontEnd (`signal-signalfrontend-1o9uuy`)
-
-The Next.js app serving signalgenie.ai. All `/api/cron/*` and other cron-style
-routes live here (`apps/web/app/api/...`). This app is running continuously.
-
-| Name | Cron (UTC) | IST equivalent | Command |
-|---|---|---|---|
-| `sentiment-scan` | `*/3 2-3 * * 1-5` | every 3 min, 7:30–9:29 AM, Mon–Fri | `wget -qO- "http://localhost:3000/api/cron/sentiment-scan?secret=xsentiment"` |
-| `sentiment-scan-backfill` | `0 4 * * *` | 9:30 AM daily | `wget -qO- "http://localhost:3000/api/cron/sentiment-scan/backfill"` |
-| `scan-log-backfill` | `0 12 * * *` | 5:30 PM daily | `wget -qO- "http://localhost:3000/api/scan-log/backfill"` |
-| `push-check-alerts` | `*/15 3-10 * * 1-5` | every 15 min, 8:30 AM–3:45 PM, Mon–Fri | `wget -qO- "http://localhost:3000/api/push/check-alerts?secret=xsentiment"` |
-
-Notes:
-- `sentiment-scan` is self-batching — processes ~10 symbols per call, skips
-  symbols already logged today, reports `remaining` in its JSON response.
-  Fires every 3 min for ~2 hours to work through up to 200 symbols/day.
-  Route: `apps/web/app/api/cron/sentiment-scan/route.ts`
-- `sentiment-scan-backfill` fills in 7-day/30-day outcome prices for accuracy
-  tracking — fully decoupled, never blocks the scan above.
-  Route: `apps/web/app/api/cron/sentiment-scan/backfill/route.ts`
-- `scan-log-backfill` and `push-check-alerts` are pre-existing crons that were
-  never actually wired up on this VPS before (only existed in the now-dead
-  `vercel.json` from when this was still Vercel-deployed).
-- The `xsentiment` secret was set as `CRON_SECRET` via Dokploy's env vars for
-  Signal_FrontEnd — rotate it if it's ever exposed outside this file.
-
----
-
-## App: Signal_BackEnd (`signal-signalbackend-bkup7s`)
-
-Python FastAPI backend (`apps/api/`). **Not currently deployed — 0 running
-containers as of 2026-07-05.** No schedules exist for it yet because there's
-nothing running to schedule against.
-
-If/when this gets deployed, add its schedules here following the same format
-as above (target `http://localhost:<port>/...` inside its own container).
-
-| Name | Cron (UTC) | Command |
+| Job | Schedule | What it does |
 |---|---|---|
-| _(none yet — apps/api not deployed)_ | — | — |
+| `morning_scan` | 9:15 AM, Mon–Fri | Dormant — signal-lifecycle feature, not currently used (see below) |
+| `intraday_check` | every 5 min, 9:20 AM–3:30 PM, Mon–Fri | Dormant — same feature |
+| `eod_cleanup` | 3:35 PM, Mon–Fri | Dormant — same feature |
+| `sentiment_scan` | 7:30 AM, Mon–Fri | AI sentiment take (Grok) per holdings/watchlist symbol → `sentiment_scores` + `sentiment_scan_log` |
+| `sentiment_backfill` | 9:30 AM, daily | Fills `sentiment_scan_log.price_7d`/`price_30d` outcomes |
+| `scan_log_backfill` | 5:30 PM, daily | Fills `scan_log.price_30d`/`price_60d` outcomes (ML technical-scan track record) |
+| `price_alerts_check` | every 15 min, 8:00 AM–3:45 PM (skips NSE holidays), Mon–Fri | Checks `price_alerts` targets, sends web push via `pywebpush` |
 
----
+## Dormant feature note
 
-## Adding a new schedule
+`morning_scan`/`intraday_check`/`eod_cleanup` implement a WATCHING → TRIGGERED
+→ EXPIRED signal lifecycle against `daily_signals`/`push_tokens`/
+`signal_alerts` (Expo push, likely intended for a future mobile app —
+`apps/signal-mobile` exists in this monorepo). Those tables had zero rows as
+of the 2026-07-05 migration — never wired up end-to-end. Left untouched by
+that migration; whether to build it out, retarget it, or remove it is a
+separate, undecided question.
 
-1. Dokploy UI → pick the app (Signal_FrontEnd or Signal_BackEnd) → Schedules tab → Create Schedule
-2. Shell type: `bash`
-3. Command: `wget -qO- "http://localhost:<port>/api/..."` (add `?secret=...` if the route checks `CRON_SECRET`)
-4. Update this file in the same PR/commit as the route change, so the two never drift apart
+**Note:** as of 2026-07-05, `core/notifier.py` (part of this dormant feature)
+also gained web-push support (reading `push_subscriptions`, sending via
+`pywebpush`) — the same capability `price_alerts_check` implements
+independently for the *active* dashboard feature. Two parallel
+implementations of "send a web push" now exist in this codebase (one wired
+to the dormant signal-lifecycle system, one wired to the live
+`price_alerts`/watchlist system). Not a conflict today, but worth
+reconciling before either grows further.
+
+## Manual triggers (testing/ops)
+
+Gated by `CRON_SECRET` (same value as Signal_FrontEnd's) via a `?secret=`
+query param:
+
+```bash
+curl -X POST "https://api.signalgenie.ai/api/jobs/sentiment-scan?secret=<CRON_SECRET>"
+curl -X POST "https://api.signalgenie.ai/api/jobs/sentiment-backfill?secret=<CRON_SECRET>"
+curl -X POST "https://api.signalgenie.ai/api/jobs/scan-log-backfill?secret=<CRON_SECRET>"
+curl -X POST "https://api.signalgenie.ai/api/jobs/price-alerts-check?secret=<CRON_SECRET>"
+```
+
+(If `api.signalgenie.ai` isn't set up yet as a Dokploy domain, trigger the
+same jobs via `docker exec` into the `signal-signalbackend-*` container and
+call the Python functions directly — no secret needed that way, since it's
+not going through the HTTP layer at all.)
+
+## Known external dependency
+
+`sentiment_scan` calls Grok (xAI) per symbol. If it stops working, check
+whether the xAI account has hit its credit/spending limit
+(console.x.ai) before assuming a code bug — this has happened before and is
+unrelated to anything in this repo.
+
+## Adding a new job
+
+1. Write the job function in `apps/api/core/<name>.py`
+2. Add it to `_JOBS` in `apps/api/routers/jobs.py` (manual trigger)
+3. Add a `scheduler.add_job(...)` call in `apps/api/core/scheduler.py` — wrap
+   it in a small `_<name>_job()` function that checks `_is_market_day()`
+   first if it's a live-market job (see `price_alerts_check` for the pattern)
+4. Update the table above in the same commit
