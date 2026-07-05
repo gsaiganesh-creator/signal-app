@@ -3,6 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
 import { StockNews } from '@/components/StockNews';
 import { usePlan } from '@/lib/use-plan';
+import { ProGate } from '@/components/ProGate';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
@@ -314,6 +315,7 @@ function DetailDrawer({ sig, onClose, isElite, session }: { sig: MLSignal; onClo
                   </div>
                 </div>
               )}
+              <ProGate feature="signals-indicators">
               <div style={{ marginBottom:20 }}>
                 <div style={{ fontSize:12, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:10 }}>Key Indicators</div>
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
@@ -370,6 +372,7 @@ function DetailDrawer({ sig, onClose, isElite, session }: { sig: MLSignal; onClo
                   );
                 })()}
               </div>
+              </ProGate>
             </>
           )}
           {!loading && !ta && (
@@ -378,6 +381,7 @@ function DetailDrawer({ sig, onClose, isElite, session }: { sig: MLSignal; onClo
             </div>
           )}
 
+          <ProGate feature="signals-indicators">
           {/* ── Fundamentals ── */}
           {!loading && fund && (fund.trailing_pe != null || fund.roe != null || fund.market_cap != null) && (
             <div style={{ marginBottom:20 }}>
@@ -504,6 +508,7 @@ function DetailDrawer({ sig, onClose, isElite, session }: { sig: MLSignal; onClo
               </div>
             </div>
           ) : null}
+          </ProGate>
 
           {/* ── Latest News ── */}
           <div style={{ marginBottom:8 }}>
@@ -614,7 +619,8 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
             </div>
           )}
 
-          {/* Technicals */}
+          {/* Technicals — Pro+ */}
+          <ProGate feature="signals-indicators">
           <Section title="Technicals" />
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
             {sig.rsi14   != null && <Stat label="RSI 14"   val={sig.rsi14.toString()} color={sig.rsi14 > 70 ? 'var(--red)' : sig.rsi14 < 35 ? 'var(--grn)' : 'var(--txt)'} />}
@@ -693,6 +699,7 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
               </div>
             </>
           )}
+          </ProGate>
 
           {/* ── Latest News ── */}
           <div style={{ marginTop:20 }}>
@@ -1190,7 +1197,7 @@ export default function SignalsPage() {
           )}
 
           {/* Controls — search on own row, pills scrollable below */}
-          <div style={{ position:'relative', marginBottom:10 }}>
+          <div style={{ position:'relative', marginBottom:10, isolation:'isolate', zIndex:250 }}>
             <span style={{ position:'absolute', left:11, top:'50%', transform:'translateY(-50%)', fontSize:13, opacity:0.5 }}>{analysing ? '⏳' : searchLoading ? '⌛' : '🔍'}</span>
             <input value={search} onChange={e => onSearchChange(e.target.value)}
               onFocus={() => searchResults.length && setShowDropdown(true)}
@@ -1198,7 +1205,7 @@ export default function SignalsPage() {
               placeholder="Search any NSE stock…"
               style={{ width:'100%', height:36, paddingLeft:34, paddingRight:10, borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--txt)', fontSize:13, fontFamily:'inherit', boxSizing:'border-box' }}/>
             {showDropdown && searchResults.length > 0 && (
-              <div style={{ position:'absolute', top:40, left:0, right:0, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:10, zIndex:200, boxShadow:'0 8px 32px rgba(0,0,0,0.3)', overflow:'hidden' }}>
+              <div style={{ position:'absolute', top:40, left:0, right:0, background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:10, zIndex:999, boxShadow:'0 8px 32px rgba(0,0,0,0.5)', overflow:'hidden' }}>
                 {searchResults.map(item => (
                   <button key={item.ticker} onPointerDown={() => analyseStock(item)}
                     style={{ width:'100%', display:'flex', alignItems:'center', gap:8, padding:'9px 13px', background:'none', border:'none', borderBottom:'1px solid var(--bdr)', cursor:'pointer', fontFamily:'inherit', textAlign:'left' }}

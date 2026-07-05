@@ -62,33 +62,37 @@ create table if not exists public.strategies (
   created_at      timestamptz not null default now()
 );
 
--- ─── 6. PAPER TRADES (sessions) ─────────────────────────────
-create table if not exists public.paper_trades (
-  id               uuid primary key default gen_random_uuid(),
-  user_id          uuid not null references public.profiles(id) on delete cascade,
-  strategy_id      uuid references public.strategies(id) on delete set null,
-  strategy_name    text not null,
-  virtual_capital  numeric(14, 2) not null default 100000,
-  current_value    numeric(14, 2) not null default 100000,
-  status           text not null default 'running',  -- running | completed | stopped
-  start_date       date not null default current_date,
-  end_date         date,
-  created_at       timestamptz not null default now()
+-- ─── 6. PAPER STRATEGIES (one row per activated algo per user) ──
+create table if not exists public.paper_strategies (
+  id           uuid primary key default gen_random_uuid(),
+  user_id      uuid not null references public.profiles(id) on delete cascade,
+  name         text not null,
+  algo_type    text,
+  capital      numeric(14, 2) not null default 100000,
+  rsi_low      numeric(5, 2)  not null default 35,
+  rsi_high     numeric(5, 2)  not null default 70,
+  sl_pct       numeric(5, 2)  not null default 2.5,
+  target_pct   numeric(5, 2)  not null default 6,
+  trial_days   integer        not null default 30,
+  active       boolean        not null default true,
+  started_at   timestamptz    not null default now(),
+  created_at   timestamptz    not null default now()
 );
 
--- ─── 7. PAPER TRADE LOGS (individual signals) ───────────────
-create table if not exists public.paper_trade_logs (
-  id               uuid primary key default gen_random_uuid(),
-  paper_trade_id   uuid not null references public.paper_trades(id) on delete cascade,
-  user_id          uuid not null references public.profiles(id) on delete cascade,
-  symbol           text not null,
-  signal           text not null,   -- BUY | SELL | HOLD
-  entry_price      numeric(12, 2),
-  exit_price       numeric(12, 2),
-  qty              integer,
-  pl               numeric(12, 2),
-  status           text not null default 'open',  -- open | win | sl | hold
-  fired_at         timestamptz not null default now()
+-- ─── 7. PAPER TRADES (individual virtual trades under a strategy) ──
+create table if not exists public.paper_trades (
+  id           uuid primary key default gen_random_uuid(),
+  strategy_id  uuid not null references public.paper_strategies(id) on delete cascade,
+  user_id      uuid not null references public.profiles(id) on delete cascade,
+  symbol       text not null,
+  signal       text not null default 'BUY',   -- BUY | SELL
+  entry_price  numeric(12, 2) not null,
+  qty          numeric(14, 4) not null,
+  entry_at     timestamptz not null default now(),
+  exit_price   numeric(12, 2),
+  exit_at      timestamptz,
+  pl           numeric(14, 2),
+  status       text not null default 'OPEN'   -- OPEN | WIN | LOSS
 );
 
 -- ============================================================
@@ -99,9 +103,9 @@ alter table public.profiles        enable row level security;
 alter table public.portfolios      enable row level security;
 alter table public.holdings        enable row level security;
 alter table public.watchlists      enable row level security;
-alter table public.strategies      enable row level security;
-alter table public.paper_trades    enable row level security;
-alter table public.paper_trade_logs enable row level security;
+alter table public.strategies       enable row level security;
+alter table public.paper_strategies enable row level security;
+alter table public.paper_trades     enable row level security;
 
 -- profiles: own row only
 create policy "profiles: own"
@@ -133,15 +137,15 @@ create policy "strategies: own"
   using  (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
--- paper_trades: own rows
-create policy "paper_trades: own"
-  on public.paper_trades for all
+-- paper_strategies: own rows
+create policy "paper_strategies: own"
+  on public.paper_strategies for all
   using  (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 
--- paper_trade_logs: own rows
-create policy "paper_trade_logs: own"
-  on public.paper_trade_logs for all
+-- paper_trades: own rows
+create policy "paper_trades: own"
+  on public.paper_trades for all
   using  (auth.uid() = user_id)
   with check (auth.uid() = user_id);
 

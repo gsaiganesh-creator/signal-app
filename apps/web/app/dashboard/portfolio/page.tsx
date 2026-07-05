@@ -1213,22 +1213,37 @@ export default function PortfolioPage() {
 
   async function handleDelete(id: string) {
     if (!session) return;
-    await fetch(`${SUPA_URL}/rest/v1/holdings?id=eq.${id}`, {
+    const res = await fetch(`${SUPA_URL}/rest/v1/holdings?id=eq.${id}`, {
       method: 'DELETE',
-      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
+      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, Prefer: 'return=representation' },
     });
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      setUploadMsg(`❌ Delete failed: ${text || `HTTP ${res.status}`}`);
+      return;
+    }
+    const deletedRows = await res.json().catch(() => []);
+    if (!Array.isArray(deletedRows) || deletedRows.length === 0) {
+      setUploadMsg('❌ Delete failed: holding not found or not permitted (RLS).');
+      return;
+    }
     await refreshContext();
   }
 
   async function handleUpdateCost(id: string) {
     const cost = parseFloat(editCostVal);
     if (!session || isNaN(cost) || cost <= 0) { setEditingCostId(null); return; }
-    await fetch(`${SUPA_URL}/rest/v1/holdings?id=eq.${id}`, {
+    const res = await fetch(`${SUPA_URL}/rest/v1/holdings?id=eq.${id}`, {
       method: 'PATCH',
       headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
       body: JSON.stringify({ avg_price: cost }),
     });
     setEditingCostId(null);
+    if (!res.ok) {
+      const text = await res.text().catch(() => '');
+      setUploadMsg(`❌ Update failed: ${text || `HTTP ${res.status}`}`);
+      return;
+    }
     await refreshContext();
   }
 

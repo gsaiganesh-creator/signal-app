@@ -9,6 +9,7 @@ const FEATURE_LABELS: Record<PlanFeature, { name: string; tier: string; desc: st
   'signals-portfolio':       { name: 'Portfolio Universe Scan', tier: 'Starter+', desc: 'Scan signals only for your holdings' },
   'signals-custom-universe': { name: 'Custom Universe Scan',    tier: 'Pro',      desc: 'Build a custom stock list for scanning' },
   'signals-us':              { name: 'US Market Signals',       tier: 'Elite',    desc: 'NYSE/NASDAQ technical scan — Elite only' },
+  'signals-indicators':      { name: 'Full Indicator Breakdown', tier: 'Pro',     desc: 'RSI, MACD, EMA, Bollinger Bands, fundamentals, peer comparison' },
   'signals-ai-narrative':    { name: 'AI Signal Narrative',     tier: 'Elite',    desc: 'Grok-powered "why now" context per signal' },
   'us-portfolio-multi':      { name: 'Multiple US Portfolios',  tier: 'Pro',      desc: 'Track multiple broker accounts' },
   'algo-builder':            { name: 'Algo Builder',            tier: 'Pro',      desc: 'Build and save custom trading strategies' },

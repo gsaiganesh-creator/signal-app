@@ -1,8 +1,8 @@
 export type Plan = 'free' | 'starter' | 'pro' | 'elite' | 'admin';
 export type MlClass = 'Momentum' | 'Swing' | 'Consolidating' | 'Hold' | 'Declining' | 'Stagnant' | 'Watch';
 export type SignalType = 'BUY' | 'SELL' | 'HOLD';
-export type TradeStatus = 'open' | 'win' | 'sl' | 'hold';
-export type PaperTradeStatus = 'running' | 'completed' | 'stopped';
+export type PaperTradeSignal = 'BUY' | 'SELL';
+export type PaperTradeStatus = 'OPEN' | 'WIN' | 'LOSS';
 
 export interface Database {
   public: {
@@ -37,16 +37,16 @@ export interface Database {
         Update: { user_id?: string; name?: string; strategy_type?: string; universe?: string[]; indicators?: string[]; stop_loss_pct?: number; target_pct?: number; config?: Record<string, unknown> };
         Relationships: [];
       };
-      paper_trades: {
-        Row:    { id: string; user_id: string; strategy_id: string | null; strategy_name: string; virtual_capital: number; current_value: number; status: PaperTradeStatus; start_date: string; end_date: string | null; created_at: string };
-        Insert: { id?: string; user_id: string; strategy_id?: string | null; strategy_name: string; virtual_capital?: number; current_value?: number; status?: PaperTradeStatus; start_date?: string; end_date?: string | null };
-        Update: { strategy_id?: string | null; strategy_name?: string; virtual_capital?: number; current_value?: number; status?: PaperTradeStatus; end_date?: string | null };
+      paper_strategies: {
+        Row:    { id: string; user_id: string; name: string; algo_type: string | null; capital: number; rsi_low: number; rsi_high: number; sl_pct: number; target_pct: number; trial_days: number; active: boolean; started_at: string; created_at: string };
+        Insert: { id?: string; user_id: string; name: string; algo_type?: string | null; capital?: number; rsi_low?: number; rsi_high?: number; sl_pct?: number; target_pct?: number; trial_days?: number; active?: boolean; started_at?: string };
+        Update: { name?: string; algo_type?: string | null; capital?: number; rsi_low?: number; rsi_high?: number; sl_pct?: number; target_pct?: number; trial_days?: number; active?: boolean };
         Relationships: [];
       };
-      paper_trade_logs: {
-        Row:    { id: string; paper_trade_id: string; user_id: string; symbol: string; signal: SignalType; entry_price: number | null; exit_price: number | null; qty: number | null; pl: number | null; status: TradeStatus; fired_at: string };
-        Insert: { id?: string; paper_trade_id: string; user_id: string; symbol: string; signal: SignalType; entry_price?: number | null; exit_price?: number | null; qty?: number | null; pl?: number | null; status?: TradeStatus };
-        Update: { signal?: SignalType; entry_price?: number | null; exit_price?: number | null; qty?: number | null; pl?: number | null; status?: TradeStatus };
+      paper_trades: {
+        Row:    { id: string; strategy_id: string; user_id: string; symbol: string; signal: PaperTradeSignal; entry_price: number; qty: number; entry_at: string; exit_price: number | null; exit_at: string | null; pl: number | null; status: PaperTradeStatus };
+        Insert: { id?: string; strategy_id: string; user_id: string; symbol: string; signal?: PaperTradeSignal; entry_price: number; qty: number; entry_at?: string; exit_price?: number | null; exit_at?: string | null; pl?: number | null; status?: PaperTradeStatus };
+        Update: { exit_price?: number | null; exit_at?: string | null; pl?: number | null; status?: PaperTradeStatus };
         Relationships: [];
       };
       broker_connections: {
