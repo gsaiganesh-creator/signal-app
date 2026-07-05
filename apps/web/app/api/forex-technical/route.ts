@@ -37,7 +37,7 @@ async function fetchOne(sym: string): Promise<TechResult> {
     const highs  = (q0.high  ?? []).filter((c): c is number => c != null && isFinite(c));
     const lows   = (q0.low   ?? []).filter((c): c is number => c != null && isFinite(c));
 
-    if (closes.length < 51 || highs.length < 12) return EMPTY;
+    if (closes.length < 51 || highs.length < 12 || lows.length < 12) return EMPTY;
 
     const rsi14 = rsi(closes, 14);
     const ema50 = ema(closes, 50);
