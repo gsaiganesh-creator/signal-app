@@ -139,7 +139,7 @@ export function NavUserChip() {
 
           {/* Sign out */}
           <button
-            onClick={() => { setOpen(false); router.push('/sign-out'); }}
+            onClick={() => { setOpen(false); window.location.href = '/sign-out'; }}
             style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', background: 'transparent', border: 'none', color: 'var(--red)', fontSize: 13, fontWeight: 600, cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit' }}
             onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,59,92,0.06)')}
             onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}>

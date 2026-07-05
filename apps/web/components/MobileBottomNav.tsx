@@ -140,15 +140,22 @@ export function MobileBottomNav() {
                   {section.links.map(l => {
                     const active = path === l.href || (l.href !== '/dashboard' && path.startsWith(l.href));
                     const isDanger = l.href === '/sign-out';
-                    return (
-                      <Link
-                        key={l.href}
-                        href={l.href}
-                        prefetch={isDanger ? false : undefined}
-                        onClick={() => setMoreOpen(false)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', fontSize: 13, fontWeight: 600, color: isDanger ? 'var(--red)' : active ? 'var(--bluL)' : 'var(--txt)', borderBottom: `1px solid var(--bdr)`, background: active ? 'rgba(79,111,250,0.08)' : 'transparent', textDecoration: 'none' }}>
+                    const linkStyle = { display: 'flex', alignItems: 'center', gap: 10, padding: '11px 16px', fontSize: 13, fontWeight: 600, color: isDanger ? 'var(--red)' : active ? 'var(--bluL)' : 'var(--txt)', borderBottom: `1px solid var(--bdr)`, background: active ? 'rgba(79,111,250,0.08)' : 'transparent', textDecoration: 'none' } as const;
+                    const content = (
+                      <>
                         <span style={{ fontSize: 15, width: 20, textAlign: 'center' }}>{l.icon}</span>
                         {l.label}
+                      </>
+                    );
+                    // Sign Out must hard-navigate — it's a Route Handler, not a page, and a
+                    // client-side soft-nav here leaves the browser's own Supabase client
+                    // unaware the session ended, which looks like "sign out doesn't work."
+                    if (isDanger) {
+                      return <a key={l.href} href={l.href} onClick={() => setMoreOpen(false)} style={linkStyle}>{content}</a>;
+                    }
+                    return (
+                      <Link key={l.href} href={l.href} onClick={() => setMoreOpen(false)} style={linkStyle}>
+                        {content}
                       </Link>
                     );
                   })}

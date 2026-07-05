@@ -113,17 +113,14 @@ export function DashboardSidebar() {
           const active = linkActive(link, pathname);
           const color  = link.danger ? 'var(--red)' : active ? 'var(--bluL)' : 'var(--nav-inactive)';
           const bg     = link.danger ? 'transparent' : active ? 'rgba(23,64,245,0.1)' : 'transparent';
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 9,
-                padding: '9px 10px', borderRadius: 9,
-                fontSize: 13, fontWeight: active ? 600 : 500,
-                color, background: bg, textDecoration: 'none',
-              }}
-            >
+          const linkStyle = {
+            display: 'flex', alignItems: 'center', gap: 9,
+            padding: '9px 10px', borderRadius: 9,
+            fontSize: 13, fontWeight: active ? 600 : 500,
+            color, background: bg, textDecoration: 'none',
+          } as const;
+          const content = (
+            <>
               <span style={{ width: 16, textAlign: 'center', fontSize: 14 }}>{link.icon}</span>
               {link.label}
               {link.badge && (
@@ -131,6 +128,18 @@ export function DashboardSidebar() {
                   {link.badge}
                 </span>
               )}
+            </>
+          );
+          // Sign Out must hard-navigate — it's a Route Handler, not a page, and a
+          // client-side <Link> soft-nav here leaves the browser's own Supabase
+          // client (and everything reading auth via context) unaware the
+          // session ended, which looks like "sign out doesn't work."
+          if (link.danger) {
+            return <a key={link.href} href={link.href} style={linkStyle}>{content}</a>;
+          }
+          return (
+            <Link key={link.href} href={link.href} style={linkStyle}>
+              {content}
             </Link>
           );
         })}
