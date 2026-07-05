@@ -5,7 +5,7 @@ from fastapi import FastAPI
 logging.basicConfig(level=logging.INFO)
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import signals, sentiment, market
+from routers import jobs, signals, sentiment, market
 from core.scheduler import start_scheduler
 
 app = FastAPI(
@@ -30,6 +30,7 @@ app.add_middleware(
 app.include_router(signals.router, prefix="/api")
 app.include_router(sentiment.router, prefix="/api")
 app.include_router(market.router, prefix="/api")
+app.include_router(jobs.router, prefix="/api")
 
 
 @app.on_event("startup")
