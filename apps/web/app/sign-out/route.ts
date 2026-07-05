@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
   }
   const supabase = await createClient();
   await supabase.auth.signOut();
-  const origin = new URL(request.url).origin;
+  // NOT new URL(request.url).origin — behind this app's reverse proxy that
+  // resolves to the container's internal Docker hostname, not the public
+  // domain, producing an unreachable redirect for real users.
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(request.url).origin;
   return NextResponse.redirect(`${origin}/`);
 }

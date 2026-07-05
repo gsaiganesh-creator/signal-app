@@ -6,7 +6,11 @@ export async function GET(req: Request) {
     return Response.json({ error: 'CAS_PARSER_API_KEY not configured on server' }, { status: 500 });
   }
 
-  const origin = new URL(req.url).origin;
+  // NOT new URL(req.url).origin — behind this app's reverse proxy that
+  // resolves to the container's internal Docker hostname, not the public
+  // domain, which would send a real user's OAuth redirect to an
+  // unreachable address after they grant consent.
+  const origin = process.env.NEXT_PUBLIC_APP_URL ?? new URL(req.url).origin;
   const redirectUri = `${origin}/casparser-callback`;
 
   let res: Response;
