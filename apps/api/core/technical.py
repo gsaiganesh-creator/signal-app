@@ -23,6 +23,7 @@ def get_technical_analysis(symbol: str, name: str | None = None) -> dict | None:
         ema5 = ta.trend.EMAIndicator(close, window=5).ema_indicator()
         ema20 = ta.trend.EMAIndicator(close, window=20).ema_indicator()
         ema50 = ta.trend.EMAIndicator(close, window=50).ema_indicator()
+        ema200 = ta.trend.EMAIndicator(close, window=200).ema_indicator()
         sma200 = ta.trend.SMAIndicator(close, window=200).sma_indicator()
 
         rsi = ta.momentum.RSIIndicator(close, window=14).rsi()
@@ -57,6 +58,7 @@ def get_technical_analysis(symbol: str, name: str | None = None) -> dict | None:
         curr_ema5 = round(float(ema5.iloc[-1]), 2)
         curr_ema20 = round(float(ema20.iloc[-1]), 2)
         curr_ema50 = round(float(ema50.iloc[-1]), 2)
+        curr_ema200 = round(float(ema200.iloc[-1]), 2) if not pd.isna(ema200.iloc[-1]) else None
         curr_sma200 = round(float(sma200.iloc[-1]), 2) if not pd.isna(sma200.iloc[-1]) else None
 
         signals = []
@@ -134,12 +136,15 @@ def get_technical_analysis(symbol: str, name: str | None = None) -> dict | None:
             "ema5": curr_ema5,
             "ema20": curr_ema20,
             "ema50": curr_ema50,
+            "ema200": curr_ema200,
             "sma200": curr_sma200,
             "rsi": curr_rsi,
             "macd": round(float(macd_line.iloc[-1]), 3),
             "macd_signal": round(float(macd_sig.iloc[-1]), 3),
             "bb_upper": round(float(bb_upper.iloc[-1]), 2),
             "bb_lower": round(float(bb_lower.iloc[-1]), 2),
+            "bb_pct": round((curr_price - float(bb_lower.iloc[-1])) / (float(bb_upper.iloc[-1]) - float(bb_lower.iloc[-1])), 3)
+                if float(bb_upper.iloc[-1]) != float(bb_lower.iloc[-1]) else 0.5,
             "support_1": round(s1, 2),
             "support_2": round(s2, 2),
             "resistance_1": round(r1, 2),

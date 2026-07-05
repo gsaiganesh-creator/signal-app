@@ -5,6 +5,7 @@ import pytz
 from apscheduler.schedulers.background import BackgroundScheduler
 from apscheduler.triggers.cron import CronTrigger
 
+from core.paper_trading_scan import run_paper_trading_scan
 from core.price_alerts import run_price_alerts_check
 from core.scan_log_backfill import run_scan_log_backfill
 from core.sentiment_scan import run_sentiment_backfill, run_sentiment_scan
@@ -77,6 +78,15 @@ def _price_alerts_check_job():
     run_price_alerts_check()
 
 
+def _paper_trading_scan_job():
+    if not _is_market_day():
+        return
+    try:
+        run_paper_trading_scan()
+    except Exception as e:
+        logger.error("scheduler: paper trading scan failed: %s", e)
+
+
 def start_scheduler():
     scheduler = BackgroundScheduler(timezone=IST)
 
@@ -143,9 +153,19 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # 9:30 AM IST (skips NSE holidays), Mon–Fri — paper trading auto-exit/auto-enter
+    scheduler.add_job(
+        _paper_trading_scan_job,
+        CronTrigger(day_of_week="mon-fri", hour=9, minute=30, timezone=IST),
+        id="paper_trading_scan",
+        name="Paper Trading Scan",
+        replace_existing=True,
+    )
+
     scheduler.start()
     logger.info(
         "scheduler: started (morning_scan, intraday_check, eod_cleanup, "
-        "sentiment_scan, sentiment_backfill, scan_log_backfill, price_alerts_check)"
+        "sentiment_scan, sentiment_backfill, scan_log_backfill, price_alerts_check, "
+        "paper_trading_scan)"
     )
     return scheduler

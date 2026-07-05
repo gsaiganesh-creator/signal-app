@@ -3,6 +3,7 @@ import os
 
 from fastapi import APIRouter, HTTPException, Query
 
+from core.paper_trading_scan import run_paper_trading_scan
 from core.price_alerts import run_price_alerts_check
 from core.scan_log_backfill import run_scan_log_backfill
 from core.sentiment_scan import run_sentiment_backfill, run_sentiment_scan
@@ -16,6 +17,7 @@ _JOBS = {
     "sentiment-backfill": run_sentiment_backfill,
     "scan-log-backfill": run_scan_log_backfill,
     "price-alerts-check": run_price_alerts_check,
+    "paper-trading-scan": run_paper_trading_scan,
 }
 
 
