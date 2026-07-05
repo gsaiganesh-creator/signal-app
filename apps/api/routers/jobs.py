@@ -1,10 +1,15 @@
-from fastapi import APIRouter
+import asyncio
+import os
+
+from fastapi import APIRouter, HTTPException, Query
 
 from core.price_alerts import run_price_alerts_check
 from core.scan_log_backfill import run_scan_log_backfill
 from core.sentiment_scan import run_sentiment_backfill, run_sentiment_scan
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
+
+_CRON_SECRET = os.getenv("CRON_SECRET", "")
 
 _JOBS = {
     "sentiment-scan": run_sentiment_scan,
@@ -15,9 +20,15 @@ _JOBS = {
 
 
 @router.post("/{name}")
-def trigger_job(name: str):
+async def trigger_job(name: str, secret: str = Query(default="")):
+    """Manually trigger a job for testing/ops. Costs real money per call
+    (Grok API) and can send real push notifications — gated by CRON_SECRET,
+    the same shared secret the scheduled Next.js routes used before this
+    migration."""
+    if _CRON_SECRET and secret != _CRON_SECRET:
+        raise HTTPException(status_code=403, detail="forbidden")
     fn = _JOBS.get(name)
     if fn is None:
         return {"error": f"unknown job '{name}'", "available": list(_JOBS.keys())}
-    result = fn()
+    result = await asyncio.to_thread(fn)
     return {"job": name, "result": result}
