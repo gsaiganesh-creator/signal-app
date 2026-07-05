@@ -88,6 +88,17 @@ const PROMPTS: Prompt[] = [
 
 const CATEGORIES = ['All', ...Array.from(new Set(PROMPTS.map(p => p.category)))];
 
+// Wraps every prompt with a persona + output-format instruction so the AI
+// responds like a senior analyst doing real diligence, not a bare data dump.
+// Kept as a wrapper (not duplicated into each PROMPTS entry) so the framing
+// stays consistent and is a one-line edit to change for all 19 prompts.
+const PERSONA_PREFIX = 'You are a senior equity research analyst at a top Indian brokerage, screening NSE/BSE stocks for a client who is actively considering fresh investment this week. Be rigorous and specific — reason like someone whose call gets checked against real outcomes, not a generic screener.\n\nTask: ';
+const OUTPUT_SUFFIX = '\n\nFor each stock that qualifies, give: (1) a one-line reason it fits the criteria above, (2) one concrete risk to watch before buying. Present as a table: Symbol | Price | key metric(s) from the criteria | Why it fits | Risk to watch. Rank by strongest fit first — top 10 only, don\'t pad the list with weak matches.';
+
+function fullPrompt(p: Prompt): string {
+  return `${PERSONA_PREFIX}${p.prompt}${OUTPUT_SUFFIX}`;
+}
+
 const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
 
 export default function AIPromptsPage() {
@@ -102,7 +113,7 @@ export default function AIPromptsPage() {
   );
 
   function copy(p: Prompt) {
-    navigator.clipboard.writeText(p.prompt).then(() => {
+    navigator.clipboard.writeText(fullPrompt(p)).then(() => {
       setCopied(p.id);
       setTimeout(() => setCopied(null), 2000);
     });
@@ -176,9 +187,13 @@ export default function AIPromptsPage() {
               </button>
             </div>
 
-            {/* Prompt text */}
+            {/* Prompt text — shown collapsed (core criteria only); full persona-wrapped
+                version is what actually gets copied via copy(), see fullPrompt() */}
             <div style={{ background:'var(--surf2)', borderRadius:10, padding:'12px 14px', fontSize:12.5, lineHeight:1.7, color:'var(--txt)', fontFamily:'inherit', border:'1px solid var(--card-bdr)' }}>
               {p.prompt}
+            </div>
+            <div style={{ fontSize:10.5, color:'var(--dim)', fontStyle:'italic' }}>
+              Copy adds analyst framing + output format automatically — click 📋 Copy to get the full prompt.
             </div>
 
             {/* Tags */}

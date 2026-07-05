@@ -619,9 +619,15 @@ export default function PaperTradingPage() {
           <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>Virtual capital · No real orders placed · ⚠️ Educational only</div>
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          {st && <button onClick={() => setShowTrade(true)} style={{ height:36, padding:'0 16px', borderRadius:9, background:'var(--grn)', border:'none', color:'#000', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Paper Trade</button>}
-          <button onClick={() => setShowNew(true)} style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>+ Add Strategy</button>
+          {st && <button onClick={() => setShowTrade(true)} title="Manually add a trade outside what the algorithm picked" style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>+ Manual Trade</button>}
+          <button onClick={() => setShowNew(true)} style={{ height:36, padding:'0 16px', borderRadius:9, background:'linear-gradient(135deg,var(--blu),var(--pur))', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>+ Add Strategy</button>
         </div>
+      </div>
+
+      {/* Auto-scan explainer — the algorithm drives stock selection, not the user */}
+      <div style={{ display:'flex', alignItems:'center', gap:10, background:'rgba(0,212,160,0.06)', border:'1px solid rgba(0,212,160,0.2)', borderRadius:12, padding:'10px 14px', marginBottom:20, fontSize:12.5, color:'var(--dim)' }}>
+        <span style={{ fontSize:16 }}>🤖</span>
+        <span>Each strategy auto-scans and enters/exits matching stocks daily at market open — no stock picking needed. &ldquo;+ Manual Trade&rdquo; is only for testing a specific stock the algorithm didn&apos;t pick.</span>
       </div>
 
       {/* Strategy selector tabs */}
@@ -808,9 +814,13 @@ export default function PaperTradingPage() {
 
             {/* Actions */}
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              <div style={{ fontSize:11, color:'var(--dim)', textAlign:'center', lineHeight:1.5 }}>
+                🤖 This algorithm auto-enters matching stocks daily at market open
+              </div>
               <button onClick={() => setShowTrade(true)}
-                style={{ height:46, borderRadius:12, background:'linear-gradient(135deg,var(--grn),#00A87D)', border:'none', color:'#001A12', fontSize:14, fontWeight:800, cursor:'pointer', fontFamily:'inherit' }}>
-                🧪 Add Paper Trade
+                title="Manually add a trade outside what the algorithm picked"
+                style={{ height:42, borderRadius:12, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, cursor:'pointer', fontFamily:'inherit' }}>
+                + Manual Trade (override)
               </button>
               <button onClick={duplicateStrategy} disabled={duplicating}
                 style={{ height:42, borderRadius:12, background:'rgba(255,184,0,0.08)', border:'1px solid rgba(255,184,0,0.25)', color:'var(--ylw)', fontSize:14, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>
