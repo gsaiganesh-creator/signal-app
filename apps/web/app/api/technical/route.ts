@@ -2,14 +2,9 @@
 // RSI/EMA/Supertrend for any Yahoo Finance symbol (FX pairs, commodity futures, etc.),
 // reusing the same math as /api/stock-detail. Consumed by the forex and commodities pages.
 import { rsi, ema, supertrend } from '@/lib/technicals';
+import type { TechResult } from '@/lib/technical-types';
 
 export const runtime = 'edge';
-
-interface TechResult {
-  rsi14: number | null;
-  ema_gap_pct: number | null;
-  bias: 'bullish' | 'bearish' | null;
-}
 
 const EMPTY: TechResult = { rsi14: null, ema_gap_pct: null, bias: null };
 
