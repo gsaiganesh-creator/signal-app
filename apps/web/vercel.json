@@ -19,6 +19,10 @@
     {
       "path": "/api/cron/sentiment-scan",
       "schedule": "0 2 * * 1-5"
+    },
+    {
+      "path": "/api/cron/sentiment-scan/backfill",
+      "schedule": "0 3 * * *"
     }
   ]
 }
