@@ -44,6 +44,7 @@ interface CommodityPosition {
 }
 
 type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
+type TechMap = Record<string, { rsi14: number | null; ema_gap_pct: number | null; bias: 'bullish' | 'bearish' | null }>;
 
 // Convert qty+unit to base unit (grams for gold, kg for silver, etc.)
 function toBaseGrams(qty: number, unit: string): number {
@@ -71,6 +72,8 @@ export default function CommoditiesPage() {
   const [prices, setPrices]   = useState<PriceMap>({});
   const [usdInr, setUsdInr]   = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
+  const [technicals, setTechnicals] = useState<TechMap>({});
+  const [expandedCom, setExpandedCom] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm]       = useState({ commodity:'gold', qty:'', unit:'grams', avg_price:'', note:'' });
   const [formErr, setFormErr] = useState('');
@@ -90,7 +93,15 @@ export default function CommoditiesPage() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchPrices(); }, [fetchPrices]);
+  const fetchTechnicals = useCallback(async () => {
+    try {
+      const syms = COMMODITIES.map(c => c.sym).join(',');
+      const res = await fetch(`/api/technical?symbols=${encodeURIComponent(syms)}`);
+      if (res.ok) setTechnicals(await res.json());
+    } catch { /* offline */ }
+  }, []);
+
+  useEffect(() => { fetchPrices(); fetchTechnicals(); }, [fetchPrices, fetchTechnicals]);
 
   function getInrPrice(com: typeof COMMODITIES[0]): number | null {
     const usd = prices[com.sym]?.price;
@@ -160,7 +171,7 @@ export default function CommoditiesPage() {
           </div>
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          <button onClick={fetchPrices} disabled={loading}
+          <button onClick={() => { fetchPrices(); fetchTechnicals(); }} disabled={loading}
             style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: loading ? 0.6 : 1 }}>
             {loading ? '⏳' : '🔄'} Refresh
           </button>
@@ -198,8 +209,11 @@ export default function CommoditiesPage() {
             const usdPrice = prices[com.sym]?.price;
             const chg = prices[com.sym]?.change_pct;
             const inrPrice = getInrPrice(com);
+            const tech = technicals[com.sym];
+            const isOpen = expandedCom === com.id;
             return (
-              <div key={com.id} style={{ background:'var(--surf2)', border:`1px solid var(--bdr)`, borderRadius:10, padding:'12px 14px', borderLeft:`3px solid ${com.color}` }}>
+              <div key={com.id} onClick={() => setExpandedCom(isOpen ? null : com.id)}
+                style={{ background:'var(--surf2)', border:`1px solid var(--bdr)`, borderRadius:10, padding:'12px 14px', borderLeft:`3px solid ${com.color}`, cursor:'pointer' }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <span style={{ fontSize:16 }}>{com.emoji}</span>
@@ -218,6 +232,26 @@ export default function CommoditiesPage() {
                   per {com.inrUnit}
                   {usdPrice ? ` · $${usdPrice.toFixed(2)}/${com.unit}` : ''}
                 </div>
+                {isOpen && (
+                  <div onClick={e => e.stopPropagation()} style={{ marginTop:10, paddingTop:10, borderTop:'1px solid var(--card-bdr)', display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+                    <div>
+                      <div style={{ fontSize:9, color:'var(--dim)', textTransform:'uppercase' }}>RSI(14)</div>
+                      <div style={{ fontSize:13, fontWeight:800 }}>{tech?.rsi14 != null ? tech.rsi14.toFixed(1) : '—'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:9, color:'var(--dim)', textTransform:'uppercase' }}>vs 50D EMA</div>
+                      <div style={{ fontSize:13, fontWeight:800, color: tech?.ema_gap_pct != null ? (tech.ema_gap_pct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
+                        {tech?.ema_gap_pct != null ? `${tech.ema_gap_pct >= 0 ? '+' : ''}${tech.ema_gap_pct.toFixed(2)}%` : '—'}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:9, color:'var(--dim)', textTransform:'uppercase' }}>Bias</div>
+                      <div style={{ fontSize:12, fontWeight:800 }}>
+                        {tech?.bias === 'bullish' ? '🟢 Bullish' : tech?.bias === 'bearish' ? '🔴 Bearish' : '⚪ —'}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
