@@ -1,11 +1,14 @@
-// Vercel Cron: daily before market open, scans distinct symbols from holdings+watchlist
-// and stores an AI sentiment take per symbol (Grok, no live search — not real-time tweets).
+// Daily before market open, scans distinct symbols from holdings+watchlist and stores
+// an AI sentiment take per symbol (Grok, no live search — not real-time tweets).
 // Also appends a row to sentiment_scan_log for later accuracy backfill — see
 // /api/cron/sentiment-scan/backfill. That backfill is fully decoupled: it never
 // blocks or is blocked by this cron.
+//
+// Self-batching: processes at most BATCH_SIZE symbols per call and skips symbols
+// already logged today (via sentiment_scan_log), so it stays well under the ~100s
+// proxy timeout in front of this deployment. A scheduler must call this repeatedly
+// (e.g. every 3 min) until `remaining` in the response reaches 0 for the day.
 // Requires env: SUPABASE_SERVICE_ROLE_KEY, XAI_API_KEY, CRON_SECRET
-// Add to vercel.json crons: { "path": "/api/cron/sentiment-scan", "schedule": "0 2 * * 1-5" }
-// (2:00 UTC = 7:30 AM IST, Mon–Fri, before market open)
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,6 +18,7 @@ const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 const XAI_KEY     = process.env.XAI_API_KEY ?? '';
 const CRON_SECRET = process.env.CRON_SECRET ?? '';
 const MAX_SYMBOLS = 200;
+const BATCH_SIZE  = 10;
 
 interface Row { symbol: string; exchange: string; }
 interface SentimentResult { label: 'bullish' | 'bearish' | 'neutral'; blurb: string; }
@@ -90,9 +94,19 @@ export async function GET(req: Request) {
   const ranked = [...counts.values()].sort((a, b) => b.count - a.count).slice(0, MAX_SYMBOLS);
 
   const today = new Date().toISOString().split('T')[0];
+
+  const doneRes = await fetch(
+    `${SUPA_URL}/rest/v1/sentiment_scan_log?scanned_at=eq.${today}&select=symbol`,
+    { headers },
+  );
+  const doneToday = new Set<string>(doneRes.ok ? (await doneRes.json() as { symbol: string }[]).map(r => r.symbol) : []);
+
+  const pending = ranked.filter(r => !doneToday.has(r.symbol));
+  const batch = pending.slice(0, BATCH_SIZE);
+
   let scanned = 0, failed = 0, logged = 0;
 
-  for (const { symbol, exchange } of ranked) {
+  for (const { symbol, exchange } of batch) {
     const result = await grokSentiment(symbol, exchange);
     if (result) {
       const upsertRes = await fetch(`${SUPA_URL}/rest/v1/sentiment_scores`, {
@@ -117,5 +131,10 @@ export async function GET(req: Request) {
     await sleep(200);
   }
 
-  return Response.json({ candidates: ranked.length, scanned, failed, logged });
+  return Response.json({
+    candidates: ranked.length,
+    batchSize: batch.length,
+    remaining: pending.length - batch.length,
+    scanned, failed, logged,
+  });
 }
