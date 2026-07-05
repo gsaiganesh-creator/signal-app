@@ -2,6 +2,7 @@
 scan track record (scan_log table). Ported from the Next.js route that
 implemented this before the move to this Python scheduler."""
 import logging
+import time
 from datetime import datetime, timedelta, timezone
 
 from core.price_utils import fetch_price
@@ -35,14 +36,15 @@ def run_scan_log_backfill() -> dict:
         key = f"{row['symbol']}:{row['exchange']}"
         if key not in price_cache:
             price_cache[key] = fetch_price(row["symbol"], row["exchange"])
+            time.sleep(0.2)
 
     updated30 = updated60 = 0
     for row in need30:
         price = price_cache.get(f"{row['symbol']}:{row['exchange']}")
-        if price is None:
+        if price is None or not row["price_at"]:
             continue
-        ret = round((price - row["price_at"]) / row["price_at"] * 100, 2)
         try:
+            ret = round((price - row["price_at"]) / row["price_at"] * 100, 2)
             rest_patch("scan_log", {"id": f"eq.{row['id']}"}, {"price_30d": price, "return_30d": ret})
             updated30 += 1
         except Exception as e:
@@ -50,10 +52,10 @@ def run_scan_log_backfill() -> dict:
 
     for row in need60:
         price = price_cache.get(f"{row['symbol']}:{row['exchange']}")
-        if price is None:
+        if price is None or not row["price_at"]:
             continue
-        ret = round((price - row["price_at"]) / row["price_at"] * 100, 2)
         try:
+            ret = round((price - row["price_at"]) / row["price_at"] * 100, 2)
             rest_patch("scan_log", {"id": f"eq.{row['id']}"}, {"price_60d": price, "return_60d": ret})
             updated60 += 1
         except Exception as e:
