@@ -7,7 +7,7 @@ import os
 import time
 from datetime import datetime, timezone
 
-from pywebpush import WebPushException, webpush
+from pywebpush import webpush
 
 from core.price_utils import fetch_price
 from core.supabase_rest import rest_get, rest_patch
@@ -33,7 +33,7 @@ def run_price_alerts_check() -> dict:
     triggered = []
     for a in alerts:
         price = price_cache.get(f"{a['symbol']}:{a['exchange']}")
-        if price is None:
+        if price is None or not a.get("target_price") or not a.get("condition"):
             continue
         hit = price >= a["target_price"] if a["condition"] == "above" else price <= a["target_price"]
         if hit:
@@ -78,7 +78,7 @@ def run_price_alerts_check() -> dict:
                     vapid_claims={"sub": _VAPID_EMAIL},
                 )
                 sent += 1
-            except WebPushException as e:
+            except Exception as e:
                 logger.warning("price_alerts: push send failed for %s: %s", a["symbol"], e)
 
     summary = {"checked": len(alerts), "triggered": len(triggered), "sent": sent}
