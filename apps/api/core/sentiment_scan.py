@@ -6,7 +6,7 @@ import json
 import logging
 import os
 import time
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 
@@ -52,6 +52,10 @@ def _grok_sentiment(symbol: str, exchange: str) -> dict | None:
 
 
 def run_sentiment_scan() -> dict:
+    if not _XAI_KEY:
+        logger.error("sentiment_scan: XAI_API_KEY missing, skipping run")
+        return {"error": "XAI_API_KEY missing"}
+
     holdings = rest_get("holdings", {"select": "symbol,exchange"})
     watchlist = rest_get("watchlist", {"select": "symbol,exchange"})
 
@@ -65,7 +69,7 @@ def run_sentiment_scan() -> dict:
 
     ranked = sorted(counts.values(), key=lambda r: -r["count"])[:_MAX_SYMBOLS]
 
-    today = date.today().isoformat()
+    today = datetime.now(timezone.utc).date().isoformat()
     done_rows = rest_get("sentiment_scan_log", {"scanned_at": f"eq.{today}", "select": "symbol"})
     done_today = {r["symbol"] for r in done_rows}
 
@@ -115,7 +119,7 @@ def run_sentiment_scan() -> dict:
 
 
 def run_sentiment_backfill() -> dict:
-    today = date.today()
+    today = datetime.now(timezone.utc).date()
     d7ago = (today - timedelta(days=7)).isoformat()
     d30ago = (today - timedelta(days=30)).isoformat()
 
