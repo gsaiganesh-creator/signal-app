@@ -71,6 +71,12 @@ def _eod_cleanup_job():
         logger.error("scheduler: EOD cleanup failed: %s", e)
 
 
+def _price_alerts_check_job():
+    if not _is_market_day():
+        return
+    run_price_alerts_check()
+
+
 def start_scheduler():
     scheduler = BackgroundScheduler(timezone=IST)
 
@@ -128,9 +134,9 @@ def start_scheduler():
         replace_existing=True,
     )
 
-    # Every 15 min, 8:30 AM–3:45 PM IST — price alert check, Mon–Fri
+    # Every 15 min, 8:00 AM–3:45 PM IST (skips NSE holidays), Mon–Fri — price alert check
     scheduler.add_job(
-        run_price_alerts_check,
+        _price_alerts_check_job,
         CronTrigger(day_of_week="mon-fri", hour="8-15", minute="*/15", timezone=IST),
         id="price_alerts_check",
         name="Price Alerts Check",
