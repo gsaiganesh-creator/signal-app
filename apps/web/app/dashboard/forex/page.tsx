@@ -32,6 +32,7 @@ interface FxPosition {
 }
 
 type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
+type TechMap = Record<string, { rsi14: number | null; ema_gap_pct: number | null; bias: 'bullish' | 'bearish' | null }>;
 
 export default function ForexPage() {
   const { positions, addPosition: savePosition, deletePosition: removePosition } =
@@ -39,6 +40,8 @@ export default function ForexPage() {
 
   const [rates, setRates]     = useState<PriceMap>({});
   const [ratesLoading, setRL] = useState(true);
+  const [technicals, setTechnicals] = useState<TechMap>({});
+  const [expandedPair, setExpandedPair] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
   const [form, setForm]       = useState({ currency:'USD', amount:'', avg_rate:'', note:'' });
   const [formErr, setFormErr] = useState('');
@@ -53,7 +56,15 @@ export default function ForexPage() {
     setRL(false);
   }, []);
 
-  useEffect(() => { fetchRates(); }, [fetchRates]);
+  const fetchTechnicals = useCallback(async () => {
+    try {
+      const syms = LIVE_PAIRS.map(p => p.sym).join(',');
+      const res = await fetch(`/api/forex-technical?symbols=${encodeURIComponent(syms)}`);
+      if (res.ok) setTechnicals(await res.json());
+    } catch { /* offline */ }
+  }, []);
+
+  useEffect(() => { fetchRates(); fetchTechnicals(); }, [fetchRates, fetchTechnicals]);
 
   function getRate(sym: string) { return rates[sym]?.price ?? null; }
   function getChg(sym: string)  { return rates[sym]?.change_pct ?? null; }
@@ -116,7 +127,7 @@ export default function ForexPage() {
           <div style={{ fontSize:12, color:'var(--dim)', marginTop:3 }}>Live rates vs INR · Track your foreign currency holdings</div>
         </div>
         <div style={{ display:'flex', gap:8 }}>
-          <button onClick={fetchRates} disabled={ratesLoading}
+          <button onClick={() => { fetchRates(); fetchTechnicals(); }} disabled={ratesLoading}
             style={{ height:36, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, cursor:'pointer', fontFamily:'inherit', opacity: ratesLoading ? 0.6 : 1 }}>
             {ratesLoading ? '⏳' : '🔄'} Refresh
           </button>
@@ -158,8 +169,11 @@ export default function ForexPage() {
             const chg  = getChg(pair.sym);
             const scale = pair.scale ?? 1;
             const displayRate = rate != null ? rate / scale : null;
+            const tech = technicals[pair.sym];
+            const isOpen = expandedPair === pair.code;
             return (
-              <div key={pair.code} style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:10, padding:'12px 14px' }}>
+              <div key={pair.code} onClick={() => setExpandedPair(isOpen ? null : pair.code)}
+                style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:10, padding:'12px 14px', cursor:'pointer' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
                   <span style={{ fontSize:18 }}>{pair.flag}</span>
                   <div>
@@ -176,6 +190,26 @@ export default function ForexPage() {
                   {displayRate != null ? `₹${displayRate.toFixed(pair.code === 'JPY' ? 4 : 2)}` : '—'}
                 </div>
                 <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>per 1 {pair.code}{scale > 1 ? ` (÷${scale})` : ''}</div>
+                {isOpen && (
+                  <div style={{ marginTop:10, paddingTop:10, borderTop:'1px solid var(--card-bdr)', display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8 }}>
+                    <div>
+                      <div style={{ fontSize:9, color:'var(--dim)', textTransform:'uppercase' }}>RSI(14)</div>
+                      <div style={{ fontSize:13, fontWeight:800 }}>{tech?.rsi14 != null ? tech.rsi14.toFixed(1) : '—'}</div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:9, color:'var(--dim)', textTransform:'uppercase' }}>vs 50D EMA</div>
+                      <div style={{ fontSize:13, fontWeight:800, color: tech?.ema_gap_pct != null ? (tech.ema_gap_pct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
+                        {tech?.ema_gap_pct != null ? `${tech.ema_gap_pct >= 0 ? '+' : ''}${tech.ema_gap_pct}%` : '—'}
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ fontSize:9, color:'var(--dim)', textTransform:'uppercase' }}>Bias</div>
+                      <div style={{ fontSize:12, fontWeight:800 }}>
+                        {tech?.bias === 'bullish' ? '🟢 Bullish' : tech?.bias === 'bearish' ? '🔴 Bearish' : '⚪ —'}
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             );
           })}
