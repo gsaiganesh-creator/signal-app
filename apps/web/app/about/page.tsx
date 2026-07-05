@@ -1,3 +1,4 @@
+import { notFound } from 'next/navigation';
 import { PublicNav } from '@/components/PublicNav';
 
 const GLS: React.CSSProperties = {
@@ -34,6 +35,9 @@ const TIMELINE = [
 ];
 
 export default function AboutPage() {
+  // Hidden: co-founder's Amazon employment + director conflict-of-interest concern.
+  // Bring back once that's resolved — content below is untouched.
+  notFound();
   return (
     <div style={{ background: 'var(--bg)', color: 'var(--txt)', fontFamily: 'Inter,system-ui,sans-serif', minHeight: '100vh', overflowX: 'hidden' }}>
 

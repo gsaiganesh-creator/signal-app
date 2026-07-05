@@ -127,8 +127,6 @@ export default function RiskDisclosurePage() {
         {/* Back link */}
         <div style={{ marginTop: 32, textAlign: 'center' }}>
           <Link href="/dashboard" style={{ fontSize: 13, color: 'var(--dim)', textDecoration: 'none' }}>← Back to Dashboard</Link>
-          <span style={{ color: 'var(--dim2)', margin: '0 12px' }}>·</span>
-          <Link href="/about" style={{ fontSize: 13, color: 'var(--dim)', textDecoration: 'none' }}>About SignalGenie</Link>
         </div>
       </main>
     </div>

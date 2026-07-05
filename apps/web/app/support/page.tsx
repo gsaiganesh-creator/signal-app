@@ -194,8 +194,7 @@ export default function SupportPage() {
           </a>
           <div style={{ marginTop: 20, fontSize: 12, color: 'var(--dim)' }}>
             <Link href="/privacy" style={{ color: 'var(--dim)', marginRight: 16 }}>Privacy Policy</Link>
-            <Link href="/risk-disclosure" style={{ color: 'var(--dim)', marginRight: 16 }}>Risk Disclosure</Link>
-            <Link href="/about" style={{ color: 'var(--dim)' }}>About Us</Link>
+            <Link href="/risk-disclosure" style={{ color: 'var(--dim)' }}>Risk Disclosure</Link>
           </div>
         </div>
 

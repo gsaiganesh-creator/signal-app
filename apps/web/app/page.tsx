@@ -254,8 +254,8 @@ export default function LandingPage() {
           <SignalLogo /> SignalGenie
         </Link>
         <div className="lp-nav-links">
-          {(['Scanner','Portfolio','Algo Builder','Pricing','Track Record','About','Support'] as const).map((l,i) => (
-            <a key={l} href={['#signals','#portfolio','#algo','#pricing','#track','/about','/support'][i]} style={{ fontSize:13, fontWeight:500, color:'var(--dim)', textDecoration:'none' }}
+          {(['Scanner','Portfolio','Algo Builder','Pricing','Track Record','Support'] as const).map((l,i) => (
+            <a key={l} href={['#signals','#portfolio','#algo','#pricing','#track','/support'][i]} style={{ fontSize:13, fontWeight:500, color:'var(--dim)', textDecoration:'none' }}
               onMouseEnter={e=>(e.currentTarget.style.color='var(--txt)')} onMouseLeave={e=>(e.currentTarget.style.color='var(--dim)')}>
               {l}
             </a>
@@ -873,7 +873,6 @@ export default function LandingPage() {
                 { label:'Paper Trading',       href:'/auth' },
               ]},
               { h:'Company', links:[
-                { label:'About & Founders',   href:'/about' },
                 { label:'Track Record',       href:'/track-record' },
                 { label:'Support',            href:'/support' },
                 { label:'Privacy Policy',     href:'/privacy' },

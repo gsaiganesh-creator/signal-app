@@ -10,7 +10,6 @@ const NAV_LINKS = [
   { href:'/#algo',        label:'Algo Builder' },
   { href:'/#pricing',     label:'Pricing'      },
   { href:'/track-record', label:'Track Record' },
-  { href:'/about',        label:'About'        },
 ];
 
 export function PublicNav() {
@@ -48,7 +47,7 @@ export function PublicNav() {
       {/* Nav links */}
       <div className="lp-nav-links">
         {NAV_LINKS.map(l => {
-          const active = path === l.href || (l.href === '/about' && path === '/about');
+          const active = path === l.href;
           return (
             <a key={l.href} href={l.href}
               style={{ fontSize:13, fontWeight: active ? 600 : 500, color: active ? 'var(--blu)' : 'var(--dim)', textDecoration:'none' }}
