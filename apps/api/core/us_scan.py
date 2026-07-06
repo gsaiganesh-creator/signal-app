@@ -3,10 +3,13 @@ US swing scan — mirrors core/swing_scan.py's logic and structure, applied
 to the US monitored universe (config/us_universe.json) instead of India's.
 """
 import json
+import logging
 import time
 from pathlib import Path
 
 import yfinance as yf
+
+logger = logging.getLogger(__name__)
 
 _UNIVERSE = Path(__file__).parent.parent / "config" / "us_universe.json"
 
@@ -92,10 +95,10 @@ def run_us_swing_scan(max_picks: int = 10) -> list[dict]:
                         "confidence": min(100, int(50 + score * 3)),
                         "score": round(score, 2),
                     })
-                except Exception:
-                    pass
-        except Exception:
-            pass
+                except Exception as e:
+                    logger.debug("us_scan: skipping %s — %s", sym, e)
+        except Exception as e:
+            logger.warning("us_scan: batch %d-%d failed — %s", i, i + batch_size, e)
         time.sleep(0.3)
 
     results.sort(key=lambda x: -x["score"])
