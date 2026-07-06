@@ -108,12 +108,13 @@ def start_scheduler():
         replace_existing=True,
     )
 
-    # 7:30 PM IST — US morning TA scan (after US market open in both EST/EDT
-    # rows), Mon–Fri. No holiday gate for v1 — worst case is a harmless
-    # re-scan on a US market holiday, not worth a separate holiday calendar yet.
+    # 8:15 PM IST — after US market open in both EDT (opens 7:00 PM IST)
+    # and EST (opens 8:00 PM IST — IST has no DST, so the ET/IST offset
+    # shifts by an hour across the year). No holiday gate for v1 — worst
+    # case is a harmless re-scan on a US market holiday.
     scheduler.add_job(
         _us_morning_scan_job,
-        CronTrigger(day_of_week="mon-fri", hour=19, minute=30, timezone=IST),
+        CronTrigger(day_of_week="mon-fri", hour=20, minute=15, timezone=IST),
         id="us_morning_scan",
         name="US Morning TA Scan",
         replace_existing=True,
