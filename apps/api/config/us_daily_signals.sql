@@ -22,5 +22,9 @@ CREATE TABLE IF NOT EXISTS public.us_daily_signals (
   UNIQUE(scanned_at, symbol)
 );
 ALTER TABLE public.us_daily_signals ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "public_read_us_daily_signals" ON public.us_daily_signals;
 CREATE POLICY "public_read_us_daily_signals" ON public.us_daily_signals FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "service_write_us_daily_signals" ON public.us_daily_signals;
 CREATE POLICY "service_write_us_daily_signals" ON public.us_daily_signals FOR ALL USING (true);

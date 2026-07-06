@@ -25,26 +25,23 @@ def _now() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def upsert_signals(rows: list[dict]) -> None:
+def _upsert(table: str, rows: list[dict]) -> None:
     if not rows:
         return
     with httpx.Client() as client:
         client.post(
-            _rest("daily_signals"),
+            _rest(table),
             headers={**_HEADERS, "Prefer": "resolution=merge-duplicates,return=minimal"},
             json=rows,
         ).raise_for_status()
+
+
+def upsert_signals(rows: list[dict]) -> None:
+    _upsert("daily_signals", rows)
 
 
 def upsert_us_signals(rows: list[dict]) -> None:
-    if not rows:
-        return
-    with httpx.Client() as client:
-        client.post(
-            _rest("us_daily_signals"),
-            headers={**_HEADERS, "Prefer": "resolution=merge-duplicates,return=minimal"},
-            json=rows,
-        ).raise_for_status()
+    _upsert("us_daily_signals", rows)
 
 
 def get_active_signals() -> list[dict]:
