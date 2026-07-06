@@ -11,6 +11,12 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      // /risk was a legacy duplicate of /risk-disclosure — consolidated to one canonical page.
+      { source: '/risk', destination: '/risk-disclosure', permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

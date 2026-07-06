@@ -51,7 +51,7 @@ const MORE_SECTIONS = [
       { href: '/dashboard/brokers', icon: '🔗', label: 'Connect Broker' },
       { href: '/dashboard/refer',   icon: '🎁', label: 'Refer & Earn'   },
       { href: '/support',           icon: '🛟', label: 'Support'        },
-      { href: '/risk',              icon: '⚠️', label: 'Risk Disclosure' },
+      { href: '/risk-disclosure',   icon: '⚠️', label: 'Risk Disclosure' },
       { href: '/sign-out',          icon: '🚪', label: 'Sign Out'       },
     ],
   },

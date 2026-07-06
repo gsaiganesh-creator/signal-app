@@ -50,6 +50,7 @@ const TABS: { key: string; icon: string; label: string; links: NavLink[] }[] = [
       { href: '/dashboard/upgrade',       icon: '⚡', label: 'Upgrade Plan'   },
       { href: '/dashboard/brokers',       icon: '🔗', label: 'Connect Broker' },
       { href: '/dashboard/refer',         icon: '🎁', label: 'Refer & Earn'   },
+      { href: '/support',                 icon: '🛟', label: 'Support'        },
       { href: '/risk-disclosure',         icon: '⚠️', label: 'Risk Disclosure' },
       { href: '/sign-out',                icon: '🚪', label: 'Sign Out', danger: true },
     ],
@@ -176,7 +177,7 @@ export function DashboardSidebar() {
       <div style={{ padding: '8px 16px 14px', fontSize: 10, color: 'rgba(122,139,170,0.6)', lineHeight: 1.5 }}>
         <Link href="/privacy" style={{ color: 'inherit', textDecoration: 'underline' }}>Privacy Policy</Link>
         {' · '}
-        <Link href="/risk" style={{ color: 'inherit', textDecoration: 'underline' }}>Risk Disclosure</Link>
+        <Link href="/risk-disclosure" style={{ color: 'inherit', textDecoration: 'underline' }}>Risk Disclosure</Link>
         {' · '}Not SEBI registered · Not investment advice
       </div>
     </aside>
