@@ -5,11 +5,14 @@ from core import cache
 import json
 from pathlib import Path
 
-_US_UNIVERSE_SYMBOLS = {
-    s["symbol"]
-    for items in json.loads((Path(__file__).parent.parent / "config" / "us_universe.json").read_text())["sectors"].values()
-    for s in items
-}
+try:
+    _US_UNIVERSE_SYMBOLS = {
+        s["symbol"]
+        for items in json.loads((Path(__file__).parent.parent / "config" / "us_universe.json").read_text())["sectors"].values()
+        for s in items
+    }
+except Exception:
+    _US_UNIVERSE_SYMBOLS = set()
 
 router = APIRouter(prefix="/signals", tags=["signals"])
 
@@ -43,6 +46,8 @@ def list_us_signals(limit: int = Query(default=10, ge=1, le=50)):
 @router.get("/{ticker}")
 def get_signal(ticker: str):
     sym = ticker.upper()
+    # US universe membership takes precedence over ambiguous short tickers —
+    # a bare symbol in us_universe.json is treated as a US ticker, not NSE.
     if sym not in _US_UNIVERSE_SYMBOLS and not sym.endswith(".NS"):
         sym += ".NS"
 
