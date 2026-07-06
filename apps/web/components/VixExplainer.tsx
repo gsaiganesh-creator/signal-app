@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 // Same India VIX zones/thresholds used by the mstock-automation trading
 // scanner (trading/scanner.py) for position sizing — this widget explains
@@ -15,7 +16,7 @@ function zoneFor(vix: number) {
   return ZONES.find(z => vix < z.max) ?? ZONES[ZONES.length - 1];
 }
 
-export function VixExplainer() {
+export function VixExplainer({ showLearnMore = true }: { showLearnMore?: boolean }) {
   const [vix, setVix]         = useState<number | null>(null);
   const [changePct, setChg]   = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -54,8 +55,15 @@ export function VixExplainer() {
           </div>
         )}
       </div>
-      <div style={{ fontSize: 11, color: 'var(--dim)', marginBottom: 14 }}>
-        Measures expected 30-day volatility on the Nifty — how much fear or calm the market is pricing in.
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+        <div style={{ fontSize: 11, color: 'var(--dim)' }}>
+          Measures expected 30-day volatility on the Nifty — how much fear or calm the market is pricing in.
+        </div>
+        {showLearnMore && (
+          <Link href="/dashboard/vix-explained" style={{ fontSize: 11, fontWeight: 700, color: 'var(--bluL)', textDecoration: 'none', whiteSpace: 'nowrap', marginLeft: 10 }}>
+            Learn more →
+          </Link>
+        )}
       </div>
 
       {loading && <div style={{ fontSize: 12, color: 'var(--dim)' }}>⏳ loading…</div>}
