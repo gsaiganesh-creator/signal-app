@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { TreemapHeatmap } from '@/components/TreemapHeatmap';
 import { MarketBrief } from '@/components/MarketBrief';
 import { MarketMoodIndex } from '@/components/MarketMoodIndex';
+import { VixExplainer } from '@/components/VixExplainer';
 import { StockDetailSheet } from '@/components/StockDetailSheet';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -1027,6 +1028,11 @@ export default function DashboardPage() {
       <div className="g-brief" style={{ display:'grid', gap:14, marginBottom:14, alignItems:'stretch' }}>
         <MarketBrief />
         <MarketMoodIndex />
+      </div>
+
+      {/* VIX explainer — raw fear-gauge reading, pairs with MMI above */}
+      <div style={{ marginBottom:14 }}>
+        <VixExplainer />
       </div>
 
       {/* Recent scan picks */}
