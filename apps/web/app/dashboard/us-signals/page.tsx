@@ -5,9 +5,9 @@ interface USSignalRow {
   symbol: string;
   name: string;
   sector: string;
-  cmp: number;
-  chg: number;
-  rsi: number;
+  cmp: number | null;
+  chg: number | null;
+  rsi: number | null;
   ema20: number;
   ema_dist_pct: number;
   entry_low: number;
@@ -15,7 +15,7 @@ interface USSignalRow {
   target: number;
   sl: number;
   signal: string;
-  confidence: number;
+  confidence: number | null;
   score: number;
 }
 
@@ -169,13 +169,13 @@ export default function USSignalsPage() {
                       {row.sector}
                     </td>
                     <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(28,46,74,0.4)', fontSize: 13, fontWeight: 700, whiteSpace: 'nowrap' }}>
-                      ${row.cmp.toFixed(2)}
+                      {row.cmp != null ? `$${row.cmp.toFixed(2)}` : '—'}
                     </td>
-                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(28,46,74,0.4)', fontSize: 12, fontWeight: 700, color: row.chg >= 0 ? 'var(--grn)' : 'var(--red)', whiteSpace: 'nowrap' }}>
-                      {row.chg >= 0 ? '+' : ''}{row.chg.toFixed(2)}%
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(28,46,74,0.4)', fontSize: 12, fontWeight: 700, color: row.chg != null && row.chg >= 0 ? 'var(--grn)' : 'var(--red)', whiteSpace: 'nowrap' }}>
+                      {row.chg != null ? `${row.chg >= 0 ? '+' : ''}${row.chg.toFixed(2)}%` : '—'}
                     </td>
-                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(28,46,74,0.4)', fontSize: 12, color: row.rsi >= 50 ? 'var(--grn)' : 'var(--red)' }}>
-                      {row.rsi.toFixed(1)}
+                    <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(28,46,74,0.4)', fontSize: 12, color: row.rsi != null && row.rsi >= 50 ? 'var(--grn)' : 'var(--red)' }}>
+                      {row.rsi != null ? row.rsi.toFixed(1) : '—'}
                     </td>
                     <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(28,46,74,0.4)' }}>
                       <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 6, whiteSpace: 'nowrap', ...signalBadgeStyle(row.signal) }}>
@@ -183,7 +183,7 @@ export default function USSignalsPage() {
                       </span>
                     </td>
                     <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(28,46,74,0.4)', fontSize: 12, color: 'var(--txt)' }}>
-                      {row.confidence}%
+                      {row.confidence != null ? `${row.confidence}%` : '—'}
                     </td>
                   </tr>
                 ))}
