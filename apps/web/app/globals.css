@@ -168,7 +168,6 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .g3 { grid-template-columns: repeat(3, 1fr); }
 .g3-earnings { grid-template-columns: repeat(3, 1fr); }
 .g2 { grid-template-columns: 1fr 1fr; }
-.g-side { grid-template-columns: 1fr 340px; align-items: start; }
 .g-mission { grid-template-columns: 1fr 1fr; gap: 60px; }
 .g-founder { grid-template-columns: 1fr 1fr; }
 .g-story { grid-template-columns: 1fr 1fr; }
@@ -233,7 +232,6 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .g4 { grid-template-columns: 1fr 1fr; }
   .g3 { grid-template-columns: 1fr 1fr; }
   .g3-earnings { grid-template-columns: 1fr 1fr; }
-  .g-side { grid-template-columns: 1fr; }
   .g-analytics { grid-template-columns: 1fr; }
   .g-brief { grid-template-columns: 1fr; }
   .g-mission { grid-template-columns: 1fr; }
