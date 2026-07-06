@@ -79,7 +79,7 @@ const COMPANY_TICKER: Record<string, string> = {
 };
 
 // Find first row that looks like a header — skip meta text (account number, report date, etc.)
-const HEADER_KEYWORDS = ['symbol','ticker','award','grant','shares','quantity','vested','vest date','type','fmv','fair market value','asset class'];
+const HEADER_KEYWORDS = ['symbol','ticker','award','grant','shares','quantity','vested','vest date','type','fmv','fair market value','asset class','units'];
 function findHeaderRow(rows: string[][]): string[][] {
   for (let i = 0; i < Math.min(rows.length, 10); i++) {
     const lc = rows[i].map(c => (c ?? '').toString().toLowerCase());
@@ -112,8 +112,20 @@ function guessBrokerage(text: string): string {
   if (t.includes('merrill')) return 'Merrill Lynch';
   return 'Other';
 }
+const MONTH_ABBR: Record<string, string> = {
+  jan:'01', feb:'02', mar:'03', apr:'04', may:'05', jun:'06',
+  jul:'07', aug:'08', sep:'09', oct:'10', nov:'11', dec:'12',
+};
 function parseISODate(val: string): string {
   if (!val) return '';
+  // "Dec-15-2023" style (Fidelity award-summary PDFs) — parsed explicitly rather
+  // than trusting the native Date parser, which is inconsistent across browsers
+  // (notably Safari/iOS) for this non-ISO format.
+  const monthDash = val.match(/^([A-Za-z]{3})-(\d{1,2})-(\d{4})$/);
+  if (monthDash) {
+    const mo = MONTH_ABBR[monthDash[1].toLowerCase()];
+    if (mo) return `${monthDash[3]}-${mo}-${monthDash[2].padStart(2,'0')}`;
+  }
   const d = new Date(val);
   if (!isNaN(d.getTime())) return d.toISOString().split('T')[0];
   const m = val.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
@@ -182,6 +194,53 @@ function companyToTicker(name: string): string {
   return '';
 }
 
+// Scan free-form prose (not a single cell value) for a known company name —
+// used for PDFs like Fidelity's "Get to know your award" summary, where the
+// company only appears in narrative text, never in the payout table itself.
+function findCompanyInText(text: string): { symbol: string; company: string } {
+  // Uppercase + collapse whitespace only — do NOT strip punctuation, since
+  // some COMPANY_TICKER keys (e.g. 'AMAZON.COM INC') rely on literal dots.
+  const norm = text.toUpperCase().replace(/\s+/g, ' ');
+  const keys = Object.keys(COMPANY_TICKER).sort((a, b) => b.length - a.length); // longest first
+  for (const k of keys) {
+    if (norm.includes(k)) return { symbol: COMPANY_TICKER[k], company: k };
+  }
+  return { symbol: '', company: '' };
+}
+
+// ── Fidelity "Get to know your award" summary PDF ─────────────────────────────
+// Narrative award-overview document (not a transaction export): has a "Payout
+// schedule" table of Payout Date | Units | Status | Potential Value, but no
+// FMV/price column at all — paid rows just say "Paid" with no dollar figure.
+// Grant price is deliberately left at 0 here; the caller backfills it from
+// historical stock price on each vest date (see handleFileChange).
+function parseFidelityAwardSummary(fullText: string): ParsedRow[] {
+  const scheduleIdx = fullText.search(/payout schedule/i);
+  if (scheduleIdx < 0) return [];
+  const scheduleText = fullText.slice(scheduleIdx);
+
+  const { symbol, company } = findCompanyInText(fullText);
+  if (!symbol) return [];
+
+  const rowRe = /\b(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)-(\d{1,2})-(\d{4})\b[^\d]{0,20}?(\d{1,5})\b/gi;
+  const seen = new Set<string>();
+  const out: ParsedRow[] = [];
+  let m: RegExpExecArray | null;
+  while ((m = rowRe.exec(scheduleText))) {
+    const vestDate = parseISODate(`${m[1]}-${m[2]}-${m[3]}`);
+    const shares = parseInt(m[4], 10);
+    if (!vestDate || !shares || shares <= 0 || seen.has(vestDate)) continue;
+    seen.add(vestDate);
+    out.push({
+      type: 'RSU', symbol, company, employer: company,
+      shares, grantPrice: 0, vestDate,
+      brokerage: 'Fidelity NetBenefits', notes: 'Historical price pending',
+      selected: true,
+    });
+  }
+  return out.sort((a, b) => a.vestDate.localeCompare(b.vestDate));
+}
+
 function parseRows2D(rows: string[][], brokerage: string): ParsedRow[] {
   const trimmed = findHeaderRow(rows);
   if (trimmed.length < 2) return [];
@@ -238,6 +297,13 @@ async function parseGrantFile(file: File): Promise<{ rows: ParsedRow[]; error?: 
         const sorted = [...lineMap.entries()].sort((a,b) => b[0]-a[0]);
         for (const [,parts] of sorted) fullText += parts.join('\t') + '\n';
       }
+      // Fidelity "Get to know your award" summary — narrative doc with a
+      // Payout schedule table but no FMV column (see parseFidelityAwardSummary).
+      // Tried before the generic tabular parser since this format has no
+      // conventional header row the generic path could find.
+      const fidelityRows = parseFidelityAwardSummary(fullText);
+      if (fidelityRows.length > 0) return { rows: fidelityRows };
+
       const lines = fullText.split('\n').map(l => l.split(/\t|,/).map(s => s.trim()));
       return { rows: parseRows2D(lines, guessBrokerage(fullText) || brokerage) };
     }
@@ -384,10 +450,34 @@ export default function EquityCompPage() {
       else if (!rows.length) errors.push(`${file.name}: no grants found`);
       else allRows.push(...rows);
     }
-    setParseLoading(false);
     if (fileRef.current) fileRef.current.value = '';
     if (errors.length) setImportMsg(`⚠ ${errors.join(' · ')}`);
-    if (!allRows.length) return;
+    if (!allRows.length) { setParseLoading(false); return; }
+
+    // Backfill missing grant prices from historical stock price on the vest
+    // date (Fidelity award-summary PDFs have no FMV column at all — see
+    // parseFidelityAwardSummary). One lookup per unique symbol+date pair.
+    const needsPrice = allRows.filter(r => r.grantPrice === 0 && r.symbol && r.vestDate);
+    const uniquePairs = [...new Map(needsPrice.map(r => [`${r.symbol}|${r.vestDate}`, r])).values()];
+    if (uniquePairs.length > 0) {
+      const priceMap = new Map<string, number>();
+      await Promise.all(uniquePairs.map(async r => {
+        try {
+          const res = await fetch(`/api/historical-price?symbol=${encodeURIComponent(r.symbol)}&date=${r.vestDate}`);
+          const d = await res.json();
+          if (d.price != null) priceMap.set(`${r.symbol}|${r.vestDate}`, d.price);
+        } catch { /* leave grantPrice at 0 for this lot */ }
+      }));
+      for (const r of allRows) {
+        const key = `${r.symbol}|${r.vestDate}`;
+        if (r.grantPrice === 0 && priceMap.has(key)) {
+          r.grantPrice = priceMap.get(key)!;
+          r.notes = r.notes === 'Historical price pending' ? `FMV @ vest (historical close)` : r.notes;
+        }
+      }
+    }
+    setParseLoading(false);
+
     // Mark rows that already exist in DB (same type+symbol+shares+grantPrice+vestDate)
     const existingKeys = new Set(grants.map(g =>
       `${g.type}|${g.symbol.toUpperCase()}|${g.shares}|${g.grantPrice}|${g.vestDate}`
