@@ -1156,7 +1156,7 @@ export default function DashboardPage() {
 
 
 
-      <div className="g-side" style={{ display:'grid', gap:16 }}>
+      <div className="g-side" style={{ display:'grid', gap:16, alignItems:'start' }}>
         <div>
           <HomeFIIDII today={fiiData} loading={fiiLoading} />
           <div style={{ marginTop:16 }}>
