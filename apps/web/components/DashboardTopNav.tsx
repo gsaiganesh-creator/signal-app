@@ -32,6 +32,12 @@ export function DashboardTopNav() {
   );
 }
 
+const TOUR_KEY_BY_HREF: Record<string, string> = {
+  '/dashboard':           'nav-home',
+  '/dashboard/signals':   'nav-signals',
+  '/dashboard/portfolio': 'nav-portfolio',
+};
+
 export function DashboardSubNav() {
   const { activeTab } = useNavCtx();
   const pathname = usePathname();
@@ -45,6 +51,7 @@ export function DashboardSubNav() {
           <Link
             key={link.href}
             href={link.href}
+            data-tour={TOUR_KEY_BY_HREF[link.href]}
             style={{
               padding: '0 14px', height: 38,
               display: 'flex', alignItems: 'center',

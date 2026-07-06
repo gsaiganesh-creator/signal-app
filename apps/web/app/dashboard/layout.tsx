@@ -5,6 +5,7 @@ import { ThemeToggle } from '@/components/ThemeToggle';
 import { DashboardTopNav, DashboardSubNav } from '@/components/DashboardTopNav';
 import { DashboardNavProvider } from '@/components/DashboardNavContext';
 import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { OnboardingTour } from '@/components/OnboardingTour';
 import { PortfolioProvider } from '@/lib/portfolio-context';
 import { NavUserChip } from '@/components/NavUserChip';
 
@@ -57,6 +58,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
 
         <MobileBottomNav />
+        <OnboardingTour />
       </div>
     </DashboardNavProvider></PortfolioProvider>
   );

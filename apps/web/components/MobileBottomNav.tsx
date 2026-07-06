@@ -78,7 +78,7 @@ export function MobileBottomNav() {
         {PRIMARY_TABS.map(t => {
           const active = path === t.href || (t.href !== '/dashboard' && path.startsWith(t.href)) || t.aliases.some(a => path.startsWith(a));
           return (
-            <Link key={t.href} href={t.href} className={active ? 'active' : ''} onClick={() => setMoreOpen(false)}>
+            <Link key={t.href} href={t.href} className={active ? 'active' : ''} onClick={() => setMoreOpen(false)} data-tour={`nav-${t.key}`}>
               <span className="icon">
                 {t.icon === '__logo__' ? (
                   <svg width="20" height="20" viewBox="0 0 26 26" fill="none" style={{ display:'block' }}>
