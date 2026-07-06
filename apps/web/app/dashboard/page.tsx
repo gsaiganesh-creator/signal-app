@@ -1156,6 +1156,20 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* US Stock Technical Analysis */}
+      {hasUSHoldings && (
+        <div style={{ ...card, marginBottom:16, borderColor:'rgba(79,111,250,0.22)', background:'linear-gradient(135deg,rgba(79,111,250,0.05),var(--card-bg))' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+            <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,rgba(79,111,250,0.18),rgba(139,92,246,0.12))', border:'1px solid rgba(79,111,250,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, flexShrink:0 }}>🇺🇸</div>
+            <div>
+              <div style={{ fontSize:14, fontWeight:800, letterSpacing:-0.2 }}>US Portfolio Technical Analysis</div>
+              <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>RSI, EMA20, MACD across your US holdings · scan output only</div>
+            </div>
+          </div>
+          <UsAnalysisSection holdings={usHoldings} usPrices={usPrices} usAnalysis={usAnalysis} usdInr={usdInr} />
+          <UsNewsWidget symbols={usHoldings.map(h => h.symbol)} />
+        </div>
+      )}
 
 
       <div style={{ marginBottom:16 }}>
