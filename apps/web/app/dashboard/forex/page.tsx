@@ -149,9 +149,9 @@ export default function ForexPage() {
               sub:`${totalInvested2 > 0 ? `${((totalCurrentVal-totalInvested2)/totalInvested2*100).toFixed(2)}%` : '—'}`,
               color: totalPL >= 0 ? 'var(--grn)' : 'var(--red)' },
           ].map((m, i) => (
-            <div key={m.label} style={{ background:STAT_GRADS[i][0], border:`1px solid ${STAT_GRADS[i][1]}`, borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
+            <div key={m.label} className="stat-card" style={{ background:STAT_GRADS[i][0], border:`1px solid ${STAT_GRADS[i][1]}`, borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
               <div style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:6 }}>{m.label}</div>
-              <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
+              <div className="stat-num" style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
               <div style={{ fontSize:11, color:'var(--dim)', marginTop:3 }}>{m.sub}</div>
             </div>
           ))}
@@ -174,7 +174,7 @@ export default function ForexPage() {
             const isOpen = expandedPair === pair.code;
             return (
               <div key={pair.code} onClick={() => setExpandedPair(isOpen ? null : pair.code)}
-                style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:10, padding:'12px 14px', cursor:'pointer' }}>
+                className="rate-card" style={{ background:'var(--surf2)', border:'1px solid var(--card-bdr)', borderRadius:10, padding:'12px 14px', cursor:'pointer' }}>
                 <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:6 }}>
                   <span style={{ fontSize:18 }}>{pair.flag}</span>
                   <div>
@@ -187,7 +187,7 @@ export default function ForexPage() {
                     </div>
                   )}
                 </div>
-                <div style={{ fontSize:18, fontWeight:900, letterSpacing:-0.3 }}>
+                <div className="rate-num" style={{ fontSize:18, fontWeight:900, letterSpacing:-0.3 }}>
                   {displayRate != null ? `₹${displayRate.toFixed(pair.code === 'JPY' ? 4 : 2)}` : '—'}
                 </div>
                 <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>per 1 {pair.code}{scale > 1 ? ` (÷${scale})` : ''}</div>

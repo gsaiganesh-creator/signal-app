@@ -192,9 +192,9 @@ export default function CommoditiesPage() {
             { label:'Current Value',  val: totalCurrentVal > 0 ? `₹${totalCurrentVal.toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', color:'var(--txt)' },
             { label:'Unrealised P&L', val: totalCurrentVal > 0 ? `${totalPL >= 0 ? '+' : '-'}₹${Math.abs(totalPL).toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', color: totalPL >= 0 ? 'var(--grn)' : 'var(--red)' },
           ].map((m, i) => (
-            <div key={m.label} style={{ background:STAT_GRADS[i][0], border:`1px solid ${STAT_GRADS[i][1]}`, borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
+            <div key={m.label} className="stat-card" style={{ background:STAT_GRADS[i][0], border:`1px solid ${STAT_GRADS[i][1]}`, borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
               <div style={{ fontSize:10.5, fontWeight:700, color:'var(--dim)', letterSpacing:0.5, textTransform:'uppercase', marginBottom:6 }}>{m.label}</div>
-              <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
+              <div className="stat-num" style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:m.color }}>{m.val}</div>
             </div>
           ))}
         </div>
@@ -216,7 +216,7 @@ export default function CommoditiesPage() {
             const moveDecomp = decomposeMove(chg ?? null, prices[USDINR_SYM]?.change_pct ?? null);
             return (
               <div key={com.id} onClick={() => setExpandedCom(isOpen ? null : com.id)}
-                style={{ background:'var(--surf2)', border:`1px solid var(--bdr)`, borderRadius:10, padding:'12px 14px', borderLeft:`3px solid ${com.color}`, cursor:'pointer' }}>
+                className="rate-card" style={{ background:'var(--surf2)', border:`1px solid var(--bdr)`, borderRadius:10, padding:'12px 14px', borderLeft:`3px solid ${com.color}`, cursor:'pointer' }}>
                 <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
                   <div style={{ display:'flex', alignItems:'center', gap:6 }}>
                     <span style={{ fontSize:16 }}>{com.emoji}</span>
@@ -228,7 +228,7 @@ export default function CommoditiesPage() {
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize:17, fontWeight:900, letterSpacing:-0.3, color: com.color }}>
+                <div className="rate-num" style={{ fontSize:17, fontWeight:900, letterSpacing:-0.3, color: com.color }}>
                   {inrPrice != null ? `₹${inrPrice.toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—'}
                 </div>
                 <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>
