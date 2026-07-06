@@ -36,6 +36,17 @@ def upsert_signals(rows: list[dict]) -> None:
         ).raise_for_status()
 
 
+def upsert_us_signals(rows: list[dict]) -> None:
+    if not rows:
+        return
+    with httpx.Client() as client:
+        client.post(
+            _rest("us_daily_signals"),
+            headers={**_HEADERS, "Prefer": "resolution=merge-duplicates,return=minimal"},
+            json=rows,
+        ).raise_for_status()
+
+
 def get_active_signals() -> list[dict]:
     with httpx.Client() as client:
         r = client.get(
