@@ -253,9 +253,8 @@ button:active:not(:disabled) { transform: scale(0.97); }
 @media (max-width: 600px) {
   /* Hide ML Class + Avg Price columns in portfolio table */
   .mob-hide { display: none !important; }
-  /* Hide bell + theme toggle on phone — inline display:flex overrides without !important */
+  /* Hide bell on phone — inline display:flex overrides without !important */
   .dash-bell { display: none !important; }
-  .dash-theme-wrap { display: none !important; }
   /* Tighten top nav gap */
   .dash-right { gap: 8px !important; }
   /* Portfolio table: tighter cells */
