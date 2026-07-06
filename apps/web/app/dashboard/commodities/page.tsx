@@ -231,9 +231,12 @@ export default function CommoditiesPage() {
                 <div className="rate-num" style={{ fontSize:17, fontWeight:900, letterSpacing:-0.3, color: com.color }}>
                   {inrPrice != null ? `₹${inrPrice.toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—'}
                 </div>
-                <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>
-                  per {com.inrUnit}
-                  {usdPrice ? ` · $${usdPrice.toFixed(2)}/${com.unit}` : ''}
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:2 }}>
+                  <span style={{ fontSize:10, color:'var(--dim)' }}>
+                    per {com.inrUnit}
+                    {usdPrice ? ` · $${usdPrice.toFixed(2)}/${com.unit}` : ''}
+                  </span>
+                  <span style={{ fontSize:10, color:'var(--dim)', transition:'transform 0.15s', transform: isOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
                 </div>
                 {isOpen && (
                   <>

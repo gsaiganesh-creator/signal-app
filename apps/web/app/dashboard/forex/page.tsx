@@ -190,7 +190,10 @@ export default function ForexPage() {
                 <div className="rate-num" style={{ fontSize:18, fontWeight:900, letterSpacing:-0.3 }}>
                   {displayRate != null ? `₹${displayRate.toFixed(pair.code === 'JPY' ? 4 : 2)}` : '—'}
                 </div>
-                <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>per 1 {pair.code}{scale > 1 ? ` (÷${scale})` : ''}</div>
+                <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginTop:2 }}>
+                  <span style={{ fontSize:10, color:'var(--dim)' }}>per 1 {pair.code}{scale > 1 ? ` (÷${scale})` : ''}</span>
+                  <span style={{ fontSize:10, color:'var(--dim)', transition:'transform 0.15s', transform: isOpen ? 'rotate(180deg)' : 'none' }}>▾</span>
+                </div>
                 {isOpen && <TechTiles tech={tech} />}
               </div>
             );
