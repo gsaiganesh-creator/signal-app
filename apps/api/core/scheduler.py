@@ -48,6 +48,15 @@ def _morning_scan_job():
         logger.error("scheduler: morning scan failed: %s", e)
 
 
+def _us_morning_scan_job():
+    logger.info("scheduler: starting US morning scan")
+    try:
+        from core.us_scan import run_us_morning_scan
+        run_us_morning_scan()
+    except Exception as e:
+        logger.error("scheduler: US morning scan failed: %s", e)
+
+
 def _intraday_check_job():
     if not _is_market_day():
         return
@@ -96,6 +105,17 @@ def start_scheduler():
         CronTrigger(day_of_week="mon-fri", hour=9, minute=15, timezone=IST),
         id="morning_scan",
         name="Morning TA Scan",
+        replace_existing=True,
+    )
+
+    # 7:30 PM IST — US morning TA scan (after US market open in both EST/EDT
+    # rows), Mon–Fri. No holiday gate for v1 — worst case is a harmless
+    # re-scan on a US market holiday, not worth a separate holiday calendar yet.
+    scheduler.add_job(
+        _us_morning_scan_job,
+        CronTrigger(day_of_week="mon-fri", hour=19, minute=30, timezone=IST),
+        id="us_morning_scan",
+        name="US Morning TA Scan",
         replace_existing=True,
     )
 
@@ -164,7 +184,7 @@ def start_scheduler():
 
     scheduler.start()
     logger.info(
-        "scheduler: started (morning_scan, intraday_check, eod_cleanup, "
+        "scheduler: started (morning_scan, us_morning_scan, intraday_check, eod_cleanup, "
         "sentiment_scan, sentiment_backfill, scan_log_backfill, price_alerts_check, "
         "paper_trading_scan)"
     )
