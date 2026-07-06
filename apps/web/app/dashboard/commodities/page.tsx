@@ -213,6 +213,7 @@ export default function CommoditiesPage() {
             const inrPrice = getInrPrice(com);
             const tech = technicals[com.sym];
             const isOpen = expandedCom === com.id;
+            const moveDecomp = decomposeMove(chg ?? null, prices[USDINR_SYM]?.change_pct ?? null);
             return (
               <div key={com.id} onClick={() => setExpandedCom(isOpen ? null : com.id)}
                 style={{ background:'var(--surf2)', border:`1px solid var(--bdr)`, borderRadius:10, padding:'12px 14px', borderLeft:`3px solid ${com.color}`, cursor:'pointer' }}>
@@ -237,14 +238,11 @@ export default function CommoditiesPage() {
                 {isOpen && (
                   <>
                     <TechTiles tech={tech} />
-                    {(() => {
-                      const decomp = decomposeMove(chg ?? null, prices[USDINR_SYM]?.change_pct ?? null);
-                      return decomp && (
-                        <div style={{ marginTop:8, fontSize:11, color:'var(--dim)' }}>
-                          {decomp.narrative}
-                        </div>
-                      );
-                    })()}
+                    {moveDecomp && (
+                      <div style={{ marginTop:8, fontSize:11, color:'var(--dim)' }}>
+                        {moveDecomp.narrative}
+                      </div>
+                    )}
                   </>
                 )}
               </div>
