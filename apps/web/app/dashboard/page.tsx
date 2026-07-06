@@ -7,6 +7,7 @@ import { TreemapHeatmap } from '@/components/TreemapHeatmap';
 import { MarketBrief } from '@/components/MarketBrief';
 import { MarketMoodIndex } from '@/components/MarketMoodIndex';
 import { VixExplainer } from '@/components/VixExplainer';
+import { DxyExplainer } from '@/components/DxyExplainer';
 import { StockDetailSheet } from '@/components/StockDetailSheet';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -1030,9 +1031,10 @@ export default function DashboardPage() {
         <MarketMoodIndex />
       </div>
 
-      {/* VIX explainer — raw fear-gauge reading, pairs with MMI above */}
-      <div style={{ marginBottom:14 }}>
+      {/* VIX + DXY explainers — raw fear-gauge and dollar-strength readings */}
+      <div className="g2" style={{ display:'grid', gap:14, marginBottom:14, alignItems:'start' }}>
         <VixExplainer />
+        <DxyExplainer />
       </div>
 
       {/* Recent scan picks */}
