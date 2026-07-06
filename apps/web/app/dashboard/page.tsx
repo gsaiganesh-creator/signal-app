@@ -580,8 +580,6 @@ export default function DashboardPage() {
   const [cmPos,   setCmPos]  = useState<{ id:string; commodity:string; qty:number; unit:string; avg_price:number }[]>([]);
   const [fxPrices, setFxPrices] = useState<Record<string, PriceData>>({});
   const [cmPrices, setCmPrices] = useState<Record<string, PriceData>>({});
-  const [watchlist, setWatchlist]   = useState<{ id: string; symbol: string; exchange: string }[]>([]);
-  const [watchPrices, setWatchPrices] = useState<Record<string, PriceData>>({});
   const [scanPicks, setScanPicks]   = useState<{ symbol: string; exchange: string; price_at: number; rsi14: number | null; scanned_at: string }[]>([]);
   const [usAnalysis, setUsAnalysis] = useState<Record<string, UsTA>>({});
   const [detailSym, setDetailSym] = useState<{ symbol: string; exchange: string } | null>(null);
@@ -721,32 +719,6 @@ export default function DashboardPage() {
       })
       .catch(() => {});
   }, [cmPos, usdInr]);
-
-  // Watchlist preview
-  useEffect(() => {
-    if (!session) return;
-    fetch(`${SUPA_URL}/rest/v1/watchlist?user_id=eq.${session.user.id}&select=id,symbol,exchange&order=added_at.desc&limit=8`, {
-      headers: { apikey: SUPA_KEY, Authorization: `Bearer ${session.access_token}` },
-    })
-      .then(r => r.json())
-      .then(rows => setWatchlist(Array.isArray(rows) ? rows : []))
-      .catch(() => {});
-  }, [session]);
-
-  useEffect(() => {
-    if (!watchlist.length) return;
-    const syms = watchlist.map(w =>
-      w.exchange === 'BSE' ? `${w.symbol}.BO` : w.exchange === 'NSE' ? `${w.symbol}.NS` : w.symbol
-    ).join(',');
-    fetch(`/api/prices?symbols=${encodeURIComponent(syms)}`)
-      .then(r => r.json())
-      .then((d: Record<string, PriceData>) => {
-        const m: Record<string, PriceData> = {};
-        for (const [k, v] of Object.entries(d)) m[k.replace('.NS', '').replace('.BO', '')] = v;
-        setWatchPrices(m);
-      })
-      .catch(() => {});
-  }, [watchlist]);
 
   // US technical analysis — defer 1.5s so prices/P&L load first
   useEffect(() => {
@@ -1198,6 +1170,7 @@ export default function DashboardPage() {
                 { href:'/dashboard/paper-trading',           icon:'🧪', label:'Paper Trading',     sub:'Risk-free strategies', grad:'rgba(139,92,246,0.09)', bdr:'rgba(139,92,246,0.28)' },
                 { href:'/dashboard/sectors',                 icon:'🔥', label:'Sector Heatmap',    sub:'Hot sectors',          grad:'rgba(255,92,26,0.09)',  bdr:'rgba(255,92,26,0.28)' },
                 { href:'/dashboard/fii-dii',                 icon:'🌍', label:'FII / DII Flow',    sub:'Institutional flow',   grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
+                { href:'/dashboard/watchlist',                icon:'⭐', label:'Watchlist',        sub:'Saved stocks',          grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
               ].map(l => (
                 <Link key={l.href} href={l.href} className="hover-lift" style={{ display:'flex', flexDirection:'column', gap:2, padding:'12px 13px', background:`linear-gradient(135deg,${l.grad},transparent)`, border:`1px solid ${l.bdr}`, borderRadius:11, textDecoration:'none' }}>
                   <span style={{ fontSize:18 }}>{l.icon}</span>
@@ -1207,42 +1180,6 @@ export default function DashboardPage() {
               ))}
             </div>
           </div>
-
-          {/* Watchlist preview */}
-          {watchlist.length > 0 && (
-            <div style={{ ...card, marginTop:14 }}>
-              <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-                <div style={{ fontSize:13, fontWeight:800 }}>⭐ Watchlist</div>
-                <Link href="/dashboard/watchlist" style={{ fontSize:11, color:'var(--bluL)', fontWeight:600, textDecoration:'none' }}>All →</Link>
-              </div>
-              <div style={{ display:'flex', flexDirection:'column', gap:5 }}>
-                {watchlist.slice(0, 6).map(w => {
-                  const p = watchPrices[w.symbol];
-                  const isIndia = w.exchange === 'NSE' || w.exchange === 'BSE';
-                  const col = p?.change_pct == null ? 'var(--dim)' : p.change_pct >= 0 ? 'var(--grn)' : 'var(--red)';
-                  return (
-                    <div key={w.id} onClick={() => setDetailSym({ symbol: w.symbol, exchange: w.exchange })}
-                      style={{ cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'space-between', padding:'8px 10px', background:'var(--surf2)', borderRadius:9 }}>
-                      <div>
-                        <div style={{ fontSize:12, fontWeight:700 }}>{w.symbol}</div>
-                        <div style={{ fontSize:9.5, color:'var(--dim)', marginTop:1 }}>{w.exchange}</div>
-                      </div>
-                      <div style={{ textAlign:'right' }}>
-                        <div style={{ fontSize:12, fontWeight:800 }}>
-                          {p?.price != null ? (isIndia ? `₹${p.price.toLocaleString('en-IN', { maximumFractionDigits:2 })}` : `$${p.price.toFixed(2)}`) : '—'}
-                        </div>
-                        {p?.change_pct != null && (
-                          <div style={{ fontSize:10, fontWeight:700, color:col }}>
-                            {p.change_pct >= 0 ? '+' : ''}{p.change_pct.toFixed(2)}%
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
