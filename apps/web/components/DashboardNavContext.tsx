@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 
 export const TABS = [
   {
@@ -45,16 +45,27 @@ export const TABS = [
     links: [
       { href: '/dashboard/upgrade',  label: 'Upgrade'         },
       { href: '/dashboard/brokers',  label: 'Broker'          },
-      { href: '/dashboard/refer',    label: 'Refer & Earn'    },
-      { href: '/support',            label: 'Support'         },
-      { href: '/risk-disclosure',    label: 'Risk Disclosure' },
+      { href: '/dashboard/refer',           label: 'Refer & Earn'    },
+      { href: '/dashboard/support',         label: 'Support'         },
+      { href: '/dashboard/risk-disclosure', label: 'Risk Disclosure' },
     ],
   },
 ];
 
-export function resolveTab(pathname: string): string {
+export function resolveTab(pathname: string, search: string = ''): string {
   // us-portfolio is part of Portfolio (home tab)
   if (pathname.startsWith('/dashboard/us-portfolio')) return 'home';
+
+  // Some links share a base path but are differentiated by query string
+  // (e.g. Signals under Home vs "Fundamentals" under Markets both point at
+  // /dashboard/signals). An exact full-URL match must win before falling
+  // back to plain-pathname prefix matching, otherwise the query-less Home
+  // link always wins first regardless of which link was actually clicked.
+  const full = search ? `${pathname}${search}` : pathname;
+  for (const tab of TABS) {
+    if (tab.links.some(l => l.href.includes('?') && l.href === full)) return tab.key;
+  }
+
   for (const tab of TABS) {
     if (tab.links.some(l => pathname === l.href || (l.href !== '/dashboard' && pathname.startsWith(l.href)))) {
       return tab.key;
@@ -69,8 +80,11 @@ export const useNavCtx = () => useContext(Ctx);
 
 export function DashboardNavProvider({ children }: { children: ReactNode }) {
   const pathname = usePathname();
-  const [activeTab, setActiveTab] = useState(() => resolveTab(pathname));
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const searchStr = search ? `?${search}` : '';
+  const [activeTab, setActiveTab] = useState(() => resolveTab(pathname, searchStr));
   // sync on route change (navigating via Link)
-  useEffect(() => { setActiveTab(resolveTab(pathname)); }, [pathname]);
+  useEffect(() => { setActiveTab(resolveTab(pathname, searchStr)); }, [pathname, searchStr]);
   return <Ctx.Provider value={{ activeTab, setActiveTab }}>{children}</Ctx.Provider>;
 }

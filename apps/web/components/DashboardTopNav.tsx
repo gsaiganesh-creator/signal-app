@@ -1,6 +1,6 @@
 'use client';
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { TABS, useNavCtx } from '@/components/DashboardNavContext';
 
 export function DashboardTopNav() {
@@ -41,12 +41,17 @@ const TOUR_KEY_BY_HREF: Record<string, string> = {
 export function DashboardSubNav() {
   const { activeTab } = useNavCtx();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const search = searchParams.toString();
+  const full = search ? `${pathname}?${search}` : pathname;
   const tab = TABS.find(t => t.key === activeTab)!;
 
   return (
     <div className="dash-subnav">
       {tab.links.map(link => {
-        const active = pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href));
+        const active = link.href.includes('?')
+          ? link.href === full
+          : pathname === link.href || (link.href !== '/dashboard' && pathname.startsWith(link.href));
         return (
           <Link
             key={link.href}
