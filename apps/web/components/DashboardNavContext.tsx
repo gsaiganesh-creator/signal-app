@@ -6,10 +6,12 @@ export const TABS = [
   {
     key: 'home', label: 'Home',
     links: [
-      { href: '/dashboard',           label: 'Dashboard' },
-      { href: '/dashboard/signals',   label: 'Signals'   },
-      { href: '/dashboard/portfolio', label: 'Portfolio' },
-      { href: '/dashboard/etf-mf',    label: 'ETF & MF'  },
+      { href: '/dashboard',             label: 'Dashboard'   },
+      { href: '/dashboard/signals',     label: 'Signals'     },
+      { href: '/dashboard/portfolio',   label: 'Portfolio'   },
+      { href: '/dashboard/watchlist',   label: 'Watchlist'   },
+      { href: '/dashboard/equity-comp', label: 'ESPP & RSU'  },
+      { href: '/dashboard/etf-mf',      label: 'ETF & MF'    },
     ],
   },
   {
@@ -34,14 +36,18 @@ export const TABS = [
       { href: '/dashboard/feed',                    label: 'Market Feed'  },
       { href: '/dashboard/forex',                   label: 'Forex'        },
       { href: '/dashboard/commodities',             label: 'Commodities'  },
+      { href: '/dashboard/ipo',                     label: 'IPO Calendar' },
+      { href: '/dashboard/capital-gains',           label: 'Capital Gains'},
     ],
   },
   {
     key: 'account', label: 'Account',
     links: [
-      { href: '/dashboard/upgrade', label: 'Upgrade'      },
-      { href: '/dashboard/brokers', label: 'Broker'       },
-      { href: '/dashboard/refer',   label: 'Refer & Earn' },
+      { href: '/dashboard/upgrade',  label: 'Upgrade'         },
+      { href: '/dashboard/brokers',  label: 'Broker'          },
+      { href: '/dashboard/refer',    label: 'Refer & Earn'    },
+      { href: '/support',            label: 'Support'         },
+      { href: '/risk-disclosure',    label: 'Risk Disclosure' },
     ],
   },
 ];
