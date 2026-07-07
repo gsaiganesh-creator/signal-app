@@ -1697,7 +1697,7 @@ export default function PortfolioPage() {
 
       {displayedHoldings.length > 0 && (
         <>
-          <div className="g3" style={{ display:'grid', gap:12, marginBottom:16 }}>
+          <div className="g3 stat-grid" style={{ display:'grid', gap:12, marginBottom:16 }}>
             {[
               { label:'Total Invested', val:`₹${totalInvested.toLocaleString('en-IN', { maximumFractionDigits:0 })}` },
               { label:'Current Value',  val:`₹${totalCurrent.toLocaleString('en-IN', { maximumFractionDigits:0 })}` },

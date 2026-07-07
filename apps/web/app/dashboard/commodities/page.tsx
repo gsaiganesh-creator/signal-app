@@ -186,7 +186,7 @@ export default function CommoditiesPage() {
 
       {/* Summary */}
       {positions.length > 0 && (
-        <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>
+        <div className="g3 stat-grid" style={{ display:'grid', gap:12, marginBottom:20 }}>
           {[
             { label:'Total Invested', val:`₹${totalInvested.toLocaleString('en-IN',{maximumFractionDigits:0})}`, color:'var(--txt)' },
             { label:'Current Value',  val: totalCurrentVal > 0 ? `₹${totalCurrentVal.toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—', color:'var(--txt)' },
@@ -206,7 +206,7 @@ export default function CommoditiesPage() {
           <div style={{ fontSize:13, fontWeight:700 }}>Live Prices (MCX Proxy via Futures)</div>
           {loading && <span style={{ fontSize:11, color:'var(--dim)' }}>⏳</span>}
         </div>
-        <div className="g3" style={{ display:'grid', gap:8 }}>
+        <div className="g3 rate-grid" style={{ display:'grid', gap:8 }}>
           {COMMODITIES.map(com => {
             const usdPrice = prices[com.sym]?.price;
             const chg = prices[com.sym]?.change_pct;

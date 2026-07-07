@@ -290,6 +290,14 @@ button:active:not(:disabled) { transform: scale(0.97); }
   .dash-port-switcher button { max-width: 110px; overflow: hidden; }
   /* Reduce top nav padding */
   nav { padding: 0 12px !important; }
+  /* Forex/commodities rate grid + forex/commodities/portfolio stat summary:
+     keep 2 columns instead of collapsing to full-width 1-col pills */
+  .rate-grid { grid-template-columns: 1fr 1fr !important; }
+  .stat-grid { grid-template-columns: 1fr 1fr !important; }
+  .rate-card { padding: 8px 10px !important; }
+  .rate-num  { font-size: 13px !important; }
+  .stat-card { padding: 10px 12px !important; }
+  .stat-num  { font-size: 15px !important; }
 }
 
 /* ---- Small phone (≤ 360px) ---- */

@@ -141,7 +141,7 @@ export default function ForexPage() {
 
       {/* Summary row — only if positions exist */}
       {positions.length > 0 && (
-        <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>
+        <div className="g3 stat-grid" style={{ display:'grid', gap:12, marginBottom:20 }}>
           {[
             { label:'Total Invested', val:`₹${totalInvested2.toLocaleString('en-IN',{maximumFractionDigits:0})}`, sub:`${positions.length} positions`, color:'var(--txt)' },
             { label:'Current Value',  val:`₹${totalCurrentVal.toLocaleString('en-IN',{maximumFractionDigits:0})}`, sub:'at live rates', color:'var(--txt)' },
@@ -164,7 +164,7 @@ export default function ForexPage() {
           <div style={{ fontSize:13, fontWeight:700 }}>Live Rates vs INR</div>
           {ratesLoading && <span style={{ fontSize:11, color:'var(--dim)' }}>⏳ loading…</span>}
         </div>
-        <div className="g3" style={{ display:'grid', gap:8 }}>
+        <div className="g3 rate-grid" style={{ display:'grid', gap:8 }}>
           {LIVE_PAIRS.map(pair => {
             const rate = getRate(pair.sym);
             const chg  = getChg(pair.sym);
