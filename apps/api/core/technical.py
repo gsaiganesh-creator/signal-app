@@ -2,9 +2,24 @@
 Technical analysis — extracted from twitter-agent/agents/technical_analyst.py.
 Simplified: uses yfinance directly (no price validator scraping).
 """
+import logging
+from pathlib import Path
+
+import joblib
 import yfinance as yf
 import pandas as pd
 import ta
+
+from ml.features import FEATURE_COLUMNS
+
+logger = logging.getLogger(__name__)
+
+_MODEL_PATH = Path(__file__).parent.parent / "ml" / "model.joblib"
+try:
+    _MODEL = joblib.load(_MODEL_PATH)
+except FileNotFoundError:
+    _MODEL = None
+    logger.warning("technical: no trained model found at %s — ml_bias/ml_confidence will be null", _MODEL_PATH)
 
 
 def get_technical_analysis(symbol: str, name: str | None = None) -> dict | None:
@@ -128,6 +143,32 @@ def get_technical_analysis(symbol: str, name: str | None = None) -> dict | None:
         if stop >= entry_lo:
             stop = round(entry_lo - atr * 1.0, 2)
 
+        bb_pct_val = (
+            round((curr_price - float(bb_lower.iloc[-1])) / (float(bb_upper.iloc[-1]) - float(bb_lower.iloc[-1])), 3)
+            if float(bb_upper.iloc[-1]) != float(bb_lower.iloc[-1]) else 0.5
+        )
+        pct_from_52h_val = round((curr_price - w52_high) / w52_high * 100, 2)
+
+        ml_bias = None
+        ml_confidence = None
+        if _MODEL is not None and curr_ema200 is not None:
+            macd_hist_val = float(macd_line.iloc[-1]) - float(macd_sig.iloc[-1])
+            feature_values = {
+                "rsi14": curr_rsi,
+                "ema5_dist": curr_price / curr_ema5 - 1,
+                "ema20_dist": curr_price / curr_ema20 - 1,
+                "ema50_dist": curr_price / curr_ema50 - 1,
+                "ema200_dist": curr_price / curr_ema200 - 1,
+                "macd_hist": macd_hist_val,
+                "bb_pct": bb_pct_val,
+                "vol_ratio": vol_ratio,
+                "pct_from_52h": pct_from_52h_val,
+            }
+            features = pd.DataFrame([feature_values])[FEATURE_COLUMNS]
+            proba = float(_MODEL.predict_proba(features)[0][1])
+            ml_confidence = round(proba, 3)
+            ml_bias = "BULLISH" if proba >= 0.55 else ("BEARISH" if proba <= 0.45 else "NEUTRAL")
+
         return {
             "symbol": symbol,
             "name": name or symbol.replace(".NS", ""),
@@ -143,8 +184,7 @@ def get_technical_analysis(symbol: str, name: str | None = None) -> dict | None:
             "macd_signal": round(float(macd_sig.iloc[-1]), 3),
             "bb_upper": round(float(bb_upper.iloc[-1]), 2),
             "bb_lower": round(float(bb_lower.iloc[-1]), 2),
-            "bb_pct": round((curr_price - float(bb_lower.iloc[-1])) / (float(bb_upper.iloc[-1]) - float(bb_lower.iloc[-1])), 3)
-                if float(bb_upper.iloc[-1]) != float(bb_lower.iloc[-1]) else 0.5,
+            "bb_pct": bb_pct_val,
             "support_1": round(s1, 2),
             "support_2": round(s2, 2),
             "resistance_1": round(r1, 2),
@@ -156,10 +196,12 @@ def get_technical_analysis(symbol: str, name: str | None = None) -> dict | None:
             "stop": stop,
             "w52_high": round(w52_high, 2),
             "w52_low": round(w52_low, 2),
-            "pct_from_52h": round((curr_price - w52_high) / w52_high * 100, 2),
+            "pct_from_52h": pct_from_52h_val,
             "vol_ratio": vol_ratio,
             "bias": bias,
             "signals": signals,
+            "ml_bias": ml_bias,
+            "ml_confidence": ml_confidence,
         }
     except Exception as e:
         print(f"[technical] Error for {symbol}: {e}")

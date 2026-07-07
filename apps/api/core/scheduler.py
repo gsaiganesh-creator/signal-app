@@ -9,6 +9,8 @@ from core.paper_trading_scan import run_paper_trading_scan
 from core.price_alerts import run_price_alerts_check
 from core.scan_log_backfill import run_scan_log_backfill
 from core.sentiment_scan import run_sentiment_backfill, run_sentiment_scan
+from core.shadow_log import run_shadow_log
+from core.ml_shadow_log_backfill import run_ml_shadow_log_backfill
 
 logger = logging.getLogger(__name__)
 
@@ -183,10 +185,28 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # 9:35 AM IST (skips NSE holidays), Mon–Fri — trained classifier shadow-mode logging
+    scheduler.add_job(
+        run_shadow_log,
+        CronTrigger(day_of_week="mon-fri", hour=9, minute=35, timezone=IST),
+        id="ml_shadow_log",
+        name="ML Shadow Log",
+        replace_existing=True,
+    )
+
+    # 9:40 AM IST, daily — ml_shadow_log 30d outcome backfill
+    scheduler.add_job(
+        run_ml_shadow_log_backfill,
+        CronTrigger(hour=9, minute=40, timezone=IST),
+        id="ml_shadow_log_backfill",
+        name="ML Shadow Log Backfill",
+        replace_existing=True,
+    )
+
     scheduler.start()
     logger.info(
         "scheduler: started (morning_scan, us_morning_scan, intraday_check, eod_cleanup, "
         "sentiment_scan, sentiment_backfill, scan_log_backfill, price_alerts_check, "
-        "paper_trading_scan)"
+        "paper_trading_scan, ml_shadow_log, ml_shadow_log_backfill)"
     )
     return scheduler

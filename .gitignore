@@ -42,3 +42,4 @@ npm-debug.log*
 .vercel
 .env*
 .worktrees/
+apps/api/ml/training_data.parquet

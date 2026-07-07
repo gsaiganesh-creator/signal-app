@@ -3,10 +3,12 @@ import os
 
 from fastapi import APIRouter, HTTPException, Query
 
+from core.ml_shadow_log_backfill import run_ml_shadow_log_backfill
 from core.paper_trading_scan import run_paper_trading_scan
 from core.price_alerts import run_price_alerts_check
 from core.scan_log_backfill import run_scan_log_backfill
 from core.sentiment_scan import run_sentiment_backfill, run_sentiment_scan
+from core.shadow_log import run_shadow_log
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -18,6 +20,8 @@ _JOBS = {
     "scan-log-backfill": run_scan_log_backfill,
     "price-alerts-check": run_price_alerts_check,
     "paper-trading-scan": run_paper_trading_scan,
+    "ml-shadow-log": run_shadow_log,
+    "ml-shadow-log-backfill": run_ml_shadow_log_backfill,
 }
 
 
