@@ -1,7 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 
-const SECTORS = [
+const INDIA_SECTORS = [
   { name:'IT',      ticker:'^CNXIT',     idx:'NIFTY IT',      stocks:'TCS · INFY · WIPRO · LTIM · HCLTECH',                key:'it' },
   { name:'BANKING', ticker:'^NSEBANK',   idx:'BANK NIFTY',    stocks:'HDFCBANK · ICICIBANK · KOTAKBANK · AXISBANK',         key:'bank' },
   { name:'AUTO',    ticker:'^CNXAUTO',   idx:'NIFTY AUTO',    stocks:'TATAMOTORS · M&M · MARUTI · BAJAJ-AUTO · EICHERMOT', key:'auto' },
@@ -11,6 +11,23 @@ const SECTORS = [
   { name:'METAL',   ticker:'^CNXMETAL',  idx:'NIFTY METAL',   stocks:'TATASTEEL · JSWSTEEL · HINDALCO · VEDL · NMDC',      key:'metal' },
   { name:'REALTY',  ticker:'^CNXREALTY', idx:'NIFTY REALTY',  stocks:'DLF · GODREJPROP · OBEROIRLTY · PRESTIGE · SOBHA',   key:'realty' },
   { name:'INFRA',   ticker:'^CNXINFRA',  idx:'NIFTY INFRA',   stocks:'LT · ADANIPORTS · POWERGRID · NTPC · BEL',           key:'infra' },
+];
+
+// US sectors — no direct GICS index tickers on Yahoo like NSE has, so these use
+// the Select Sector SPDR ETFs (XLK/XLF/etc.) as the standard proxy — same convention
+// already used for the MCX commodity-price proxy elsewhere in the app.
+const US_SECTORS = [
+  { name:'TECH',      ticker:'XLK',   idx:'SPDR Technology (XLK)',              stocks:'AAPL · MSFT · NVDA · AVGO · CRM',        key:'us-tech' },
+  { name:'FINANCIAL', ticker:'XLF',   idx:'SPDR Financial (XLF)',               stocks:'BRK.B · JPM · V · MA · BAC',             key:'us-fin' },
+  { name:'HEALTHCARE',ticker:'XLV',   idx:'SPDR Health Care (XLV)',             stocks:'LLY · UNH · JNJ · ABBV · MRK',           key:'us-health' },
+  { name:'DISCRETIONARY', ticker:'XLY', idx:'SPDR Consumer Discretionary (XLY)',stocks:'AMZN · TSLA · HD · MCD · NKE',           key:'us-disc' },
+  { name:'COMM SVCS', ticker:'XLC',   idx:'SPDR Communication Svcs (XLC)',      stocks:'GOOGL · META · NFLX · DIS · TMUS',       key:'us-comm' },
+  { name:'INDUSTRIALS', ticker:'XLI', idx:'SPDR Industrials (XLI)',             stocks:'GE · CAT · RTX · UNP · HON',             key:'us-ind' },
+  { name:'ENERGY',    ticker:'XLE',   idx:'SPDR Energy (XLE)',                  stocks:'XOM · CVX · COP · WMB · EOG',            key:'us-energy' },
+  { name:'STAPLES',   ticker:'XLP',   idx:'SPDR Consumer Staples (XLP)',        stocks:'WMT · COST · PG · KO · PEP',             key:'us-staples' },
+  { name:'UTILITIES', ticker:'XLU',   idx:'SPDR Utilities (XLU)',               stocks:'NEE · SO · DUK · CEG · AEP',             key:'us-util' },
+  { name:'REAL ESTATE', ticker:'XLRE', idx:'SPDR Real Estate (XLRE)',           stocks:'PLD · AMT · EQIX · WELL · SPG',          key:'us-re' },
+  { name:'MATERIALS', ticker:'XLB',   idx:'SPDR Materials (XLB)',               stocks:'LIN · SHW · FCX · ECL · NEM',            key:'us-mat' },
 ];
 
 interface LiveData {
@@ -46,9 +63,12 @@ const PERIODS = ['1D', '5D', '1M', '3M', '1Y'];
 const PERIOD_RANGE: Record<string, string> = { '1D':'1d', '5D':'5d', '1M':'1mo', '3M':'3mo', '1Y':'1y' };
 
 export default function SectorHeatmapPage() {
+  const [market, setMarket] = useState<'india' | 'us'>('india');
   const [period, setPeriod] = useState('1D');
   const [live, setLive]     = useState<Record<string, LiveData>>({});
   const [loading, setLoading] = useState(true);
+
+  const SECTORS = market === 'india' ? INDIA_SECTORS : US_SECTORS;
 
   useEffect(() => {
     setLoading(true);
@@ -57,7 +77,7 @@ export default function SectorHeatmapPage() {
       .then(r => r.json())
       .then(d => { setLive(d); setLoading(false); })
       .catch(() => setLoading(false));
-  }, [period]);
+  }, [market, period]);
 
   // Sort: biggest movers first (abs change)
   const sorted = [...SECTORS].sort((a, b) => {
@@ -74,12 +94,27 @@ export default function SectorHeatmapPage() {
       <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
         <div>
           <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>Sector Heatmap</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>NSE sectoral indices · live prices from Yahoo Finance</div>
+          <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>
+            {market === 'india' ? 'NSE sectoral indices' : 'US sector ETFs (SPDR Select Sector)'} · live prices from Yahoo Finance
+          </div>
         </div>
         <div style={{ display:'flex', alignItems:'center', gap:8 }}>
           {!loading && <span style={{ fontSize:11, color:'var(--grn)', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span>}
           {loading && <span style={{ fontSize:11, color:'var(--dim)' }}>loading…</span>}
         </div>
+      </div>
+
+      {/* India / US toggle */}
+      <div style={{ display:'flex', gap:8, marginBottom:14 }}>
+        {(['india','us'] as const).map(m => (
+          <button key={m} onClick={() => setMarket(m)}
+            style={{ height:34, padding:'0 18px', borderRadius:8, fontSize:12, fontWeight:800, cursor:'pointer', fontFamily:'inherit',
+              background: market===m ? 'rgba(255,184,0,0.15)' : 'transparent',
+              border: market===m ? '1px solid var(--ylw)' : '1px solid var(--bdr)',
+              color: market===m ? 'var(--ylw)' : 'var(--dim)' }}>
+            {m === 'india' ? '🇮🇳 India' : '🇺🇸 US'}
+          </button>
+        ))}
       </div>
 
       {/* Period selector */}
@@ -119,7 +154,7 @@ export default function SectorHeatmapPage() {
                     {chg != null ? `${chg >= 0 ? '+' : ''}${chg.toFixed(2)}%` : '—'}
                   </div>
                   <div style={{ fontSize:11, color:'var(--dim)', marginTop:4 }}>
-                    {s.idx}{d?.price != null ? ` · ${d.price.toLocaleString('en-IN', { maximumFractionDigits:0 })}` : ''}
+                    {s.idx}{d?.price != null ? ` · ${market === 'us' ? '$' : ''}${d.price.toLocaleString(market === 'us' ? 'en-US' : 'en-IN', { maximumFractionDigits: market === 'us' ? 2 : 0 })}` : ''}
                   </div>
                 </>
               )}
@@ -165,7 +200,7 @@ export default function SectorHeatmapPage() {
       )}
 
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:8 }}>
-        ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · Sector data informational only · Prices from Yahoo Finance · Not investment advice · DYOR
+        ⚠️ <strong style={{ color:'var(--ylw)' }}>{market === 'us' ? 'NOT SEC REGISTERED' : 'NOT SEBI REGISTERED'}</strong> · Sector data informational only · Prices from Yahoo Finance · Not investment advice · DYOR
       </div>
     </>
   );
