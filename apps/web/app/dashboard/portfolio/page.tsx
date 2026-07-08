@@ -820,6 +820,40 @@ function parseRows(rows: string[][]): { result: ParsedRow[]; debug: string } {
   return { result: [], debug: `no header found. ${scanned}` };
 }
 
+// Last-resort fallback for brokerage formats the hand-coded matchers above don't
+// recognize (new/unlisted broker, renamed columns, unusual layout). Sends the raw
+// rows/text to an LLM to infer the symbol/qty/price mapping. Only called after every
+// heuristic attempt has already failed, so it doesn't add cost/latency to the common path.
+async function parseWithAI(rows?: string[][], text?: string): Promise<{ result: ParsedRow[]; debug: string }> {
+  try {
+    const res = await fetch('/api/parse-holdings-ai', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(rows ? { rows } : { text }),
+      signal: AbortSignal.timeout(25000),
+    });
+    if (!res.ok) return { result: [], debug: `AI_FALLBACK: HTTP ${res.status}` };
+    const data = await res.json() as {
+      result: { symbol: string; company_name?: string; qty: number; avg_price: number; exchange: string }[];
+      debug: string;
+    };
+    const result: ParsedRow[] = data.result
+      .map(r => {
+        // Prefer the ticker the model gave us; if it looks unusable (too long / not
+        // ticker-shaped) fall back to deriving one from the printed company name.
+        const cleaned = cleanSymbol(r.symbol);
+        const sym = (cleaned && cleaned.length <= 15) ? cleaned : companyNameToTicker(r.company_name ?? r.symbol);
+        if (!sym || sym.length < 2) return null;
+        const exchange = (['NSE','BSE','NYSE','NASDAQ'].includes(r.exchange) ? r.exchange : 'NSE') as Exchange;
+        return { symbol: sym, qty: r.qty, avg_price: r.avg_price, exchange };
+      })
+      .filter(Boolean) as ParsedRow[];
+    return { result, debug: data.debug };
+  } catch (e) {
+    return { result: [], debug: `AI_FALLBACK: ${e instanceof Error ? e.message : String(e)}` };
+  }
+}
+
 async function parseFile(file: File): Promise<{ result: ParsedRow[]; debug: string }> {
   try {
     if (file.name.match(/\.pdf$/i)) return parsePdf(file);
@@ -828,6 +862,7 @@ async function parseFile(file: File): Promise<{ result: ParsedRow[]; debug: stri
       const buf = await file.arrayBuffer();
       const wb = XLSX.read(buf, { type:'array' });
       // Try all sheets, not just the first — Zerodha sometimes has a cover sheet
+      let bestRows: string[][] = [];
       for (const sheetName of wb.SheetNames) {
         const ws = wb.Sheets[sheetName];
         // raw:false converts numbers/dates to strings automatically
@@ -835,11 +870,13 @@ async function parseFile(file: File): Promise<{ result: ParsedRow[]; debug: stri
         // Drop completely empty rows (merged-cell title areas at top of Zerodha XLSX)
         const rows = all.filter(r => r.some(c => (c ?? '').toString().trim() !== ''));
         if (rows.length < 2) continue;
+        if (rows.length > bestRows.length) bestRows = rows;
         const res = parseRows(rows);
         if (res.result.length) return { result: res.result, debug: `sheet="${sheetName}" ${res.debug}` };
-        // keep last debug for context if no sheet succeeds
-        const lastDebug = `sheet="${sheetName}" rows=${rows.length} ${res.debug}`;
-        if (sheetName === wb.SheetNames[wb.SheetNames.length - 1]) return { result: [], debug: lastDebug };
+      }
+      if (bestRows.length >= 2) {
+        const ai = await parseWithAI(bestRows);
+        if (ai.result.length) return ai;
       }
       return { result: [], debug: 'no usable sheet found' };
     }
@@ -848,7 +885,13 @@ async function parseFile(file: File): Promise<{ result: ParsedRow[]; debug: stri
     const rows = text.split('\n')
       .map(l => l.split(',').map(c => c.replace(/^"|"$/g,'').trim()))
       .filter(r => r.some(c => c !== ''));
-    return parseRows(rows);
+    const res = parseRows(rows);
+    if (res.result.length) return res;
+    if (rows.length >= 2) {
+      const ai = await parseWithAI(rows);
+      if (ai.result.length) return ai;
+    }
+    return res;
   } catch (e) {
     return { result: [], debug: `parse error: ${e instanceof Error ? e.message : e}` };
   }

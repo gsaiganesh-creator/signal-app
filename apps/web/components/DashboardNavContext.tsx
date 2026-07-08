@@ -8,7 +8,6 @@ export const TABS = [
     links: [
       { href: '/dashboard',             label: 'Dashboard'   },
       { href: '/dashboard/signals',     label: 'Signals'     },
-      { href: '/dashboard/us-signals',  label: 'US Signals'  },
       { href: '/dashboard/portfolio',   label: 'Portfolio'   },
       { href: '/dashboard/watchlist',   label: 'Watchlist'   },
       { href: '/dashboard/equity-comp', label: 'ESPP & RSU'  },

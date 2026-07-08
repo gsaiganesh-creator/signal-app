@@ -19,7 +19,6 @@ const MORE_SECTIONS = [
     label: 'Markets',
     links: [
       { href: '/dashboard/watchlist',    icon: '👁', label: 'Watchlist'      },
-      { href: '/dashboard/us-signals',  icon: '🇺🇸', label: 'US Signals'     },
       { href: '/stocks/compare',        icon: '⚖️', label: 'Compare'        },
       { href: '/dashboard/sectors',     icon: '🔥', label: 'Sector Heatmap' },
       { href: '/dashboard/fii-dii',     icon: '🌍', label: 'FII / DII'      },
