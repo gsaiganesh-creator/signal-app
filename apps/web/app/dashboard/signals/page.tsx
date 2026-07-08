@@ -64,21 +64,16 @@ interface USDetail {
   next_earnings_date: string | null; days_to_earnings: Num;
   short_pct_float: Num; short_ratio: Num;
 }
-interface USSignal extends USDetail {
-  zone: 'Strong Momentum' | 'Building' | 'Sideways' | 'Weak / Declining' | 'N/A';
-  supertrend_value: Num;
-  supertrend_dir:   1 | -1 | null;
+interface USScanPick {
+  symbol: string; name: string; sector: string;
+  cmp: number; chg: number; rsi: number; ema20: number; ema_dist_pct: number;
+  entry_low: number; entry_high: number; target: number; sl: number;
+  signal: string; confidence: number; score: number;
 }
-
-// ── Curated US scan universe ──────────────────────────────────────────────────
-const US_UNIVERSE = [
-  'NVDA','MSFT','META','GOOGL','AMZN','AAPL','TSLA','AMD','NFLX',
-  'JPM','V','MA','GS','BAC','BLK',
-  'QQQ','SPY','SOXX','ARKK',
-  'PLTR','COIN','APP','UBER','SNOW',
-  'JNJ','UNH','ABBV',
-  'XOM','CVX',
-];
+interface USSignal extends USScanPick {
+  zone: 'Strong Momentum' | 'Building' | 'Sideways' | 'Weak / Declining' | 'N/A';
+  detail: USDetail | null; // lazily populated when the row is clicked
+}
 
 // ── India helpers ─────────────────────────────────────────────────────────────
 async function fetchMLSignals(): Promise<MLSignal[]> {
@@ -96,34 +91,20 @@ async function fetchTA(symbol: string): Promise<TADetail | null> {
     return await r.json();
   } catch { return null; }
 }
+async function fetchUSMLSignals(): Promise<USScanPick[]> {
+  try {
+    const r = await fetch('/api/ml/signals/us?limit=20', { next: { revalidate: 0 } });
+    if (!r.ok) return [];
+    const d = await r.json();
+    return d.signals ?? [];
+  } catch { return []; }
+}
 
 // ── US helpers ────────────────────────────────────────────────────────────────
-function scoreUSZone(signals: string[]): USSignal['zone'] {
-  const s = signals.join(' ').toLowerCase();
-  const buy = (s.match(/bullish|above.*ema|positive.*macd|oversold|momentum|analyst.*target|upside/g) || []).length;
-  const sel = (s.match(/bearish|below.*ema|negative.*macd|overbought|exit|short interest/g) || []).length;
-  if (buy > sel + 1) return 'Strong Momentum';
-  if (sel > buy + 1) return 'Weak / Declining';
-  if (buy > 0 || sel > 0) return 'Building';
+function usZoneFromConfidence(confidence: number): USSignal['zone'] {
+  if (confidence >= 72) return 'Strong Momentum';
+  if (confidence >= 58) return 'Building';
   return 'Sideways';
-}
-async function fetchUSUniverse(extra: string[]): Promise<USSignal[]> {
-  const syms = [...new Set([...extra, ...US_UNIVERSE])];
-  const results = await Promise.allSettled(
-    syms.map(s =>
-      fetch(`/api/stock-detail?symbol=${s}&exchange=NYSE`, { signal: AbortSignal.timeout(14000) })
-        .then(r => r.ok ? r.json() as Promise<USDetail> : null)
-        .catch(() => null)
-    )
-  );
-  return results
-    .map((r, i) => {
-      if (r.status !== 'fulfilled' || !r.value) return null;
-      const d = r.value;
-      if (!d.price) return null;
-      return { ...d, symbol: syms[i], zone: scoreUSZone(d.signals ?? []) } as USSignal;
-    })
-    .filter(Boolean) as USSignal[];
 }
 
 // ── Scan logging ──────────────────────────────────────────────────────────────
@@ -535,8 +516,31 @@ function DetailDrawer({ sig, onClose, isElite, session }: { sig: MLSignal; onClo
 }
 
 // ── US Detail Drawer ──────────────────────────────────────────────────────────
-function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }) {
+function USDetailDrawer({ sig, onClose, isElite }: { sig: USSignal; onClose: () => void; isElite: boolean }) {
   const z = zs(sig.zone);
+  const [detail, setDetail] = useState<USDetail | null>(null);
+  const [detailLoading, setDetailLoading] = useState(true);
+  const [narrative, setNarrative] = useState<string | null>(null);
+  const [narrativeLoading, setNarrativeLoading] = useState(false);
+
+  useEffect(() => {
+    setDetailLoading(true); setDetail(null); setNarrative(null);
+    fetch(`/api/stock-detail?symbol=${sig.symbol}&exchange=NYSE`)
+      .then(r => r.ok ? r.json() as Promise<USDetail> : null)
+      .then(d => setDetail(d))
+      .catch(() => setDetail(null))
+      .finally(() => setDetailLoading(false));
+
+    if (isElite) {
+      setNarrativeLoading(true);
+      fetch(`/api/signal-narrative?symbol=${encodeURIComponent(sig.symbol)}&name=${encodeURIComponent(sig.name)}&sector=${encodeURIComponent(sig.sector)}&rsi=${sig.rsi}&ema_dist=${sig.ema_dist_pct}&signal=${encodeURIComponent(sig.signal)}&confidence=${sig.confidence}&market=us`)
+        .then(r => r.ok ? r.json() : null)
+        .then(d => setNarrative(d?.narrative ?? null))
+        .catch(() => {})
+        .finally(() => setNarrativeLoading(false));
+    }
+  }, [sig.symbol, isElite]); // eslint-disable-line react-hooks/exhaustive-deps
+
   function fmt(n: Num, suffix = '', prefix = '') { return n != null ? `${prefix}${n}${suffix}` : '—'; }
   function Stat({ label, val, sub, color }: { label:string; val:string; sub?:string; color?:string }) {
     return (
@@ -550,9 +554,16 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
   function Section({ title }: { title:string }) {
     return <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', textTransform:'uppercase', letterSpacing:1, marginBottom:8, marginTop:4 }}>{title}</div>;
   }
+  function SkeletonBlock() {
+    return (
+      <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
+        {[1,2,3,4,5,6].map(i => <div key={i} style={{ height:52, borderRadius:9, background:'var(--surf2)', animation:'pulse 1.4s infinite', opacity:0.7 }}/>)}
+      </div>
+    );
+  }
 
-  const cmp = sig.price ?? 0;
-  const chg = sig.change_pct ?? 0;
+  const cmp = sig.cmp;
+  const chg = sig.chg;
 
   return (
     <>
@@ -568,30 +579,64 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
             </div>
             <button onClick={onClose} style={{ width:34, height:34, borderRadius:9, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
           </div>
-          <div style={{ display:'flex', alignItems:'baseline', gap:10, flexWrap:'wrap' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:10, flexWrap:'wrap' }}>
             <span style={{ fontSize:24, fontWeight:900 }}>{cmp ? `$${cmp.toFixed(2)}` : '—'}</span>
             {chg !== 0 && <span style={{ fontSize:14, fontWeight:700, color: chg >= 0 ? 'var(--grn)' : 'var(--red)' }}>{chg >= 0 ? '+' : ''}{chg.toFixed(2)}% today</span>}
-            <span style={{ marginLeft:'auto', padding:'4px 12px', borderRadius:7, background:z.bg, border:`1px solid ${z.bdr}`, fontSize:11, fontWeight:800, color:z.color }}>
+            <span style={{ padding:'4px 10px', borderRadius:7, background:z.bg, border:`1px solid ${z.bdr}`, fontSize:11, fontWeight:800, color:z.color }}>
               {sig.zone}
+            </span>
+            <span style={{ marginLeft:'auto', padding:'4px 12px', borderRadius:7, background: sig.confidence >= 75 ? 'rgba(0,212,160,0.15)' : 'rgba(23,64,245,0.12)', border:'1px solid', borderColor: sig.confidence >= 75 ? 'rgba(0,212,160,0.3)' : 'rgba(23,64,245,0.25)', fontSize:12, fontWeight:800, color: confColor(sig.confidence) }}>
+              🤖 {sig.confidence}% momentum score
             </span>
           </div>
         </div>
 
         <div style={{ padding:'20px 24px', flex:1 }}>
+          {/* ── Scan summary (entry/target/SL — always available, from the scan itself) ── */}
+          <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.08),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.2)', borderRadius:16, padding:'20px 22px', marginBottom:20, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16 }}>
+            <div>
+              <div style={{ fontSize:10, fontWeight:800, color:'var(--grn)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:6 }}>US Swing Scan · {sig.signal}</div>
+              <div style={{ fontSize:16, fontWeight:800, letterSpacing:-0.3, marginBottom:4 }}>Entry ${sig.entry_low}–{sig.entry_high}</div>
+              <div style={{ fontSize:12, color:'var(--dim)' }}>Target ${sig.target} · SL ${sig.sl}</div>
+            </div>
+            <div style={{ textAlign:'center', flexShrink:0 }}>
+              <div style={{ fontSize:32, fontWeight:900, color:'var(--grn)', lineHeight:1 }}>{((sig.target - sig.cmp) / (sig.cmp - sig.sl)).toFixed(1)}×</div>
+              <div style={{ fontSize:10, color:'var(--dim)', marginTop:4 }}>Risk : Reward</div>
+            </div>
+          </div>
+
+          {/* ── AI Narrative (Elite) ── */}
+          {isElite && (
+            <div style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.07),rgba(139,92,246,0.05))', border:'1px solid rgba(255,184,0,0.22)', borderRadius:14, padding:'14px 18px', marginBottom:18 }}>
+              <div style={{ fontSize:10, fontWeight:800, color:'var(--ylw)', letterSpacing:1.2, textTransform:'uppercase', marginBottom:8, display:'flex', alignItems:'center', gap:6 }}>
+                ✨ AI Analysis <span style={{ fontSize:9, background:'rgba(255,184,0,0.15)', border:'1px solid rgba(255,184,0,0.3)', borderRadius:4, padding:'1px 5px' }}>Elite · Grok</span>
+              </div>
+              {narrativeLoading ? (
+                <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+                  {[1,2,3].map(i => <div key={i} style={{ height:14, borderRadius:4, background:'rgba(255,255,255,0.06)', animation:'pulse 1.4s infinite', width: i === 3 ? '60%' : '100%' }}/>)}
+                </div>
+              ) : narrative ? (
+                <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.75, whiteSpace:'pre-line' }}>{narrative}</div>
+              ) : (
+                <div style={{ fontSize:12, color:'var(--dim2)' }}>Narrative unavailable — try refreshing.</div>
+              )}
+            </div>
+          )}
+
           {/* Analyst banner */}
-          {sig.analyst_consensus && (
+          {!detailLoading && detail?.analyst_consensus && (
             <div style={{ background:'linear-gradient(135deg,rgba(79,111,250,0.08),rgba(23,64,245,0.03))', border:'1px solid rgba(79,111,250,0.22)', borderRadius:14, padding:'16px 20px', marginBottom:18, display:'flex', justifyContent:'space-between', alignItems:'center', gap:12 }}>
               <div>
                 <div style={{ fontSize:10, fontWeight:800, color:'var(--bluL)', letterSpacing:1.2, textTransform:'uppercase', marginBottom:5 }}>
-                  Wall St. Consensus · {sig.analyst_count ?? '—'} analysts
+                  Wall St. Consensus · {detail.analyst_count ?? '—'} analysts
                 </div>
-                <div style={{ fontSize:16, fontWeight:800 }}>{sig.analyst_consensus?.replace('_',' ').toUpperCase() ?? '—'}</div>
-                {sig.analyst_target && <div style={{ fontSize:12, color:'var(--dim)', marginTop:2 }}>Avg target ${sig.analyst_target} · range ${sig.analyst_target_low}–${sig.analyst_target_high}</div>}
+                <div style={{ fontSize:16, fontWeight:800 }}>{detail.analyst_consensus?.replace('_',' ').toUpperCase() ?? '—'}</div>
+                {detail.analyst_target && <div style={{ fontSize:12, color:'var(--dim)', marginTop:2 }}>Avg target ${detail.analyst_target} · range ${detail.analyst_target_low}–${detail.analyst_target_high}</div>}
               </div>
-              {sig.upside_to_target != null && (
+              {detail.upside_to_target != null && (
                 <div style={{ textAlign:'center', flexShrink:0 }}>
-                  <div style={{ fontSize:28, fontWeight:900, color: sig.upside_to_target >= 10 ? 'var(--grn)' : sig.upside_to_target < -5 ? 'var(--red)' : 'var(--ylw)', lineHeight:1 }}>
-                    {sig.upside_to_target >= 0 ? '+' : ''}{sig.upside_to_target}%
+                  <div style={{ fontSize:28, fontWeight:900, color: detail.upside_to_target >= 10 ? 'var(--grn)' : detail.upside_to_target < -5 ? 'var(--red)' : 'var(--ylw)', lineHeight:1 }}>
+                    {detail.upside_to_target >= 0 ? '+' : ''}{detail.upside_to_target}%
                   </div>
                   <div style={{ fontSize:10, color:'var(--dim)', marginTop:3 }}>upside to target</div>
                 </div>
@@ -600,11 +645,11 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
           )}
 
           {/* Signals */}
-          {sig.signals.length > 0 && (
+          {!detailLoading && detail?.signals && detail.signals.length > 0 && (
             <div style={{ marginBottom:18 }}>
               <Section title="Technical Signals" />
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-                {sig.signals.map((s, i) => {
+                {detail.signals.map((s, i) => {
                   const isBull = s.toLowerCase().includes('bullish') || s.toLowerCase().includes('above') || s.toLowerCase().includes('oversold') || s.toLowerCase().includes('upside');
                   const isBear = s.toLowerCase().includes('bearish') || s.toLowerCase().includes('below') || s.toLowerCase().includes('overbought') || s.toLowerCase().includes('elevated short');
                   const c = isBull ? 'var(--grn)' : isBear ? 'var(--red)' : 'var(--ylw)';
@@ -622,74 +667,71 @@ function USDetailDrawer({ sig, onClose }: { sig: USSignal; onClose: () => void }
           {/* Technicals — Pro+ */}
           <ProGate feature="signals-indicators">
           <Section title="Technicals" />
+          {detailLoading ? <SkeletonBlock /> : (
           <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-            {sig.rsi14   != null && <Stat label="RSI 14"   val={sig.rsi14.toString()} color={sig.rsi14 > 70 ? 'var(--red)' : sig.rsi14 < 35 ? 'var(--grn)' : 'var(--txt)'} />}
-            {sig.macd    != null && <Stat label="MACD"     val={sig.macd.toString()}  color={sig.macd >= 0 ? 'var(--grn)' : 'var(--red)'} />}
-            {sig.bb_pct  != null && <Stat label="BB %"     val={`${sig.bb_pct}%`} sub="0=lower 100=upper" />}
-            {sig.vol_ratio != null && <Stat label="Vol Ratio" val={`${sig.vol_ratio}x`} color={sig.vol_ratio > 2 ? 'var(--ylw)' : 'var(--txt)'} />}
-            {sig.from_52h != null && <Stat label="vs 52W High" val={`${sig.from_52h}%`} color={sig.from_52h > -5 ? 'var(--grn)' : 'var(--dim)'} />}
-            {sig.ema20   != null && <Stat label="EMA 20"   val={`$${sig.ema20}`} color={cmp > sig.ema20 ? 'var(--grn)' : 'var(--red)'} />}
-            {sig.ema50   != null && <Stat label="EMA 50"   val={`$${sig.ema50}`} color={cmp > sig.ema50 ? 'var(--grn)' : 'var(--red)'} />}
-            {sig.ema200  != null && <Stat label="EMA 200"  val={`$${sig.ema200}`} color={cmp > sig.ema200 ? 'var(--grn)' : 'var(--red)'} />}
+            {detail?.rsi14   != null && <Stat label="RSI 14"   val={detail.rsi14.toString()} color={detail.rsi14 > 70 ? 'var(--red)' : detail.rsi14 < 35 ? 'var(--grn)' : 'var(--txt)'} />}
+            {detail?.macd    != null && <Stat label="MACD"     val={detail.macd.toString()}  color={detail.macd >= 0 ? 'var(--grn)' : 'var(--red)'} />}
+            {detail?.bb_pct  != null && <Stat label="BB %"     val={`${detail.bb_pct}%`} sub="0=lower 100=upper" />}
+            {detail?.vol_ratio != null && <Stat label="Vol Ratio" val={`${detail.vol_ratio}x`} color={detail.vol_ratio > 2 ? 'var(--ylw)' : 'var(--txt)'} />}
+            {detail?.from_52h != null && <Stat label="vs 52W High" val={`${detail.from_52h}%`} color={detail.from_52h > -5 ? 'var(--grn)' : 'var(--dim)'} />}
+            {detail?.ema20   != null && <Stat label="EMA 20"   val={`$${detail.ema20}`} color={cmp > detail.ema20 ? 'var(--grn)' : 'var(--red)'} />}
+            {detail?.ema50   != null && <Stat label="EMA 50"   val={`$${detail.ema50}`} color={cmp > detail.ema50 ? 'var(--grn)' : 'var(--red)'} />}
+            {detail?.ema200  != null && <Stat label="EMA 200"  val={`$${detail.ema200}`} color={cmp > detail.ema200 ? 'var(--grn)' : 'var(--red)'} />}
           </div>
+          )}
 
           {/* Valuation */}
-          {(sig.trailing_pe != null || sig.forward_pe != null || sig.market_cap != null || sig.beta != null) && (
+          {!detailLoading && (detail?.trailing_pe != null || detail?.forward_pe != null || detail?.market_cap != null || detail?.beta != null) && (
             <>
               <Section title="Valuation" />
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                {sig.trailing_pe    != null && <Stat label="P/E (TTM)"   val={fmt(sig.trailing_pe)} />}
-                {sig.forward_pe     != null && <Stat label="Forward P/E" val={fmt(sig.forward_pe)} />}
-                {sig.ev_ebitda      != null && <Stat label="EV/EBITDA"   val={fmt(sig.ev_ebitda)} />}
-                {sig.beta           != null && <Stat label="Beta"        val={fmt(sig.beta)} sub="vs S&P 500" />}
-                {sig.market_cap     != null && <Stat label="Market Cap"  val={sig.market_cap >= 1e12 ? `$${(sig.market_cap/1e12).toFixed(2)}T` : `$${(sig.market_cap/1e9).toFixed(1)}B`} />}
-                {sig.short_pct_float != null && <Stat label="Short Float" val={fmt(sig.short_pct_float, '%')} color={sig.short_pct_float > 20 ? 'var(--ylw)' : 'var(--txt)'} />}
+                {detail.trailing_pe    != null && <Stat label="P/E (TTM)"   val={fmt(detail.trailing_pe)} />}
+                {detail.forward_pe     != null && <Stat label="Forward P/E" val={fmt(detail.forward_pe)} />}
+                {detail.ev_ebitda      != null && <Stat label="EV/EBITDA"   val={fmt(detail.ev_ebitda)} />}
+                {detail.beta           != null && <Stat label="Beta"        val={fmt(detail.beta)} sub="vs S&P 500" />}
+                {detail.market_cap     != null && <Stat label="Market Cap"  val={detail.market_cap >= 1e12 ? `$${(detail.market_cap/1e12).toFixed(2)}T` : `$${(detail.market_cap/1e9).toFixed(1)}B`} />}
+                {detail.short_pct_float != null && <Stat label="Short Float" val={fmt(detail.short_pct_float, '%')} color={detail.short_pct_float > 20 ? 'var(--ylw)' : 'var(--txt)'} />}
               </div>
             </>
           )}
 
           {/* Growth */}
-          {(sig.revenue_growth != null || sig.net_margin != null || sig.roe != null) && (
+          {!detailLoading && (detail?.revenue_growth != null || detail?.net_margin != null || detail?.roe != null) && (
             <>
               <Section title="Growth & Profitability" />
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:16 }}>
-                {sig.revenue_growth  != null && <Stat label="Revenue Growth"  val={fmt(sig.revenue_growth, '%')}  color={sig.revenue_growth >= 0 ? 'var(--grn)' : 'var(--red)'} />}
-                {sig.earnings_growth != null && <Stat label="Earnings Growth" val={fmt(sig.earnings_growth, '%')} color={sig.earnings_growth >= 0 ? 'var(--grn)' : 'var(--red)'} />}
-                {sig.net_margin      != null && <Stat label="Net Margin"      val={fmt(sig.net_margin, '%')} />}
-                {sig.roe             != null && <Stat label="ROE"             val={fmt(sig.roe, '%')} />}
-                {sig.gross_margin    != null && <Stat label="Gross Margin"    val={fmt(sig.gross_margin, '%')} />}
-                {sig.operating_margin != null && <Stat label="Op. Margin"     val={fmt(sig.operating_margin, '%')} />}
+                {detail.revenue_growth  != null && <Stat label="Revenue Growth"  val={fmt(detail.revenue_growth, '%')}  color={detail.revenue_growth >= 0 ? 'var(--grn)' : 'var(--red)'} />}
+                {detail.earnings_growth != null && <Stat label="Earnings Growth" val={fmt(detail.earnings_growth, '%')} color={detail.earnings_growth >= 0 ? 'var(--grn)' : 'var(--red)'} />}
+                {detail.net_margin      != null && <Stat label="Net Margin"      val={fmt(detail.net_margin, '%')} />}
+                {detail.roe             != null && <Stat label="ROE"             val={fmt(detail.roe, '%')} />}
+                {detail.gross_margin    != null && <Stat label="Gross Margin"    val={fmt(detail.gross_margin, '%')} />}
+                {detail.operating_margin != null && <Stat label="Op. Margin"     val={fmt(detail.operating_margin, '%')} />}
               </div>
             </>
           )}
 
           {/* Earnings */}
-          {sig.next_earnings_date && (
+          {!detailLoading && detail?.next_earnings_date && (
             <>
               <Section title="Earnings" />
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8, marginBottom:16 }}>
-                <Stat label="Next Earnings" val={sig.next_earnings_date}
-                  sub={sig.days_to_earnings != null ? `${sig.days_to_earnings}d away` : undefined}
-                  color={sig.days_to_earnings != null && sig.days_to_earnings <= 14 ? 'var(--ylw)' : 'var(--txt)'} />
-                {sig.dividend_yield != null && <Stat label="Div Yield" val={fmt(sig.dividend_yield, '%')} color="var(--grn)" />}
+                <Stat label="Next Earnings" val={detail.next_earnings_date}
+                  sub={detail.days_to_earnings != null ? `${detail.days_to_earnings}d away` : undefined}
+                  color={detail.days_to_earnings != null && detail.days_to_earnings <= 14 ? 'var(--ylw)' : 'var(--txt)'} />
+                {detail.dividend_yield != null && <Stat label="Div Yield" val={fmt(detail.dividend_yield, '%')} color="var(--grn)" />}
               </div>
             </>
           )}
 
-          {/* Price targets */}
-          {(sig.stop_loss != null || sig.target1 != null || sig.supertrend_value != null) && (
+          {/* Price targets — from full detail fetch, when available */}
+          {!detailLoading && (detail?.stop_loss != null || detail?.target1 != null) && (
             <>
               <Section title="Price Levels" />
               <div style={{ display:'flex', flexDirection:'column', gap:0 }}>
                 {[
-                  { l:'🔴 Stop Loss',  v: sig.stop_loss        ? `$${sig.stop_loss}` : '—', c:'var(--red)' },
-                  ...(sig.supertrend_value != null ? [{
-                    l: sig.supertrend_dir === 1 ? '🟢 Supertrend Support' : '🔴 Supertrend Resistance',
-                    v: `$${sig.supertrend_value}`,
-                    c: sig.supertrend_dir === 1 ? 'var(--grn)' : 'var(--red)',
-                  }] : []),
-                  { l:'🎯 Target 1',   v: sig.target1          ? `$${sig.target1}` : '—',   c:'var(--grn)' },
-                  { l:'🎯 Target 2',   v: sig.target2          ? `$${sig.target2}` : '—',   c:'var(--grn)' },
+                  { l:'🔴 Stop Loss',  v: detail?.stop_loss ? `$${detail.stop_loss}` : '—', c:'var(--red)' },
+                  { l:'🎯 Target 1',   v: detail?.target1   ? `$${detail.target1}` : '—',   c:'var(--grn)' },
+                  { l:'🎯 Target 2',   v: detail?.target2   ? `$${detail.target2}` : '—',   c:'var(--grn)' },
                 ].map(row => (
                   <div key={row.l} style={{ display:'flex', justifyContent:'space-between', padding:'8px 0', borderBottom:'1px solid var(--bdr)' }}>
                     <span style={{ fontSize:12, color:'var(--dim)' }}>{row.l}</span>
@@ -928,11 +970,11 @@ export default function SignalsPage() {
   const loadUS = useCallback(async () => {
     if (usLoaded) return;
     setUsLoading(true);
-    const sigs = await fetchUSUniverse(usPortSyms);
-    setUsSignals(sigs);
+    const picks = await fetchUSMLSignals();
+    setUsSignals(picks.map(p => ({ ...p, zone: usZoneFromConfidence(p.confidence), detail: null })));
     setUsLoading(false);
     setUsLoaded(true);
-  }, [usPortSyms, usLoaded]);
+  }, [usLoaded]);
 
   const loadFundamentals = useCallback(async () => {
     setFundLoading(true);
@@ -1443,8 +1485,8 @@ export default function SignalsPage() {
               {shownUS.map(sig => {
                 const st = zs(sig.zone);
                 const inPort = usPortSet.has(sig.symbol);
-                const cmp = sig.price ?? 0;
-                const chg = sig.change_pct ?? 0;
+                const cmp = sig.cmp;
+                const chg = sig.chg;
                 return (
                   <div key={sig.symbol} onClick={() => setSelectedUS(sig)}
                     style={{ background:`linear-gradient(160deg,${st.grad},var(--card-bg))`, border:'1px solid var(--card-bdr)', borderRadius:16, padding:'14px 18px', cursor:'pointer', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:12, alignItems:'center' }}
@@ -1460,33 +1502,25 @@ export default function SignalsPage() {
                         <span style={{ fontSize:14, fontWeight:800 }}>{sig.symbol}</span>
                         {inPort && <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)' }}>IN PORTFOLIO</span>}
                         <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4, background:st.bg, color:st.color, border:`1px solid ${st.bdr}` }}>{sig.zone}</span>
-                        {sig.analyst_consensus && (
-                          <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4, background:'rgba(79,111,250,0.1)', color:'var(--bluL)', border:'1px solid rgba(79,111,250,0.25)' }}>
-                            {sig.analyst_consensus.replace('_',' ').toUpperCase()}
-                          </span>
-                        )}
                       </div>
                       <div style={{ fontSize:11, color:'var(--dim)', marginBottom:5 }}>{sig.name ?? sig.symbol}</div>
                       <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                        {sig.rsi14 != null && <span style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>RSI {sig.rsi14}</span>}
-                        {sig.upside_to_target != null && <span style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color: sig.upside_to_target >= 10 ? 'var(--grn)' : 'var(--dim)', border:'1px solid var(--card-bdr)' }}>Target +{sig.upside_to_target}%</span>}
-                        {sig.market_cap != null && <span style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>{sig.market_cap >= 1e12 ? `$${(sig.market_cap/1e12).toFixed(1)}T` : `$${(sig.market_cap/1e9).toFixed(0)}B`}</span>}
+                        <span style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>RSI {sig.rsi}</span>
+                        <span style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>EMA {sig.ema_dist_pct > 0 ? '+' : ''}{sig.ema_dist_pct}%</span>
                         <span style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color: chg >= 0 ? 'var(--grn)' : 'var(--red)', border:'1px solid var(--card-bdr)' }}>{chg >= 0 ? '+' : ''}{chg.toFixed(2)}%</span>
                       </div>
                     </div>
 
                     <div style={{ textAlign:'right', flexShrink:0 }}>
                       <div style={{ fontSize:16, fontWeight:900 }}>{cmp ? `$${cmp.toFixed(2)}` : '—'}</div>
-                      {sig.analyst_target != null && <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>T ${sig.analyst_target}</div>}
-                      {sig.rsi14 != null && (
-                        <div style={{ marginTop:5, display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
-                          <div style={{ width:52, height:4, borderRadius:2, background:'var(--bdr)' }}>
-                            <div style={{ width:`${Math.min(100, sig.rsi14)}%`, height:'100%', borderRadius:2, background: sig.rsi14 > 70 ? 'var(--red)' : sig.rsi14 < 35 ? 'var(--grn)' : 'var(--bluL)' }}/>
-                          </div>
-                          <span style={{ fontSize:11, fontWeight:700, color: sig.rsi14 > 70 ? 'var(--red)' : sig.rsi14 < 35 ? 'var(--grn)' : 'var(--dim)' }}>{sig.rsi14}</span>
+                      <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>T ${sig.target}</div>
+                      <div style={{ marginTop:5, display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
+                        <div style={{ width:52, height:4, borderRadius:2, background:'var(--bdr)' }}>
+                          <div style={{ width:`${sig.confidence}%`, height:'100%', borderRadius:2, background:confColor(sig.confidence) }}/>
                         </div>
-                      )}
-                      <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>RSI</div>
+                        <span style={{ fontSize:11, fontWeight:700, color:confColor(sig.confidence) }}>{sig.confidence}%</span>
+                      </div>
+                      <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>🤖 momentum</div>
                     </div>
                   </div>
                 );
@@ -1510,7 +1544,7 @@ export default function SignalsPage() {
           )}
 
           <div style={{ fontSize:11, color:'var(--dim2)', marginTop:16 }}>
-            Scanning {US_UNIVERSE.length} curated stocks {usPortSyms.length > 0 ? `+ ${usPortSyms.length} from your portfolio` : ''} · Prices from Yahoo Finance (15-20 min delay) · NOT SEC REGISTERED · Not investment advice · DYOR
+            Scanning a 100-stock US universe for RSI 42-62 + near-EMA20 swing setups · Prices from Yahoo Finance · NOT SEC REGISTERED · Not investment advice · DYOR
           </div>
         </>
       )}
@@ -1692,7 +1726,7 @@ export default function SignalsPage() {
       })()}
 
       {selected  && <DetailDrawer   sig={selected}   onClose={() => setSelected(null)} isElite={isElite} session={session} />}
-      {selectedUS && <USDetailDrawer sig={selectedUS} onClose={() => setSelectedUS(null)} />}
+      {selectedUS && <USDetailDrawer sig={selectedUS} onClose={() => setSelectedUS(null)} isElite={isElite} />}
       {upgradeModal && <UpgradeModal feature={upgradeModal.feature} minPlan={upgradeModal.minPlan} onClose={() => setUpgradeModal(null)} />}
     </>
   );

@@ -1,5 +1,5 @@
-// Grok-powered AI narrative for a single NSE signal — Elite tier only.
-// Called from DetailDrawer when isElite=true.
+// Grok-powered AI narrative for a single signal (NSE or US) — Elite tier only.
+// Called from DetailDrawer / USDetailDrawer when isElite=true.
 export const runtime = 'nodejs';
 
 export async function GET(req: Request) {
@@ -11,6 +11,7 @@ export async function GET(req: Request) {
   const emaDist    = searchParams.get('ema_dist') ?? '';
   const signal     = searchParams.get('signal') ?? '';
   const confidence = searchParams.get('confidence') ?? '';
+  const market     = searchParams.get('market') === 'us' ? 'us' : 'india';
 
   if (!symbol) return Response.json({ error: 'symbol required' }, { status: 400 });
 
@@ -18,7 +19,7 @@ export async function GET(req: Request) {
   if (!apiKey) return Response.json({ narrative: null, error: 'XAI_API_KEY not set' });
 
   const userPrompt =
-    `NSE Stock: ${name} (${symbol})\n` +
+    `${market === 'us' ? 'US Stock' : 'NSE Stock'}: ${name} (${symbol})\n` +
     `Sector: ${sector}\n` +
     `RSI-14: ${rsi} | EMA20 distance: ${emaDist}% | Signal: ${signal} | Confidence: ${confidence}%\n\n` +
     `Give a concise 3-line analysis:\n` +
@@ -37,7 +38,7 @@ export async function GET(req: Request) {
       body: JSON.stringify({
         model: 'grok-4.3',
         messages: [
-          { role: 'system', content: 'You are a concise Indian stock market technical analyst. Respond only with the 3-line analysis requested. No preamble, no extra text.' },
+          { role: 'system', content: `You are a concise ${market === 'us' ? 'US stock market' : 'Indian stock market'} technical analyst. Respond only with the 3-line analysis requested. No preamble, no extra text.` },
           { role: 'user', content: userPrompt },
         ],
         max_tokens: 180,
