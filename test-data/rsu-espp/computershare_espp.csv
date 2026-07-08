@@ -1,0 +1,6 @@
+Transaction Type,Stock,Company Name,Units Purchased,Purchase Price,Purchase Date,Plan Name
+Employee Stock Purchase,AAPL,Apple Inc.,18,189.34,06/30/2023,Apple ESPP
+Employee Stock Purchase,AAPL,Apple Inc.,21,201.82,12/29/2023,Apple ESPP
+Employee Stock Purchase,AAPL,Apple Inc.,19,198.14,06/28/2024,Apple ESPP
+Employee Stock Purchase,AAPL,Apple Inc.,22,211.42,12/31/2024,Apple ESPP
+Employee Stock Purchase,AAPL,Apple Inc.,20,207.18,06/27/2025,Apple ESPP

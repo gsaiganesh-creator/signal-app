@@ -174,237 +174,6 @@ const MKT_INDICES = [
   { name:'NIFTY IT',   ticker:'^CNXIT'  },
 ];
 
-// ─── US Stock News (lazy, max 3 symbols, deferred 2s) ────────────────────────
-interface NewsItem { title: string; publisher: string; link: string; published_at: string | null; ticker: string }
-function UsNewsWidget({ symbols }: { symbols: string[] }) {
-  const [news, setNews]     = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const usSyms = symbols.filter(s => !s.endsWith('.NS') && !s.endsWith('.BO')).slice(0, 3);
-
-  useEffect(() => {
-    if (!usSyms.length) { setLoading(false); return; }
-    // Defer so main P&L + prices render first
-    const t = setTimeout(() => {
-      fetch(`/api/portfolio-news?symbols=${encodeURIComponent(usSyms.join(','))}`)
-        .then(r => r.json())
-        .then((d: { news?: NewsItem[] }) => { setNews(d.news ?? []); setLoading(false); })
-        .catch(() => setLoading(false));
-    }, 2000);
-    return () => clearTimeout(t);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [usSyms.join(',')]);
-
-  if (!usSyms.length || (!loading && !news.length)) return null;
-
-  return (
-    <div style={{ borderTop:'1px solid var(--bdr)', paddingTop:14, marginTop:14 }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-        <div style={{ fontSize:12, fontWeight:800 }}>📰 US Market News</div>
-        {loading && <span style={{ fontSize:10, color:'var(--dim)' }}>loading…</span>}
-      </div>
-      {!loading && (
-        <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-          {news.slice(0, 5).map((n, i) => {
-            const ago = (() => {
-              if (!n.published_at) return '';
-              const s = (Date.now() - new Date(n.published_at).getTime()) / 1000;
-              if (s < 3600) return `${Math.floor(s/60)}m ago`;
-              if (s < 86400) return `${Math.floor(s/3600)}h ago`;
-              return `${Math.floor(s/86400)}d ago`;
-            })();
-            return (
-              <a key={i} href={n.link} target="_blank" rel="noopener noreferrer"
-                style={{ textDecoration:'none', display:'flex', alignItems:'flex-start', gap:8, padding:'8px 10px', background:'var(--surf2)', borderRadius:8, borderLeft:'3px solid rgba(79,111,250,0.4)' }}>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontSize:12, fontWeight:600, color:'var(--txt)', lineHeight:1.4, display:'-webkit-box', WebkitLineClamp:2, WebkitBoxOrient:'vertical' as const, overflow:'hidden' }}>{n.title}</div>
-                  <div style={{ display:'flex', gap:6, marginTop:3, alignItems:'center' }}>
-                    <span style={{ fontSize:9, color:'var(--dim)' }}>{n.publisher}</span>
-                    {ago && <span style={{ fontSize:9, color:'var(--dim2)' }}>· {ago}</span>}
-                    <span style={{ fontSize:9, fontWeight:700, padding:'1px 5px', borderRadius:3, background:'rgba(79,111,250,0.12)', color:'var(--bluL)' }}>{n.ticker} 🇺🇸</span>
-                  </div>
-                </div>
-                <span style={{ fontSize:11, color:'var(--dim2)', flexShrink:0 }}>↗</span>
-              </a>
-            );
-          })}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─── US Stock Analysis Section ───────────────────────────────────────────────
-interface UsTA { rsi:number; ema20:number; macd:number; macd_signal:number; macd_bullish:boolean; w52_high:number; w52_low:number; pct_from_52h:number; vol_ratio:number; chg_pct:number; signal:string; sector:string }
-
-function UsAnalysisSection({ holdings, usPrices, usAnalysis, usdInr }: {
-  holdings: { symbol:string; qty:number; avg_price:number }[];
-  usPrices: Record<string, { price:number|null; change_pct:number|null }>;
-  usAnalysis: Record<string, UsTA>;
-  usdInr: number | null;
-}) {
-  if (!holdings.length) return null;
-
-  const syms = holdings.map(h => h.symbol);
-  const hasTA = syms.some(s => !!usAnalysis[s]);
-  if (!hasTA) return (
-    <div style={{ textAlign:'center', padding:'12px 0', fontSize:11, color:'var(--dim)' }}>Loading technical analysis…</div>
-  );
-
-  // Sector breakdown
-  const sectorMap: Record<string, number> = {};
-  for (const h of holdings) {
-    const ta = usAnalysis[h.symbol];
-    if (!ta) continue;
-    const sec = ta.sector;
-    const val = (usPrices[h.symbol]?.price ?? h.avg_price) * h.qty;
-    sectorMap[sec] = (sectorMap[sec] ?? 0) + val;
-  }
-  const sectorTotal = Object.values(sectorMap).reduce((s, v) => s + v, 0);
-  const sectors = Object.entries(sectorMap).sort((a, b) => b[1] - a[1]);
-  const SECTOR_COLORS: Record<string, string> = {
-    'Technology':'#4F6FFA', 'Consumer Disc.':'#FF5C1A', 'Financials':'#00D4A0',
-    'Healthcare':'#8B5CF6', 'Energy':'#FFB800', 'Industrials':'#FF3B5C',
-    'Materials':'#00D4A0', 'Real Estate':'#8B5CF6', 'Consumer Staples':'#4F6FFA',
-    'Utilities':'#FFB800', 'ETF':'#7A8BAA', 'Diversified':'#3A4E6A', 'Other':'#3A4E6A',
-  };
-
-  // Signal counts
-  const signals = syms.map(s => usAnalysis[s]?.signal).filter(Boolean);
-  const buys  = signals.filter(s => s === 'BUY').length;
-  const sells = signals.filter(s => s === 'SELL').length;
-  const holds = signals.filter(s => s === 'HOLD').length;
-
-  // Overbought / near 52H
-  const near52H = syms.filter(s => usAnalysis[s] && usAnalysis[s].pct_from_52h > -10).length;
-  const avgRsi  = syms.reduce((acc, s) => acc + (usAnalysis[s]?.rsi ?? 50), 0) / syms.length;
-
-  return (
-    <div style={{ marginTop:16, borderTop:'1px solid var(--bdr)', paddingTop:14 }}>
-      <div style={{ fontSize:13, fontWeight:800, marginBottom:12 }}>Technical Analysis</div>
-
-      {/* Signal summary strip */}
-      <div style={{ display:'flex', gap:8, marginBottom:14, flexWrap:'wrap' }}>
-        {[
-          { label:`${buys} BUY`,  bg:'rgba(0,212,160,0.12)', bdr:'rgba(0,212,160,0.3)', col:'var(--grn)' },
-          { label:`${holds} HOLD`, bg:'rgba(255,184,0,0.1)',  bdr:'rgba(255,184,0,0.3)',  col:'var(--ylw)' },
-          { label:`${sells} SELL`, bg:'rgba(255,59,92,0.1)',  bdr:'rgba(255,59,92,0.25)', col:'var(--red)' },
-          { label:`Avg RSI ${avgRsi.toFixed(0)}`, bg:'rgba(79,111,250,0.1)', bdr:'rgba(79,111,250,0.28)', col:'var(--bluL)' },
-          { label:`${near52H} near 52W high`, bg:'rgba(255,92,26,0.1)', bdr:'rgba(255,92,26,0.28)', col:'var(--org)' },
-        ].map(c => (
-          <span key={c.label} style={{ fontSize:11, fontWeight:700, padding:'4px 10px', borderRadius:20, background:c.bg, border:`1px solid ${c.bdr}`, color:c.col }}>
-            {c.label}
-          </span>
-        ))}
-      </div>
-
-      {/* Per-stock technical table */}
-      <div style={{ overflowX:'auto', marginBottom:14 }}>
-        <table style={{ width:'100%', borderCollapse:'collapse', fontSize:12 }}>
-          <thead>
-            <tr>{['Stock','Signal','RSI','vs EMA20','MACD','52W High','From 52H','Vol'].map(h => (
-              <th key={h} style={{ fontSize:9, fontWeight:700, color:'var(--dim)', padding:'5px 8px', textAlign:'left', borderBottom:'1px solid rgba(79,111,250,0.15)', textTransform:'uppercase', letterSpacing:0.4, whiteSpace:'nowrap' }}>{h}</th>
-            ))}</tr>
-          </thead>
-          <tbody>
-            {[...holdings].sort((a,b)=>(b.avg_price*b.qty)-(a.avg_price*a.qty)).map(h => {
-              const ta  = usAnalysis[h.symbol];
-              const cmp = usPrices[h.symbol]?.price ?? h.avg_price;
-              const vsEma = ta ? ((cmp - ta.ema20) / ta.ema20 * 100) : null;
-              const sigColor = !ta ? 'var(--dim)' : ta.signal === 'BUY' ? 'var(--grn)' : ta.signal === 'SELL' ? 'var(--red)' : 'var(--ylw)';
-              const sigBg    = !ta ? 'transparent' : ta.signal === 'BUY' ? 'rgba(0,212,160,0.12)' : ta.signal === 'SELL' ? 'rgba(255,59,92,0.1)' : 'rgba(255,184,0,0.1)';
-              const rsiColor = !ta ? 'var(--dim)' : ta.rsi < 40 ? 'var(--grn)' : ta.rsi > 65 ? 'var(--red)' : 'var(--ylw)';
-              return (
-                <tr key={h.symbol}
-                  onMouseEnter={e => (e.currentTarget.style.background='rgba(79,111,250,0.06)')}
-                  onMouseLeave={e => (e.currentTarget.style.background='transparent')}>
-                  <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)' }}>
-                    <div style={{ fontWeight:700 }}>{h.symbol}</div>
-                    <div style={{ fontSize:9, color:'var(--dim)', marginTop:1 }}>{ta?.sector ?? '—'}</div>
-                  </td>
-                  <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)' }}>
-                    {ta ? <span style={{ fontSize:9, fontWeight:800, padding:'2px 7px', borderRadius:5, background:sigBg, color:sigColor, border:`1px solid ${sigColor}33` }}>{ta.signal}</span> : <span style={{ color:'var(--dim)' }}>—</span>}
-                  </td>
-                  <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', fontWeight:700, color:rsiColor }}>
-                    {ta ? ta.rsi : '—'}
-                  </td>
-                  <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', fontWeight:600, color: vsEma == null ? 'var(--dim)' : vsEma >= 0 ? 'var(--grn)' : 'var(--red)', whiteSpace:'nowrap' }}>
-                    {vsEma != null ? `${vsEma >= 0 ? '+' : ''}${vsEma.toFixed(1)}%` : '—'}
-                  </td>
-                  <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)' }}>
-                    {ta ? <span style={{ fontSize:10, color: ta.macd_bullish ? 'var(--grn)' : 'var(--red)', fontWeight:700 }}>{ta.macd_bullish ? '▲ Bull' : '▼ Bear'}</span> : <span style={{ color:'var(--dim)' }}>—</span>}
-                  </td>
-                  <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', whiteSpace:'nowrap' }}>
-                    {ta?.w52_high ? `$${ta.w52_high.toFixed(0)}` : '—'}
-                  </td>
-                  <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', fontWeight:700, whiteSpace:'nowrap', color: !ta ? 'var(--dim)' : ta.pct_from_52h > -10 ? 'var(--ylw)' : ta.pct_from_52h > -25 ? 'var(--grn)' : 'var(--dim)' }}>
-                    {ta ? `${ta.pct_from_52h}%` : '—'}
-                  </td>
-                  <td style={{ padding:'7px 8px', borderBottom:'1px solid rgba(79,111,250,0.1)', color: !ta ? 'var(--dim)' : ta.vol_ratio > 1.8 ? 'var(--org)' : 'var(--dim)' }}>
-                    {ta ? `${ta.vol_ratio}×` : '—'}
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Sector breakdown */}
-      {sectors.length > 0 && (
-        <div>
-          <div style={{ fontSize:12, fontWeight:700, marginBottom:8, color:'var(--dim)' }}>Sector Exposure</div>
-          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
-            {sectors.slice(0, 8).map(([sec, val]) => {
-              const pct = sectorTotal > 0 ? val / sectorTotal * 100 : 0;
-              const col = SECTOR_COLORS[sec] ?? '#3A4E6A';
-              return (
-                <div key={sec}>
-                  <div style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:3 }}>
-                    <div style={{ display:'flex', alignItems:'center', gap:6 }}>
-                      <div style={{ width:8, height:8, borderRadius:2, background:col, flexShrink:0 }}/>
-                      <span style={{ color:'var(--dim)' }}>{sec}</span>
-                    </div>
-                    <span style={{ fontWeight:700 }}>{pct.toFixed(0)}%{usdInr ? ` · $${(val).toFixed(0)}` : ''}</span>
-                  </div>
-                  <div style={{ height:3, background:'rgba(255,255,255,0.06)', borderRadius:2, overflow:'hidden' }}>
-                    <div style={{ height:'100%', width:`${pct}%`, background:col, borderRadius:2 }}/>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* US Portfolio Insights */}
-      {(() => {
-        const insights: { icon:string; text:string; accent:string }[] = [];
-        const techPct = sectorTotal > 0 ? (sectorMap['Technology'] ?? 0) / sectorTotal * 100 : 0;
-        if (techPct > 50) insights.push({ icon:'⚠️', accent:'var(--ylw)', text:`${techPct.toFixed(0)}% of your US portfolio is in Technology. High concentration in one sector amplifies sector-level risk — regulatory changes, rate sensitivity, or earnings misses affect all names simultaneously.` });
-        if (buys > 0 && buys >= holds + sells) insights.push({ icon:'✅', accent:'var(--grn)', text:`${buys} of ${syms.length} holdings showing technical BUY signals — RSI below 38 or MACD bullish crossover. Scan output only, not a recommendation.` });
-        if (sells > 1) insights.push({ icon:'⚠️', accent:'var(--red)', text:`${sells} holdings in SELL territory (RSI > 70 — overbought). Overbought doesn't guarantee a reversal but signals elevated risk of short-term pullback.` });
-        if (near52H > syms.length * 0.6) insights.push({ icon:'📈', accent:'var(--org)', text:`${near52H} of ${syms.length} stocks within 10% of 52W highs — your US portfolio is broadly near cycle highs. Strong momentum but also elevated entry risk for new positions.` });
-        if (avgRsi < 45) insights.push({ icon:'🔄', accent:'var(--bluL)', text:`Average RSI across US holdings is ${avgRsi.toFixed(0)} — broadly oversold. Historically this range has preceded recoveries, though individual stock fundamentals matter more.` });
-        if (!insights.length) return null;
-        return (
-          <div style={{ borderTop:'1px solid var(--bdr)', paddingTop:12, marginTop:12 }}>
-            <div style={{ fontSize:12, fontWeight:700, marginBottom:8 }}>US Portfolio Insights</div>
-            <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
-              {insights.map((ins, i) => (
-                <div key={i} style={{ display:'flex', gap:10, padding:'10px 12px', background:'var(--surf2)', borderRadius:9, borderLeft:`3px solid ${ins.accent}` }}>
-                  <span style={{ fontSize:14, flexShrink:0 }}>{ins.icon}</span>
-                  <div style={{ fontSize:11.5, color:'var(--txt)', lineHeight:1.6 }}>{ins.text}</div>
-                </div>
-              ))}
-            </div>
-            <div style={{ fontSize:10, color:'var(--dim2)', marginTop:8 }}>⚠️ Technical scan output only — not investment advice · DYOR</div>
-          </div>
-        );
-      })()}
-    </div>
-  );
-}
-
 type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
 type FiiRow   = { fii_net: number; dii_net: number; date: string };
 
@@ -583,8 +352,8 @@ export default function DashboardPage() {
   const [fxPrices, setFxPrices] = useState<Record<string, PriceData>>({});
   const [cmPrices, setCmPrices] = useState<Record<string, PriceData>>({});
   const [scanPicks, setScanPicks]   = useState<{ symbol: string; exchange: string; price_at: number; rsi14: number | null; scanned_at: string }[]>([]);
-  const [usAnalysis, setUsAnalysis] = useState<Record<string, UsTA>>({});
   const [detailSym, setDetailSym] = useState<{ symbol: string; exchange: string } | null>(null);
+  const [heatRegion, setHeatRegion] = useState<'IN' | 'US'>('IN');
   // Market sidebar data — indices + sectors in one batch call
   const [mktData,    setMktData]    = useState<PriceMap>({});
   const [mktLoading, setMktLoading] = useState(true);
@@ -721,19 +490,6 @@ export default function DashboardPage() {
       })
       .catch(() => {});
   }, [cmPos, usdInr]);
-
-  // US technical analysis — defer 1.5s so prices/P&L load first
-  useEffect(() => {
-    if (!usHoldings.length) { setUsAnalysis({}); return; }
-    const t = setTimeout(() => {
-      const syms = [...new Set(usHoldings.map(h => h.symbol))].join(',');
-      fetch(`/api/us/analysis?symbols=${encodeURIComponent(syms)}`)
-        .then(r => r.json())
-        .then((d: Record<string, UsTA>) => setUsAnalysis(d))
-        .catch(() => {});
-    }, 1500);
-    return () => clearTimeout(t);
-  }, [usHoldings]);
 
   // Recent scan picks from scan_log
   useEffect(() => {
@@ -874,8 +630,12 @@ export default function DashboardPage() {
     { label:'ETF / MF',  value:capDist.etf,   color:'#8B5CF6' },
   ].filter(s => s.value > 0);
 
-  const insights  = buildInsights(mergedIndia);
-  const heatTiles = [...mergedIndia].sort((a, b) => b.avg_price * b.qty - a.avg_price * a.qty);
+  const insights    = buildInsights(mergedIndia);
+  const heatTilesIN = [...mergedIndia].sort((a, b) => b.avg_price * b.qty - a.avg_price * a.qty);
+  const heatTilesUS = [...usHoldings].sort((a, b) => b.avg_price * b.qty - a.avg_price * a.qty);
+  const activeHeatRegion = heatRegion === 'US' && heatTilesUS.length > 0 ? 'US' : 'IN';
+  const heatTiles = activeHeatRegion === 'US' ? heatTilesUS : heatTilesIN;
+  const heatPrices = activeHeatRegion === 'US' ? usPrices : prices;
 
   return (
     <>
@@ -1156,75 +916,49 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* US Stock Technical Analysis */}
-      {hasUSHoldings && (
-        <div style={{ ...card, marginBottom:16, borderColor:'rgba(79,111,250,0.22)', background:'linear-gradient(135deg,rgba(79,111,250,0.05),var(--card-bg))' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-            <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,rgba(79,111,250,0.18),rgba(139,92,246,0.12))', border:'1px solid rgba(79,111,250,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, flexShrink:0 }}>🇺🇸</div>
-            <div>
-              <div style={{ fontSize:14, fontWeight:800, letterSpacing:-0.2 }}>US Portfolio Technical Analysis</div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>RSI, EMA20, MACD across your US holdings · scan output only</div>
-            </div>
-          </div>
-          <UsAnalysisSection holdings={usHoldings} usPrices={usPrices} usAnalysis={usAnalysis} usdInr={usdInr} />
-          <UsNewsWidget symbols={usHoldings.map(h => h.symbol)} />
-        </div>
-      )}
-
-
       <div style={{ marginBottom:16 }}>
         <HomeFIIDII today={fiiData} loading={fiiLoading} />
       </div>
       <div style={{ marginBottom:16 }}>
         <HomeSectorPerf data={mktData} loading={mktLoading} />
       </div>
-      <div style={{ ...card, marginBottom:16 }}>
-        <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Quick Links</div>
-        <div className="g4" style={{ display:'grid', gap:8 }}>
-          {[
-            { href:'/dashboard/signals',                 icon:'📈', label:'ML Scan',          sub:'RSI + EMA screener',   grad:'rgba(23,64,245,0.10)',  bdr:'rgba(23,64,245,0.28)' },
-            { href:'/dashboard/signals?tab=fundamental', icon:'📊', label:'Fundamentals',     sub:'PE · ROE · D/E screener', grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
-            { href:'/dashboard/portfolio',               icon:'💼', label:'India Portfolio',   sub:'P&L · signals',        grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
-            { href:'/dashboard/us-portfolio',            icon:'🇺🇸', label:'US Portfolio',    sub:'USD stocks',            grad:'rgba(79,111,250,0.09)', bdr:'rgba(79,111,250,0.28)' },
-            { href:'/dashboard/dividends',               icon:'💰', label:'Dividends',        sub:'Ex-dates · income',     grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
-            { href:'/dashboard/paper-trading',           icon:'🧪', label:'Paper Trading',     sub:'Risk-free strategies', grad:'rgba(139,92,246,0.09)', bdr:'rgba(139,92,246,0.28)' },
-            { href:'/dashboard/sectors',                 icon:'🔥', label:'Sector Heatmap',    sub:'Hot sectors',          grad:'rgba(255,92,26,0.09)',  bdr:'rgba(255,92,26,0.28)' },
-            { href:'/dashboard/fii-dii',                 icon:'🌍', label:'FII / DII Flow',    sub:'Institutional flow',   grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
-            { href:'/dashboard/watchlist',                icon:'⭐', label:'Watchlist',        sub:'Saved stocks',          grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
-          ].map(l => (
-            <Link key={l.href} href={l.href} className="hover-lift" style={{ display:'flex', flexDirection:'column', gap:2, padding:'12px 13px', background:`linear-gradient(135deg,${l.grad},transparent)`, border:`1px solid ${l.bdr}`, borderRadius:11, textDecoration:'none' }}>
-              <span style={{ fontSize:18 }}>{l.icon}</span>
-              <span style={{ fontSize:12, fontWeight:700, color:'var(--txt)', marginTop:3 }}>{l.label}</span>
-              <span style={{ fontSize:10, color:'var(--dim)' }}>{l.sub}</span>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-
-      {/* Analytics: treemap heatmap + cap donut — at bottom */}
-      {heatTiles.length > 0 && (
+      {/* Analytics: treemap heatmap + cap donut */}
+      {(heatTilesIN.length > 0 || heatTilesUS.length > 0) && (
         <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
           {/* Treemap heatmap */}
           <div style={{ ...card, padding:'16px', borderColor:'rgba(0,212,160,0.2)', background:'linear-gradient(160deg,rgba(0,212,160,0.05),var(--card-bg))' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10, flexWrap:'wrap', gap:8 }}>
               <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                 <div style={{ width:30, height:30, borderRadius:9, background:'rgba(0,212,160,0.14)', border:'1px solid rgba(0,212,160,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🔥</div>
                 <div>
                   <div style={{ fontSize:13, fontWeight:800 }}>Portfolio Heatmap</div>
                   <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>
-                    Size = weight · Color = daily Δ · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => prices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
+                    Size = weight · Color = daily Δ · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => heatPrices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
                   </div>
                 </div>
               </div>
-              <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
+              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                {heatTilesUS.length > 0 && (
+                  <div style={{ display:'flex', background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:20, padding:2 }}>
+                    {(['IN','US'] as const).map(r => (
+                      <button key={r} onClick={() => setHeatRegion(r)}
+                        style={{ fontSize:10, fontWeight:800, padding:'4px 12px', borderRadius:18, border:'none', cursor:'pointer',
+                          background: activeHeatRegion === r ? 'rgba(0,212,160,0.18)' : 'transparent',
+                          color: activeHeatRegion === r ? 'var(--grn)' : 'var(--dim)' }}>
+                        {r === 'IN' ? '🇮🇳 India' : '🇺🇸 US'}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
+              </div>
             </div>
             <TreemapHeatmap
               height={420}
               items={heatTiles.map(h => ({
                 symbol:    h.symbol,
                 value:     h.avg_price * h.qty,
-                changePct: prices[h.symbol]?.change_pct ?? null,
+                changePct: heatPrices[h.symbol]?.change_pct ?? null,
               }))}
             />
           </div>
@@ -1265,6 +999,29 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+
+      <div style={{ ...card, marginBottom:16 }}>
+        <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Quick Links</div>
+        <div className="g4" style={{ display:'grid', gap:8 }}>
+          {[
+            { href:'/dashboard/signals',                 icon:'📈', label:'ML Scan',          sub:'RSI + EMA screener',   grad:'rgba(23,64,245,0.10)',  bdr:'rgba(23,64,245,0.28)' },
+            { href:'/dashboard/signals?tab=fundamental', icon:'📊', label:'Fundamentals',     sub:'PE · ROE · D/E screener', grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
+            { href:'/dashboard/portfolio',               icon:'💼', label:'India Portfolio',   sub:'P&L · signals',        grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
+            { href:'/dashboard/us-portfolio',            icon:'🇺🇸', label:'US Portfolio',    sub:'USD stocks',            grad:'rgba(79,111,250,0.09)', bdr:'rgba(79,111,250,0.28)' },
+            { href:'/dashboard/dividends',               icon:'💰', label:'Dividends',        sub:'Ex-dates · income',     grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
+            { href:'/dashboard/paper-trading',           icon:'🧪', label:'Paper Trading',     sub:'Risk-free strategies', grad:'rgba(139,92,246,0.09)', bdr:'rgba(139,92,246,0.28)' },
+            { href:'/dashboard/sectors',                 icon:'🔥', label:'Sector Heatmap',    sub:'Hot sectors',          grad:'rgba(255,92,26,0.09)',  bdr:'rgba(255,92,26,0.28)' },
+            { href:'/dashboard/fii-dii',                 icon:'🌍', label:'FII / DII Flow',    sub:'Institutional flow',   grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
+            { href:'/dashboard/watchlist',                icon:'⭐', label:'Watchlist',        sub:'Saved stocks',          grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
+          ].map(l => (
+            <Link key={l.href} href={l.href} className="hover-lift" style={{ display:'flex', flexDirection:'column', gap:2, padding:'12px 13px', background:`linear-gradient(135deg,${l.grad},transparent)`, border:`1px solid ${l.bdr}`, borderRadius:11, textDecoration:'none' }}>
+              <span style={{ fontSize:18 }}>{l.icon}</span>
+              <span style={{ fontSize:12, fontWeight:700, color:'var(--txt)', marginTop:3 }}>{l.label}</span>
+              <span style={{ fontSize:10, color:'var(--dim)' }}>{l.sub}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
 
       <div style={{ fontSize:11, color:'var(--dim2)', marginTop:14 }}>
         ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · This is a technical screening tool · Scan results are computed indicators, not investment advice · DYOR

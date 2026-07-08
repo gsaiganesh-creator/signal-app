@@ -42,4 +42,6 @@ npm-debug.log*
 .vercel
 .env*
 .worktrees/
+.claude/worktrees/
+.superpowers/
 apps/api/ml/training_data.parquet

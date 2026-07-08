@@ -56,13 +56,22 @@ etc.), not this file's shape (`{signal, rsi, current_price, change_pct}`).
   monthly) retraining once `scan_log`'s real outcomes mature is a later fast-follow.
 - US stocks — this spec trains and validates on the India `NSE_UNIVERSE` only. Extending to the
   US universe (`us_universe.json`, per the US-parity spec) is a follow-up once this is proven.
+- The signals page's main scan list (`GET /signals`, backed by `core/swing_scan.py`'s
+  `run_swing_scan()`) — confirmed during planning to be a **separate, independent** screener from
+  `get_technical_analysis()`, with its own hand-rolled RSI/EMA and scoring formula, returning only
+  pre-filtered candidates all hardcoded `"signal": "BUY"`. It is also not really "ML," but it's a
+  different system needing its own separate spec — not touched here. This spec's target
+  (`get_technical_analysis()`, reached via `GET /signals/{ticker}`) is what powers the portfolio
+  page's `ml_class` badges and the per-ticker detail drawer on the signals page — confirmed as the
+  shared, symbol-agnostic engine intended for both India and (per the US-parity spec) US serving.
 
 ## Data pipeline
 
 New `apps/api/ml/` module:
 
-- **`apps/api/ml/backtest_labels.py`** — walks `NSE_UNIVERSE` (the same 30-stock list
-  `paper_trading_scan.py`/`swing_scan.py` already use) across ~3 years of yfinance daily history.
+- **`apps/api/ml/backtest_labels.py`** — walks `NSE_UNIVERSE` (the 30-stock list defined in
+  `apps/api/core/paper_trading_scan.py`, imported rather than duplicated) across ~3 years of
+  yfinance daily history.
   At each historical date (skipping the initial warm-up window needed before EMA200/RSI/BB are
   defined), computes the same feature set `get_technical_analysis()` computes today:
   - RSI(14)
@@ -106,23 +115,65 @@ New `apps/api/ml/` module:
 - `get_technical_analysis()` gains a second, parallel computation path: alongside the existing
   vote-counting `bias`, it also runs `model.joblib` on the same already-computed features to
   produce `ml_bias` (`BULLISH` if `predict_proba >= 0.55`, `BEARISH` if `predict_proba <= 0.45`,
-  else `NEUTRAL`) and `ml_confidence` (the raw probability).
-- **Both** the existing `bias` and the new `ml_bias`/`ml_confidence` get logged to `scan_log`
-  every scan during the shadow window — two new nullable columns
-  (`ml_bias text`, `ml_confidence numeric`). The API response and UI keep serving the existing
-  rule-based `bias` unchanged throughout this window; the model runs, but nothing user-facing
-  changes yet.
-- **Shadow window: 4 weeks.** Chosen because `scan_log`'s backfill needs 30 days to mature — a
-  4-week window means the earliest-logged shadow rows will have a real `return_30d` by the time
-  the window closes, giving at least some real evidence rather than none.
-- **Cutover criterion:** compare realized hit-rate — did `ml_bias=BULLISH` calls see
-  `return_30d > 0` more often than rule-based `bias=BULLISH` calls did, over whatever real data
-  accumulated during the 4 weeks. This is explicitly a judgment call on a small sample, not a
-  rigorous significance test — acknowledged and accepted, with the cutover reversible (flip the
+  else `NEUTRAL`) and `ml_confidence` (the raw probability), added as two new keys on the returned
+  dict. Purely additive — the API response and UI keep reading the existing `bias`/`confidence`
+  fields unchanged, so this is a safe no-behavior-change deploy on its own.
+
+- **New table `ml_shadow_log`, not `scan_log`.** `scan_log` writes are driven by the frontend's
+  `logScansAsync` (`apps/web/app/dashboard/signals/page.tsx`), which only fires when a user has
+  the signals page open, and only logs the swing-screener's pre-filtered candidates (a different,
+  separate system per the Non-goals note above — it doesn't carry a `bias` value at all).
+  Reusing `scan_log` for this would mean incomplete, user-dependent coverage and risks row
+  collisions with the screener's existing writes to the same `(scanned_at, symbol, exchange)` key.
+  Following the same precedent as `bias_log` (created as its own table rather than overloading
+  `scan_log` for forex/commodities), shadow-mode data gets its own table:
+
+  ```sql
+  CREATE TABLE IF NOT EXISTS public.ml_shadow_log (
+    id            uuid primary key default gen_random_uuid(),
+    scanned_at    date not null,
+    symbol        text not null,
+    bias          text not null,        -- rule-based, from get_technical_analysis()
+    ml_bias       text not null,        -- trained model
+    ml_confidence numeric not null,     -- predict_proba
+    price_at      numeric not null,
+    price_30d     numeric,
+    return_30d    numeric,
+    created_at    timestamptz default now(),
+    UNIQUE(scanned_at, symbol)
+  );
+  ALTER TABLE public.ml_shadow_log ENABLE ROW LEVEL SECURITY;
+  CREATE POLICY "public_read_ml_shadow_log"  ON public.ml_shadow_log FOR SELECT USING (true);
+  CREATE POLICY "anon_insert_ml_shadow_log"  ON public.ml_shadow_log FOR INSERT WITH CHECK (true);
+  CREATE POLICY "anon_update_ml_shadow_log"  ON public.ml_shadow_log FOR UPDATE USING (true);
+  ```
+
+- **New Python job, not a frontend side effect.** `apps/api/ml/shadow_log.py`, scheduled daily in
+  `core/scheduler.py` (same pattern as `paper_trading_scan`): iterates the full `NSE_UNIVERSE`
+  (not just screener matches), calls `get_technical_analysis()` for each symbol, and upserts one
+  row per symbol per day to `ml_shadow_log` via `core/supabase_rest.py`'s existing `rest_post`
+  helper (`Prefer: resolution=merge-duplicates`). This guarantees complete, reliable daily
+  coverage independent of whether anyone opens the dashboard.
+
+- **Backfill:** a small addition to `apps/api/core/scan_log_backfill.py` (or a new sibling
+  function, reusing its existing Yahoo-price-lookup pattern) fills `price_30d`/`return_30d` on
+  `ml_shadow_log` rows once 30 days have passed, mirroring exactly what it already does for
+  `scan_log`.
+
+- **Shadow window: 4 weeks.** Chosen because the backfill needs 30 days to mature — a 4-week
+  window means the earliest-logged shadow rows will have a real `return_30d` by the time the
+  window closes, giving at least some real evidence rather than none.
+
+- **Cutover criterion:** compare realized hit-rate — did `ml_bias=BULLISH` rows see
+  `return_30d > 0` more often than `bias=BULLISH` rows did, over whatever real data accumulated
+  in `ml_shadow_log` during the 4 weeks. This is explicitly a judgment call on a small sample, not
+  a rigorous significance test — acknowledged and accepted, with the cutover reversible (flip the
   API back to serving rule-based `bias`) if it looks wrong after the fact.
-- Once cutover happens: the API response's `bias` field becomes `ml_bias`'s value, and
-  `confidence` becomes `ml_confidence`. The rule-based vote-counting logic stays in the codebase
-  (not deleted) as a fallback/reference, at minimum through the first post-cutover review cycle.
+
+- Once cutover happens: `get_technical_analysis()`'s returned `bias`/`confidence` values become
+  the model's `ml_bias`/`ml_confidence` (the `ml_*` keys can stay too, now redundant but harmless).
+  The rule-based vote-counting logic stays in the codebase (not deleted) as a fallback/reference,
+  at minimum through the first post-cutover review cycle.
 
 ## Testing
 

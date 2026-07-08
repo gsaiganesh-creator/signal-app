@@ -306,24 +306,23 @@ export default function ETFMFPage() {
     setMfHoldings(prev => prev.filter(h => h.id !== id));
   }
 
-  // Fetch live ETF prices from /api/prices
+  // Fetch live ETF prices from /api/prices (batched — route expects `symbols`, comma-separated)
   useEffect(() => {
     if (tab !== 'etf') return;
     setEtfLoading(true);
-    Promise.allSettled(
-      ETFS.map(async e => {
-        const r = await fetch(`/api/prices?symbol=${encodeURIComponent(e.sym)}`);
-        const d = await r.json();
-        return { sym: e.sym, price: d.price, chg: d.change_pct };
+    const symbols = ETFS.map(e => e.sym).join(',');
+    fetch(`/api/prices?symbols=${encodeURIComponent(symbols)}`)
+      .then(r => r.json())
+      .then((d: Record<string, { price: number | null; change_pct: number | null }>) => {
+        const map: Record<string, { price: number; chg: number }> = {};
+        ETFS.forEach(e => {
+          const row = d[e.sym.toUpperCase()];
+          if (row?.price != null) map[e.sym] = { price: row.price, chg: row.change_pct ?? 0 };
+        });
+        setEtfPrices(map);
+        setEtfLoading(false);
       })
-    ).then(results => {
-      const map: Record<string, { price: number; chg: number }> = {};
-      results.forEach((r, i) => {
-        if (r.status === 'fulfilled') map[ETFS[i].sym] = r.value;
-      });
-      setEtfPrices(map);
-      setEtfLoading(false);
-    });
+      .catch(() => setEtfLoading(false));
   }, [tab]);
 
   function addHolding() {
