@@ -102,6 +102,48 @@ const COMPARISON: { category: string; rows: { label: string; free: string; start
   },
 ];
 
+const COMING_SOON = [
+  {
+    icon: '🎯', tier: 'Starter+',
+    title: 'Curated Fundamental Screens',
+    desc: 'Pre-built value, quality, low-beta, and institutional-accumulation screens — not just RSI/EMA technicals. Save your own filter combos and reuse them.',
+  },
+  {
+    icon: '💬', tier: 'Pro+',
+    title: 'AI Portfolio Chat',
+    desc: 'Ask questions grounded in your own data — "why did this stock trigger a signal," "how diversified am I," "what\'s my sector exposure." No hallucinated answers, just your real numbers.',
+  },
+  {
+    icon: '📌', tier: 'Starter+',
+    title: 'Saved Screen Recipes',
+    desc: 'Build a filter combo once, save it, run it again anytime — instead of rebuilding your screen criteria every session.',
+  },
+];
+
+function ComingSoonSection() {
+  return (
+    <div style={{ marginBottom:28 }}>
+      <div style={{ display:'flex', alignItems:'baseline', gap:10, marginBottom:14 }}>
+        <div style={{ fontSize:15, fontWeight:800 }}>Coming Soon</div>
+        <div style={{ fontSize:12, color:'var(--dim)' }}>On the roadmap — not live yet</div>
+      </div>
+      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))', gap:14 }}>
+        {COMING_SOON.map(f => (
+          <div key={f.title} style={{ background:'var(--surf)', border:'1px dashed var(--bdr)', borderRadius:14, padding:'18px 20px', position:'relative' }}>
+            <div style={{ position:'absolute', top:12, right:14, fontSize:9, fontWeight:800, padding:'3px 9px', borderRadius:20, background:'rgba(139,92,246,0.12)', border:'1px solid rgba(139,92,246,0.3)', color:'var(--pur)', letterSpacing:0.5 }}>
+              SOON
+            </div>
+            <div style={{ fontSize:22, marginBottom:8 }}>{f.icon}</div>
+            <div style={{ fontSize:13, fontWeight:800, marginBottom:4 }}>{f.title}</div>
+            <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginBottom:8, textTransform:'uppercase', letterSpacing:0.5 }}>{f.tier}</div>
+            <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>{f.desc}</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const FAQS = [
   { q: 'Can I cancel anytime?', a: 'Yes. Cancel from Account settings — no questions asked. You keep access till the billing period ends.' },
   { q: 'Is this SEBI registered?', a: 'No. SignalGenie is a technical analysis and screener tool, not a SEBI Research Analyst. All outputs are "scan results", not investment advice. We are working toward RA registration — until then, use your own judgment.' },
@@ -337,6 +379,8 @@ export default function UpgradePage() {
           <span key={t} style={{ fontSize:12, color:'var(--dim)' }}>{t}</span>
         ))}
       </div>
+
+      <ComingSoonSection />
 
       {/* Feature comparison table */}
       <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, overflow:'hidden', marginBottom:28 }}>
