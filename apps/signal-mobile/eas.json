@@ -23,7 +23,8 @@
     "production": {
       "autoIncrement": true,
       "cache": {
-        "paths": ["~/Library/Caches/ReactNative"]
+        "disabled": false,
+        "customPaths": ["~/Library/Caches/ReactNative"]
       },
       "ios": {
         "buildConfiguration": "Release"
