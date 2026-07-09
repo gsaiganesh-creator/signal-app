@@ -3,16 +3,13 @@
     "name": "SIGNAL",
     "slug": "signal-mobile",
     "version": "1.0.0",
-    "runtimeVersion": {
-      "policy": "appVersion"
-    },
     "scheme": "signal",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.signalgenie.signal",
-      "buildNumber": "9",
+      "buildNumber": "13",
       "supportsTablet": false,
       "requireFullScreen": true,
       "infoPlist": {

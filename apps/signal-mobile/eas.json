@@ -24,7 +24,7 @@
       "autoIncrement": true,
       "cache": {
         "disabled": false,
-        "customPaths": ["~/Library/Caches/ReactNative"]
+        "paths": ["~/Library/Caches/ReactNative"]
       },
       "ios": {
         "buildConfiguration": "Release"
