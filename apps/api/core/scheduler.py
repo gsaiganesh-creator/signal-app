@@ -12,6 +12,7 @@ from core.sentiment_scan import run_sentiment_backfill, run_sentiment_scan
 from core.shadow_log import run_shadow_log
 from core.ml_shadow_log_backfill import run_ml_shadow_log_backfill
 from core.signal_cache_scan import run_signal_cache_prewarm
+from core.scan_log_writer import run_scan_log_writer
 
 logger = logging.getLogger(__name__)
 
@@ -106,6 +107,15 @@ def _signal_cache_prewarm_job():
         run_signal_cache_prewarm()
     except Exception as e:
         logger.error("scheduler: signal cache prewarm failed: %s", e)
+
+
+def _scan_log_writer_job():
+    if not _is_market_day():
+        return
+    try:
+        run_scan_log_writer()
+    except Exception as e:
+        logger.error("scheduler: scan log writer failed: %s", e)
 
 
 def start_scheduler():
@@ -233,10 +243,22 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # 3:45 PM IST — scan_log writer (post-close), independent of anyone visiting
+    # /dashboard/signals — keeps Track Record's zone accuracy / RL analysis /
+    # methodology stats moving instead of frozen on stale data
+    scheduler.add_job(
+        _scan_log_writer_job,
+        CronTrigger(day_of_week="mon-fri", hour=15, minute=45, timezone=IST),
+        id="scan_log_writer",
+        name="Scan Log Writer (post-close)",
+        replace_existing=True,
+    )
+
     scheduler.start()
     logger.info(
         "scheduler: started (morning_scan, us_morning_scan, intraday_check, eod_cleanup, "
         "sentiment_scan, sentiment_backfill, scan_log_backfill, price_alerts_check, "
-        "paper_trading_scan, ml_shadow_log, ml_shadow_log_backfill, signal_cache_prewarm)"
+        "paper_trading_scan, ml_shadow_log, ml_shadow_log_backfill, signal_cache_prewarm, "
+        "scan_log_writer)"
     )
     return scheduler

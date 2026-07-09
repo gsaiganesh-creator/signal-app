@@ -10,6 +10,7 @@ from core.scan_log_backfill import run_scan_log_backfill
 from core.sentiment_scan import run_sentiment_backfill, run_sentiment_scan
 from core.shadow_log import run_shadow_log
 from core.signal_cache_scan import run_signal_cache_prewarm
+from core.scan_log_writer import run_scan_log_writer
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -24,6 +25,7 @@ _JOBS = {
     "ml-shadow-log": run_shadow_log,
     "ml-shadow-log-backfill": run_ml_shadow_log_backfill,
     "signal-cache-prewarm": run_signal_cache_prewarm,
+    "scan-log-writer": run_scan_log_writer,
 }
 
 
