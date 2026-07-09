@@ -3,16 +3,29 @@
     "name": "SIGNAL",
     "slug": "signal-mobile",
     "version": "1.0.0",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "scheme": "signal",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "automatic",
     "ios": {
-      "supportsTablet": true
+      "bundleIdentifier": "com.signalgenie.signal",
+      "buildNumber": "7",
+      "supportsTablet": false,
+      "requireFullScreen": true,
+      "infoPlist": {
+        "NSCameraUsageDescription": "SIGNAL uses the camera to scan QR codes for broker linking.",
+        "NSFaceIDUsageDescription": "SIGNAL uses Face ID for secure sign-in.",
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
+      "package": "com.signalgenie.signal",
+      "versionCode": 2,
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#070D1A",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -25,8 +38,23 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-splash-screen",
-      "expo-status-bar"
-    ]
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#070D1A"
+        }
+      ],
+      "expo-status-bar",
+      "react-native-reanimated"
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "c0bbb6a9-3d73-4674-bf75-07ccc252e4a4"
+      },
+      "router": {}
+    },
+    "owner": "sksignalgenie"
   }
 }
