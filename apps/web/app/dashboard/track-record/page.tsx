@@ -20,6 +20,30 @@ const ZONE_CFG: Record<string, { color: string; bg: string; border: string }> = 
   'Weak / Declining': { color:'var(--red)',  bg:'rgba(255,59,92,0.10)',  border:'rgba(255,59,92,0.25)'  },
 };
 
+// What each tab shows + when it fills in — shown as a persistent strip under the
+// tab bar (always visible, not just on empty) and reused for the empty-state cards.
+const TAB_INFO: Record<'zones' | 'log' | 'rl' | 'method', { what: string; when: string }> = {
+  zones:  { what: 'Win-rate per momentum zone (Strong Momentum, Building, Sideways, Weak/Declining), from closed 30-day outcomes.', when: 'A scan runs daily at 3:45 PM IST. Each entry needs 30 days to close before it counts here — so this fills in roughly a month after scanning starts.' },
+  log:    { what: 'Every individual scan result — symbol, zone, price at scan time, and its 30-day outcome once verified.', when: 'New rows appear daily at 3:45 PM IST (market close). Outcomes show "⏳ pending" until 30 days have passed.' },
+  rl:     { what: 'Which scan parameters (RSI bounds, confidence threshold) get tightened after analysing failed calls.', when: 'Needs at least ~3 closed Strong Momentum calls per parameter bucket before it can detect a pattern — appears once enough scans have closed.' },
+  method: { what: 'The fixed rules the scanner uses to pick candidates and verify outcomes.', when: 'Static — always shown.' },
+};
+
+function EmptyTabState({ icon, title, what, when }: { icon: string; title: string; what: string; when: string }) {
+  return (
+    <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'32px 24px', textAlign:'center' }}>
+      <div style={{ fontSize:28, marginBottom:10 }}>{icon}</div>
+      <div style={{ fontSize:14, fontWeight:700, marginBottom:8 }}>{title}</div>
+      <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.7, maxWidth:420, margin:'0 auto' }}>
+        <span style={{ color:'var(--txt)' }}>What this shows:</span> {what}
+      </div>
+      <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.7, maxWidth:420, margin:'8px auto 0' }}>
+        <span style={{ color:'var(--txt)' }}>When it fills in:</span> {when}
+      </div>
+    </div>
+  );
+}
+
 // ── RL analysis ───────────────────────────────────────────────────────────────
 interface RlInsight {
   param: string; original: string; updated: string;
@@ -214,15 +238,21 @@ export default function TrackRecordPage() {
             ))}
           </div>
 
+          {/* Persistent "what is this tab" strip — always visible, not just when empty */}
+          <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6, marginBottom:16, padding:'10px 14px', background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10 }}>
+            {TAB_INFO[tab].what} <span style={{ color:'var(--dim2)' }}>· {TAB_INFO[tab].when}</span>
+          </div>
+
           {/* Zone Accuracy */}
-          {tab === 'zones' && (
+          {tab === 'zones' && (() => {
+            const zonesShown = (stats?.zone_stats ?? []).filter(z => z.count > 0);
+            return (
             <div style={{ display:'flex', flexDirection:'column', gap:12 }}>
-              {!loading && !hasData && (
-                <div style={{ fontSize:13, color:'var(--dim)', padding:'16px', textAlign:'center', background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:12 }}>
-                  No scan data yet — zone accuracy appears after 30 days of outcomes.
-                </div>
+              {!loading && zonesShown.length === 0 && (
+                <EmptyTabState icon="📊" title="Zone accuracy — building"
+                  what={TAB_INFO.zones.what} when={TAB_INFO.zones.when} />
               )}
-              {(stats?.zone_stats ?? []).filter(z => z.count > 0).map(z => {
+              {zonesShown.map(z => {
                 const zc = ZONE_CFG[z.zone] ?? { color:'var(--dim)', bg:'var(--surf)', border:'var(--bdr)' };
                 const barPct = z.accuracy ?? 0;
                 return (
@@ -244,15 +274,15 @@ export default function TrackRecordPage() {
                 );
               })}
             </div>
-          )}
+            );
+          })()}
 
           {/* Scan Log */}
           {tab === 'log' && (
             <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, overflow:'hidden' }}>
               {entries.length === 0 ? (
-                <div style={{ padding:'32px 24px', textAlign:'center', color:'var(--dim)', fontSize:13 }}>
-                  No scan results logged yet. Visit the Signals page to run the screener.
-                </div>
+                <EmptyTabState icon="📋" title="Scan log — no entries yet"
+                  what={TAB_INFO.log.what} when={TAB_INFO.log.when} />
               ) : (
                 <table style={{ width:'100%', borderCollapse:'collapse', fontSize:13 }}>
                   <thead>
@@ -399,13 +429,8 @@ export default function TrackRecordPage() {
                   )}
 
                   {closed.length === 0 && (
-                    <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:12, padding:'28px 24px', textAlign:'center' }}>
-                      <div style={{ fontSize:28, marginBottom:8 }}>⏳</div>
-                      <div style={{ fontSize:14, fontWeight:700, marginBottom:6 }}>RL model learning…</div>
-                      <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6, maxWidth:380, margin:'0 auto' }}>
-                        No closed outcomes yet. Scan results need 30 days to verify. The RL feedback loop activates automatically once enough signals close — parameters will tighten based on real failure patterns.
-                      </div>
-                    </div>
+                    <EmptyTabState icon="⏳" title="RL model learning…"
+                      what={TAB_INFO.rl.what} when={TAB_INFO.rl.when} />
                   )}
 
                   {/* Static RL parameter set */}
