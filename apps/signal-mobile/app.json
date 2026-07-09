@@ -12,7 +12,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.signalgenie.signal",
-      "buildNumber": "7",
+      "buildNumber": "8",
       "supportsTablet": false,
       "requireFullScreen": true,
       "infoPlist": {
@@ -46,8 +46,7 @@
           "backgroundColor": "#070D1A"
         }
       ],
-      "expo-status-bar",
-      "react-native-reanimated"
+      "expo-status-bar"
     ],
     "extra": {
       "eas": {
