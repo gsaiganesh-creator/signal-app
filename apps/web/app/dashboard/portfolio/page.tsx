@@ -57,6 +57,8 @@ interface Holding extends RawHolding {
   pl_pct?: number;
   exchange: Exchange;
   ml_class?: MlClass;
+  bias?: string | null;
+  momentum_signal?: string | null;
   is_etf?: boolean;
   isin?: string;
 }
@@ -131,6 +133,17 @@ function sigLabel(s?: string | null): string {
   if (s.includes('BUY')) return 'Bullish';
   if (s.includes('SELL')) return 'Bearish';
   return 'Neutral';
+}
+
+function biasLabel(bias?: string | null): string {
+  if (bias === 'BULLISH') return 'Bullish';
+  if (bias === 'BEARISH') return 'Bearish';
+  return 'Neutral';
+}
+function biasColor(bias?: string | null): { bg: string; color: string } {
+  if (bias === 'BULLISH') return { bg: 'rgba(0,212,160,0.12)', color: 'var(--grn)' };
+  if (bias === 'BEARISH') return { bg: 'rgba(255,59,92,0.12)', color: 'var(--red)' };
+  return { bg: 'rgba(255,184,0,0.12)', color: 'var(--ylw)' };
 }
 
 type ParsedRow = { symbol: string; qty: number; avg_price: number; exchange: Exchange; is_etf?: boolean; isin?: string };
@@ -1000,11 +1013,11 @@ export default function PortfolioPage() {
     const enriched = withPrices.map(h => {
       const cached = h.exchange === 'NSE' ? nseCache.get(h.symbol) : bseCache.get(h.symbol);
       if (!cached) return h;
-      const sig = cached.signal ?? (cached.bias === 'BULLISH' ? 'BUY' : cached.bias === 'BEARISH' ? 'SELL' : 'HOLD');
+      const sig = cached.bias === 'BULLISH' ? 'BUY' : cached.bias === 'BEARISH' ? 'SELL' : 'HOLD'; // always bias-derived — keeps ML Class behavior unchanged, see cached.signal usage below for the separate Momentum Scan badge
       const cur = cached.price ?? h.current_price;
       const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : h.pl;
       const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (h.pl_pct ?? 0);
-      return { ...h, current_price: cur, change_pct: cached.change_pct ?? h.change_pct, signal: sig, rsi: cached.rsi14 ?? null, pl, pl_pct, ml_class: classify(sig, cached.rsi14 ?? null, pl_pct) };
+      return { ...h, current_price: cur, change_pct: cached.change_pct ?? h.change_pct, signal: sig, rsi: cached.rsi14 ?? null, pl, pl_pct, ml_class: classify(sig, cached.rsi14 ?? null, pl_pct), bias: cached.bias ?? null, momentum_signal: cached.signal ?? null };
     });
     setHoldings([...enriched]);
 
@@ -1143,11 +1156,11 @@ export default function PortfolioPage() {
       const withCache = enriched.map(h => {
         const cached = h.exchange === 'NSE' ? nCache.get(h.symbol) : bCache.get(h.symbol);
         if (!cached) return h;
-        const sig = cached.signal ?? (cached.bias === 'BULLISH' ? 'BUY' : cached.bias === 'BEARISH' ? 'SELL' : 'HOLD');
+        const sig = cached.bias === 'BULLISH' ? 'BUY' : cached.bias === 'BEARISH' ? 'SELL' : 'HOLD'; // always bias-derived — keeps ML Class behavior unchanged, see cached.signal usage below for the separate Momentum Scan badge
         const cur = cached.price ?? h.current_price;
         const pl = (cur != null && h.avg_price >= 1) ? (cur - h.avg_price) * h.qty : h.pl;
         const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (h.pl_pct ?? 0);
-        return { ...h, current_price: cur, change_pct: cached.change_pct ?? h.change_pct, signal: sig, rsi: cached.rsi14 ?? null, pl, pl_pct, ml_class: classify(sig, cached.rsi14 ?? null, pl_pct) };
+        return { ...h, current_price: cur, change_pct: cached.change_pct ?? h.change_pct, signal: sig, rsi: cached.rsi14 ?? null, pl, pl_pct, ml_class: classify(sig, cached.rsi14 ?? null, pl_pct), bias: cached.bias ?? null, momentum_signal: cached.signal ?? null };
       });
       setAllViewHoldings(withCache);
       setAllLoading(false);
@@ -1916,12 +1929,20 @@ export default function PortfolioPage() {
                     </>
                   ) : <span style={{ color:'var(--dim2)', fontSize:12 }}>—</span>}
                 </td>
+                <td className="mob-hide" style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
+                  {!h.is_etf && (
+                    <span style={{ fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:5, whiteSpace:'nowrap',
+                      background: biasColor(h.bias).bg, color: biasColor(h.bias).color }}>
+                      {biasLabel(h.bias)}
+                    </span>
+                  )}
+                </td>
                 <td style={{ padding:'10px', borderBottom:'1px solid rgba(28,46,74,0.5)' }}>
                   {!h.is_etf && (
                     <span style={{ fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:5, whiteSpace:'nowrap',
-                      background: h.signal?.includes('BUY') ? 'rgba(0,212,160,0.12)' : h.signal?.includes('SELL') ? 'rgba(255,59,92,0.12)' : 'rgba(255,184,0,0.12)',
-                      color: h.signal?.includes('BUY') ? 'var(--grn)' : h.signal?.includes('SELL') ? 'var(--red)' : 'var(--ylw)' }}>
-                      {sigLabel(h.signal)}
+                      background: h.momentum_signal?.includes('BUY') ? 'rgba(0,212,160,0.12)' : h.momentum_signal?.includes('SELL') ? 'rgba(255,59,92,0.12)' : 'rgba(255,184,0,0.12)',
+                      color: h.momentum_signal?.includes('BUY') ? 'var(--grn)' : h.momentum_signal?.includes('SELL') ? 'var(--red)' : 'var(--ylw)' }}>
+                      {sigLabel(h.momentum_signal)}
                     </span>
                   )}
                 </td>
@@ -1940,7 +1961,8 @@ export default function PortfolioPage() {
               <TH label="CMP"       col="current_price" />
               <TH label="P&L ₹"     col="pl"            />
               <TH label="P&L %"     col="pl_pct"        />
-              <TH label="Technical" col={null}          />
+              <TH label="Bias"      col={null}    className="mob-hide" />
+              <TH label="Momentum"  col={null}          />
               <TH label=""          col={null}          />
             </tr>
           );
