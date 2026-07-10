@@ -22,6 +22,9 @@
     },
     "production": {
       "autoIncrement": true,
+      "env": {
+        "EAS_USE_PRECOMPILED_MODULES": "0"
+      },
       "cache": {
         "disabled": false,
         "paths": ["~/Library/Caches/ReactNative"]
