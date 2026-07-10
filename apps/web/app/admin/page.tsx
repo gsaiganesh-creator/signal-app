@@ -7,6 +7,7 @@ import { FOUNDERS } from '@/lib/use-plan';
 
 interface UserRow {
   id: string; email: string; created_at: string; last_sign_in: string | null;
+  last_active: string | null;
   confirmed: boolean; plan: string;
   portfolios: number; india_holdings: number; us_holdings: number;
   india_invested: number; us_invested: number; rsu_grants: number;
@@ -194,7 +195,7 @@ export default function AdminPage() {
                       ['email',          'Email'         ],
                       ['plan',           'Plan'          ],
                       ['created_at',     'Joined'        ],
-                      ['last_sign_in',   'Last Login'    ],
+                      ['last_active',    'Last Active'   ],
                       ['india_holdings', 'India Holdings'],
                       ['us_holdings',    'US Holdings'   ],
                       ['india_invested', 'India Invested'],
@@ -222,7 +223,7 @@ export default function AdminPage() {
                         </span>
                       </td>
                       <td style={{ ...tdStyle, color:'#7A8BAA' }}>{rel(u.created_at)}</td>
-                      <td style={{ ...tdStyle, color:'#7A8BAA' }}>{rel(u.last_sign_in)}</td>
+                      <td style={{ ...tdStyle, color:'#7A8BAA' }} title={u.last_sign_in ? `Last login: ${rel(u.last_sign_in)}` : 'Never logged in'}>{rel(u.last_active)}</td>
                       <td style={{ ...tdStyle, textAlign:'center' }}>{u.india_holdings || '—'}</td>
                       <td style={{ ...tdStyle, textAlign:'center' }}>{u.us_holdings || '—'}</td>
                       <td style={tdStyle}>{u.india_invested > 0 ? fmt(u.india_invested) : '—'}</td>

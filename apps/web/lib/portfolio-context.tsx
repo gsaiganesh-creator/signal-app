@@ -77,6 +77,23 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  // Throttled activity heartbeat — updates profiles.last_active_at, at most once/hour
+  // per browser, so "last seen" reflects real usage instead of Supabase's
+  // last_sign_in_at (which only updates on actual re-authentication, not on
+  // every app open with an already-valid session).
+  const pingActive = useCallback((token: string, uid: string) => {
+    if (typeof window === 'undefined') return;
+    const key = 'signal_last_heartbeat';
+    const last = Number(localStorage.getItem(key) ?? '0');
+    if (Date.now() - last < 3_600_000) return; // <1hr since last ping — skip
+    localStorage.setItem(key, String(Date.now()));
+    restFetch(`profiles?id=eq.${uid}`, token, {
+      method: 'PATCH',
+      prefer: 'return=minimal',
+      body: JSON.stringify({ last_active_at: new Date().toISOString() }),
+    }).catch(() => { /* non-critical, retry next hour */ });
+  }, []);
+
   const fetchPortfolios = useCallback(async (token: string, uid: string) => {
     try {
       const data: Portfolio[] = await restFetch(
@@ -115,6 +132,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         setUser(u);
         if (sess && u) {
           await fetchPortfolios(sess.access_token, u.id);
+          pingActive(sess.access_token, u.id);
         } else {
           setPortfolios([]); setHoldings([]);
         }
@@ -122,7 +140,7 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
       }
     );
     return () => subscription.unsubscribe();
-  }, [supabase, fetchPortfolios]);
+  }, [supabase, fetchPortfolios, pingActive]);
 
   // Switch active portfolio — fetches holdings via sessionRef (no stale closure)
   function setActiveId(id: string) {

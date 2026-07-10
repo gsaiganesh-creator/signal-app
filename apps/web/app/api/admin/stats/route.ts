@@ -46,7 +46,7 @@ export async function GET(req: Request) {
 
   // ── Fetch public tables ────────────────────────────────────────────────────
   const [profiles, portfolios, holdings, grants] = await Promise.all([
-    svcGet('profiles?select=id,plan,plan_expires_at') as Promise<Array<{ id: string; plan: string; plan_expires_at: string | null }>>,
+    svcGet('profiles?select=id,plan,plan_expires_at,last_active_at') as Promise<Array<{ id: string; plan: string; plan_expires_at: string | null; last_active_at: string | null }>>,
     svcGet('portfolios?select=id,user_id') as Promise<Array<{ id: string; user_id: string }>>,
     svcGet('holdings?select=portfolio_id,exchange,qty,avg_price') as Promise<Array<{ portfolio_id: string; exchange: string; qty: number; avg_price: number }>>,
     svcGet('equity_grants?select=user_id,symbol,type') as Promise<Array<{ user_id: string; symbol: string; type: string }>>,
@@ -97,13 +97,15 @@ export async function GET(req: Request) {
     totalIndiaInv += h.india_inv;
     totalUSInv    += h.us_inv;
 
-    if (u.last_sign_in_at && now - new Date(u.last_sign_in_at).getTime() < sevenDays) active7d++;
+    const lastActive = profile?.last_active_at ?? null;
+    if (lastActive && now - new Date(lastActive).getTime() < sevenDays) active7d++;
 
     return {
       id:            u.id,
       email:         u.email ?? '—',
       created_at:    u.created_at,
       last_sign_in:  u.last_sign_in_at ?? null,
+      last_active:   lastActive,
       confirmed:     !!u.email_confirmed_at,
       plan,
       portfolios:    userPortfolios.get(u.id) ?? 0,
