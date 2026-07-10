@@ -17,6 +17,7 @@ interface MLSignal {
   ema_dist_pct: number; entry_low: number; entry_high: number;
   target: number; sl: number; signal: string;
   confidence: number; score: number;
+  bias?: string | null;
 }
 interface TADetail {
   symbol: string; name: string; price: number; change_pct: number;
@@ -98,6 +99,51 @@ async function fetchUSMLSignals(): Promise<USScanPick[]> {
     const d = await r.json();
     return d.signals ?? [];
   } catch { return []; }
+}
+
+// ── Technical Bias (signal_cache) ────────────────────────────────────────────
+interface CachedSignal {
+  symbol: string; exchange: string; bias: string | null; signal: string | null;
+  rsi14: number | null; ml_class: string | null; price: number | null;
+  change_pct: number | null; fetched_at: string;
+}
+async function loadSignalCache(symbols: string[], exchange: 'NSE' | 'BSE'): Promise<Map<string, CachedSignal>> {
+  if (symbols.length === 0) return new Map();
+  try {
+    const list = symbols.map(s => `"${s}"`).join(',');
+    const res = await fetch(
+      `${SUPA_URL}/rest/v1/signal_cache?symbol=in.(${list})&exchange=eq.${exchange}&select=*`,
+      { headers: { apikey: SUPA_KEY } }
+    );
+    if (!res.ok) return new Map();
+    const rows: CachedSignal[] = await res.json();
+    return new Map(rows.map(r => [r.symbol, r]));
+  } catch { return new Map(); }
+}
+function biasLabel(bias?: string | null): string {
+  if (bias === 'BULLISH') return 'Bullish';
+  if (bias === 'BEARISH') return 'Bearish';
+  return 'Neutral';
+}
+function biasColor(bias?: string | null): { bg: string; color: string } {
+  if (bias === 'BULLISH') return { bg: 'rgba(0,212,160,0.12)', color: 'var(--grn)' };
+  if (bias === 'BEARISH') return { bg: 'rgba(255,59,92,0.12)', color: 'var(--red)' };
+  return { bg: 'rgba(255,184,0,0.12)', color: 'var(--ylw)' };
+}
+// India `.NS`/`.BO`-suffixed symbols → batch-fetch bias from signal_cache, split by exchange
+async function attachBias<T extends { symbol: string }>(items: T[]): Promise<(T & { bias?: string | null })[]> {
+  if (items.length === 0) return items;
+  const nseSymbols = Array.from(new Set(items.filter(i => !i.symbol.endsWith('.BO')).map(i => i.symbol.replace(/\.(NS|BO)$/i, ''))));
+  const bseSymbols = Array.from(new Set(items.filter(i => i.symbol.endsWith('.BO')).map(i => i.symbol.replace(/\.(NS|BO)$/i, ''))));
+  const [nseMap, bseMap] = await Promise.all([
+    loadSignalCache(nseSymbols, 'NSE'),
+    loadSignalCache(bseSymbols, 'BSE'),
+  ]);
+  return items.map(i => {
+    const bare = i.symbol.replace(/\.(NS|BO)$/i, '');
+    const cached = i.symbol.endsWith('.BO') ? bseMap.get(bare) : nseMap.get(bare);
+    return { ...i, bias: cached?.bias ?? null };
+  });
 }
 
 // ── US helpers ────────────────────────────────────────────────────────────────
@@ -962,7 +1008,8 @@ export default function SignalsPage() {
     setMlLoading(true); setMlError(false);
     const sigs = await fetchMLSignals();
     if (sigs.length === 0) setMlError(true);
-    setMlSignals(sigs);
+    const withBias = await attachBias(sigs);
+    setMlSignals(withBias);
     setMlLoading(false);
     if (sigs.length > 0) void logScansAsync(sigs);
   }, []);
@@ -1051,6 +1098,8 @@ export default function SignalsPage() {
         setPortScanProgress(Math.min(99, Math.round((i + BATCH) / universe.length * 100)));
       }
       setPortScanProgress(100);
+      const withBias = await attachBias(results);
+      setPortScanResults(withBias);
       setPortScanLoaded(true);
     } finally {
       setPortScanLoading(false);
@@ -1384,6 +1433,11 @@ export default function SignalsPage() {
                             const cfg = { buy:{ label:'Strong Momentum', bg:'rgba(0,212,160,0.12)', color:'var(--grn)', border:'rgba(0,212,160,0.25)' }, accumulate:{ label:'Building', bg:'rgba(79,111,250,0.12)', color:'var(--bluL)', border:'rgba(79,111,250,0.25)' }, hold:{ label:'Sideways', bg:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'rgba(255,184,0,0.25)' }, sell:{ label:'Weak / Declining', bg:'rgba(255,59,92,0.12)', color:'var(--red)', border:'rgba(255,59,92,0.25)' } }[cat];
                             return <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4, background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}` }}>{cfg.label}</span>;
                           })()}
+                          {sig.bias && (
+                            <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4, background:biasColor(sig.bias).bg, color:biasColor(sig.bias).color, border:`1px solid ${biasColor(sig.bias).color}40` }}>
+                              {`B: ${biasLabel(sig.bias)}`}
+                            </span>
+                          )}
                           <span style={{ marginLeft:'auto', fontSize:11, color:'var(--dim)' }}>{sig.sector.replace(/_/g,' ')}</span>
                         </div>
                         <div style={{ fontSize:11, color:'var(--dim)', marginBottom:5 }}>{sig.name}</div>
