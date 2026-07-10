@@ -1047,7 +1047,7 @@ export default function PortfolioPage() {
           const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (live[idx].pl_pct ?? 0);
           const signal = q.signal ?? (q.bias === 'BULLISH' ? 'BUY' : q.bias === 'BEARISH' ? 'SELL' : 'HOLD');
           live[idx] = { ...live[idx], current_price: cur, change_pct: q.change_pct ?? live[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
-          toUpsert.push({ symbol: h.symbol, exchange: h.exchange, bias: q.bias ?? null, signal, rsi14: q.rsi ?? null, ml_class: classify(signal, q.rsi ?? null, pl_pct), price: cur ?? null, change_pct: q.change_pct ?? null, fetched_at: new Date().toISOString() });
+          toUpsert.push({ symbol: h.symbol, exchange: h.exchange, bias: q.bias ?? null, signal: live[idx].momentum_signal ?? null, rsi14: q.rsi ?? null, ml_class: classify(signal, q.rsi ?? null, pl_pct), price: cur ?? null, change_pct: q.change_pct ?? null, fetched_at: new Date().toISOString() });
         } catch { /* timeout — keep cached */ }
       }));
       setHoldings([...live]);
@@ -1196,7 +1196,7 @@ export default function PortfolioPage() {
             const pl_pct = (cur != null && h.avg_price >= 1) ? ((cur - h.avg_price) / h.avg_price) * 100 : (ec[idx].pl_pct ?? 0);
             const signal = q.signal ?? (q.bias === 'BULLISH' ? 'BUY' : q.bias === 'BEARISH' ? 'SELL' : 'HOLD');
             ec[idx] = { ...ec[idx], current_price: cur, change_pct: q.change_pct ?? ec[idx].change_pct, signal, rsi: q.rsi ?? null, pl, pl_pct, ml_class: classify(signal, q.rsi ?? null, pl_pct) };
-            toUpsertAll.push({ symbol: h.symbol, exchange: h.exchange, bias: q.bias ?? null, signal, rsi14: q.rsi ?? null, ml_class: classify(signal, q.rsi ?? null, pl_pct), price: cur ?? null, change_pct: q.change_pct ?? null, fetched_at: new Date().toISOString() });
+            toUpsertAll.push({ symbol: h.symbol, exchange: h.exchange, bias: q.bias ?? null, signal: ec[idx].momentum_signal ?? null, rsi14: q.rsi ?? null, ml_class: classify(signal, q.rsi ?? null, pl_pct), price: cur ?? null, change_pct: q.change_pct ?? null, fetched_at: new Date().toISOString() });
           } catch { /* timeout — keep cached */ }
         }));
         setAllViewHoldings([...ec]);
