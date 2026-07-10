@@ -4,9 +4,11 @@ happening to have the page open during market hours to trigger the client-side
 live fetch (dashboard/portfolio/page.tsx enrichHoldings Step 3, gated behind
 isMarketOpen()). Runs independently of any user session, right after market
 open and again after close. Also computes a 'Momentum Scan' verdict (EMA/RSI/
-MACD priority cascade, mirrors the TS logic in
-apps/web/app/api/stock-detail/route.ts) into the same row's 'signal' column,
-so both technical read-outs are available from a single cached fetch."""
+MACD priority cascade, mirroring the same priority-chain idea used by
+apps/web/app/api/stock-detail/route.ts to build signals[0] — not a literal
+port, since that route returns a sentence array, not a singular verdict)
+into the same row's 'signal' column, so both technical read-outs are
+available from a single cached fetch."""
 import logging
 import time
 from datetime import datetime, timezone
@@ -22,13 +24,17 @@ _SUFFIX = {"NSE": ".NS", "BSE": ".BO"}
 
 def _momentum_signal(price: float | None, ema200: float | None, ema50: float | None,
                       rsi: float | None, macd: float | None) -> str:
-    """Mirrors apps/web/app/api/stock-detail/route.ts's signal-priority chain
-    (EMA200 position -> EMA50 position -> RSI extreme -> MACD sign, first
-    match wins) so the "Momentum Scan" badge reflects the same read a user
-    already sees on the Signals page's "My Portfolio" mode — collapsed to a
-    clean BUY/SELL/HOLD verdict instead of that endpoint's full sentence, so
+    """Mirrors the same underlying priority idea (EMA200 position -> EMA50
+    position -> RSI extreme -> MACD sign, first match wins) that
+    stock-detail/route.ts's signal-priority chain uses to build signals[0]
+    — not a literal port of that TS function, which returns a sentence
+    array, not a singular verdict. (dashboard/signals/page.tsx's
+    loadPortfolioScan previously took signals[0] as its raw momentum read,
+    before this branch replaced that with the cached Bias/Momentum badges
+    from signal_cache.) Collapsed here to a clean BUY/SELL/HOLD verdict so
     it renders consistently next to the Technical Bias badge (BULLISH/
-    BEARISH/NEUTRAL). Keep this in sync if the TS priority chain changes."""
+    BEARISH/NEUTRAL). Keep the priority order in sync if the TS chain
+    changes."""
     if price and ema200:
         return "BUY" if price >= ema200 else "SELL"
     if price and ema50:

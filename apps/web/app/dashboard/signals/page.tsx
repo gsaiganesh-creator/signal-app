@@ -277,7 +277,7 @@ function DetailDrawer({ sig, onClose, isElite, session }: { sig: MLSignal; onClo
         <div style={{ padding:'20px 24px 16px', borderBottom:'1px solid var(--bdr)', background:'var(--surf2)', position:'sticky', top:0, zIndex:1 }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:6 }}>
             <div>
-              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.4 }}>{sig.symbol.replace('.NS','')}</div>
+              <div style={{ fontSize:20, fontWeight:900, letterSpacing:-0.4 }}>{sig.symbol.replace(/\.(NS|BO)$/, '')}</div>
               <div style={{ fontSize:12, color:'var(--dim)', marginTop:2 }}>{sig.name} · NSE</div>
             </div>
             <button onClick={onClose} style={{ width:34, height:34, borderRadius:9, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', cursor:'pointer', fontSize:16, display:'flex', alignItems:'center', justifyContent:'center' }}>✕</button>
