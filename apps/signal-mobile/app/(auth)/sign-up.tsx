@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 WebBrowser.maybeCompleteAuthSession();
 
 const LEVELS = ['Beginner', 'Intermediate', 'Pro'];
-const REDIRECT_URL = 'signal://auth/callback';
+const REDIRECT_URL = 'https://signalgenie.ai/auth/callback?mobile=1';
 
 export default function SignUp() {
   const { T, ACC } = useTheme();
@@ -39,21 +39,17 @@ export default function SignUp() {
       return;
     }
 
-    const result = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT_URL);
+    const result = await WebBrowser.openAuthSessionAsync(data.url, 'signal://');
 
     if (result.type === 'success') {
       const url = new URL(result.url);
-      const code = url.searchParams.get('code');
-      if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) setError(exchangeError.message);
+      const access_token = url.searchParams.get('access_token');
+      const refresh_token = url.searchParams.get('refresh_token');
+      if (access_token && refresh_token) {
+        const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (sessionError) setError(sessionError.message);
       } else {
-        const fragment = new URLSearchParams(result.url.split('#')[1] ?? '');
-        const access_token = fragment.get('access_token');
-        const refresh_token = fragment.get('refresh_token');
-        if (access_token && refresh_token) {
-          await supabase.auth.setSession({ access_token, refresh_token });
-        }
+        setError('Sign-in failed — missing tokens');
       }
     } else if (result.type === 'cancel') {
       setError('Sign-in was cancelled');

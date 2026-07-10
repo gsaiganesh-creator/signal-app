@@ -20,8 +20,26 @@ function Handler() {
     const code     = params.get('code');
     const error    = params.get('error');
     const next     = params.get('next') ?? '/dashboard';
+    const mobile   = params.get('mobile') === '1';
 
     if (error) { router.replace(`/sign-in?error=${encodeURIComponent(error)}`); return; }
+
+    // Mobile implicit-flow path: Supabase puts tokens in the URL fragment.
+    // The Expo app's ASWebAuthenticationSession watches for signal:// — relay there.
+    if (mobile && !code) {
+      const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
+      const fragment = new URLSearchParams(hash);
+      const access_token  = fragment.get('access_token');
+      const refresh_token = fragment.get('refresh_token');
+      if (access_token && refresh_token) {
+        window.location.href =
+          `signal://auth/callback?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
+        return;
+      }
+      router.replace('/sign-in?error=no_tokens');
+      return;
+    }
+
     if (!code) { router.replace('/sign-in?error=no_code'); return; }
 
     supabase.auth.exchangeCodeForSession(code)
@@ -29,6 +47,13 @@ function Handler() {
         if (err) {
           router.replace(`/sign-in?error=${encodeURIComponent(err.message)}`);
         } else {
+          // Mobile PKCE edge-case: if somehow mobile ends up with a code, relay session to app
+          if (mobile && data.session) {
+            const { access_token, refresh_token } = data.session;
+            window.location.href =
+              `signal://auth/callback?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
+            return;
+          }
           // Record referral if one was stored before sign-in
           const refCode = localStorage.getItem('signal_ref_code');
           if (refCode && data.session?.access_token) {

@@ -9,7 +9,10 @@ import { supabase } from '@/lib/supabase';
 
 WebBrowser.maybeCompleteAuthSession();
 
-const REDIRECT_URL = 'signal://auth/callback';
+// Web callback relays tokens to signal:// so ASWebAuthenticationSession intercepts them.
+// https://signalgenie.ai/auth/callback is already in Supabase's allowed redirect URLs
+// (it's used by the web app), so no new Supabase config is needed.
+const REDIRECT_URL = 'https://signalgenie.ai/auth/callback?mobile=1';
 
 export default function SignIn() {
   const { T, ACC } = useTheme();
@@ -34,23 +37,20 @@ export default function SignIn() {
       return;
     }
 
-    const result = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT_URL);
+    // Watch for signal:// — the web callback at signalgenie.ai reads the
+    // implicit-flow token fragment and redirects to signal://auth/callback?access_token=...
+    const result = await WebBrowser.openAuthSessionAsync(data.url, 'signal://');
 
     if (result.type === 'success') {
-      // PKCE flow: ?code=...
+      // Tokens relayed as query params: signal://auth/callback?access_token=...&refresh_token=...
       const url = new URL(result.url);
-      const code = url.searchParams.get('code');
-      if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError) setError(exchangeError.message);
+      const access_token = url.searchParams.get('access_token');
+      const refresh_token = url.searchParams.get('refresh_token');
+      if (access_token && refresh_token) {
+        const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
+        if (sessionError) setError(sessionError.message);
       } else {
-        // Implicit flow fallback: tokens in fragment
-        const fragment = new URLSearchParams(result.url.split('#')[1] ?? '');
-        const access_token = fragment.get('access_token');
-        const refresh_token = fragment.get('refresh_token');
-        if (access_token && refresh_token) {
-          await supabase.auth.setSession({ access_token, refresh_token });
-        }
+        setError('Sign-in failed — missing tokens');
       }
     } else if (result.type === 'cancel') {
       setError('Sign-in was cancelled');
