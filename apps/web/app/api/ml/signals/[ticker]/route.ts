@@ -1,5 +1,10 @@
 // Per-stock ML signal: RSI14 + EMA20/50/200 + MACD → BUY/SELL/HOLD/STRONG_BUY/STRONG_SELL
-export const runtime = 'edge';
+//
+// nodejs runtime, not edge — this route was 404ing in production (self-hosted
+// Dokploy/Docker deployment, not Vercel's edge network). All sibling routes
+// under apps/web/app/api/ml/signals/ already use nodejs; this was the one
+// outlier still on 'edge', which is why it alone was broken.
+export const runtime = 'nodejs';
 
 function calcEma(prices: number[], period: number): number | null {
   if (prices.length < period) return null;
