@@ -24,9 +24,16 @@ function Handler() {
 
     if (error) { router.replace(`/sign-in?error=${encodeURIComponent(error)}`); return; }
 
-    // Mobile implicit-flow path: Supabase puts tokens in the URL fragment.
-    // The Expo app's ASWebAuthenticationSession watches for signal:// — relay there.
-    if (mobile && !code) {
+    // Mobile path: relay to app regardless of flow type.
+    // The mobile Supabase client holds the PKCE code verifier in AsyncStorage,
+    // so we must NOT exchange the code here — send it back to the app via signal://.
+    if (mobile) {
+      // PKCE: relay the code to the app, which will call exchangeCodeForSession
+      if (code) {
+        window.location.href = `signal://auth/callback?code=${encodeURIComponent(code)}`;
+        return;
+      }
+      // Implicit fallback: tokens in URL fragment
       const hash = typeof window !== 'undefined' ? window.location.hash.slice(1) : '';
       const fragment = new URLSearchParams(hash);
       const access_token  = fragment.get('access_token');
@@ -47,13 +54,6 @@ function Handler() {
         if (err) {
           router.replace(`/sign-in?error=${encodeURIComponent(err.message)}`);
         } else {
-          // Mobile PKCE edge-case: if somehow mobile ends up with a code, relay session to app
-          if (mobile && data.session) {
-            const { access_token, refresh_token } = data.session;
-            window.location.href =
-              `signal://auth/callback?access_token=${encodeURIComponent(access_token)}&refresh_token=${encodeURIComponent(refresh_token)}`;
-            return;
-          }
           // Record referral if one was stored before sign-in
           const refCode = localStorage.getItem('signal_ref_code');
           if (refCode && data.session?.access_token) {

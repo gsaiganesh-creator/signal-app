@@ -43,9 +43,14 @@ export default function SignUp() {
 
     if (result.type === 'success') {
       const url = new URL(result.url);
-      const access_token = url.searchParams.get('access_token');
+      const code          = url.searchParams.get('code');
+      const access_token  = url.searchParams.get('access_token');
       const refresh_token = url.searchParams.get('refresh_token');
-      if (access_token && refresh_token) {
+
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) setError(exchangeError.message);
+      } else if (access_token && refresh_token) {
         const { error: sessionError } = await supabase.auth.setSession({ access_token, refresh_token });
         if (sessionError) setError(sessionError.message);
       } else {
