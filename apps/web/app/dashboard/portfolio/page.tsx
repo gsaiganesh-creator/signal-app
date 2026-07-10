@@ -1933,7 +1933,7 @@ export default function PortfolioPage() {
                   {!h.is_etf && (
                     <span style={{ fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:5, whiteSpace:'nowrap',
                       background: biasColor(h.bias).bg, color: biasColor(h.bias).color }}>
-                      {biasLabel(h.bias)}
+                      {`B: ${biasLabel(h.bias)}`}
                     </span>
                   )}
                 </td>
@@ -1942,7 +1942,7 @@ export default function PortfolioPage() {
                     <span style={{ fontSize:10.5, fontWeight:700, padding:'3px 8px', borderRadius:5, whiteSpace:'nowrap',
                       background: h.momentum_signal?.includes('BUY') ? 'rgba(0,212,160,0.12)' : h.momentum_signal?.includes('SELL') ? 'rgba(255,59,92,0.12)' : 'rgba(255,184,0,0.12)',
                       color: h.momentum_signal?.includes('BUY') ? 'var(--grn)' : h.momentum_signal?.includes('SELL') ? 'var(--red)' : 'var(--ylw)' }}>
-                      {sigLabel(h.momentum_signal)}
+                      {`M: ${sigLabel(h.momentum_signal)}`}
                     </span>
                   )}
                 </td>
