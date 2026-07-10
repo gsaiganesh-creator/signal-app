@@ -1,5 +1,5 @@
 // Plaid webhook — handles INVESTMENTS_DEFAULT_UPDATE events to auto-sync holdings
-// Register this URL in Plaid Dashboard → Webhooks: https://signal-app-api.vercel.app/api/plaid/webhook
+// Register this URL in Plaid Dashboard → Webhooks: https://signalgenie.ai/api/plaid/webhook
 export const runtime = 'nodejs';
 
 import { NextRequest } from 'next/server';

@@ -161,7 +161,7 @@ export function PortfolioShareCard({ totalInvested, totalCurrent, totalPL, total
           {/* Footer */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 16, borderTop: `1px solid ${C.bdr}` }}>
             <div style={{ fontSize: 9, color: C.dim2 }}>Not SEBI registered · Not investment advice · DYOR</div>
-            <div style={{ fontSize: 10, fontWeight: 700, color: C.dim, letterSpacing: 0.3 }}>signal-app.vercel.app</div>
+            <div style={{ fontSize: 10, fontWeight: 700, color: C.dim, letterSpacing: 0.3 }}>signalgenie.ai</div>
           </div>
         </div>
       </div>

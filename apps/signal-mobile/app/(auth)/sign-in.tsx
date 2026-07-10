@@ -1,13 +1,88 @@
-import React from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '@/hooks/useTheme';
+import { supabase } from '@/lib/supabase';
+
+WebBrowser.maybeCompleteAuthSession();
+
+const REDIRECT_URL = 'signal://auth/callback';
 
 export default function SignIn() {
   const { T, ACC } = useTheme();
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function signInWithGoogle() {
+    setLoading(true);
+    setError('');
+
+    const { data, error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: REDIRECT_URL, skipBrowserRedirect: true },
+    });
+
+    if (oauthError || !data.url) {
+      setError(oauthError?.message ?? 'Could not start Google sign-in');
+      setLoading(false);
+      return;
+    }
+
+    const result = await WebBrowser.openAuthSessionAsync(data.url, REDIRECT_URL);
+
+    if (result.type === 'success') {
+      // PKCE flow: ?code=...
+      const url = new URL(result.url);
+      const code = url.searchParams.get('code');
+      if (code) {
+        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
+        if (exchangeError) setError(exchangeError.message);
+      } else {
+        // Implicit flow fallback: tokens in fragment
+        const fragment = new URLSearchParams(result.url.split('#')[1] ?? '');
+        const access_token = fragment.get('access_token');
+        const refresh_token = fragment.get('refresh_token');
+        if (access_token && refresh_token) {
+          await supabase.auth.setSession({ access_token, refresh_token });
+        }
+      }
+    } else if (result.type === 'cancel') {
+      setError('Sign-in was cancelled');
+    }
+
+    setLoading(false);
+  }
+
+  async function signInWithEmail() {
+    if (!email.trim()) { setError('Enter your email'); return; }
+    if (!password) { setError('Enter your password'); return; }
+
+    setLoading(true);
+    setError('');
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: email.trim().toLowerCase(),
+      password,
+    });
+
+    if (signInError) {
+      const m = signInError.message.toLowerCase();
+      if (m.includes('invalid') || m.includes('wrong') || m.includes('credentials')) {
+        setError('Wrong email or password. If you signed up with Google, use "Continue with Google" above.');
+      } else {
+        setError(signInError.message);
+      }
+    }
+    // On success, onAuthStateChange in _layout fires → redirect to /(app) automatically
+
+    setLoading(false);
+  }
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: T.bg }]}>
@@ -19,23 +94,57 @@ export default function SignIn() {
         <Text style={[s.h1, { color: T.txt }]}>Welcome Back</Text>
         <Text style={[s.sub, { color: T.dim }]}>Sign in to SIGNAL</Text>
 
-        <View style={s.fields}>
-          {[{ label: 'Email / Mobile', placeholder: 'you@signal.in' }, { label: 'Password', placeholder: '••••••••', secure: true }].map(f => (
-            <View key={f.label}>
-              <Text style={[s.label, { color: T.dim }]}>{f.label.toUpperCase()}</Text>
-              <TextInput
-                placeholder={f.placeholder}
-                placeholderTextColor={T.dim}
-                secureTextEntry={f.secure}
-                style={[s.input, { backgroundColor: T.surf, borderColor: T.bdr, color: T.txt }]}
-              />
-            </View>
-          ))}
+        {/* Google */}
+        <TouchableOpacity
+          onPress={signInWithGoogle}
+          disabled={loading}
+          style={[s.googleBtn, { backgroundColor: T.surf, borderColor: T.bdr, opacity: loading ? 0.6 : 1 }]}
+        >
+          <Text style={s.googleIcon}>G</Text>
+          <Text style={[s.googleLbl, { color: T.txt }]}>Continue with Google</Text>
+        </TouchableOpacity>
+
+        <View style={s.divider}>
+          <View style={[s.line, { backgroundColor: T.bdr }]} />
+          <Text style={[s.orTxt, { color: T.dim }]}>or email</Text>
+          <View style={[s.line, { backgroundColor: T.bdr }]} />
         </View>
 
-        <TouchableOpacity onPress={() => router.replace('/(app)')}>
+        <View style={s.fields}>
+          <View>
+            <Text style={[s.label, { color: T.dim }]}>EMAIL</Text>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="you@signal.in"
+              placeholderTextColor={T.dim}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+              style={[s.input, { backgroundColor: T.surf, borderColor: T.bdr, color: T.txt }]}
+            />
+          </View>
+          <View>
+            <Text style={[s.label, { color: T.dim }]}>PASSWORD</Text>
+            <TextInput
+              value={password}
+              onChangeText={setPassword}
+              placeholder="••••••••"
+              placeholderTextColor={T.dim}
+              secureTextEntry
+              style={[s.input, { backgroundColor: T.surf, borderColor: T.bdr, color: T.txt }]}
+            />
+          </View>
+        </View>
+
+        {error ? <Text style={s.error}>{error}</Text> : null}
+
+        <TouchableOpacity onPress={signInWithEmail} disabled={loading} style={{ opacity: loading ? 0.6 : 1 }}>
           <LinearGradient colors={[ACC.blu, ACC.bluL]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={s.cta}>
-            <Text style={s.ctaTxt}>Sign In →</Text>
+            {loading
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={s.ctaTxt}>Sign In →</Text>
+            }
           </LinearGradient>
         </TouchableOpacity>
 
@@ -51,18 +160,25 @@ export default function SignIn() {
 }
 
 const s = StyleSheet.create({
-  safe:      { flex: 1 },
-  wrap:      { flex: 1, padding: 20 },
-  back:      { marginBottom: 24 },
-  backTxt:   { fontSize: 16 },
-  h1:        { fontSize: 26, fontWeight: '800', marginBottom: 4 },
-  sub:       { fontSize: 13, marginBottom: 32 },
-  fields:    { gap: 10, marginBottom: 24 },
-  label:     { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.5, marginBottom: 5 },
-  input:     { height: 46, borderRadius: 12, borderWidth: 1, paddingHorizontal: 13, fontSize: 14 },
-  cta:       { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
-  ctaTxt:    { color: '#fff', fontSize: 16, fontWeight: '700' },
-  footer:    { flexDirection: 'row', justifyContent: 'center', marginTop: 16 },
-  footerTxt: { fontSize: 13 },
-  footerLink:{ fontSize: 13, fontWeight: '600' },
+  safe:       { flex: 1 },
+  wrap:       { flex: 1, padding: 20 },
+  back:       { marginBottom: 24 },
+  backTxt:    { fontSize: 16 },
+  h1:         { fontSize: 26, fontWeight: '800', marginBottom: 4 },
+  sub:        { fontSize: 13, marginBottom: 24 },
+  googleBtn:  { height: 48, borderRadius: 12, borderWidth: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 16 },
+  googleIcon: { fontSize: 16, fontWeight: '800', color: '#EA4335' },
+  googleLbl:  { fontSize: 14, fontWeight: '600' },
+  divider:    { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 },
+  line:       { flex: 1, height: 1 },
+  orTxt:      { fontSize: 11 },
+  fields:     { gap: 10, marginBottom: 16 },
+  label:      { fontSize: 10.5, fontWeight: '700', letterSpacing: 0.5, marginBottom: 5 },
+  input:      { height: 46, borderRadius: 12, borderWidth: 1, paddingHorizontal: 13, fontSize: 14 },
+  error:      { color: '#FF3B5C', fontSize: 12, marginBottom: 12, textAlign: 'center' },
+  cta:        { height: 52, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
+  ctaTxt:     { color: '#fff', fontSize: 16, fontWeight: '700' },
+  footer:     { flexDirection: 'row', justifyContent: 'center', marginTop: 16 },
+  footerTxt:  { fontSize: 13 },
+  footerLink: { fontSize: 13, fontWeight: '600' },
 });

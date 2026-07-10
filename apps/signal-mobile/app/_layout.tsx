@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { Stack } from 'expo-router';
+import { Stack, useRouter, useSegments } from 'expo-router';
 import { ThemeProvider } from '@/hooks/useTheme';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { useSession } from '@/hooks/useSession';
 
 // Catch fatal JS errors in production and show them instead of crashing
 if (!__DEV__) {
@@ -39,17 +40,41 @@ class ErrorBoundary extends React.Component<
   }
 }
 
+function AuthGate({ children }: { children: React.ReactNode }) {
+  const { session, loading } = useSession();
+  const router = useRouter();
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (loading) return;
+
+    const inAppGroup = segments[0] === '(app)';
+    const inAuthGroup = segments[0] === '(auth)';
+    const atRoot = segments[0] !== '(app)' && segments[0] !== '(auth)';
+
+    if (session && (inAuthGroup || atRoot)) {
+      router.replace('/(app)');
+    } else if (!session && inAppGroup) {
+      router.replace('/');
+    }
+  }, [session, loading, segments]);
+
+  return <>{children}</>;
+}
+
 export default function RootLayout() {
   return (
     <ErrorBoundary>
       <SafeAreaProvider>
         <ThemeProvider>
-          <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
-            <Stack.Screen name="index" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="(app)" />
-            <Stack.Screen name="analyzing" />
-          </Stack>
+          <AuthGate>
+            <Stack screenOptions={{ headerShown: false, animation: 'slide_from_right' }}>
+              <Stack.Screen name="index" />
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(app)" />
+              <Stack.Screen name="analyzing" />
+            </Stack>
+          </AuthGate>
         </ThemeProvider>
       </SafeAreaProvider>
     </ErrorBoundary>

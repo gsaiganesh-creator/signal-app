@@ -1,5 +1,5 @@
-// Paper trading auto-scanner — runs via Vercel Cron Mon–Fri at 4:00 AM UTC (9:30 AM IST)
-// Requires: SUPABASE_SERVICE_ROLE_KEY + CRON_SECRET in Vercel env vars
+// Paper trading auto-scanner — runs via cron Mon–Fri at 4:00 AM UTC (9:30 AM IST)
+// Requires: SUPABASE_SERVICE_ROLE_KEY + CRON_SECRET in env vars
 // Two jobs per run:
 //   1. Auto-EXIT open trades that hit SL or target
 //   2. Auto-ENTER new trades where stock matches strategy signal
@@ -12,7 +12,7 @@ export const maxDuration = 60;
 
 const SUPABASE_URL  = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SERVICE_KEY   = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const APP_URL       = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://signal-app-api.vercel.app').replace(/\/$/, '');
+const APP_URL       = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://signalgenie.ai').replace(/\/$/, '');
 const CRON_SECRET   = process.env.CRON_SECRET ?? '';
 
 // 30-stock NSE universe scanned every morning

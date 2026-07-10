@@ -23,7 +23,9 @@
     "production": {
       "autoIncrement": true,
       "env": {
-        "EAS_USE_PRECOMPILED_MODULES": "0"
+        "EAS_USE_PRECOMPILED_MODULES": "0",
+        "EXPO_PUBLIC_SUPABASE_URL": "https://bmjrmwnomirlplcucyiy.supabase.co",
+        "EXPO_PUBLIC_SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJtanJtd25vbWlybHBsY3VjeWl5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIwNDc4MDcsImV4cCI6MjA5NzYyMzgwN30.neETEqW0_BubxTxSpXIfQIXJluT4At5AOPfniN9kMgE"
       },
       "cache": {
         "disabled": false,

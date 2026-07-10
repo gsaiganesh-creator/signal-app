@@ -685,8 +685,8 @@ export default function LandingPage() {
             </div>
             <div style={{ ...GC.mix, padding:28, borderRadius:22, position:'relative', overflow:'hidden', transition:'transform .2s' }} onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-3px)')} onMouseLeave={e=>(e.currentTarget.style.transform='')}>
               <div style={{ width:44, height:44, borderRadius:14, background:'rgba(79,111,250,0.12)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, marginBottom:16 }}>📱</div>
-              <div style={{ fontSize:17, fontWeight:800, marginBottom:8 }}>Mobile App <span style={{ fontSize:11, padding:'2px 7px', borderRadius:5, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', fontWeight:600 }}>Soon</span></div>
-              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>Full SignalGenie on iOS &amp; Android — scan results, alerts, portfolio sync, paper trading in your pocket.</div>
+              <div style={{ fontSize:17, fontWeight:800, marginBottom:8 }}>Mobile App <span style={{ fontSize:11, padding:'2px 7px', borderRadius:5, background:'rgba(0,212,160,0.12)', color:'var(--grn)', fontWeight:600 }}>iOS Live</span></div>
+              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>Full SignalGenie on iOS — scan results, alerts, portfolio sync, paper trading in your pocket. Android coming soon.</div>
             </div>
           </div>
         </div>

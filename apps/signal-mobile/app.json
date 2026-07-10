@@ -9,7 +9,7 @@
     "userInterfaceStyle": "automatic",
     "ios": {
       "bundleIdentifier": "com.signalgenie.signal",
-      "buildNumber": "15",
+      "buildNumber": "17",
       "supportsTablet": false,
       "requireFullScreen": true,
       "infoPlist": {

@@ -3,9 +3,9 @@ import type { CapacitorConfig } from '@capacitor/cli';
 const config: CapacitorConfig = {
   appId: 'com.signal.app',
   appName: 'SIGNAL',
-  webDir: 'public',           // not used — server.url overrides (live Vercel)
+  webDir: 'public',           // not used — server.url overrides (live deploy)
   server: {
-    url: 'https://signal-app-api.vercel.app',
+    url: 'https://signalgenie.ai',
     cleartext: false,         // HTTPS only
   },
   ios: {

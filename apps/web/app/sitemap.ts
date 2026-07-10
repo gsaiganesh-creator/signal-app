@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { SECTORS } from '@/lib/sectors';
 
-const BASE = 'https://signal-app-api.vercel.app';
+const BASE = 'https://signalgenie.ai';
 
 const TOP_NSE = [
   'RELIANCE','TCS','HDFCBANK','INFY','ICICIBANK','HINDUNILVR','BHARTIARTL',
