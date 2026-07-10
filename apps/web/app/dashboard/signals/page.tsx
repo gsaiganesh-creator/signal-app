@@ -1397,7 +1397,7 @@ export default function SignalsPage() {
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {shown.map((sig, sigIdx) => {
                 const locked = !isStarter && sigIdx >= FREE_LIMIT;
-                const inPortfolio = portfolioSymbols.includes(sig.symbol.replace('.NS',''));
+                const inPortfolio = portfolioSymbols.includes(sig.symbol.replace(/\.(NS|BO)$/, ''));
                 const rr = ((sig.target - sig.cmp) / (sig.cmp - sig.sl)).toFixed(1);
                 const secBg = sectorColor(sig.sector);
                 return (
@@ -1422,11 +1422,11 @@ export default function SignalsPage() {
                       onMouseEnter={e => { if (!locked) (e.currentTarget as HTMLElement).style.borderColor='rgba(0,212,160,0.4)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='var(--card-bdr)'; }}>
                       <div style={{ width:50, height:50, borderRadius:12, background:secBg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, color:'var(--txt)', flexShrink:0, border:'1px solid rgba(255,255,255,0.06)' }}>
-                        {sig.symbol.replace('.NS','').slice(0,4)}
+                        {sig.symbol.replace(/\.(NS|BO)$/, '').slice(0,4)}
                       </div>
                       <div>
                         <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:4, flexWrap:'wrap' }}>
-                          <span style={{ fontSize:14, fontWeight:800 }}>{sig.symbol.replace('.NS','')}</span>
+                          <span style={{ fontSize:14, fontWeight:800 }}>{sig.symbol.replace(/\.(NS|BO)$/, '')}</span>
                           {inPortfolio && <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)' }}>IN PORTFOLIO</span>}
                           {(() => {
                             const cat = scoreSig(sig);
