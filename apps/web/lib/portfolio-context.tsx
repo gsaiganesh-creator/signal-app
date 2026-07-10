@@ -132,6 +132,8 @@ export function PortfolioProvider({ children }: { children: ReactNode }) {
         setUser(u);
         if (sess && u) {
           await fetchPortfolios(sess.access_token, u.id);
+          // Fired after (not alongside) fetchPortfolios — heartbeat isn't
+          // latency-sensitive, no need to race it against the real data load.
           pingActive(sess.access_token, u.id);
         } else {
           setPortfolios([]); setHoldings([]);

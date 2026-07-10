@@ -11,6 +11,7 @@ create table if not exists public.profiles (
   avatar_url  text,
   plan        text not null default 'free',  -- free | starter | pro | elite
   broker      text,                          -- mstock | zerodha | upstox | null
+  last_active_at timestamptz,                -- updated by client heartbeat, not last_sign_in_at
   created_at  timestamptz not null default now(),
   updated_at  timestamptz not null default now()
 );
