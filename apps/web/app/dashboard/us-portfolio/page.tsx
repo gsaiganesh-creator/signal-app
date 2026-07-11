@@ -112,12 +112,48 @@ function parseUSRows(rows: string[][]): { result: USRow[]; debug: string } {
 
   const symIdx   = headers.findIndex(h => isSymCell(h));
   const qtyIdx   = col(QTY_NAMES);
-  const priceIdx = col(PRICE_NAMES);
   const exchIdx  = col(['exchange','market','exch']);
 
   if (symIdx < 0 || qtyIdx < 0) return { result: [], debug: `headers: [${headers.slice(0,8).join('|')}] — missing Symbol or Qty column` };
 
   const VALID_US = new Set(['NYSE','NASDAQ','AMEX','ARCA','BATS']);
+
+  // Schwab / IBKR: "Cost Basis" is a TOTAL dollar value for the whole position,
+  // not a per-share price — grabbing it (or "Price"/"Mark Price", the current
+  // market price) directly as avg_price would be wrong, same bug class already
+  // fixed elsewhere for HDFC's Investment_Value vs Avg_Cost_Price mixup. Only
+  // take this path when there's no genuine per-share cost column already —
+  // Robinhood's "Average Cost Per Share" etc. must keep matching PRICE_NAMES
+  // directly, unchanged.
+  const exactCostBasisIdx = headers.findIndex(h => h === 'cost basis' || h === 'total cost basis');
+  const hasPerShareCostCol = headers.some(h =>
+    h.includes('per share') || h.includes('/share') || h.includes('avg cost') ||
+    h.includes('average cost') || h.includes('avg. cost') || h.includes('avg buy') ||
+    h.includes('average buy') || h.includes('avg price') || h.includes('avg. buy'));
+
+  if (exactCostBasisIdx >= 0 && !hasPerShareCostCol) {
+    // IBKR reports include non-equity rows (options, cash, futures) under the
+    // same Symbol column — Asset Class lets us keep stocks only. Schwab has no
+    // such column; when absent, don't filter (every row is an equity position).
+    const assetClassIdx = headers.findIndex(h => h === 'asset class');
+    const result = rows.slice(headerIdx + 1)
+      .filter(r => r.length > Math.max(symIdx, qtyIdx, exactCostBasisIdx) && (r[symIdx]??'').toString().trim())
+      .filter(r => assetClassIdx < 0 || (r[assetClassIdx]??'').toString().trim().toUpperCase() === 'STK')
+      .map(r => {
+        const sym = (r[symIdx]??'').toString().trim().toUpperCase().replace(/[^A-Z0-9.\-]/g,'');
+        const qty = parseFloat(((r[qtyIdx]??'0').toString()).replace(/,/g,''));
+        const costBasis = parseFloat(((r[exactCostBasisIdx]??'0').toString()).replace(/[$,]/g,''));
+        const rawX = exchIdx >= 0 ? (r[exchIdx]??'').toString().toUpperCase().trim() : '';
+        const exchange = VALID_US.has(rawX) ? rawX : 'NYSE';
+        if (!sym || sym.length > 10 || isNaN(qty) || qty <= 0) return null;
+        const avg = (!isNaN(costBasis) && costBasis > 0) ? costBasis / qty : 0.001;
+        return { symbol:sym, exchange, qty, avg_price: avg } as USRow;
+      })
+      .filter(Boolean) as USRow[];
+    if (result.length) return { result, debug: `cost-basis-derived: sym=${symIdx} qty=${qtyIdx} costBasis=${exactCostBasisIdx}` };
+  }
+
+  const priceIdx = col(PRICE_NAMES);
   const result = rows.slice(headerIdx + 1)
     .filter(r => r.length > Math.max(symIdx, qtyIdx) && (r[symIdx]??'').toString().trim())
     .map(r => {
