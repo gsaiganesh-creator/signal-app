@@ -1,11 +1,13 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StyleSheet, Alert } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { Spark } from '@/components/ui/Spark';
 import { Tag } from '@/components/ui/Tag';
+import { useSession } from '@/hooks/useSession';
+import { supabase } from '@/lib/supabase';
 
 const INDICES = [
   { n:'NIFTY 50',   v:'24,812', chg:'+0.92%', up:true },
@@ -30,6 +32,25 @@ const TWEETS = [
 export default function Dashboard() {
   const { T, ACC } = useTheme();
   const router = useRouter();
+  const { session } = useSession();
+
+  const meta      = session?.user?.user_metadata ?? {};
+  const fullName  = (meta.full_name ?? meta.name ?? session?.user?.email ?? 'Welcome') as string;
+  const initials  = fullName.split(' ').slice(0, 2).map((w: string) => w[0]?.toUpperCase() ?? '').join('');
+
+  function confirmSignOut() {
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      { text: 'Cancel', style: 'cancel' },
+      {
+        text: 'Sign Out',
+        style: 'destructive',
+        onPress: async () => {
+          await supabase.auth.signOut();
+          router.replace('/(auth)/sign-in');
+        },
+      },
+    ]);
+  }
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: T.bg }]}>
@@ -38,11 +59,13 @@ export default function Dashboard() {
         <View style={s.header}>
           <View>
             <Text style={[s.greet, { color: T.dim }]}>Namaste 👋</Text>
-            <Text style={[s.userName, { color: T.txt }]}>Vaasudev Amitav</Text>
+            <Text style={[s.userName, { color: T.txt }]}>{fullName}</Text>
           </View>
-          <LinearGradient colors={[ACC.blu, ACC.org]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.avatar}>
-            <Text style={s.avatarTxt}>VA</Text>
-          </LinearGradient>
+          <TouchableOpacity onPress={confirmSignOut}>
+            <LinearGradient colors={[ACC.blu, ACC.org]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.avatar}>
+              <Text style={s.avatarTxt}>{initials || '?'}</Text>
+            </LinearGradient>
+          </TouchableOpacity>
         </View>
 
         {/* Hero stats row */}
@@ -203,7 +226,7 @@ export default function Dashboard() {
           {TWEETS.map((tw, i) => (
             <View key={i} style={[s.tweetRow, { backgroundColor: T.surf, borderColor: T.bdr }]}>
               <LinearGradient colors={[ACC.blu, ACC.org]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.tweetAv}>
-                <Text style={s.tweetAvTxt}>VA</Text>
+                <Text style={s.tweetAvTxt}>{initials || 'SG'}</Text>
               </LinearGradient>
               <View style={{ flex: 1 }}>
                 <Text style={[s.tweetTime, { color: T.dim }]}>{tw.time}</Text>
