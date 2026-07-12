@@ -3,11 +3,12 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
-// Landing page for the password-reset email link (auth/callback?next=/dashboard/settings).
-// By the time a user reaches this page the recovery code has already been exchanged
-// for a session in auth/callback, so this is just: capture new password, call
-// updateUser, done. Was previously missing entirely — resetPasswordForEmail sent
-// a working email, but nothing existed at the redirect target to complete the flow.
+// Two entry points: (1) the password-reset email link
+// (auth/callback?next=/dashboard/settings) — by the time a user lands here the
+// recovery code has already been exchanged for a session in auth/callback, or
+// (2) NavUserChip's "Change Password" menu item, for any already-logged-in user
+// proactively changing their password. Same form either way — supabase.auth.
+// updateUser works against any active session, recovery or not.
 export default function SettingsPage() {
   const router = useRouter();
   const supabase = createClient();

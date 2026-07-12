@@ -48,6 +48,14 @@ function IconShield() {
     </svg>
   );
 }
+function IconLock() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+      <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+    </svg>
+  );
+}
 function IconLogOut() {
   return (
     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -85,9 +93,10 @@ export function NavUserChip() {
 
   type MenuItem = { icon: React.ReactNode; label: string; href: string };
   const menuItems: MenuItem[] = [
-    { icon: <IconBell />, label: 'Notifications', href: '' },
-    { icon: <IconZap />,  label: 'Upgrade Plan',  href: '/dashboard/upgrade' },
-    { icon: <IconGift />, label: 'Refer & Earn',  href: '/dashboard/refer' },
+    { icon: <IconBell />, label: 'Notifications',   href: '' },
+    { icon: <IconLock />, label: 'Change Password', href: '/dashboard/settings' },
+    { icon: <IconZap />,  label: 'Upgrade Plan',     href: '/dashboard/upgrade' },
+    { icon: <IconGift />, label: 'Refer & Earn',     href: '/dashboard/refer' },
   ];
   if (isAdmin) {
     menuItems.splice(0, 0, { icon: <IconShield />, label: 'Admin Console', href: '/admin' });
