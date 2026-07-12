@@ -29,11 +29,16 @@ the same day specifically to remove that constraint — see
 
 `morning_scan`/`intraday_check`/`eod_cleanup` implement a WATCHING → TRIGGERED
 → EXPIRED signal lifecycle against `daily_signals`/`push_tokens`/
-`signal_alerts` (Expo push, likely intended for a future mobile app —
-`apps/signal-mobile` exists in this monorepo). Those tables had zero rows as
-of the 2026-07-05 migration — never wired up end-to-end. Left untouched by
-that migration; whether to build it out, retarget it, or remove it is a
-separate, undecided question.
+`signal_alerts` (Expo push — built for `apps/signal-mobile`, a standalone
+React Native/Expo app that existed in this monorepo). Those tables had zero
+rows as of the 2026-07-05 migration — never wired up end-to-end.
+
+**2026-07-12 update:** `apps/signal-mobile` removed entirely (2026-07-12 —
+its UI had drifted from the web redesign and was never kept in sync; the
+Capacitor-wrapped web app at `apps/web/ios` is now the one mobile app,
+rendering the live site directly so there's nothing to keep in sync). These
+three jobs and their tables remain dormant/unused — still undecided whether
+to retarget them at something else or remove them too.
 
 **Note:** as of 2026-07-05, `core/notifier.py` (part of this dormant feature)
 also gained web-push support (reading `push_subscriptions`, sending via
