@@ -1,4 +1,5 @@
 export const runtime = 'edge';
+import { fetchYahooQuoteSummary } from '@/lib/yahoo-auth';
 
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
@@ -7,11 +8,10 @@ export async function GET(req: Request) {
   if (!symbol) return Response.json({ error: 'symbol required' }, { status: 400 });
 
   const ySym = exchange === 'NSE' ? `${symbol}.NS` : exchange === 'BSE' ? `${symbol}.BO` : symbol;
-  const hdrs = { 'User-Agent': 'Mozilla/5.0 (compatible; signal-app/1.0)' };
   const url  = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ySym)}?modules=incomeStatementHistory,balanceSheetHistory`;
 
   try {
-    const res = await fetch(url, { headers: hdrs, signal: AbortSignal.timeout(8000) });
+    const res = await fetchYahooQuoteSummary(url);
     if (!res.ok) return Response.json({ error: `yahoo ${res.status}` }, { status: 502 });
 
     const data = await res.json() as {

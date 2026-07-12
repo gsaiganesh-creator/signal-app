@@ -2,6 +2,7 @@
 // 52W range, signals — plus US fundamentals from Yahoo quoteSummary.
 
 import { ema, rsi, bollinger, atr, supertrend } from '@/lib/technicals';
+import { fetchYahooQuoteSummary } from '@/lib/yahoo-auth';
 
 export const runtime = 'edge';
 
@@ -91,13 +92,15 @@ export async function GET(request: Request) {
   const hdrs = { 'User-Agent': 'Mozilla/5.0 (compatible; signal-app/1.0)' };
 
   try {
-    // Run chart + quoteSummary in parallel; quoteSummary only for US stocks
+    // Run chart + quoteSummary in parallel — quoteSummary needs crumb+cookie
+    // auth now (Yahoo started requiring it; unauthenticated calls 401 with
+    // "Invalid Crumb" for every ticker, not just India — see lib/yahoo-auth.ts).
     const chartUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=3mo`;
     const qsUrl    = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ySym)}?modules=defaultKeyStatistics,financialData,summaryDetail,calendarEvents,incomeStatementHistoryQuarterly,majorHoldersBreakdown`;
 
     const [chartRes, qsRes] = await Promise.all([
       fetch(chartUrl, { headers: hdrs, signal: AbortSignal.timeout(8000) }),
-      fetch(qsUrl, { headers: hdrs, signal: AbortSignal.timeout(8000) }),
+      fetchYahooQuoteSummary(qsUrl),
     ]);
 
     if (!chartRes.ok) return Response.json({ error: `yahoo ${chartRes.status}` }, { status: 502 });

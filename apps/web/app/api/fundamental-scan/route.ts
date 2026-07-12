@@ -1,6 +1,7 @@
 export const runtime = 'edge';
 import type { FundStock } from '@/lib/fundamental-scan-types';
 import { NSE_SCAN_UNIVERSE } from '@/lib/fundamental-scan-types';
+import { fetchYahooQuoteSummary } from '@/lib/yahoo-auth';
 
 const HDR = { 'User-Agent': 'Mozilla/5.0 (compatible; signal-app/1.0)' };
 
@@ -14,8 +15,7 @@ async function fetchFund(sym: string, sector: string): Promise<FundStock> {
     const [chartRes, qsRes] = await Promise.all([
       fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=1d`,
         { headers: HDR, signal: AbortSignal.timeout(7000) }),
-      fetch(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ySym)}?modules=summaryDetail,financialData`,
-        { headers: HDR, signal: AbortSignal.timeout(7000) }),
+      fetchYahooQuoteSummary(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ySym)}?modules=summaryDetail,financialData`),
     ]);
 
     if (chartRes.ok) {

@@ -1,4 +1,5 @@
 export const runtime = 'edge';
+import { fetchYahooQuoteSummary } from '@/lib/yahoo-auth';
 
 // Sector → peer list (top NSE stocks by market cap / liquidity)
 const SECTOR_PEERS: Record<string, string[]> = {
@@ -79,8 +80,7 @@ async function fetchPeer(sym: string, exchange: string): Promise<Peer> {
   const [chartRes, qsRes] = await Promise.all([
     fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ySym)}?interval=1d&range=1d`,
       { headers: hdrs, signal: AbortSignal.timeout(6000) }),
-    fetch(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ySym)}?modules=summaryDetail,financialData`,
-      { headers: hdrs, signal: AbortSignal.timeout(6000) }),
+    fetchYahooQuoteSummary(`https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ySym)}?modules=summaryDetail,financialData`),
   ]);
 
   let price: number | null = null, change_pct: number | null = null, name = sym;

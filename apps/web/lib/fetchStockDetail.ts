@@ -1,6 +1,8 @@
 // Shared utility — used by /api/stock-detail and /stocks/[symbol] server page
 // Fetches Yahoo Finance 3mo daily OHLCV and computes RSI14, EMA20/50/200
 
+import { fetchYahooQuoteSummary } from './yahoo-auth';
+
 export interface StockDetail {
   symbol: string;
   exchange: string;
@@ -70,7 +72,7 @@ export async function fetchStockDetail(symbol: string, exchange = 'NSE'): Promis
 
     const [chartRes, qsRes] = await Promise.all([
       fetch(chartUrl, { headers: hdrs, ...nxt }),
-      fetch(qsUrl,    { headers: hdrs, ...nxt }).catch(() => null),
+      fetchYahooQuoteSummary(qsUrl, nxt).catch(() => null),
     ]);
 
     if (!chartRes.ok) return fail('fetch_failed');

@@ -2,6 +2,7 @@
 // Primary: quoteSummary summaryDetail+calendarEvents
 // Fallback: chart API dividends events (better coverage for Indian NSE stocks)
 export const runtime = 'edge';
+import { fetchYahooQuoteSummary } from '@/lib/yahoo-auth';
 
 interface DivResult {
   symbol: string;
@@ -26,7 +27,7 @@ export async function GET(req: Request) {
       try {
         // --- Primary: quoteSummary ---
         const url = `https://query1.finance.yahoo.com/v10/finance/quoteSummary/${encodeURIComponent(ySym)}?modules=summaryDetail,calendarEvents`;
-        const r   = await fetch(url, { headers: hdrs, signal: AbortSignal.timeout(6000) });
+        const r   = await fetchYahooQuoteSummary(url);
 
         let exDate: string | null  = null;
         let daysTo: number | null  = null;
