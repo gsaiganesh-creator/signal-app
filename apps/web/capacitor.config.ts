@@ -12,7 +12,15 @@ const config: CapacitorConfig = {
     contentInset: 'automatic',
     backgroundColor: '#070D1A',
     scrollEnabled: true,
-    limitsNavigationsToAppBoundDomains: true,
+    // Was true with no matching WKAppBoundDomains entry in Info.plist — per
+    // WebKit's documented behavior that combination leaves navigation
+    // unbound/restricted, which can degrade the WebView toward Safari-style
+    // chrome instead of a clean native container. This app has no local
+    // bundled content (server.url overrides webDir entirely, 100% remote),
+    // so the app-bound-domains restriction doesn't serve its intended
+    // purpose here anyway — turning it off instead of adding a
+    // WKAppBoundDomains array neither of us has verified the right values for.
+    limitsNavigationsToAppBoundDomains: false,
     allowsLinkPreview: false,
   },
   android: {
