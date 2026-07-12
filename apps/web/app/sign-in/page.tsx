@@ -27,10 +27,11 @@ export default function SignInPage() {
   // ── OAuth ──────────────────────────────────────────────────────────────────
   async function doOAuth(provider: 'google') {
     setLoading(true);
-    const isCapacitor = typeof window !== 'undefined' && !!(window as { Capacitor?: unknown }).Capacitor;
-    const redirectTo = isCapacitor
-      ? `com.gsaiganesh.signal.app://auth/callback`
-      : `${location.origin}/auth/callback`;
+    // Always use the web callback URL — works for both browser and Capacitor (which
+    // loads signalgenie.ai in WKWebView, so the same origin is reachable in-app).
+    // The old custom-scheme approach (com.gsaiganesh.signal.app://) caused double
+    // login because no appUrlOpen listener existed to handle the deep link.
+    const redirectTo = `${location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
     if (error) { setMsg(error.message); setLoading(false); }
   }
