@@ -1,6 +1,9 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { StockNews } from './StockNews';
+import { DividendHistoryTable } from './DividendHistoryTable';
+
+type Tab = 'overview' | 'technicals' | 'fundamentals' | 'dividends';
 
 interface Detail {
   name?: string;
@@ -55,6 +58,7 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
   const [data,    setData]    = useState<Detail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error,   setError]   = useState(false);
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   const isIndia = exchange === 'NSE' || exchange === 'BSE';
   const cur = holding?.currency ?? (isIndia ? 'INR' : 'USD');
@@ -185,11 +189,28 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
           )}
         </div>
 
+        {/* ─── TAB BAR ─── */}
+        <div style={{ display:'flex', gap:4, padding:'0 18px', borderBottom:'1px solid var(--bdr)', flexShrink:0 }}>
+          {([
+            { key:'overview',     label:'Overview' },
+            { key:'technicals',   label:'Technicals' },
+            { key:'fundamentals', label:'Fundamentals' },
+            { key:'dividends',    label:'Dividends' },
+          ] as { key: Tab; label: string }[]).map(t => (
+            <button key={t.key} onClick={() => setActiveTab(t.key)}
+              style={{ padding:'10px 4px', background:'none', border:'none', borderBottom: activeTab === t.key ? '2px solid var(--bluL)' : '2px solid transparent',
+                color: activeTab === t.key ? 'var(--txt)' : 'var(--dim)', fontWeight: activeTab === t.key ? 700 : 500,
+                fontSize:12, cursor:'pointer', fontFamily:'inherit', marginRight:14 }}>
+              {t.label}
+            </button>
+          ))}
+        </div>
+
         {/* ─── SCROLLABLE BODY ─── */}
         <div style={{ flex:1, overflowY:'auto' }}>
 
-          {/* ── Position section (only when holding provided) ── */}
-          {holding && (
+          {/* ── Position section (only when holding provided) — Overview tab ── */}
+          {activeTab === 'overview' && holding && (
             <div style={{ padding:'14px 18px', borderBottom:'1px solid var(--bdr)' }}>
               <SecHead title="Portfolio Position" />
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:10 }}>
@@ -258,8 +279,8 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
 
             {!loading && !error && data && (
               <>
-                {/* ── Signals ── */}
-                {allSignals.length > 0 && (
+                {/* ── Signals — Overview tab ── */}
+                {activeTab === 'overview' && allSignals.length > 0 && (
                   <>
                     <SecHead title="Scan Results" />
                     <div style={{ display:'flex', flexDirection:'column', gap:5, marginBottom:14 }}>
@@ -279,7 +300,9 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
                   </>
                 )}
 
-                {/* ── Technicals ── */}
+                {/* ── Technicals tab ── */}
+                {activeTab === 'technicals' && (
+                <>
                 <SecHead title="Technicals" />
                 <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
                   {data.rsi14    != null && <Stat label="RSI 14"    val={data.rsi14.toFixed(1)}
@@ -288,7 +311,7 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
                     color={data.macd >= 0 ? 'var(--grn)' : 'var(--red)'} />}
                   {data.atr14    != null && <Stat label="ATR 14"    val={fmtP(data.atr14)}
                     sub={livePrice ? `${(data.atr14 / livePrice * 100).toFixed(1)}% of price` : undefined} />}
-                  {data.bb_pct   != null && <Stat label="BB %B"     val={`${(data.bb_pct * 100).toFixed(0)}%`} sub="0=lower 100=upper" />}
+                  {data.bb_pct   != null && <Stat label="BB %B"     val={`${data.bb_pct.toFixed(0)}%`} sub="0=lower 100=upper" />}
                   {data.vol_ratio != null && <Stat label="Vol Ratio" val={`${data.vol_ratio.toFixed(1)}×`}
                     color={data.vol_ratio > 1.5 ? 'var(--grn)' : 'var(--txt)'} />}
                   {data.from_52h != null && <Stat label="vs 52W Hi"  val={`${data.from_52h.toFixed(1)}%`}
@@ -300,9 +323,11 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
                   {data.ema200 != null && <Stat label="EMA 200" val={fmtP(data.ema200)}
                     color={livePrice != null ? (livePrice > data.ema200 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)'} />}
                 </div>
+                </>
+                )}
 
-                {/* ── Price Levels ── */}
-                {(data.stop_loss != null || data.target1 != null || data.entry_low != null) && (
+                {/* ── Price Levels — Overview tab ── */}
+                {activeTab === 'overview' && (data.stop_loss != null || data.target1 != null || data.entry_low != null) && (
                   <>
                     <SecHead title="Price Levels" />
                     <div style={{ display:'grid', gridTemplateColumns:'repeat(4,1fr)', gap:8, marginBottom:14 }}>
@@ -324,8 +349,8 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
                   </>
                 )}
 
-                {/* ── Valuation ── */}
-                {(data.trailing_pe != null || data.ev_ebitda != null || data.market_cap != null) && (
+                {/* ── Valuation — Fundamentals tab ── */}
+                {activeTab === 'fundamentals' && (data.trailing_pe != null || data.ev_ebitda != null || data.market_cap != null) && (
                   <>
                     <SecHead title="Valuation" />
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
@@ -347,8 +372,8 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
                   </>
                 )}
 
-                {/* ── Growth & Profitability ── */}
-                {(data.revenue_growth != null || data.net_margin != null || data.roe != null) && (
+                {/* ── Growth & Profitability — Fundamentals tab ── */}
+                {activeTab === 'fundamentals' && (data.revenue_growth != null || data.net_margin != null || data.roe != null) && (
                   <>
                     <SecHead title="Growth & Profitability" />
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
@@ -368,8 +393,8 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
                   </>
                 )}
 
-                {/* ── Analyst & Earnings ── */}
-                {(data.analyst_target != null || data.next_earnings_date) && (
+                {/* ── Analyst & Earnings — Fundamentals tab ── */}
+                {activeTab === 'fundamentals' && (data.analyst_target != null || data.next_earnings_date) && (
                   <>
                     <SecHead title="Analyst & Earnings" />
                     <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
@@ -395,23 +420,31 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
                   </>
                 )}
 
-                {/* ── Dividend & Short Interest ── */}
-                {(data.dividend_yield != null || data.short_pct_float != null) && (
+                {/* ── Dividends tab ── */}
+                {activeTab === 'dividends' && (
                   <>
-                    <SecHead title="Dividend & Short Interest" />
-                    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
-                      {data.dividend_yield  != null && <Stat label="Div Yield"    val={pct(data.dividend_yield)}   color="var(--grn)" />}
-                      {data.payout_ratio    != null && <Stat label="Payout Ratio" val={pct(data.payout_ratio)} />}
-                      {data.ex_div_date               && <Stat label="Ex-Div Date"  val={data.ex_div_date} />}
-                      {data.short_pct_float != null && <Stat label="Short Float"  val={pct(data.short_pct_float)}
-                        color={data.short_pct_float > 0.15 ? 'var(--ylw)' : 'var(--txt)'} />}
-                      {data.short_ratio     != null && <Stat label="Days to Cover" val={`${data.short_ratio.toFixed(1)}d`} />}
+                    {(data.dividend_yield != null || data.short_pct_float != null) && (
+                      <>
+                        <SecHead title="Dividend & Short Interest" />
+                        <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr 1fr', gap:8, marginBottom:14 }}>
+                          {data.dividend_yield  != null && <Stat label="Div Yield"    val={pct(data.dividend_yield)}   color="var(--grn)" />}
+                          {data.payout_ratio    != null && <Stat label="Payout Ratio" val={pct(data.payout_ratio)} />}
+                          {data.ex_div_date               && <Stat label="Ex-Div Date"  val={data.ex_div_date} />}
+                          {data.short_pct_float != null && <Stat label="Short Float"  val={pct(data.short_pct_float)}
+                            color={data.short_pct_float > 0.15 ? 'var(--ylw)' : 'var(--txt)'} />}
+                          {data.short_ratio     != null && <Stat label="Days to Cover" val={`${data.short_ratio.toFixed(1)}d`} />}
+                        </div>
+                      </>
+                    )}
+                    <SecHead title="Payout History" />
+                    <div style={{ marginBottom:14 }}>
+                      <DividendHistoryTable symbol={symbol} exchange={exchange} currency={cur} />
                     </div>
                   </>
                 )}
 
-                {/* ── Shareholding Pattern (India) ── */}
-                {(data.insider_pct != null || data.institution_pct != null) && (
+                {/* ── Shareholding Pattern (India) — Fundamentals tab ── */}
+                {activeTab === 'fundamentals' && (data.insider_pct != null || data.institution_pct != null) && (
                   <>
                     <SecHead title="Shareholding Pattern" />
                     <div style={{ display:'flex', flexDirection:'column', gap:7, marginBottom:14 }}>
