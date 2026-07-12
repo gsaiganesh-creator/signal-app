@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.gsaiganesh.signal.app',
+  appId: 'com.signalgenie.signal',
   appName: 'SignalGenie',
   webDir: 'public',           // not used — server.url overrides (live deploy)
   server: {
