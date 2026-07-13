@@ -227,3 +227,18 @@ create policy "equity_grants: own"
 create trigger equity_grants_updated_at
   before update on public.equity_grants
   for each row execute function public.set_updated_at();
+
+-- ─── 9. NATIVE PUSH TOKENS ───────────────────────────────────
+create table if not exists public.native_push_tokens (
+  id          uuid primary key default gen_random_uuid(),
+  user_id     uuid not null references auth.users(id) on delete cascade,
+  platform    text not null check (platform in ('ios','android')),
+  fcm_token   text not null,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now(),
+  unique(user_id, platform, fcm_token)
+);
+alter table public.native_push_tokens enable row level security;
+drop policy if exists "native_push_tokens: own" on public.native_push_tokens;
+create policy "native_push_tokens: own" on public.native_push_tokens
+  for all using (auth.uid() = user_id) with check (auth.uid() = user_id);
