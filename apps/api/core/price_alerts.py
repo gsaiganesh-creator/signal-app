@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 
 from pywebpush import webpush
 
+from core.native_push import send_native_push
 from core.price_utils import fetch_price
 from core.supabase_rest import rest_get, rest_patch
 
@@ -55,14 +56,17 @@ def run_price_alerts_check() -> dict:
     user_ids = sorted({a["user_id"] for a in triggered})
     sub_filter = "(" + ",".join(f'"{u}"' for u in user_ids) + ")"
     subs = rest_get("push_subscriptions", {"user_id": f"in.{sub_filter}", "select": "*"})
+    native_tokens = rest_get("native_push_tokens", {"user_id": f"in.{sub_filter}", "select": "*"})
 
     sent = 0
     for a in triggered:
         user_subs = [s for s in subs if s["user_id"] == a["user_id"]]
         direction = "above" if a["condition"] == "above" else "below"
+        title_text = f"🔔 {a['symbol']} Alert Triggered"
+        body_text = f"{a['symbol']} is now ₹{a['current_price']:,.2f} — {direction} your ₹{a['target_price']} target."
         payload = json.dumps({
-            "title": f"🔔 {a['symbol']} Alert Triggered",
-            "body": f"{a['symbol']} is now ₹{a['current_price']:,.2f} — {direction} your ₹{a['target_price']} target.",
+            "title": title_text,
+            "body": body_text,
             "url": "/dashboard/watchlist",
             "tag": f"alert-{a['id']}",
         })
@@ -80,6 +84,15 @@ def run_price_alerts_check() -> dict:
                 sent += 1
             except Exception as e:
                 logger.warning("price_alerts: push send failed for %s: %s", a["symbol"], e)
+
+        # Native push — same fired-alert set, different delivery channel
+        user_native_tokens = [t["fcm_token"] for t in native_tokens if t["user_id"] == a["user_id"]]
+        if user_native_tokens:
+            try:
+                result = send_native_push(user_native_tokens, title=title_text, body=body_text)
+                sent += result.get("sent", 0)
+            except Exception as e:
+                logger.warning("price_alerts: native push send failed for %s: %s", a["symbol"], e)
 
     summary = {"checked": len(alerts), "triggered": len(triggered), "sent": sent}
     logger.info("price_alerts: %s", summary)
