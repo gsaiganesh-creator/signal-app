@@ -1,9 +1,9 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Capacitor } from '@capacitor/core';
 import { usePortfolio } from '@/lib/portfolio-context';
 import { usePlan } from '@/lib/use-plan';
+import { useIsNativePlatform } from '@/lib/use-is-native';
 
 const PLAN_LABEL: Record<string, string> = {
   admin: 'ADMIN', elite: 'ELITE', pro: 'PRO', starter: 'STARTER', free: 'FREE',
@@ -73,6 +73,7 @@ export function NavUserChip() {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const isNative = useIsNativePlatform();
 
   const raw = user?.user_metadata?.full_name || user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
   const initials = raw.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase();
@@ -98,7 +99,7 @@ export function NavUserChip() {
     { icon: <IconLock />, label: 'Change Password', href: '/dashboard/settings' },
     { icon: <IconZap />,  label: 'Upgrade Plan',     href: '/dashboard/upgrade' },
     { icon: <IconGift />, label: 'Refer & Earn',     href: '/dashboard/refer' },
-  ].filter(item => !(Capacitor.isNativePlatform() && item.href === '/dashboard/upgrade'));
+  ].filter(item => !(isNative && item.href === '/dashboard/upgrade'));
   if (isAdmin) {
     menuItems.splice(0, 0, { icon: <IconShield />, label: 'Admin Console', href: '/admin' });
   }

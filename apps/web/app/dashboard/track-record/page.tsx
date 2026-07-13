@@ -1,8 +1,8 @@
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Capacitor } from '@capacitor/core';
 import { usePlan } from '@/lib/use-plan';
+import { useIsNativePlatform } from '@/lib/use-is-native';
 
 interface ZoneStat { zone: string; count: number; avg_return: number | null; accuracy: number | null }
 interface MonthStat { month: string; wins: number; total: number; pct: number }
@@ -115,6 +115,7 @@ export default function TrackRecordPage() {
   const [data,    setData]    = useState<ScanLogResp | null>(null);
   const [loading, setLoading] = useState(true);
   const [tab,     setTab]     = useState<'zones' | 'log' | 'rl' | 'method'>('zones');
+  const isNative = useIsNativePlatform();
 
   useEffect(() => {
     fetch('/api/scan-log?days=90&limit=200')
@@ -331,7 +332,7 @@ export default function TrackRecordPage() {
                   <div style={{ fontSize:28, marginBottom:10 }}>🧠</div>
                   <div style={{ fontSize:15, fontWeight:700, marginBottom:8 }}>RL Analysis — Starter+</div>
                   <div style={{ fontSize:13, color:'var(--dim)', marginBottom:16 }}>See exactly which signal parameters are being adjusted after failed calls, and why.</div>
-                  {!Capacitor.isNativePlatform() && (
+                  {!isNative && (
                     <Link href="/dashboard/upgrade" style={{ display:'inline-flex', height:38, padding:'0 20px', borderRadius:9, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, alignItems:'center', textDecoration:'none' }}>
                       Upgrade to view →
                     </Link>

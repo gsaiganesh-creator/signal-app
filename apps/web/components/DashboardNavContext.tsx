@@ -1,7 +1,6 @@
 'use client';
 import { createContext, useContext, useState, useEffect, type ReactNode } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { Capacitor } from '@capacitor/core';
 
 export const TABS = [
   {
@@ -49,7 +48,7 @@ export const TABS = [
       { href: '/dashboard/refer',           label: 'Refer & Earn'    },
       { href: '/dashboard/support',         label: 'Support'         },
       { href: '/dashboard/risk-disclosure', label: 'Risk Disclosure' },
-    ].filter(l => !(Capacitor.isNativePlatform() && l.href === '/dashboard/upgrade')),
+    ],
   },
 ];
 

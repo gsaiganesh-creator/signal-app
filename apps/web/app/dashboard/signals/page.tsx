@@ -1,12 +1,12 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { usePortfolio } from '@/lib/portfolio-context';
 import { StockNews } from '@/components/StockNews';
 import { usePlan } from '@/lib/use-plan';
 import { ProGate } from '@/components/ProGate';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useIsNativePlatform } from '@/lib/use-is-native';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -852,6 +852,7 @@ const PLAN_DETAILS = {
 
 function UpgradeModal({ feature, minPlan, onClose }: { feature: string; minPlan: 'starter' | 'pro' | 'elite'; onClose: () => void }) {
   const d = PLAN_DETAILS[minPlan];
+  const isNative = useIsNativePlatform();
   return (
     <div onClick={onClose} style={{ position:'fixed', inset:0, zIndex:1000, background:'rgba(0,0,0,0.65)', backdropFilter:'blur(6px)', display:'flex', alignItems:'center', justifyContent:'center', padding:20 }}>
       <div onClick={e => e.stopPropagation()}
@@ -873,7 +874,7 @@ function UpgradeModal({ feature, minPlan, onClose }: { feature: string; minPlan:
             </div>
           ))}
         </div>
-        {!Capacitor.isNativePlatform() && (
+        {!isNative && (
           <Link href="/dashboard/upgrade" style={{ display:'block', height:44, lineHeight:'44px', borderRadius:11, background:'linear-gradient(135deg,var(--blu),rgba(79,111,250,0.8))', color:'#fff', fontSize:14, fontWeight:700, textDecoration:'none', marginBottom:10 }}>
             Upgrade Now →
           </Link>
@@ -893,6 +894,7 @@ export default function SignalsPage() {
   const { symbols: portfolioSymbols, portfolios, session } = usePortfolio();
   const { isStarter, isElite, loading: planLoading } = usePlan();
   const [market, setMarket] = useState<Market>('india');
+  const isNative = useIsNativePlatform();
 
   // Deep-link: /dashboard/signals?tab=fundamental|us|india
   useEffect(() => {
@@ -1476,7 +1478,7 @@ export default function SignalsPage() {
                     Starter unlocks all {shown.length} signals · entry ranges · targets · stop-losses · portfolio universe scan
                   </div>
                   <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
-                    {!Capacitor.isNativePlatform() && (
+                    {!isNative && (
                       <Link href="/dashboard/upgrade" style={{ height:38, padding:'0 22px', borderRadius:10, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, textDecoration:'none', display:'inline-flex', alignItems:'center' }}>
                         Upgrade to Starter — ₹299/mo →
                       </Link>

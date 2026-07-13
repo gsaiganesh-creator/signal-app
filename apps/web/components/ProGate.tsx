@@ -1,8 +1,8 @@
 'use client';
 import Link from 'next/link';
-import { Capacitor } from '@capacitor/core';
 import { usePlan } from '@/lib/use-plan';
 import type { PlanFeature } from '@/lib/use-plan';
+import { useIsNativePlatform } from '@/lib/use-is-native';
 
 const FEATURE_LABELS: Record<PlanFeature, { name: string; tier: string; desc: string }> = {
   'signals-unlimited':       { name: 'Unlimited Scan Results',  tier: 'Starter+', desc: 'Get unlimited ML Technical Scan results daily' },
@@ -23,6 +23,7 @@ const FEATURE_LABELS: Record<PlanFeature, { name: string; tier: string; desc: st
 
 export function ProGate({ feature, children }: { feature: PlanFeature; children: React.ReactNode }) {
   const { canAccess, loading } = usePlan();
+  const isNative = useIsNativePlatform();
 
   if (loading) return (
     <div style={{ height:200, borderRadius:16, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', animation:'pulse 1.5s infinite' }}/>
@@ -40,7 +41,7 @@ export function ProGate({ feature, children }: { feature: PlanFeature; children:
         {meta.tier} Plan
       </div>
       <br/>
-      {!Capacitor.isNativePlatform() && (
+      {!isNative && (
         <Link href="/dashboard/upgrade"
           style={{ display:'inline-block', padding:'11px 28px', borderRadius:11, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontWeight:800, fontSize:13, textDecoration:'none' }}>
           Upgrade Now →
