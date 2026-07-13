@@ -1,6 +1,6 @@
 'use client';
 export const dynamic = 'force-dynamic';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 
@@ -17,6 +17,31 @@ export default function SignInPage() {
 
   const go = (s: Screen) => { setScreen(s); setMsg(''); };
 
+  // Listen for OAuth deep link callback in Capacitor (com.signalgenie.signal://auth/callback?code=...)
+  // Capacitor opens Google in external Safari; after auth, Safari redirects to the custom URL
+  // scheme which iOS hands back to the app via appUrlOpen.
+  useEffect(() => {
+    const isCapacitor = !!(window as { Capacitor?: unknown }).Capacitor;
+    if (!isCapacitor) return;
+    let handle: { remove: () => Promise<void> } | null = null;
+    (async () => {
+      const { App } = await import('@capacitor/app');
+      handle = await App.addListener('appUrlOpen', async ({ url }) => {
+        if (!url.startsWith('com.signalgenie.signal://auth/callback')) return;
+        const params = new URL(url).searchParams;
+        const code = params.get('code');
+        const errParam = params.get('error');
+        if (errParam) { setMsg(`❌ ${errParam}`); setLoading(false); return; }
+        if (!code) { setMsg('❌ No auth code received'); setLoading(false); return; }
+        const { error } = await supabase.auth.exchangeCodeForSession(code);
+        if (error) { setMsg(`❌ ${error.message}`); setLoading(false); }
+        else { afterLogin(); }
+      });
+    })();
+    return () => { handle?.remove(); };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // After successful auth, go back to intended page (e.g. /dashboard/feed)
   function afterLogin() {
     const params = new URLSearchParams(window.location.search);
@@ -27,11 +52,15 @@ export default function SignInPage() {
   // ── OAuth ──────────────────────────────────────────────────────────────────
   async function doOAuth(provider: 'google') {
     setLoading(true);
-    // Always use the web callback URL — works for both browser and Capacitor (which
-    // loads signalgenie.ai in WKWebView, so the same origin is reachable in-app).
-    // The old custom-scheme approach (com.gsaiganesh.signal.app://) caused double
-    // login because no appUrlOpen listener existed to handle the deep link.
-    const redirectTo = `${location.origin}/auth/callback`;
+    const isCapacitor = !!(window as { Capacitor?: unknown }).Capacitor;
+    // Capacitor: use custom URL scheme so that after Google auth, Safari hands
+    // control back to the app via appUrlOpen (listener above exchanges the code).
+    // Google is opened in external Safari — required by Google's policy which
+    // forbids OAuth inside embedded WebViews like WKWebView.
+    // Web: use the standard web callback URL.
+    const redirectTo = isCapacitor
+      ? 'com.signalgenie.signal://auth/callback'
+      : `${location.origin}/auth/callback`;
     const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
     if (error) { setMsg(error.message); setLoading(false); }
   }
