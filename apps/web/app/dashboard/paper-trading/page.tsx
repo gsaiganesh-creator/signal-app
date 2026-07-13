@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { Capacitor } from '@capacitor/core';
 import { usePortfolio } from '@/lib/portfolio-context';
 import { usePlan } from '@/lib/use-plan';
 
@@ -434,7 +435,9 @@ const ProGate = () => (
     <div style={{ fontSize:32 }}>🔒</div>
     <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.95)' }}>Pro Feature</div>
     <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', maxWidth:260, lineHeight:1.6 }}>Paper trade with virtual capital, track your strategies risk-free. Unlock with Pro.</div>
-    <Link href="/dashboard/upgrade" style={{ marginTop:6, height:38, padding:'0 20px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:13, fontWeight:800, display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}>⚡ Upgrade to Pro</Link>
+    {!Capacitor.isNativePlatform() && (
+      <Link href="/dashboard/upgrade" style={{ marginTop:6, height:38, padding:'0 20px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:13, fontWeight:800, display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}>⚡ Upgrade to Pro</Link>
+    )}
   </div>
 );
 

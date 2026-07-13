@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { useTheme } from '@/components/ThemeProvider';
 import { usePlan } from '@/lib/use-plan';
 
@@ -68,6 +69,10 @@ export function MobileBottomNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const { theme, toggle } = useTheme();
   const { isAdmin } = usePlan();
+
+  // The native iOS/Android app shell has its own UITabBar-style chrome
+  // (Tasks 4 and 8) — this web bottom nav must render nothing there.
+  if (Capacitor.isNativePlatform()) return null;
 
   const allMoreLinks = MORE_SECTIONS.flatMap(s => s.links);
   const isMoreActive = allMoreLinks.some(l => path === l.href || (l.href !== '/dashboard' && path.startsWith(l.href)));

@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
+import { Capacitor } from '@capacitor/core';
 import { usePlan } from '@/lib/use-plan';
 
 interface Algorithm {
@@ -299,7 +300,7 @@ export default function AlgorithmsPage() {
             Battle-tested trading algorithms. View logic, parameters, and backtested stats. Pro users can copy and run these in Algo Builder.
           </div>
         </div>
-        {notPro && (
+        {notPro && !Capacitor.isNativePlatform() && (
           <Link href="/dashboard/upgrade"
             style={{ height:40, padding:'0 18px', borderRadius:10, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:13, fontWeight:800, display:'flex', alignItems:'center', gap:6, whiteSpace:'nowrap' }}>
             ⚡ Upgrade to Pro
@@ -388,7 +389,7 @@ export default function AlgorithmsPage() {
                   <span style={{ fontSize:10, fontWeight:700, color: CAT_STYLE[a.category]?.accent ?? 'var(--dim)', background: CAT_STYLE[a.category]?.grad ?? 'var(--surf2)', border:`1px solid ${CAT_STYLE[a.category]?.bdr ?? 'var(--bdr)'}`, borderRadius:20, padding:'2px 8px' }}>{a.category}</span>
                   <span style={{ fontSize:10, color:'var(--dim)' }}>{a.timeframe}</span>
                 </div>
-                {locked && (
+                {locked && !Capacitor.isNativePlatform() && (
                   <Link href="/dashboard/upgrade"
                     style={{ flexShrink:0, height:32, padding:'0 14px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:11, fontWeight:800, display:'flex', alignItems:'center', gap:5, whiteSpace:'nowrap' }}>
                     ⚡ Unlock
@@ -435,10 +436,12 @@ export default function AlgorithmsPage() {
                     <div style={{ fontSize:11.5, color:'var(--dim)', textAlign:'center', maxWidth:260, lineHeight:1.5 }}>
                       Upgrade to view stats, logic, parameters and copy into Algo Builder.
                     </div>
-                    <Link href="/dashboard/upgrade"
-                      style={{ marginTop:4, height:36, padding:'0 18px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:12, fontWeight:800, display:'flex', alignItems:'center', gap:5 }}>
-                      ⚡ Upgrade to Pro
-                    </Link>
+                    {!Capacitor.isNativePlatform() && (
+                      <Link href="/dashboard/upgrade"
+                        style={{ marginTop:4, height:36, padding:'0 18px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:12, fontWeight:800, display:'flex', alignItems:'center', gap:5 }}>
+                        ⚡ Upgrade to Pro
+                      </Link>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -535,7 +538,9 @@ export default function AlgorithmsPage() {
               <div style={{ fontSize:32 }}>🔒</div>
               <div style={{ fontSize:15, fontWeight:800, color:'rgba(255,255,255,0.95)' }}>Pro Feature</div>
               <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', maxWidth:280, lineHeight:1.6 }}>Download deployable Python packages for each algorithm. Run them locally with your broker API key. Pro only.</div>
-              <Link href="/dashboard/upgrade" style={{ marginTop:6, height:38, padding:'0 20px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:13, fontWeight:800, display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}>⚡ Upgrade to Pro</Link>
+              {!Capacitor.isNativePlatform() && (
+                <Link href="/dashboard/upgrade" style={{ marginTop:6, height:38, padding:'0 20px', borderRadius:9, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontSize:13, fontWeight:800, display:'flex', alignItems:'center', gap:6, textDecoration:'none' }}>⚡ Upgrade to Pro</Link>
+              )}
             </div>
           )}
 

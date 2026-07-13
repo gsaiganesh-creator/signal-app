@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
 import { usePortfolio } from '@/lib/portfolio-context';
 import { StockNews } from '@/components/StockNews';
 import { usePlan } from '@/lib/use-plan';
@@ -872,9 +873,11 @@ function UpgradeModal({ feature, minPlan, onClose }: { feature: string; minPlan:
             </div>
           ))}
         </div>
-        <Link href="/dashboard/upgrade" style={{ display:'block', height:44, lineHeight:'44px', borderRadius:11, background:'linear-gradient(135deg,var(--blu),rgba(79,111,250,0.8))', color:'#fff', fontSize:14, fontWeight:700, textDecoration:'none', marginBottom:10 }}>
-          Upgrade Now →
-        </Link>
+        {!Capacitor.isNativePlatform() && (
+          <Link href="/dashboard/upgrade" style={{ display:'block', height:44, lineHeight:'44px', borderRadius:11, background:'linear-gradient(135deg,var(--blu),rgba(79,111,250,0.8))', color:'#fff', fontSize:14, fontWeight:700, textDecoration:'none', marginBottom:10 }}>
+            Upgrade Now →
+          </Link>
+        )}
         <Link href="/dashboard/track-record" style={{ display:'block', fontSize:12, color:'var(--bluL)', fontWeight:600, textDecoration:'none', marginBottom:14 }}>
           📊 See our accuracy first (free) →
         </Link>
@@ -1473,9 +1476,11 @@ export default function SignalsPage() {
                     Starter unlocks all {shown.length} signals · entry ranges · targets · stop-losses · portfolio universe scan
                   </div>
                   <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
-                    <Link href="/dashboard/upgrade" style={{ height:38, padding:'0 22px', borderRadius:10, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, textDecoration:'none', display:'inline-flex', alignItems:'center' }}>
-                      Upgrade to Starter — ₹299/mo →
-                    </Link>
+                    {!Capacitor.isNativePlatform() && (
+                      <Link href="/dashboard/upgrade" style={{ height:38, padding:'0 22px', borderRadius:10, background:'var(--blu)', color:'#fff', fontSize:13, fontWeight:700, textDecoration:'none', display:'inline-flex', alignItems:'center' }}>
+                        Upgrade to Starter — ₹299/mo →
+                      </Link>
+                    )}
                     <Link href="/dashboard/track-record" style={{ height:38, padding:'0 16px', borderRadius:10, background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', fontSize:13, fontWeight:600, textDecoration:'none', display:'inline-flex', alignItems:'center' }}>
                       See track record first
                     </Link>

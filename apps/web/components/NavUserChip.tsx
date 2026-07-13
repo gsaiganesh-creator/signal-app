@@ -1,6 +1,7 @@
 'use client';
 import { useRef, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Capacitor } from '@capacitor/core';
 import { usePortfolio } from '@/lib/portfolio-context';
 import { usePlan } from '@/lib/use-plan';
 
@@ -97,7 +98,7 @@ export function NavUserChip() {
     { icon: <IconLock />, label: 'Change Password', href: '/dashboard/settings' },
     { icon: <IconZap />,  label: 'Upgrade Plan',     href: '/dashboard/upgrade' },
     { icon: <IconGift />, label: 'Refer & Earn',     href: '/dashboard/refer' },
-  ];
+  ].filter(item => !(Capacitor.isNativePlatform() && item.href === '/dashboard/upgrade'));
   if (isAdmin) {
     menuItems.splice(0, 0, { icon: <IconShield />, label: 'Admin Console', href: '/admin' });
   }

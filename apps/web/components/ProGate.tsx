@@ -1,5 +1,6 @@
 'use client';
 import Link from 'next/link';
+import { Capacitor } from '@capacitor/core';
 import { usePlan } from '@/lib/use-plan';
 import type { PlanFeature } from '@/lib/use-plan';
 
@@ -39,10 +40,12 @@ export function ProGate({ feature, children }: { feature: PlanFeature; children:
         {meta.tier} Plan
       </div>
       <br/>
-      <Link href="/dashboard/upgrade"
-        style={{ display:'inline-block', padding:'11px 28px', borderRadius:11, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontWeight:800, fontSize:13, textDecoration:'none' }}>
-        Upgrade Now →
-      </Link>
+      {!Capacitor.isNativePlatform() && (
+        <Link href="/dashboard/upgrade"
+          style={{ display:'inline-block', padding:'11px 28px', borderRadius:11, background:'linear-gradient(135deg,#FFB800,#FF5C1A)', color:'#000', fontWeight:800, fontSize:13, textDecoration:'none' }}>
+          Upgrade Now →
+        </Link>
+      )}
     </div>
   );
 }
