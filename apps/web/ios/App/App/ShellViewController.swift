@@ -9,6 +9,7 @@ class ShellViewController: UIViewController, UITabBarDelegate {
 
     private let bridgeVC = CAPBridgeViewController()
     private let tabBar = UITabBar()
+    private var selectedTag: Int = 0
 
     private let tabs: [(title: String, route: String, icon: String)] = [
         ("Home",      "/dashboard",         "house"),
@@ -48,6 +49,9 @@ class ShellViewController: UIViewController, UITabBarDelegate {
     }
 
     func tabBar(_ tabBar: UITabBar, didSelect item: UITabBarItem) {
+        guard tabs.indices.contains(item.tag) else { return }
+        guard item.tag != selectedTag else { return }
+        selectedTag = item.tag
         let route = tabs[item.tag].route
         let js = "window.location.href = '\(route)';"
         bridgeVC.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
