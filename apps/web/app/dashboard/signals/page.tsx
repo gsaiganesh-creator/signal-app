@@ -1454,7 +1454,7 @@ export default function SignalsPage() {
                       </div>
                       <div style={{ textAlign:'right', flexShrink:0 }}>
                         <div style={{ fontSize:15, fontWeight:900 }}>₹{sig.cmp.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
-                        <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>T₹{sig.target.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+                        <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginTop:2 }}>T₹{sig.target.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
                         <div style={{ marginTop:5, display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
                           <div style={{ width:52, height:4, borderRadius:2, background:'var(--bdr)' }}>
                             <div style={{ width:`${sig.confidence}%`, height:'100%', borderRadius:2, background:confColor(sig.confidence) }}/>
