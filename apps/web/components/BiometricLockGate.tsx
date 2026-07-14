@@ -34,6 +34,8 @@ export function BiometricLockGate({ children }: { children: React.ReactNode }) {
         reason: 'Unlock SignalGenie',
         cancelTitle: 'Cancel',
       });
+      const { Haptics, NotificationType } = await import('@capacitor/haptics');
+      await Haptics.notification({ type: NotificationType.Success }).catch(() => {});
       setLocked(false);
     } catch (err) {
       if (err instanceof BiometryError && err.code === BiometryErrorType.biometryLockout) {

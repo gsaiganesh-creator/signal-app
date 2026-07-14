@@ -307,7 +307,16 @@ function NewTradeModal({ strategy, token, userId, onDone, onClose, initialSym = 
       }),
     });
     setBusy(false);
-    if (r.ok) onDone();
+    if (r.ok) {
+      if (typeof window !== 'undefined') {
+        const { Capacitor } = await import('@capacitor/core');
+        if (Capacitor.isNativePlatform()) {
+          const { Haptics, ImpactStyle } = await import('@capacitor/haptics');
+          await Haptics.impact({ style: ImpactStyle.Medium }).catch(() => {});
+        }
+      }
+      onDone();
+    }
     else setErr('Failed to add trade.');
   }
 
