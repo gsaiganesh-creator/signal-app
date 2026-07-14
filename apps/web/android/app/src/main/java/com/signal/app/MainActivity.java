@@ -1,14 +1,13 @@
 package com.signal.app;
 
 import android.os.Bundle;
+import android.view.ViewGroup;
 import android.webkit.WebView;
 import android.widget.FrameLayout;
 import com.getcapacitor.BridgeActivity;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 
 public class MainActivity extends BridgeActivity {
-
-    private static final String BASE_URL = "https://signalgenie.ai";
 
     private int selectedNavItemId = -1;
 
@@ -24,7 +23,7 @@ public class MainActivity extends BridgeActivity {
         // setup; re-parent it into our layout's container instead of leaving
         // it in Capacitor's default full-screen placement.
         if (webView.getParent() != null) {
-            ((android.view.ViewGroup) webView.getParent()).removeView(webView);
+            ((ViewGroup) webView.getParent()).removeView(webView);
         }
         container.addView(webView);
 
