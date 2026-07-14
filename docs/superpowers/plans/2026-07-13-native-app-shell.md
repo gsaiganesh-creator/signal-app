@@ -665,12 +665,16 @@ Confirm its current structure (it hosts `PortfolioProvider`, top nav, sidebar pe
 ```tsx
 'use client';
 import { useEffect, useState, useRef } from 'react';
-import { Capacitor } from '@capacitor/core';
 import { App as CapacitorApp } from '@capacitor/app';
+import { useIsNativePlatform } from '@/lib/use-is-native';
 
 export function BiometricLockGate({ children }: { children: React.ReactNode }) {
-  const isNative = Capacitor.isNativePlatform();
-  const [locked, setLocked] = useState(isNative);
+  // Do NOT call Capacitor.isNativePlatform() directly here — Task 1 found this
+  // causes a real SSR/hydration mismatch (server render always sees `false`,
+  // native client's first render sees `true` immediately), fixed there via this
+  // shared post-mount hook. Reuse it rather than reintroducing the same bug.
+  const isNative = useIsNativePlatform();
+  const [locked, setLocked] = useState(false);
   const [checking, setChecking] = useState(false);
   const attemptedRef = useRef(false);
 
@@ -695,6 +699,10 @@ export function BiometricLockGate({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!isNative) return;
+    // isNative just resolved true (post-mount, per useIsNativePlatform's own
+    // effect) — engage the lock now rather than relying on `locked`'s initial
+    // state, which must start `false` to stay SSR-safe (see hook above).
+    setLocked(true);
     if (!attemptedRef.current) { attemptedRef.current = true; tryUnlock(); }
 
     const sub = CapacitorApp.addListener('resume', () => {
