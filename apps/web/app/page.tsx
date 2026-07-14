@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTheme } from '@/components/ThemeProvider';
+import { DemoVideoModal } from '@/components/DemoVideoModal';
 
 // ── Pricing ───────────────────────────────────────────────────────────────────
 const PRICE: Record<string, { s:string; p:string; e:string; cy:string; note:string }> = {
@@ -218,6 +219,7 @@ export default function LandingPage() {
   const [period,    setPeriod]    = useState<'mo'|'qtr'|'half'|'yr'>('mo');
   const [coupon,    setCoupon]    = useState('');
   const [couponMsg, setCouponMsg] = useState<{text:string;ok:boolean}|null>(null);
+  const [demoOpen,  setDemoOpen]  = useState(false);
   const pr = PRICE[period];
 
   function applyCoupon() {
@@ -294,7 +296,7 @@ export default function LandingPage() {
               <Link href="/sign-in" style={{ height:54, padding:'0 32px', borderRadius:15, fontSize:16, fontWeight:700, background:'linear-gradient(135deg,var(--blu),var(--bluL))', color:'#fff', boxShadow:'0 8px 40px rgba(23,64,245,0.4)', display:'flex', alignItems:'center', textDecoration:'none', transition:'transform .2s' }}>
                 Start Free — No Card Needed →
               </Link>
-              <button style={{ height:54, padding:'0 32px', borderRadius:15, fontSize:16, fontWeight:700, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)', color:'var(--txt)', cursor:'pointer', fontFamily:'inherit' }}>
+              <button onClick={() => setDemoOpen(true)} style={{ height:54, padding:'0 32px', borderRadius:15, fontSize:16, fontWeight:700, background:'rgba(255,255,255,0.07)', border:'1px solid rgba(255,255,255,0.12)', color:'var(--txt)', cursor:'pointer', fontFamily:'inherit' }}>
                 Watch Demo ▶
               </button>
             </div>
@@ -908,6 +910,7 @@ export default function LandingPage() {
         </div>
       </footer>
 
+      <DemoVideoModal open={demoOpen} onClose={() => setDemoOpen(false)} />
     </div>
   );
 }
