@@ -14,13 +14,14 @@ export function BiometricLockGate({ children }: { children: React.ReactNode }) {
   const [checking, setChecking] = useState(false);
   const [lockoutMessage, setLockoutMessage] = useState<string | null>(null);
   const attemptedRef = useRef(false);
-  // Gates when children (incl. PortfolioProvider) are allowed to mount at all —
-  // resolves in the same post-mount tick as `isNative` itself, so it stays
-  // SSR-safe (server + first client render both produce `null`, no hydration
-  // mismatch) while preventing PortfolioProvider from mounting/fetching during
-  // the brief window before we know whether this is a native shell.
-  const [resolved, setResolved] = useState(false);
-  useEffect(() => { setResolved(true); }, []);
+  // No `resolved` pre-mount gate here on purpose: it was tried and reverted
+  // (see commit history) because it blanked the dashboard for one tick on
+  // EVERY web page load, not just native — `isNative` itself only resolves
+  // post-mount for both platforms, so gating on "resolved" before "isNative"
+  // punished the (much larger) web audience to avoid a native-only double
+  // fetch. That double-fetch-on-cold-launch (PortfolioProvider fetches once
+  // wastefully pre-lock, then again post-unlock) is an accepted, documented
+  // tradeoff — do not reintroduce this gate to "fix" it.
 
   async function tryUnlock() {
     if (checking) return;
@@ -69,7 +70,6 @@ export function BiometricLockGate({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [locked]);
 
-  if (!resolved) return null;
   if (!isNative || !locked) return <>{children}</>;
 
   return (
