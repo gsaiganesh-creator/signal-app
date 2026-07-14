@@ -27,7 +27,7 @@ export default function SignInPage() {
     (async () => {
       const { App } = await import('@capacitor/app');
       handle = await App.addListener('appUrlOpen', async ({ url }) => {
-        if (!url.startsWith('com.signalgenie.signal://auth/callback')) return;
+        if (!url.includes('://auth/callback')) return;
         const params = new URL(url).searchParams;
         const code = params.get('code');
         const errParam = params.get('error');
@@ -53,14 +53,18 @@ export default function SignInPage() {
   async function doOAuth(provider: 'google') {
     setLoading(true);
     const isCapacitor = !!(window as { Capacitor?: unknown }).Capacitor;
-    // Capacitor: use custom URL scheme so that after Google auth, Safari hands
-    // control back to the app via appUrlOpen (listener above exchanges the code).
-    // Google is opened in external Safari — required by Google's policy which
-    // forbids OAuth inside embedded WebViews like WKWebView.
-    // Web: use the standard web callback URL.
-    const redirectTo = isCapacitor
-      ? 'com.signalgenie.signal://auth/callback'
-      : `${location.origin}/auth/callback`;
+    let redirectTo = `${location.origin}/auth/callback`;
+    if (isCapacitor) {
+      // Read the bundle ID at runtime so both apps (com.signalgenie.signal and
+      // com.signalgenie.signal.native) use their own URL scheme automatically.
+      try {
+        const { App: CapApp } = await import('@capacitor/app');
+        const info = await CapApp.getInfo();
+        redirectTo = `${info.id}://auth/callback`;
+      } catch {
+        redirectTo = 'com.signalgenie.signal://auth/callback';
+      }
+    }
     const { error } = await supabase.auth.signInWithOAuth({ provider, options: { redirectTo } });
     if (error) { setMsg(error.message); setLoading(false); }
   }
