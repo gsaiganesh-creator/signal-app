@@ -9,6 +9,8 @@ from pathlib import Path
 
 import yfinance as yf
 
+from core.alpaca_client import fetch_alpaca_daily_closes_batch
+
 logger = logging.getLogger(__name__)
 
 _UNIVERSE = Path(__file__).parent.parent / "config" / "us_universe.json"
@@ -46,10 +48,12 @@ def run_us_swing_scan(max_picks: int = 10) -> list[dict]:
     for i in range(0, len(symbols), batch_size):
         batch = symbols[i : i + batch_size]
         try:
-            raw = yf.download(batch, period="1mo", interval="1d", progress=False, auto_adjust=True)
-            if raw.empty:
-                continue
-            closes = raw["Close"] if hasattr(raw.columns, "levels") else raw
+            closes = fetch_alpaca_daily_closes_batch(batch, days=35)  # None if keys unset/failed -- falls through to yfinance
+            if closes is None:
+                raw = yf.download(batch, period="1mo", interval="1d", progress=False, auto_adjust=True)
+                if raw.empty:
+                    continue
+                closes = raw["Close"] if hasattr(raw.columns, "levels") else raw
             for sym in batch:
                 try:
                     if sym not in closes.columns:

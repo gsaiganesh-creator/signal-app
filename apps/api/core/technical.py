@@ -11,6 +11,7 @@ import pandas as pd
 import ta
 
 from ml.features import FEATURE_COLUMNS
+from core.alpaca_client import fetch_alpaca_daily_bars, is_us_equity_symbol
 
 logger = logging.getLogger(__name__)
 
@@ -25,8 +26,12 @@ except FileNotFoundError:
 def get_technical_analysis(symbol: str, name: str | None = None) -> dict | None:
     """Full technical analysis for a single stock symbol (e.g. 'RELIANCE.NS')."""
     try:
-        tk = yf.Ticker(symbol)
-        df = tk.history(period="2y", auto_adjust=True)
+        df = None
+        if is_us_equity_symbol(symbol):
+            df = fetch_alpaca_daily_bars(symbol, years=2)  # None if keys unset/request failed -- falls through to yfinance
+        if df is None:
+            tk = yf.Ticker(symbol)
+            df = tk.history(period="2y", auto_adjust=True)
         if df.empty or len(df) < 50:
             return None
 
