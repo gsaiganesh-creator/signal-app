@@ -8,6 +8,7 @@
     "start": "next start"
   },
   "dependencies": {
+    "@aparajita/capacitor-biometric-auth": "^10.0.0",
     "@capacitor/android": "^8.4.1",
     "@capacitor/app": "^8.1.0",
     "@capacitor/cli": "^8.4.1",
@@ -18,7 +19,6 @@
     "@cas-parser/connect": "^2.1.2",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.49.4",
-    "capacitor-native-biometric": "^4.2.2",
     "html-to-image": "^1.11.13",
     "lightweight-charts": "^5.2.0",
     "next": "^15.5.19",
