@@ -17,7 +17,9 @@ apps/web/
   components/MobileBottomNav.tsx          — MODIFY: hide when Capacitor.isNativePlatform()
   components/DashboardNavContext.tsx      — MODIFY: hide upgrade link when native
   package.json                            — MODIFY: add @capacitor/push-notifications,
-                                             @capacitor/haptics, capacitor-native-biometric
+                                             @capacitor/haptics, @aparajita/capacitor-biometric-auth
+                                             (swapped from capacitor-native-biometric during Task 5 —
+                                             see note below Task 5)
   ios/App/App/
     AppDelegate.swift                     — MODIFY: programmatic root VC (ShellViewController)
     ShellViewController.swift             — NEW: native UITabBar + embedded CAPBridgeViewController
@@ -398,6 +400,13 @@ npm install @capacitor/push-notifications @capacitor/haptics capacitor-native-bi
 npx cap sync ios
 ```
 
+> **Post-execution note (added after Task 5 actually ran):** `capacitor-native-biometric` has no
+> SPM support and this project is SPM-only (no CocoaPods) — its native iOS code cannot link.
+> Task 5 was completed with `@aparajita/capacitor-biometric-auth` instead (confirmed real
+> `Package.swift`/SPM support, Capacitor 8-compatible). **Task 7 (Android) and Task 8 (web-side
+> gate) must use `@aparajita/capacitor-biometric-auth`, not `capacitor-native-biometric`** — every
+> reference to the old package name below is stale; see the corrected API usage in Task 8.
+
 - [ ] **Step 2: Add required Info.plist keys**
 
 Add (as sibling `<key>`/`<string>` or `<key>`/`<true/>` pairs, matching the file's existing formatting) inside the top-level `<dict>`:
@@ -620,7 +629,7 @@ Add inside the `<manifest>` element, alongside any existing `<uses-permission>` 
 <uses-permission android:name="android.permission.USE_BIOMETRIC" />
 <uses-permission android:name="android.permission.VIBRATE" />
 ```
-(`POST_NOTIFICATIONS` for push on Android 13+, `USE_BIOMETRIC` for the biometric plugin, `VIBRATE` for haptics — `capacitor-native-biometric`/`@capacitor/push-notifications`/`@capacitor/haptics`'s own Capacitor sync step may already inject some of these automatically via their own manifest merging; check the file's actual state after Step 1's `npx cap sync` before adding — don't duplicate an already-present permission line.)
+(`POST_NOTIFICATIONS` for push on Android 13+, `USE_BIOMETRIC` for the biometric plugin, `VIBRATE` for haptics — `@aparajita/capacitor-biometric-auth`/`@capacitor/push-notifications`/`@capacitor/haptics`'s own Capacitor sync step may already inject some of these automatically via their own manifest merging; check the file's actual state after Step 1's `npx cap sync` before adding — don't duplicate an already-present permission line.)
 
 - [ ] **Step 3: Verify build**
 
@@ -641,7 +650,7 @@ git commit -m "feat: sync push/biometric/haptics plugins to Android, add manifes
 
 ## Task 8: Web-side biometric app-lock gate
 
-`capacitor-native-biometric` (installed in Task 5 Step 1) is a JS-callable Capacitor plugin — the actual lock-screen behavior belongs in `apps/web` TypeScript, not native Swift/Java. This is what makes Task 5/7's plugin installs actually do something.
+`@aparajita/capacitor-biometric-auth` (installed in Task 5 Step 1, swapped in from the originally-planned `capacitor-native-biometric` — see the post-execution note under Task 5 Step 1) is a JS-callable Capacitor plugin — the actual lock-screen behavior belongs in `apps/web` TypeScript, not native Swift/Java. This is what makes Task 5/7's plugin installs actually do something.
 
 **Files:**
 - Create: `apps/web/components/BiometricLockGate.tsx`
@@ -669,16 +678,16 @@ export function BiometricLockGate({ children }: { children: React.ReactNode }) {
     if (checking) return;
     setChecking(true);
     try {
-      const { NativeBiometric } = await import('capacitor-native-biometric');
-      const result = await NativeBiometric.isAvailable();
+      const { BiometricAuth } = await import('@aparajita/capacitor-biometric-auth');
+      const result = await BiometricAuth.checkBiometry();
       if (!result.isAvailable) { setLocked(false); return; } // no biometric hardware — skip lock
-      await NativeBiometric.verifyIdentity({
+      await BiometricAuth.authenticate({
         reason: 'Unlock SignalGenie',
-        title: 'SignalGenie',
+        cancelTitle: 'Cancel',
       });
       setLocked(false);
     } catch {
-      // Verification failed or was cancelled — stay locked, let the user retry via the button.
+      // authenticate() throws BiometryError on failure/cancel — stay locked, let the user retry via the button.
     } finally {
       setChecking(false);
     }
@@ -716,7 +725,7 @@ export function BiometricLockGate({ children }: { children: React.ReactNode }) {
 }
 ```
 
-Note: `capacitor-native-biometric` is dynamically imported (not top-level) so this file doesn't fail to build/import on the WEB target, where the native module doesn't exist — the dynamic import only actually executes inside the `isNative` branch, at runtime, inside a real Capacitor shell.
+Note: `@aparajita/capacitor-biometric-auth` is dynamically imported (not top-level) so this file doesn't fail to build/import on the WEB target, where the native module doesn't exist — the dynamic import only actually executes inside the `isNative` branch, at runtime, inside a real Capacitor shell.
 
 - [ ] **Step 3: Wrap the dashboard layout**
 
@@ -756,7 +765,7 @@ git commit -m "feat: add biometric app-lock gate for native app shell"
 
 - [ ] **Step 1: Wire haptic feedback on successful biometric unlock**
 
-In `BiometricLockGate.tsx` (Task 8), after `await NativeBiometric.verifyIdentity(...)` succeeds and before `setLocked(false)`:
+In `BiometricLockGate.tsx` (Task 8), after `await BiometricAuth.authenticate(...)` succeeds and before `setLocked(false)`:
 
 ```tsx
 const { Haptics, NotificationType } = await import('@capacitor/haptics');
