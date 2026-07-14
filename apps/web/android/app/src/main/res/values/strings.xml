@@ -4,4 +4,8 @@
     <string name="title_activity_main">SIGNAL</string>
     <string name="package_name">com.signal.app</string>
     <string name="custom_url_scheme">com.signal.app</string>
+    <string name="nav_home">Home</string>
+    <string name="nav_signals">Signals</string>
+    <string name="nav_portfolio">Portfolio</string>
+    <string name="nav_dividends">Dividends</string>
 </resources>
