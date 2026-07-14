@@ -8,9 +8,11 @@ import { MobileBottomNav } from '@/components/MobileBottomNav';
 import { OnboardingTour } from '@/components/OnboardingTour';
 import { PortfolioProvider } from '@/lib/portfolio-context';
 import { NavUserChip } from '@/components/NavUserChip';
+import { BiometricLockGate } from '@/components/BiometricLockGate';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
+    <BiometricLockGate>
     <PortfolioProvider><DashboardNavProvider>
       <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh' }}>
 
@@ -61,5 +63,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <OnboardingTour />
       </div>
     </DashboardNavProvider></PortfolioProvider>
+    </BiometricLockGate>
   );
 }
