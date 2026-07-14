@@ -39,10 +39,21 @@ export function BiometricLockGate({ children }: { children: React.ReactNode }) {
       await Haptics.notification({ type: NotificationType.Success }).catch(() => {});
       setLocked(false);
     } catch (err) {
-      if (err instanceof BiometryError && err.code === BiometryErrorType.biometryLockout) {
-        setLockoutMessage('Too many failed attempts. Use your device passcode to unlock your phone, then reopen the app.');
+      if (err instanceof BiometryError) {
+        if (err.code === BiometryErrorType.biometryLockout) {
+          setLockoutMessage('Too many failed attempts. Use your device passcode to unlock your phone, then reopen the app.');
+        } else if (
+          err.code === BiometryErrorType.biometryNotAvailable ||
+          err.code === BiometryErrorType.biometryNotEnrolled ||
+          err.code === BiometryErrorType.noDeviceCredential
+        ) {
+          setLocked(false); // biometry not set up — skip gate
+        }
+        // userCancel / authFailed — stay locked, user retries via button
+      } else {
+        // Unexpected error (plugin bridge issue etc.) — fail open so app is usable
+        setLocked(false);
       }
-      // Verification failed or was cancelled — stay locked, let the user retry via the button.
     } finally {
       setChecking(false);
     }
