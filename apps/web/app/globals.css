@@ -5,6 +5,7 @@
   --txt: #FFFFFF; --dim: #7A8BAA; --dim2: #3A4E6A;
   --blu: #1740F5; --bluL: #4F6FFA; --org: #FF5C1A; --orgL: #FF7D46;
   --grn: #00D4A0; --red: #FF3B5C; --ylw: #FFB800; --pur: #8B5CF6;
+  --grn-bright: #00FFD1; --pur-bright: #A78BFA;
   --glass: linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82));
   --glass-bdr: rgba(79,111,250,0.22);
   --card-bg: linear-gradient(145deg,rgba(17,36,80,0.72),rgba(8,14,42,0.82));
@@ -21,6 +22,10 @@
   --txt: #0A1525; --dim: #4A5C7A; --dim2: #8A9EBB;
   --blu: #1740F5; --bluL: #3558E0; --org: #E84D0E; --orgL: #FF5C1A;
   --grn: #009B75; --red: #D42847; --ylw: #B88000; --pur: #6D28D9;
+  /* Reuse the base tones here, not lighter/brighter ones -- these back gradient-text
+     endpoints (background-clip:text), and the dark-theme values (#00FFD1/#A78BFA)
+     are near-invisible against this theme's light background. */
+  --grn-bright: #009B75; --pur-bright: #6D28D9;
   --card-bg: linear-gradient(145deg,rgba(255,255,255,0.92),rgba(232,240,255,0.80));
   --card-bdr: rgba(79,111,250,0.18);
   --card-shadow: 0 2px 20px rgba(23,64,245,0.07),0 1px 4px rgba(0,0,0,0.06),inset 0 1px 0 rgba(255,255,255,0.95);

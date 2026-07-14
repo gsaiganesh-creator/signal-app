@@ -80,7 +80,7 @@ const fpill = (ico: string, icoBg: string, title: string, desc: string) => (
 const MQ1 = () => (
   <>
     <div style={{ ...GC.grn, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · AI Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>RELIANCE</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹2,912 · ▲ +1.80%</div></div>
         {sigtag('↑ Momentum','buy')}
@@ -89,7 +89,7 @@ const MQ1 = () => (
       <div style={{ fontSize:10.5, color:'var(--dim)' }}>Score <strong style={{ color:'var(--grn)' }}>87%</strong></div>
     </div>
     <div style={{ ...GC.blu, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>Portfolio ML</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>Portfolio AI</div>
       <div style={{ fontSize:14, fontWeight:800, marginBottom:8 }}>16 stocks screened</div>
       {[['🚀 Rising','var(--grn)','5'],['🔄 Building','var(--bluL)','4'],['↓ Declining','var(--red)','2']].map(([l,c,n]) => (
         <div key={l as string} style={{ display:'flex', justifyContent:'space-between', fontSize:11, marginBottom:3 }}><span style={{ color:c as string }}>{l}</span><span>{n}</span></div>
@@ -113,7 +113,7 @@ const MQ1 = () => (
       </div>
     </div>
     <div style={{ ...GC.org, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · AI Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>SBIN</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹812 · ▲ +2.1%</div></div>
         {sigtag('↑ Momentum','buy')}
@@ -133,7 +133,7 @@ const MQ1 = () => (
       </div>
     </div>
     <div style={{ ...GC.grn, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · AI Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>TATAMOTORS</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹960 · ▲ +3.5%</div></div>
         {sigtag('↑ Momentum','buy')}
@@ -163,7 +163,7 @@ const MQ2 = () => (
       </div>
     </div>
     <div style={{ ...GC.org, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · AI Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>ZOMATO</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹189 · ▼ -1.4%</div></div>
         {sigtag('↓ Declining','sell')}
@@ -188,7 +188,7 @@ const MQ2 = () => (
       ))}
     </div>
     <div style={{ ...GC.ylw, padding:'16px 18px', minWidth:220, flexShrink:0 }}>
-      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · ML Scan</div>
+      <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>NSE · AI Scan</div>
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
         <div><div style={{ fontSize:16, fontWeight:900 }}>HDFCBANK</div><div style={{ fontSize:10.5, color:'var(--dim)' }}>₹1,620 · ▲ +0.6%</div></div>
         {sigtag('→ Sideways','hold')}
@@ -285,12 +285,15 @@ export default function LandingPage() {
               Live · NSE &amp; BSE · 4,000+ stocks
             </div>
             <h1 style={{ fontSize:'clamp(44px,6.5vw,88px)', fontWeight:900, letterSpacing:-3.5, lineHeight:.93, marginBottom:24 }}>
-              <span style={grd('linear-gradient(135deg,#fff 0%,var(--bluL) 55%,var(--pur) 100%)')}>Trade</span><br/>
+              <span style={grd('linear-gradient(135deg,var(--txt) 0%,var(--bluL) 55%,var(--pur) 100%)')}>Trade</span><br/>
               <span style={grd('linear-gradient(135deg,var(--org),var(--ylw))')}>Smarter</span><br/>
-              <span style={grd('linear-gradient(135deg,var(--grn),#00FFD1)')}>with ML</span>
+              <span style={grd('linear-gradient(135deg,var(--grn),var(--grn-bright))')}>with AI</span>
             </h1>
-            <p style={{ fontSize:'clamp(15px,1.6vw,18px)', color:'var(--dim)', lineHeight:1.7, maxWidth:480, marginBottom:36 }}>
-              Portfolio ML classification, Random Forest technical screener, no-code Algo Builder, and Paper Trading — for a fraction of what premium services charge.
+            <p style={{ fontSize:'clamp(15px,1.6vw,18px)', color:'var(--dim)', lineHeight:1.7, maxWidth:480, marginBottom:12 }}>
+              AI-powered portfolio classification, technical screener, no-code Algo Builder, and Paper Trading — for a fraction of what premium services charge.
+            </p>
+            <p style={{ fontSize:12.5, color:'var(--dim2)', lineHeight:1.6, maxWidth:480, marginBottom:36 }}>
+              Powered by our own proprietary ML models — trained on 5 years of NSE/BSE data, not a wrapper around someone else's chatbot.
             </p>
             <div style={{ display:'flex', gap:12, flexWrap:'wrap', marginBottom:44 }}>
               <Link href="/sign-in" style={{ height:54, padding:'0 32px', borderRadius:15, fontSize:16, fontWeight:700, background:'linear-gradient(135deg,var(--blu),var(--bluL))', color:'#fff', boxShadow:'0 8px 40px rgba(23,64,245,0.4)', display:'flex', alignItems:'center', textDecoration:'none', transition:'transform .2s' }}>
@@ -302,7 +305,7 @@ export default function LandingPage() {
             </div>
             <div className="lp-stats-4" style={{ display:'grid' }}>
               {[
-                { v:'71.4%', s:grd('linear-gradient(135deg,var(--grn),#00FFD1)'), l:'Scan accuracy' },
+                { v:'71.4%', s:grd('linear-gradient(135deg,var(--grn),var(--grn-bright))'), l:'Scan accuracy' },
                 { v:'4,000+',s:{ color:'var(--bluL)' },                            l:'Stocks tracked' },
                 { v:'₹599',  s:grd('linear-gradient(135deg,var(--org),var(--ylw))'),l:'vs ₹15,000 elsewhere' },
                 { v:'6',     s:{ color:'var(--pur)' },                              l:'Brokers synced' },
@@ -319,7 +322,7 @@ export default function LandingPage() {
           <div className="lp-hero-cards">
             {/* Strong momentum — green — top-left */}
             <div style={{ ...GC.grn, position:'absolute', width:220, top:'2%', left:'0%', padding:'18px 20px', animation:'fl1 7s ease-in-out infinite', cursor:'default' }}>
-              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>ML Scan · NSE</div>
+              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>AI Scan · NSE</div>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:8 }}>
                 <div><div style={{ fontSize:17, fontWeight:900 }}>RELIANCE</div><div style={{ fontSize:11, color:'var(--dim)' }}>₹2,912 · ▲ +1.80%</div></div>
                 {sigtag('↑ Strong Momentum','buy')}
@@ -330,7 +333,7 @@ export default function LandingPage() {
 
             {/* Portfolio ML — blue — top-right */}
             <div style={{ ...GC.blu, position:'absolute', width:210, top:'0%', right:'0%', padding:'18px 20px', animation:'fl2 9s ease-in-out infinite .8s', cursor:'default' }}>
-              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>Portfolio ML</div>
+              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>Portfolio AI</div>
               {[['🚀 Rising','var(--grn)','rgba(0,212,160,0.1)','rgba(0,212,160,0.2)','5'],['🔄 Building','var(--bluL)','rgba(79,111,250,0.1)','rgba(79,111,250,0.2)','4'],['↓ Declining','var(--red)','rgba(255,59,92,0.08)','rgba(255,59,92,0.2)','2']].map(([l,c,bg,bc,n]) => (
                 <div key={l as string} style={{ display:'flex', justifyContent:'space-between', padding:'5px 9px', background:bg as string, borderRadius:7, border:`1px solid ${bc}`, marginBottom:4 }}>
                   <span style={{ fontSize:11.5, fontWeight:700, color:c as string }}>{l}</span><span style={{ fontSize:11, color:'var(--dim)' }}>{n}</span>
@@ -342,7 +345,7 @@ export default function LandingPage() {
             <div style={{ ...GC.mix, position:'absolute', width:200, top:'32%', left:'28%', padding:'18px 20px', animation:'fl5 8s ease-in-out infinite 1.5s', cursor:'default' }}>
               <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:8 }}>Week 23 Scorecard</div>
               <div style={{ fontSize:34, fontWeight:900, letterSpacing:-2, color:'var(--grn)', lineHeight:1, marginBottom:4 }}>71.4%</div>
-              <div style={{ height:5, background:'rgba(255,255,255,0.08)', borderRadius:3, overflow:'hidden', marginBottom:6 }}><div style={{ height:'100%', width:'71.4%', background:'linear-gradient(90deg,var(--grn),#00FFD1)', borderRadius:3 }}/></div>
+              <div style={{ height:5, background:'rgba(255,255,255,0.08)', borderRadius:3, overflow:'hidden', marginBottom:6 }}><div style={{ height:'100%', width:'71.4%', background:'linear-gradient(90deg,var(--grn),var(--grn-bright))', borderRadius:3 }}/></div>
               <div style={{ fontSize:10.5, color:'var(--dim)' }}>14 scans · 10 strong · 2 reversed</div>
             </div>
 
@@ -374,7 +377,7 @@ export default function LandingPage() {
             {/* Sentiment — yellow — bottom-right */}
             <div style={{ ...GC.ylw, position:'absolute', width:195, bottom:'2%', right:'5%', padding:'18px 20px', animation:'fl6 11s ease-in-out infinite 1s', cursor:'default' }}>
               <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:9 }}>🐦 Sentiment · SBIN</div>
-              <div style={{ height:7, background:'rgba(255,59,92,0.2)', borderRadius:4, overflow:'hidden', marginBottom:6 }}><div style={{ height:'100%', width:'76%', background:'linear-gradient(90deg,var(--grn),#00FFD1)', borderRadius:4 }}/></div>
+              <div style={{ height:7, background:'rgba(255,59,92,0.2)', borderRadius:4, overflow:'hidden', marginBottom:6 }}><div style={{ height:'100%', width:'76%', background:'linear-gradient(90deg,var(--grn),var(--grn-bright))', borderRadius:4 }}/></div>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:11.5, fontWeight:700 }}>
                 <span style={{ color:'var(--grn)' }}>76% Bullish</span>
                 <span style={{ color:'var(--red)' }}>24%</span>
@@ -406,9 +409,9 @@ export default function LandingPage() {
       <section id="signals" style={sect('clamp(80px,10vw,140px)')}>
         <div className="lp-feat lp-reveal">
           <div>
-            {hdr('ML Technical Scan','var(--grn)')}
+            {hdr('AI Technical Scan','var(--grn)')}
             <h2 style={{ fontSize:'clamp(28px,3.8vw,50px)', fontWeight:900, letterSpacing:-2, lineHeight:.97, marginBottom:16 }}>
-              Scan. Analyse. Decide.<br/><span style={grd('linear-gradient(135deg,var(--grn),#00FFD1)')}>Know exactly why.</span>
+              Scan. Analyse. Decide.<br/><span style={grd('linear-gradient(135deg,var(--grn),var(--grn-bright))')}>Know exactly why.</span>
             </h2>
             <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Every scan result comes with a technical momentum score, Twitter/X sentiment, delivery volume %, and a full breakdown of the 15 indicators that computed it — not a human guess.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -421,12 +424,12 @@ export default function LandingPage() {
             <div style={{ ...GC.ylw, position:'absolute', width:300, top:30, left:30, padding:'20px 22px', transform:'rotate(-5deg)', animation:'fl3 8s ease-in-out infinite' }}>
               <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:8 }}>🐦 Twitter Sentiment</div>
               <div style={{ fontSize:16, fontWeight:800, marginBottom:8 }}>TATAMOTORS</div>
-              <div style={{ height:7, background:'rgba(255,59,92,0.2)', borderRadius:4, overflow:'hidden', marginBottom:6 }}><div style={{ height:'100%', width:'76%', background:'linear-gradient(90deg,var(--grn),#00FFD1)', borderRadius:4 }}/></div>
+              <div style={{ height:7, background:'rgba(255,59,92,0.2)', borderRadius:4, overflow:'hidden', marginBottom:6 }}><div style={{ height:'100%', width:'76%', background:'linear-gradient(90deg,var(--grn),var(--grn-bright))', borderRadius:4 }}/></div>
               <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, fontWeight:700 }}><span style={{ color:'var(--grn)' }}>76% Bullish</span><span style={{ color:'var(--red)' }}>24%</span></div>
               <div style={{ fontSize:10.5, color:'var(--dim)', marginTop:5 }}>212 posts · 24h window</div>
             </div>
             <div style={{ ...GC.grn, position:'absolute', width:310, top:0, left:0, padding:'20px 22px', animation:'fl1 7s ease-in-out infinite .5s' }}>
-              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.7, marginBottom:12 }}>ML Scan · NSE</div>
+              <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.7, marginBottom:12 }}>AI Scan · NSE</div>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start', marginBottom:12 }}>
                 <div><div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5 }}>RELIANCE</div><div style={{ fontSize:11.5, color:'var(--dim)' }}>Reliance Industries · Large Cap</div></div>
                 <div style={{ textAlign:'right' }}><div style={{ fontSize:26, fontWeight:900, letterSpacing:-1 }}>₹2,912</div><div style={{ fontSize:12, color:'var(--grn)', fontWeight:700 }}>▲ +1.80%</div></div>
@@ -441,7 +444,7 @@ export default function LandingPage() {
                   <span style={{ fontSize:11.5, fontWeight:700, color:'var(--grn)' }}>🚀 RISING</span>
                   {sigtag('↑ Strong Momentum','buy')}
                 </div>
-                {cbar(87,'linear-gradient(90deg,var(--grn),#00FFD1)')}
+                {cbar(87,'linear-gradient(90deg,var(--grn),var(--grn-bright))')}
                 <div style={{ fontSize:10.5, color:'var(--dim)', marginTop:5 }}>Score <strong style={{ color:'var(--grn)' }}>87%</strong> · 15/15 indicators · Updated 2 min ago</div>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'repeat(3,1fr)', gap:7 }}>
@@ -470,7 +473,7 @@ export default function LandingPage() {
           <div style={{ direction:'ltr' }}>
             {hdr('Portfolio Intelligence','var(--bluL)')}
             <h2 style={{ fontSize:'clamp(28px,3.8vw,50px)', fontWeight:900, letterSpacing:-2, lineHeight:.97, marginBottom:16 }}>
-              Your holdings,<br/><span style={grd('linear-gradient(135deg,var(--bluL),var(--pur))')}>classified by ML.</span>
+              Your holdings,<br/><span style={grd('linear-gradient(135deg,var(--bluL),var(--pur))')}>classified by AI.</span>
             </h2>
             <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Connect your broker via secure OAuth or upload Excel. Our model instantly tags every stock — Rising, Building, Holding, Declining — and syncs live P&amp;L every 30 seconds.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -483,12 +486,12 @@ export default function LandingPage() {
               <div style={{ fontSize:9.5, fontWeight:700, letterSpacing:1, textTransform:'uppercase', opacity:.6, marginBottom:10 }}>Live P&amp;L</div>
               <div style={{ fontSize:28, fontWeight:900, letterSpacing:-1.5, color:'var(--grn)', marginBottom:3 }}>₹12,40,000</div>
               <div style={{ fontSize:13, color:'var(--grn)', fontWeight:700, marginBottom:8 }}>▲ +18.4% YoY</div>
-              {cbar(68,'linear-gradient(90deg,var(--grn),#00FFD1)')}
+              {cbar(68,'linear-gradient(90deg,var(--grn),var(--grn-bright))')}
             </div>
             <div style={{ ...GC.blu, position:'absolute', width:300, top:0, left:0, padding:'20px 22px', animation:'fl1 7s ease-in-out infinite .3s' }}>
               <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:16 }}>
                 <div style={{ fontSize:15, fontWeight:800 }}>Portfolio Analysis</div>
-                <div style={{ fontSize:10.5, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.12)', border:'1px solid rgba(0,212,160,0.3)', color:'var(--grn)' }}>ML ✓ Live</div>
+                <div style={{ fontSize:10.5, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.12)', border:'1px solid rgba(0,212,160,0.3)', color:'var(--grn)' }}>AI ✓ Live</div>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:8 }}>
                 {[['🚀 Rising','var(--grn)','rgba(0,212,160,0.08)','rgba(0,212,160,0.2)','5','RELIANCE, TML…'],['🔄 Building','var(--bluL)','rgba(79,111,250,0.08)','rgba(79,111,250,0.2)','4','HDFC, BAJFIN…'],['🏛️ Holding','var(--pur)','rgba(139,92,246,0.08)','rgba(139,92,246,0.2)','5','TCS, INFY…'],['↓ Declining','var(--red)','rgba(255,59,92,0.07)','rgba(255,59,92,0.2)','2','ZOMATO, PAYTM']].map(([l,c,bg,bc,n,s]) => (
@@ -581,7 +584,7 @@ export default function LandingPage() {
           <div style={{ direction:'ltr' }}>
             {hdr('Paper Trading','var(--pur)')}
             <h2 style={{ fontSize:'clamp(28px,3.8vw,50px)', fontWeight:900, letterSpacing:-2, lineHeight:.97, marginBottom:16 }}>
-              Test risk-free on<br/><span style={grd('linear-gradient(135deg,var(--pur),#A78BFA)')}>live market data.</span>
+              Test risk-free on<br/><span style={grd('linear-gradient(135deg,var(--pur),var(--pur-bright))')}>live market data.</span>
             </h2>
             <p style={{ fontSize:15, color:'var(--dim)', lineHeight:1.75, marginBottom:28 }}>Deploy your algo with ₹1,00,000 virtual capital on real NSE/BSE live feeds. Watch signals fire, track virtual P&amp;L, tweak any parameter — then go live when you&apos;re confident.</p>
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
@@ -662,7 +665,7 @@ export default function LandingPage() {
             <div style={{ ...GC.ylw, padding:28, borderRadius:22, position:'relative', overflow:'hidden', transition:'transform .2s' }} onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-3px)')} onMouseLeave={e=>(e.currentTarget.style.transform='')}>
               <div style={{ width:44, height:44, borderRadius:14, background:'rgba(255,184,0,0.15)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:20, marginBottom:16 }}>📅</div>
               <div style={{ fontSize:17, fontWeight:800, marginBottom:8 }}>Earnings Calendar</div>
-              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>ML-predicted earnings impact for every NSE/BSE quarterly result — pre-position before the announcement.</div>
+              <div style={{ fontSize:13, color:'var(--dim)', lineHeight:1.65 }}>AI-predicted earnings impact for every NSE/BSE quarterly result — pre-position before the announcement.</div>
             </div>
             <div className="span2" style={{ ...GC.blu, padding:28, borderRadius:22, position:'relative', overflow:'hidden', transition:'transform .2s' }} onMouseEnter={e=>(e.currentTarget.style.transform='translateY(-3px)')} onMouseLeave={e=>(e.currentTarget.style.transform='')}>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:24, alignItems:'center' }}>
@@ -864,13 +867,13 @@ export default function LandingPage() {
         <div style={{ maxWidth:1200, margin:'0 auto', display:'flex', justifyContent:'space-between', flexWrap:'wrap', gap:32 }}>
           <div>
             <div style={{ display:'flex', alignItems:'center', gap:8, fontSize:19, fontWeight:900, letterSpacing:-0.5, marginBottom:6 }}><SignalLogo /> SignalGenie</div>
-            <div style={{ fontSize:12, color:'var(--dim)', maxWidth:260, lineHeight:1.6 }}>ML-powered trading intelligence for NSE &amp; BSE. Not SEBI registered. Not financial advice.</div>
+            <div style={{ fontSize:12, color:'var(--dim)', maxWidth:260, lineHeight:1.6 }}>AI-powered trading intelligence for NSE &amp; BSE. Not SEBI registered. Not financial advice.</div>
           </div>
           <div style={{ display:'flex', gap:48, flexWrap:'wrap' }}>
             {([
               { h:'Platform', links:[
                 { label:'Portfolio Analysis',  href:'/auth' },
-                { label:'ML Technical Scan',   href:'/signals' },
+                { label:'AI Technical Scan',   href:'/signals' },
                 { label:'Algo Builder',        href:'/auth' },
                 { label:'Paper Trading',       href:'/auth' },
               ]},
