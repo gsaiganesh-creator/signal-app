@@ -16,6 +16,7 @@ class ShellViewController: UIViewController, UITabBarDelegate {
         ("Signals",   "/dashboard/signals", "chart.line.uptrend.xyaxis"),
         ("Portfolio", "/dashboard/portfolio","briefcase"),
         ("Dividends", "/dashboard/dividends","banknote"),
+        ("More",      "/dashboard/more",    "ellipsis"),
     ]
 
     override func viewDidLoad() {
