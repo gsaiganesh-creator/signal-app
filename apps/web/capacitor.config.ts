@@ -1,8 +1,8 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.signalgenie.signal.native',
-  appName: 'SignalGenie2.0',
+  appId: 'com.signalgenie.signal',
+  appName: 'SignalGenie',
   webDir: 'public',           // not used — server.url overrides (live deploy)
   server: {
     url: 'https://signalgenie.ai',

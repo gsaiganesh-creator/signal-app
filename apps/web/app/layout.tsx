@@ -4,6 +4,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { ThemeProvider } from '@/components/ThemeProvider';
 import { CapacitorOAuthListener } from '@/components/CapacitorOAuthListener';
+import { NativeNavBridge } from '@/components/NativeNavBridge';
 
 export const metadata: Metadata = {
   title: 'SignalGenie — ML-Powered Algo Trading',
@@ -36,6 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <script dangerouslySetInnerHTML={{ __html: `try{var t=localStorage.getItem('signal-theme')||'dark';document.documentElement.setAttribute('data-theme',t);}catch(e){}` }} />
         <ThemeProvider>{children}</ThemeProvider>
         <CapacitorOAuthListener />
+        <NativeNavBridge />
       </body>
     </html>
   );
