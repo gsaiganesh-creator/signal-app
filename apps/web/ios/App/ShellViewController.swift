@@ -16,6 +16,7 @@ class ShellViewController: UIViewController, UITabBarDelegate {
         ("Signals",   "/dashboard/signals", "chart.line.uptrend.xyaxis"),
         ("Portfolio", "/dashboard/portfolio","briefcase"),
         ("Dividends", "/dashboard/dividends","banknote"),
+        ("More",      "/dashboard/more",    "ellipsis"),
     ]
 
     override func viewDidLoad() {
@@ -53,7 +54,7 @@ class ShellViewController: UIViewController, UITabBarDelegate {
         guard item.tag != selectedTag else { return }
         selectedTag = item.tag
         let route = tabs[item.tag].route
-        let js = "window.location.href = '\(route)';"
+        let js = "if(typeof window.__navigateTo==='function'){window.__navigateTo('\(route)');}else{window.location.href='\(route)';};"
         bridgeVC.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
     }
 }
