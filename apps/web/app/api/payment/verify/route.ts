@@ -7,6 +7,7 @@ export const runtime = 'nodejs';
 
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const SUPABASE_SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // Plan → duration in days
 const PLAN_DAYS: Record<string, number> = {
@@ -23,12 +24,12 @@ export async function POST(req: Request) {
 
   let body: {
     order_id?: string; payment_id?: string; signature?: string;
-    plan?: string; billing?: string; user_token?: string;
+    plan?: string; billing?: string; user_token?: string; promo_code?: string; discount_pct?: number;
   };
   try { body = await req.json(); }
   catch { return Response.json({ error: 'Invalid body' }, { status: 400 }); }
 
-  const { order_id, payment_id, signature, plan, billing, user_token } = body;
+  const { order_id, payment_id, signature, plan, billing, user_token, promo_code, discount_pct } = body;
 
   if (!order_id || !payment_id || !signature) {
     return Response.json({ error: 'Missing payment fields' }, { status: 400 });
@@ -42,6 +43,59 @@ export async function POST(req: Request) {
 
   if (expected !== signature) {
     return Response.json({ error: 'Invalid payment signature' }, { status: 400 });
+  }
+
+  // ── 1b. Ledger + promo redemption — authoritative amount refetched from
+  // Razorpay's own order API, never trusted from the client. Awaited (not
+  // fire-and-forget) — a Vercel Node function can kill unawaited work the
+  // instant the response is sent, which would silently drop this write.
+  if (SUPABASE_SERVICE_KEY) {
+    try {
+      const keyId = process.env.RAZORPAY_KEY_ID!;
+      const orderRes = await fetch(`https://api.razorpay.com/v1/orders/${order_id}`, {
+        headers: { Authorization: `Basic ${Buffer.from(`${keyId}:${keySecret}`).toString('base64')}` },
+      });
+      if (orderRes.ok) {
+        const orderData = await orderRes.json() as { amount: number; currency: string; notes?: Record<string, string> };
+
+        let email = '';
+        let uid = '';
+        try {
+          const payload = JSON.parse(Buffer.from((user_token ?? '').split('.')[1], 'base64url').toString()) as { sub?: string; email?: string };
+          uid = payload.sub ?? ''; email = payload.email ?? '';
+        } catch { /* no user_token — skip ledger write below, nothing to link it to */ }
+
+        if (uid) {
+          const code = (promo_code ?? orderData.notes?.promo_code ?? '').trim().toUpperCase();
+
+          await fetch(`${SUPABASE_URL}/rest/v1/payments`, {
+            method: 'POST',
+            headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+            body: JSON.stringify({
+              user_id: uid, email, plan: (plan ?? 'starter').toLowerCase(), billing: billing ?? 'monthly',
+              amount: orderData.amount, currency: orderData.currency,
+              discount_pct: discount_pct ?? 0, promo_code: code || null,
+              razorpay_order_id: order_id, razorpay_payment_id: payment_id,
+            }),
+          });
+
+          if (code) {
+            // Conditional PATCH — only succeeds if still unused, closes the
+            // race where two checkouts redeem the same one-time code at once.
+            await fetch(
+              `${SUPABASE_URL}/rest/v1/promo_codes?code=eq.${encodeURIComponent(code)}&used_by=is.null`,
+              {
+                method: 'PATCH',
+                headers: { apikey: SUPABASE_SERVICE_KEY, Authorization: `Bearer ${SUPABASE_SERVICE_KEY}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+                body: JSON.stringify({ used_by: uid, used_at: new Date().toISOString(), razorpay_payment_id: payment_id }),
+              },
+            );
+          }
+        }
+      }
+    } catch (e) {
+      console.error('[verify] ledger/promo write failed:', e);
+    }
   }
 
   // ── 2. Update Supabase profile (anon key + user JWT respects RLS) ───────────

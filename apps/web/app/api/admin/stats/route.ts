@@ -45,11 +45,15 @@ export async function GET(req: Request) {
   }> = usersData.users ?? [];
 
   // ── Fetch public tables ────────────────────────────────────────────────────
-  const [profiles, portfolios, holdings, grants] = await Promise.all([
+  const [profiles, portfolios, holdings, grants, payments] = await Promise.all([
     svcGet('profiles?select=id,plan,plan_expires_at,last_active_at') as Promise<Array<{ id: string; plan: string; plan_expires_at: string | null; last_active_at: string | null }>>,
     svcGet('portfolios?select=id,user_id') as Promise<Array<{ id: string; user_id: string }>>,
     svcGet('holdings?select=portfolio_id,exchange,qty,avg_price') as Promise<Array<{ portfolio_id: string; exchange: string; qty: number; avg_price: number }>>,
     svcGet('equity_grants?select=user_id,symbol,type') as Promise<Array<{ user_id: string; symbol: string; type: string }>>,
+    svcGet('payments?select=*&order=created_at.desc&limit=200') as Promise<Array<{
+      id: string; email: string; plan: string; billing: string; amount: number; currency: string;
+      discount_pct: number; promo_code: string | null; razorpay_payment_id: string; created_at: string;
+    }>>,
   ]);
 
   // ── Build lookup maps ──────────────────────────────────────────────────────
@@ -117,6 +121,12 @@ export async function GET(req: Request) {
     };
   });
 
+  // Revenue in paise (all payments are INR — Razorpay only supports INR here)
+  const totalRevenuePaise = payments.reduce((s, p) => s + p.amount, 0);
+  const revenue30dPaise = payments
+    .filter(p => now - new Date(p.created_at).getTime() < 30 * 24 * 60 * 60 * 1000)
+    .reduce((s, p) => s + p.amount, 0);
+
   return Response.json({
     summary: {
       total_users:   authUsers.length,
@@ -128,8 +138,12 @@ export async function GET(req: Request) {
       total_portfolios:     portfolios.length,
       total_holdings:       holdings.length,
       total_rsu_grants:     grants.length,
+      total_revenue_paise:  totalRevenuePaise,
+      revenue_30d_paise:    revenue30dPaise,
+      total_payments:       payments.length,
     },
     users: users.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+    payments: payments.slice(0, 50),
     generated_at: new Date().toISOString(),
   });
 }

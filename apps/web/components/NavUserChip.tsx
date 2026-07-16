@@ -15,6 +15,11 @@ const PLAN_BG: Record<string, string> = {
   admin: 'rgba(167,139,250,0.12)', elite: 'rgba(255,184,0,0.12)',
   pro: 'rgba(79,111,250,0.12)', starter: 'rgba(0,212,160,0.12)', free: 'rgba(122,139,170,0.10)',
 };
+// Small badge glyph on the avatar's corner — visible without opening the
+// dropdown, so a tier change is noticeable at a glance right after checkout.
+const PLAN_GLYPH: Record<string, string> = {
+  admin: '👑', elite: '💎', pro: '⚡', starter: '⭐', free: '',
+};
 
 function IconBell() {
   return (
@@ -108,8 +113,15 @@ export function NavUserChip() {
     <div ref={ref} style={{ position: 'relative', flexShrink: 0 }}>
       <div onClick={() => setOpen(o => !o)}
         style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '4px 10px 4px 4px', borderRadius: 20, background: 'var(--surf2)', border: '1px solid var(--bdr)', cursor: 'pointer' }}>
-        <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1740F5,#FF5C1A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#fff' }}>
-          {initials}
+        <div style={{ position: 'relative', width: 28, height: 28, flexShrink: 0 }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#1740F5,#FF5C1A)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, fontWeight: 900, color: '#fff' }}>
+            {initials}
+          </div>
+          {PLAN_GLYPH[planKey] && (
+            <div title={`${planLabel} plan`} style={{ position: 'absolute', bottom: -3, right: -3, width: 15, height: 15, borderRadius: '50%', background: planBg, border: `1.5px solid ${planColor}`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, lineHeight: 1, boxShadow: '0 1px 4px rgba(0,0,0,0.4)' }}>
+              {PLAN_GLYPH[planKey]}
+            </div>
+          )}
         </div>
         <span className="dash-username" style={{ fontSize: 12, fontWeight: 600 }}>{first}</span>
         <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ opacity: 0.5, transition: 'transform 0.15s', transform: open ? 'rotate(180deg)' : 'none' }}>

@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Payment gateway not configured' }, { status: 503 });
   }
 
-  let body: { plan?: string; billing?: string; user_token?: string };
+  let body: { plan?: string; billing?: string; user_token?: string; promo_code?: string };
   try { body = await req.json(); }
   catch { return Response.json({ error: 'Invalid request body' }, { status: 400 }); }
 
@@ -32,9 +32,31 @@ export async function POST(req: Request) {
     return Response.json({ error: `Unknown plan: ${plan}` }, { status: 400 });
   }
 
-  // Check for welcome discount (referred user 5% off first purchase)
+  // A promo code (admin-generated, one-time) overrides the welcome-referral
+  // discount rather than stacking with it — simpler math, and stops a
+  // referred user from also redeeming a giveaway code on the same order.
+  const SRVC_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  let promoDisc = 0;
+  let promoCode: string | null = null;
+  if (body.promo_code && SUPA_URL && SRVC_KEY) {
+    const code = body.promo_code.trim().toUpperCase();
+    try {
+      const promoRes = await fetch(
+        `${SUPA_URL}/rest/v1/promo_codes?code=eq.${encodeURIComponent(code)}&select=discount_pct,is_active,used_by`,
+        { headers: { apikey: SRVC_KEY, Authorization: `Bearer ${SRVC_KEY}` } },
+      );
+      if (promoRes.ok) {
+        const rows = await promoRes.json() as Array<{ discount_pct: number; is_active: boolean; used_by: string | null }>;
+        const row = rows[0];
+        if (row && row.is_active && !row.used_by) { promoDisc = row.discount_pct; promoCode = code; }
+      }
+    } catch { /* non-critical — falls back to welcome discount below */ }
+  }
+
+  // Check for welcome discount (referred user 5% off first purchase) — only
+  // consulted when no valid promo code was supplied.
   let welcomeDisc = 0;
-  if (body.user_token && SUPA_URL && SUPA_KEY) {
+  if (promoDisc === 0 && body.user_token && SUPA_URL && SUPA_KEY) {
     try {
       const meRes = await fetch(`${SUPA_URL}/auth/v1/user`, {
         headers: { apikey: SUPA_KEY, Authorization: `Bearer ${body.user_token}` },
@@ -53,8 +75,9 @@ export async function POST(req: Request) {
     } catch { /* non-critical — proceed without discount */ }
   }
 
+  const effectiveDisc = promoDisc > 0 ? promoDisc : welcomeDisc;
   const baseAmount    = planDef[billing];
-  const discountAmt   = welcomeDisc > 0 ? Math.round(baseAmount * welcomeDisc / 100) : 0;
+  const discountAmt   = effectiveDisc > 0 ? Math.round(baseAmount * effectiveDisc / 100) : 0;
   const amount        = baseAmount - discountAmt;
 
   try {
@@ -68,7 +91,7 @@ export async function POST(req: Request) {
         amount,
         currency: 'INR',
         receipt: `signal_${plan}_${billing}_${Date.now()}`,
-        notes: { plan, billing },
+        notes: { plan, billing, promo_code: promoCode ?? '' },
       }),
     });
 
@@ -87,6 +110,8 @@ export async function POST(req: Request) {
       plan_name:       planDef.name,
       key_id:          keyId,
       welcome_disc_pct: welcomeDisc,
+      promo_code:      promoCode,
+      promo_disc_pct:  promoDisc,
       original_amount: baseAmount,
     });
 
