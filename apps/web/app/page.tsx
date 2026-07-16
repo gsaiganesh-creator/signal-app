@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { useTheme } from '@/components/ThemeProvider';
 import { DemoVideoModal } from '@/components/DemoVideoModal';
+import { BrandIcon } from '@/components/Brand';
 
 // ── Pricing ───────────────────────────────────────────────────────────────────
 const PRICE: Record<string, { s:string; p:string; e:string; cy:string; note:string }> = {
@@ -35,20 +36,7 @@ const GC: Record<string,React.CSSProperties> = {
 };
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
-const SignalLogo = () => (
-  <svg width="26" height="26" viewBox="0 0 26 26" fill="none">
-    <rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/>
-    <polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    <circle cx="22" cy="4" r="3.6" stroke="#8B5CF6" strokeWidth="0.6" opacity="0.7"/>
-    <circle cx="22" cy="0.4" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-    <circle cx="25.1" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-    <circle cx="25.1" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-    <circle cx="22" cy="7.6" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-    <circle cx="18.9" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-    <circle cx="18.9" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-    <path d="M22 2.2 L22.45 3.55 L23.8 4 L22.45 4.45 L22 5.8 L21.55 4.45 L20.2 4 L21.55 3.55 Z" fill="#FF5C1A"/>
-  </svg>
-);
+const SignalLogo = () => <BrandIcon size={26} />;
 
 const grd = (g: string): React.CSSProperties => ({
   background: g, WebkitBackgroundClip:'text', WebkitTextFillColor:'transparent', backgroundClip:'text',

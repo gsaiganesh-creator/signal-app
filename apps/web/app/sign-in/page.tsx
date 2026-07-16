@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
+import { BrandIcon } from '@/components/Brand';
 
 type Screen = 'signin' | 'signup' | 'magic' | 'reset' | 'reset_sent' | 'confirm_wait';
 
@@ -180,18 +181,7 @@ export default function SignInPage() {
         <div style={{ position:'absolute', width:500, height:500, top:-100, left:-100, background:'radial-gradient(circle,rgba(23,64,245,0.14) 0%,transparent 65%)', borderRadius:'50%', pointerEvents:'none' }}/>
         <div style={{ position:'absolute', width:400, height:400, bottom:-100, right:-50, background:'radial-gradient(circle,rgba(0,212,160,0.08) 0%,transparent 65%)', borderRadius:'50%', pointerEvents:'none' }}/>
         <Link href="/" style={{ display:'flex', alignItems:'center', gap:10, fontSize:22, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)', position:'relative', zIndex:1 }}>
-          <svg width="28" height="28" viewBox="0 0 26 26" fill="none">
-            <rect width="26" height="26" rx="7" fill="#1740F5" opacity="0.2"/>
-            <polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <circle cx="22" cy="4" r="3.6" stroke="#8B5CF6" strokeWidth="0.6" opacity="0.7"/>
-            <circle cx="22" cy="0.4" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-            <circle cx="25.1" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-            <circle cx="25.1" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-            <circle cx="22" cy="7.6" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-            <circle cx="18.9" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-            <circle cx="18.9" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-            <path d="M22 2.2 L22.45 3.55 L23.8 4 L22.45 4.45 L22 5.8 L21.55 4.45 L20.2 4 L21.55 3.55 Z" fill="#FF5C1A"/>
-          </svg>
+          <BrandIcon size={28} />
           SignalGenie
         </Link>
         <div style={{ position:'relative', zIndex:1 }}>

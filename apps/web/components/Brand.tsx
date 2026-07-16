@@ -1,21 +1,18 @@
 // SignalGenie brand — single source for the logo icon + wordmark.
-// Icon: "G" monogram (Genie) with an orange spark in the opening.
+// Icon renders the actual exported app icon (public/icons/icon-192.png) —
+// not a hand-drawn approximation — so the in-app header always matches
+// the real home-screen/App Store icon pixel-for-pixel. Previously this
+// was a rough inline SVG guess (faint tinted bg, blue not white stroke,
+// extra sparkle dots not present in the real icon) that visibly drifted
+// from the shipped icon; dashboard/layout.tsx even had its own separate
+// copy of that same wrong SVG, duplicated instead of importing this file.
 import Link from 'next/link';
 
-export function BrandIcon({ size = 24, bg = 0.18 }: { size?: number; bg?: number }) {
+export function BrandIcon({ size = 24 }: { size?: number }) {
   return (
-    <svg width={size} height={size} viewBox="0 0 26 26" fill="none" style={{ flexShrink: 0 }}>
-      <rect width="26" height="26" rx="7" fill="#1740F5" opacity={bg} />
-      <polyline points="3,20 8,13 12,17 17,7 21,11 24,5" stroke="#4F6FFA" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-      <circle cx="22" cy="4" r="3.6" stroke="#8B5CF6" strokeWidth="0.6" opacity="0.7"/>
-      <circle cx="22" cy="0.4" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-      <circle cx="25.1" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-      <circle cx="25.1" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-      <circle cx="22" cy="7.6" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-      <circle cx="18.9" cy="5.8" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-      <circle cx="18.9" cy="2.2" r="0.55" fill="#8B5CF6" opacity="0.8"/>
-      <path d="M22 2.2 L22.45 3.55 L23.8 4 L22.45 4.45 L22 5.8 L21.55 4.45 L20.2 4 L21.55 3.55 Z" fill="#FF5C1A"/>
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src="/icons/icon-192.png" width={size} height={size} alt="SignalGenie"
+      style={{ flexShrink: 0, borderRadius: size * 0.22, display: 'block' }} />
   );
 }
 
