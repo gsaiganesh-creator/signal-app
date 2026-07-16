@@ -120,7 +120,9 @@ export function StockDetailSheet({ symbol, exchange = 'NSE', onClose, holding }:
   if (holding?.mlSignal && !holding.isEtf) {
     const isBull = holding.mlSignal.includes('BUY');
     const isBear = holding.mlSignal.includes('SELL');
-    allSignals.push({ text: `ML: ${holding.mlSignal}`, bull: isBull, bear: isBear });
+    // Display-only mapping — never surface a raw BUY/SELL scan value.
+    const mlLabel = isBull ? 'Bullish' : isBear ? 'Bearish' : 'Neutral';
+    allSignals.push({ text: `ML: ${mlLabel}`, bull: isBull, bear: isBear });
   }
   for (const s of data?.signals ?? []) {
     const bull = /ABOVE|BULLISH|OVERSOLD/i.test(s);

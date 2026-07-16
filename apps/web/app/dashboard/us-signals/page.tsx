@@ -43,6 +43,16 @@ function signalBadgeStyle(signal: string): React.CSSProperties {
   return { color: 'var(--dim)', background: 'rgba(122,139,170,0.08)', border: '1px solid rgba(122,139,170,0.2)' };
 }
 
+// Display-only mapping — never show a raw BUY/SELL/HOLD scan value to the
+// user (SEBI RA registration requirement, not just style). The underlying
+// `signal` field itself stays untouched since paper-trading and other
+// internal logic branch on the raw value.
+function signalLabel(signal: string): string {
+  if (signal === 'BUY') return 'Bullish';
+  if (signal === 'SELL') return 'Bearish';
+  return 'Neutral';
+}
+
 export default function USSignalsPage() {
   const [data, setData] = useState<USSignalsResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -179,7 +189,7 @@ export default function USSignalsPage() {
                     </td>
                     <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(28,46,74,0.4)' }}>
                       <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 6, whiteSpace: 'nowrap', ...signalBadgeStyle(row.signal) }}>
-                        {row.signal}
+                        {signalLabel(row.signal)}
                       </span>
                     </td>
                     <td style={{ padding: '10px 14px', borderBottom: '1px solid rgba(28,46,74,0.4)', fontSize: 12, color: 'var(--txt)' }}>

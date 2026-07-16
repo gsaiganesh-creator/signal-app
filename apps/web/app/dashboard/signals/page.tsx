@@ -651,7 +651,7 @@ function USDetailDrawer({ sig, onClose, isElite }: { sig: USSignal; onClose: () 
           {/* ── Scan summary (entry/target/SL — always available, from the scan itself) ── */}
           <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.08),rgba(23,64,245,0.04))', border:'1px solid rgba(0,212,160,0.2)', borderRadius:16, padding:'20px 22px', marginBottom:20, display:'flex', justifyContent:'space-between', alignItems:'center', gap:16 }}>
             <div>
-              <div style={{ fontSize:10, fontWeight:800, color:'var(--grn)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:6 }}>US Swing Scan · {sig.signal}</div>
+              <div style={{ fontSize:10, fontWeight:800, color:'var(--grn)', letterSpacing:1.5, textTransform:'uppercase', marginBottom:6 }}>US Swing Scan</div>
               <div style={{ fontSize:16, fontWeight:800, letterSpacing:-0.3, marginBottom:4 }}>Entry ${sig.entry_low}–{sig.entry_high}</div>
               <div style={{ fontSize:12, color:'var(--dim)' }}>Target ${sig.target} · SL ${sig.sl}</div>
             </div>

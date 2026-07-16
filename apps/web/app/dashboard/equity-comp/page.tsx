@@ -359,10 +359,10 @@ function sigBadge(signals?: string[]) {
   if (!signals?.length) return { label:'N/A', color:'var(--dim)', bg:'rgba(122,139,170,0.1)', border:'rgba(122,139,170,0.2)' };
   const s = signals.join(' ').toLowerCase();
   if (s.includes('buy')||s.includes('momentum')||s.includes('bullish'))
-    return { label:'BUY', color:'var(--grn)', bg:'rgba(0,212,160,0.12)', border:'rgba(0,212,160,0.3)' };
+    return { label:'Bullish', color:'var(--grn)', bg:'rgba(0,212,160,0.12)', border:'rgba(0,212,160,0.3)' };
   if (s.includes('sell')||s.includes('bearish')||s.includes('exit'))
-    return { label:'SELL', color:'var(--red)', bg:'rgba(255,59,92,0.1)', border:'rgba(255,59,92,0.3)' };
-  return { label:'HOLD', color:'var(--ylw)', bg:'rgba(255,184,0,0.1)', border:'rgba(255,184,0,0.3)' };
+    return { label:'Bearish', color:'var(--red)', bg:'rgba(255,59,92,0.1)', border:'rgba(255,59,92,0.3)' };
+  return { label:'Neutral', color:'var(--ylw)', bg:'rgba(255,184,0,0.1)', border:'rgba(255,184,0,0.3)' };
 }
 function rsiLabel(rsi?: number) {
   if (!rsi) return { txt:'—', color:'var(--dim)' };
