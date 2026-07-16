@@ -1,4 +1,4 @@
-package com.signal.app;
+package com.signalgenie.app;
 
 import android.os.Bundle;
 import android.view.ViewGroup;
