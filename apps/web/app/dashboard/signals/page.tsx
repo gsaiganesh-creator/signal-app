@@ -7,6 +7,15 @@ import { ProGate } from '@/components/ProGate';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useIsNativePlatform } from '@/lib/use-is-native';
+import { SECTORS } from '@/lib/sectors';
+
+// Reverse symbol → sector lookup, built once. stock-detail doesn't return a
+// sector field, so the portfolio-universe scan (unlike the ML Top 20 scan,
+// which gets sector from config/universe.json server-side) needs this to
+// avoid showing the literal word "Unknown" on every portfolio-scanned card.
+const SYMBOL_SECTOR: Record<string, string> = Object.fromEntries(
+  SECTORS.flatMap(s => s.stocks.map(sym => [sym, s.label]))
+);
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -1086,7 +1095,7 @@ export default function SignalsPage() {
             const d = await r.json();
             return {
               symbol: `${u.symbol}.${u.exchange === 'NSE' ? 'NS' : 'BO'}`,
-              name: d.name ?? u.symbol, sector: d.sector ?? 'Unknown',
+              name: d.name ?? u.symbol, sector: d.sector ?? SYMBOL_SECTOR[u.symbol] ?? 'Diversified',
               cmp: d.price ?? 0, chg: d.change_pct ?? 0,
               rsi: d.rsi14 ?? 50, ema20: d.ema20 ?? 0,
               ema_dist_pct: (d.ema20 && d.price) ? +((d.price - d.ema20) / d.ema20 * 100).toFixed(1) : 0,
@@ -1403,7 +1412,6 @@ export default function SignalsPage() {
               {shown.map((sig, sigIdx) => {
                 const locked = !isStarter && sigIdx >= FREE_LIMIT;
                 const inPortfolio = portfolioSymbols.includes(sig.symbol.replace(/\.(NS|BO)$/, ''));
-                const rr = ((sig.target - sig.cmp) / (sig.cmp - sig.sl)).toFixed(1);
                 const secBg = sectorColor(sig.sector);
                 return (
                   <div key={sig.symbol} style={{ position:'relative' }}
@@ -1423,45 +1431,41 @@ export default function SignalsPage() {
                       </div>
                     )}
                     <div
-                      style={{ background:`linear-gradient(160deg,${secBg},var(--card-bg))`, border:'1px solid var(--card-bdr)', borderRadius:16, padding:'15px 18px', cursor:'pointer', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:12, alignItems:'center', ...(locked ? { filter:'blur(1.5px)', userSelect:'none', pointerEvents:'none' } : {}) }}
+                      style={{ background:`linear-gradient(160deg,${secBg},var(--card-bg))`, border:'1px solid var(--card-bdr)', borderRadius:14, padding:'11px 13px', cursor:'pointer', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:10, alignItems:'center', ...(locked ? { filter:'blur(1.5px)', userSelect:'none', pointerEvents:'none' } : {}) }}
                       onMouseEnter={e => { if (!locked) (e.currentTarget as HTMLElement).style.borderColor='rgba(0,212,160,0.4)'; }}
                       onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor='var(--card-bdr)'; }}>
-                      <div style={{ width:50, height:50, borderRadius:12, background:secBg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, color:'var(--txt)', flexShrink:0, border:'1px solid rgba(255,255,255,0.06)' }}>
+                      <div style={{ width:40, height:40, borderRadius:10, background:secBg, display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:900, color:'var(--txt)', flexShrink:0, border:'1px solid rgba(255,255,255,0.06)' }}>
                         {sig.symbol.replace(/\.(NS|BO)$/, '').slice(0,4)}
                       </div>
-                      <div>
-                        <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:4, flexWrap:'wrap' }}>
-                          <span style={{ fontSize:14, fontWeight:800 }}>{sig.symbol.replace(/\.(NS|BO)$/, '')}</span>
-                          {inPortfolio && <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)' }}>IN PORTFOLIO</span>}
+                      <div style={{ minWidth:0 }}>
+                        <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
+                          <span style={{ fontSize:13, fontWeight:800, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{sig.symbol.replace(/\.(NS|BO)$/, '')}</span>
+                          {inPortfolio && <span style={{ fontSize:8, fontWeight:700, padding:'1px 5px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)', flexShrink:0 }}>PORTFOLIO</span>}
+                        </div>
+                        <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
                           {(() => {
                             const cat = scoreSig(sig);
                             const cfg = { buy:{ label:'Strong Momentum', bg:'rgba(0,212,160,0.12)', color:'var(--grn)', border:'rgba(0,212,160,0.25)' }, accumulate:{ label:'Building', bg:'rgba(79,111,250,0.12)', color:'var(--bluL)', border:'rgba(79,111,250,0.25)' }, hold:{ label:'Sideways', bg:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'rgba(255,184,0,0.25)' }, sell:{ label:'Weak / Declining', bg:'rgba(255,59,92,0.12)', color:'var(--red)', border:'rgba(255,59,92,0.25)' } }[cat];
-                            return <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4, background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}` }}>{cfg.label}</span>;
+                            return <span style={{ fontSize:8, fontWeight:700, padding:'1px 6px', borderRadius:4, background:cfg.bg, color:cfg.color, border:`1px solid ${cfg.border}`, whiteSpace:'nowrap' }}>{cfg.label}</span>;
                           })()}
                           {sig.bias && (
-                            <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4, background:biasColor(sig.bias).bg, color:biasColor(sig.bias).color, border:`1px solid ${biasColor(sig.bias).color}40` }}>
+                            <span style={{ fontSize:8, fontWeight:700, padding:'1px 6px', borderRadius:4, background:biasColor(sig.bias).bg, color:biasColor(sig.bias).color, border:`1px solid ${biasColor(sig.bias).color}40`, whiteSpace:'nowrap' }}>
                               {`B: ${biasLabel(sig.bias)}`}
                             </span>
                           )}
-                          <span style={{ marginLeft:'auto', fontSize:11, color:'var(--dim)' }}>{sig.sector.replace(/_/g,' ')}</span>
-                        </div>
-                        <div style={{ fontSize:11, color:'var(--dim)', marginBottom:5 }}>{sig.name}</div>
-                        <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                          {[`RSI ${sig.rsi}`, `EMA ${sig.ema_dist_pct > 0 ? '+' : ''}${sig.ema_dist_pct}%`, `${sig.chg >= 0 ? '+' : ''}${sig.chg.toFixed(1)}%`].map(t => (
-                            <span key={t} style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>{t}</span>
-                          ))}
+                          <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)', whiteSpace:'nowrap' }}>RSI {sig.rsi}</span>
+                          <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)', whiteSpace:'nowrap' }}>EMA {sig.ema_dist_pct > 0 ? '+' : ''}{sig.ema_dist_pct}%</span>
                         </div>
                       </div>
                       <div style={{ textAlign:'right', flexShrink:0 }}>
-                        <div style={{ fontSize:15, fontWeight:900 }}>₹{sig.cmp.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
-                        <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginTop:2 }}>T₹{sig.target.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
-                        <div style={{ marginTop:5, display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
-                          <div style={{ width:52, height:4, borderRadius:2, background:'var(--bdr)' }}>
+                        <div style={{ fontSize:14, fontWeight:900 }}>₹{sig.cmp.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+                        <div style={{ fontSize:10, fontWeight:700, color:'var(--dim)', marginTop:1 }}>T₹{sig.target.toLocaleString('en-IN',{maximumFractionDigits:0})}</div>
+                        <div style={{ marginTop:4, display:'flex', alignItems:'center', gap:4, justifyContent:'flex-end' }}>
+                          <div style={{ width:40, height:4, borderRadius:2, background:'var(--bdr)' }}>
                             <div style={{ width:`${sig.confidence}%`, height:'100%', borderRadius:2, background:confColor(sig.confidence) }}/>
                           </div>
-                          <span style={{ fontSize:11, fontWeight:700, color:confColor(sig.confidence) }}>{sig.confidence}%</span>
+                          <span style={{ fontSize:10, fontWeight:700, color:confColor(sig.confidence) }}>{sig.confidence}%</span>
                         </div>
-                        <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>R/R {rr}×</div>
                       </div>
                     </div>
                   </div>
@@ -1550,38 +1554,36 @@ export default function SignalsPage() {
                 const chg = sig.chg;
                 return (
                   <div key={sig.symbol} onClick={() => setSelectedUS(sig)}
-                    style={{ background:`linear-gradient(160deg,${st.grad},var(--card-bg))`, border:'1px solid var(--card-bdr)', borderRadius:16, padding:'14px 18px', cursor:'pointer', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:12, alignItems:'center' }}
+                    style={{ background:`linear-gradient(160deg,${st.grad},var(--card-bg))`, border:'1px solid var(--card-bdr)', borderRadius:14, padding:'11px 13px', cursor:'pointer', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:10, alignItems:'center' }}
                     onMouseEnter={e => { (e.currentTarget as HTMLElement).style.borderColor = st.bdr; }}
                     onMouseLeave={e => { (e.currentTarget as HTMLElement).style.borderColor = 'var(--card-bdr)'; }}>
 
-                    <div style={{ width:50, height:50, borderRadius:12, background:st.bg, border:`1px solid ${st.bdr}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:11, fontWeight:900, color:st.color, flexShrink:0 }}>
+                    <div style={{ width:40, height:40, borderRadius:10, background:st.bg, border:`1px solid ${st.bdr}`, display:'flex', alignItems:'center', justifyContent:'center', fontSize:10, fontWeight:900, color:st.color, flexShrink:0 }}>
                       {sig.symbol.slice(0,4)}
                     </div>
 
-                    <div>
-                      <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:4, flexWrap:'wrap' }}>
-                        <span style={{ fontSize:14, fontWeight:800 }}>{sig.symbol}</span>
-                        {inPort && <span style={{ fontSize:9, fontWeight:700, padding:'2px 6px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)' }}>IN PORTFOLIO</span>}
-                        <span style={{ fontSize:9, fontWeight:700, padding:'2px 7px', borderRadius:4, background:st.bg, color:st.color, border:`1px solid ${st.bdr}` }}>{sig.zone}</span>
+                    <div style={{ minWidth:0 }}>
+                      <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
+                        <span style={{ fontSize:13, fontWeight:800, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{sig.symbol}</span>
+                        {inPort && <span style={{ fontSize:8, fontWeight:700, padding:'1px 5px', borderRadius:4, background:'rgba(255,184,0,0.12)', color:'var(--ylw)', border:'1px solid rgba(255,184,0,0.25)', flexShrink:0 }}>PORTFOLIO</span>}
                       </div>
-                      <div style={{ fontSize:11, color:'var(--dim)', marginBottom:5 }}>{sig.name ?? sig.symbol}</div>
-                      <div style={{ display:'flex', gap:5, flexWrap:'wrap' }}>
-                        <span style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>RSI {sig.rsi}</span>
-                        <span style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)' }}>EMA {sig.ema_dist_pct > 0 ? '+' : ''}{sig.ema_dist_pct}%</span>
-                        <span style={{ fontSize:10, padding:'2px 6px', borderRadius:5, background:'var(--surf2)', color: chg >= 0 ? 'var(--grn)' : 'var(--red)', border:'1px solid var(--card-bdr)' }}>{chg >= 0 ? '+' : ''}{chg.toFixed(2)}%</span>
+                      <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
+                        <span style={{ fontSize:8, fontWeight:700, padding:'1px 6px', borderRadius:4, background:st.bg, color:st.color, border:`1px solid ${st.bdr}`, whiteSpace:'nowrap' }}>{sig.zone}</span>
+                        <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)', whiteSpace:'nowrap' }}>RSI {sig.rsi}</span>
+                        <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)', whiteSpace:'nowrap' }}>EMA {sig.ema_dist_pct > 0 ? '+' : ''}{sig.ema_dist_pct}%</span>
+                        <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background:'var(--surf2)', color: chg >= 0 ? 'var(--grn)' : 'var(--red)', border:'1px solid var(--card-bdr)', whiteSpace:'nowrap' }}>{chg >= 0 ? '+' : ''}{chg.toFixed(2)}%</span>
                       </div>
                     </div>
 
                     <div style={{ textAlign:'right', flexShrink:0 }}>
-                      <div style={{ fontSize:16, fontWeight:900 }}>{cmp ? `$${cmp.toFixed(2)}` : '—'}</div>
-                      <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>T ${sig.target}</div>
-                      <div style={{ marginTop:5, display:'flex', alignItems:'center', gap:5, justifyContent:'flex-end' }}>
-                        <div style={{ width:52, height:4, borderRadius:2, background:'var(--bdr)' }}>
+                      <div style={{ fontSize:14, fontWeight:900 }}>{cmp ? `$${cmp.toFixed(2)}` : '—'}</div>
+                      <div style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>T ${sig.target}</div>
+                      <div style={{ marginTop:4, display:'flex', alignItems:'center', gap:4, justifyContent:'flex-end' }}>
+                        <div style={{ width:40, height:4, borderRadius:2, background:'var(--bdr)' }}>
                           <div style={{ width:`${sig.confidence}%`, height:'100%', borderRadius:2, background:confColor(sig.confidence) }}/>
                         </div>
-                        <span style={{ fontSize:11, fontWeight:700, color:confColor(sig.confidence) }}>{sig.confidence}%</span>
+                        <span style={{ fontSize:10, fontWeight:700, color:confColor(sig.confidence) }}>{sig.confidence}%</span>
                       </div>
-                      <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>🤖 momentum</div>
                     </div>
                   </div>
                 );

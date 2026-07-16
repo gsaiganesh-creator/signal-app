@@ -65,7 +65,7 @@ export default function IPOPage() {
     const sc  = STATUS_CONFIG[ipo.status];
     const days = ipo.status === 'upcoming' ? daysTo(ipo.open) : null;
     return (
-      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' }}>
+      <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
         <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', marginBottom:12, gap:8 }}>
           <div>
             <div style={{ fontSize:14, fontWeight:800, color:'var(--txt)', marginBottom:3 }}>{ipo.company}</div>

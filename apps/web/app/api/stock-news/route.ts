@@ -47,7 +47,10 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const symbol   = (searchParams.get('symbol') ?? '').trim().toUpperCase();
   const name     = (searchParams.get('name') ?? '').trim();
+  const exchange = (searchParams.get('exchange') ?? 'NSE').trim().toUpperCase();
   if (!symbol) return Response.json({ error: 'symbol required' }, { status: 400 });
+
+  const isIndia = exchange === 'NSE' || exchange === 'BSE';
 
   // Build clean company name — strip legal suffixes for better search
   const cleanName = name
@@ -55,13 +58,15 @@ export async function GET(req: Request) {
     : symbol;
 
   // Two Google News RSS queries — run in parallel
-  // Q1: exact company name + NSE context
+  // Q1: exact company name + market context
   // Q2: symbol fallback in case name query is too narrow
-  const q1 = `"${cleanName}" NSE stock`;
-  const q2 = `${cleanName} NSE India share`;
+  const q1 = isIndia ? `"${cleanName}" NSE stock` : `"${cleanName}" stock`;
+  const q2 = isIndia ? `${cleanName} NSE India share` : `${cleanName} ${symbol} shares`;
 
   const gnUrl = (q: string) =>
-    `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-IN&gl=IN&ceid=IN:en`;
+    isIndia
+      ? `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-IN&gl=IN&ceid=IN:en`
+      : `https://news.google.com/rss/search?q=${encodeURIComponent(q)}&hl=en-US&gl=US&ceid=US:en`;
 
   const hdrs = {
     'User-Agent': 'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',

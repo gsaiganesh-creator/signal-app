@@ -2,6 +2,7 @@
 import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { SECTION_TINT } from '@/components/MobileBottomNav';
 
 const sections = [
   {
@@ -54,52 +55,53 @@ export default function MorePage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg, #070D1A)', padding: '24px 16px 40px' }}>
-      <h1 style={{ color: '#fff', fontSize: 24, fontWeight: 700, marginBottom: 24 }}>More</h1>
+    <>
+      {/* Page header — matches every other dashboard page (e.g. Connect Broker) */}
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: -0.5, marginBottom: 4 }}>More</div>
+        <div style={{ fontSize: 13, color: 'var(--dim)' }}>Every SignalGenie tool and screen in one place</div>
+      </div>
 
-      {sections.map(section => (
-        <div key={section.heading} style={{ marginBottom: 28 }}>
-          <p style={{ color: '#7A8BAA', fontSize: 11, fontWeight: 600, letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 8 }}>
-            {section.heading}
-          </p>
-          <div style={{ background: '#0E1628', borderRadius: 12, overflow: 'hidden', border: '1px solid #1C2E4A' }}>
-            {section.items.map((item, i) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '14px 16px',
-                  borderBottom: i < section.items.length - 1 ? '1px solid #1C2E4A' : 'none',
-                  textDecoration: 'none',
-                }}
-              >
-                <div style={{
-                  width: 36, height: 36, borderRadius: 9,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'rgba(23,64,245,0.1)', flexShrink: 0, fontSize: 18,
-                }}>
-                  {item.icon}
-                </div>
-                <span style={{ flex: 1, color: '#fff', fontSize: 15, fontWeight: 500 }}>{item.label}</span>
-                <span style={{ color: '#3A4E6A', fontSize: 16 }}>›</span>
-              </Link>
-            ))}
+      {sections.map(section => {
+        const t = SECTION_TINT[section.heading] ?? SECTION_TINT.Markets;
+        return (
+          <div key={section.heading} style={{ marginBottom: 22 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--dim)', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 10 }}>
+              {section.heading}
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+              {section.items.map(item => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 8, padding: '12px 13px', fontSize: 13, fontWeight: 700,
+                    background: t.grad, border: `1px solid ${t.bdr}`, borderRadius: 12,
+                    color: 'var(--txt)', textDecoration: 'none',
+                  }}
+                >
+                  <span style={{ width: 26, height: 26, borderRadius: 7, flexShrink: 0, background: t.iconBg, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14 }}>
+                    {item.icon}
+                  </span>
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.label}</span>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
 
       <button
         onClick={handleSignOut}
         style={{
-          width: '100%', padding: '14px 0', borderRadius: 12,
-          background: '#FF3B5C18', border: '1px solid #FF3B5C44',
-          color: '#FF3B5C', fontSize: 15, fontWeight: 600,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer',
+          width: '100%', padding: '13px 0', borderRadius: 12, marginTop: 4,
+          background: SECTION_TINT.Admin.grad, border: `1px solid ${SECTION_TINT.Admin.bdr}`,
+          color: 'var(--red)', fontSize: 14, fontWeight: 700,
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit',
         }}
       >
         🚪 Sign Out
       </button>
-    </div>
+    </>
   );
 }

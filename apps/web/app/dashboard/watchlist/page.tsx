@@ -220,7 +220,8 @@ export default function WatchlistPage() {
   }
 
   const card: React.CSSProperties = {
-    background: 'var(--surf)', border: '1px solid var(--bdr)', borderRadius: 14, padding: 16, marginBottom: 16,
+    background: 'var(--card-bg)', border: '1px solid var(--card-bdr)', borderRadius: 14, padding: 16, marginBottom: 16,
+    backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)', boxShadow: 'var(--card-shadow)',
   };
 
   const untriggeredCount = alerts.filter(a => !a.triggered).length;

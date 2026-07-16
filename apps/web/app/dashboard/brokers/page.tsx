@@ -166,7 +166,7 @@ export default function BrokersPage() {
       {error && <div style={{ marginBottom:16, padding:'10px 16px', borderRadius:10, background:'rgba(255,59,92,0.1)', border:'1px solid rgba(255,59,92,0.3)', fontSize:13, color:'var(--red)', display:'flex', justifyContent:'space-between' }}>⚠ {error}<button onClick={() => setError(null)} style={{ background:'none', border:'none', color:'var(--dim)', cursor:'pointer' }}>✕</button></div>}
 
       {/* ── Angel One ─────────────────────────────────────────────────────────── */}
-      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:'22px 24px', marginBottom:16 }}>
+      <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'22px 24px', marginBottom:16, backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', flexWrap:'wrap', gap:12 }}>
           <div style={{ display:'flex', alignItems:'center', gap:14 }}>
             <div style={{ width:46, height:46, borderRadius:12, background:'linear-gradient(135deg,#FF6B35,#E8552A)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:22, flexShrink:0 }}>A1</div>
@@ -224,7 +224,7 @@ export default function BrokersPage() {
         <div style={{ fontSize:11, fontWeight:700, color:'var(--dim)', marginBottom:10, letterSpacing:1, textTransform:'uppercase' }}>Coming Soon</div>
         <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(180px,1fr))', gap:10 }}>
           {INDIA_BROKERS.map(b => (
-            <div key={b.id} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'16px 18px', opacity:0.5, position:'relative' }}>
+            <div key={b.id} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:12, padding:'16px 18px', opacity:0.5, position:'relative', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)' }}>
               <div style={{ width:36, height:36, borderRadius:9, background:`${b.color}22`, border:`1px solid ${b.color}44`, marginBottom:8 }}/>
               <div style={{ fontSize:14, fontWeight:800 }}>{b.name}</div>
               <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{b.sub}</div>
@@ -235,7 +235,7 @@ export default function BrokersPage() {
       </div>
 
       {/* ── US Broker (Plaid) ─────────────────────────────────────────────────── */}
-      <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:16, padding:'22px 24px', marginBottom:24 }}>
+      <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'22px 24px', marginBottom:24, backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
         <div style={{ fontSize:14, fontWeight:800, marginBottom:4 }}>US Broker (Plaid)</div>
         <div style={{ fontSize:12, color:'var(--dim)', marginBottom:14 }}>Connect E*TRADE, Schwab, Fidelity or any US broker</div>
         <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap' }}>
@@ -274,7 +274,7 @@ export default function BrokersPage() {
       {showModal && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:300, display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}
           onClick={e => { if (e.target === e.currentTarget) setShowModal(false); }}>
-          <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:20, padding:'28px 28px', width:'100%', maxWidth:420, boxShadow:'0 24px 80px rgba(0,0,0,0.5)' }}>
+          <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:20, padding:'28px 28px', width:'100%', maxWidth:420, backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'0 24px 80px rgba(0,0,0,0.5)' }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
               <div>
                 <div style={{ fontSize:17, fontWeight:900 }}>Connect Angel One</div>

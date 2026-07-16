@@ -119,7 +119,7 @@ export default function CapitalGainsPage() {
   const ltcgGain   = ltcg.reduce((s, h) => s + (h.gain ?? 0), 0);
   const noDate     = holdings.filter(h => !h.purchase_date);
 
-  const cardStyle = { background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:14, padding:'18px 20px' };
+  const cardStyle = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
 
   if (loading) return (
     <div style={{ padding:40, textAlign:'center', color:'var(--dim)' }}>Loading holdings…</div>
