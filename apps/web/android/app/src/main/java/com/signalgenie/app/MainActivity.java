@@ -44,7 +44,7 @@ public class MainActivity extends BridgeActivity {
             else return false;
 
             selectedNavItemId = id;
-            webView.evaluateJavascript("window.location.href = '" + route + "';", null);
+            webView.evaluateJavascript("if(typeof window.__navigateTo==='function'){window.__navigateTo('" + route + "');}else{window.location.href='" + route + "';}", null);
             return true;
         });
     }
