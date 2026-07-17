@@ -12,6 +12,7 @@ import { StockDetailSheet } from '@/components/StockDetailSheet';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+const MONO = "'JetBrains Mono', monospace";
 
 // Confirmed NSE ticker renames / common alias → canonical NSE symbol
 const SYM_ALIAS: Record<string, string> = {
@@ -72,10 +73,6 @@ function greet() {
 }
 
 const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
-const colorCard = (grad: string, bdr: string): React.CSSProperties => ({
-  background: grad, border:`1px solid ${bdr}`, borderRadius:16, padding:'18px 20px',
-  backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)',
-});
 
 const LARGE_CAP = new Set([
   'RELIANCE','INFY','TCS','HDFCBANK','ICICIBANK','SBIN','WIPRO','HINDUNILVR','ITC',
@@ -116,6 +113,53 @@ function capCat(sym: string): 'large' | 'mid' | 'small' | 'etf' {
 
 interface PriceData { price: number | null; change_pct: number | null }
 
+/* =====================================================
+   Minimal stroke icon set — replaces emoji in chrome UI
+   ===================================================== */
+const I = {
+  bars:   'M4 20V10M10 20V4M16 20v-6M2 20h20',
+  bank:   'M3 9.5L12 4l9 5.5M5 10v7M9.5 10v7M14.5 10v7M19 10v7M3 20h18',
+  wallet: 'M3 7a2 2 0 012-2h14a2 2 0 012 2v10a2 2 0 01-2 2H5a2 2 0 01-2-2V7zM3 10h18M16.5 14.5h1',
+  globe:  'M12 21a9 9 0 100-18 9 9 0 000 18zM3 12h18M12 3c2.5 2.5 3.8 5.6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.6-3.8-9S9.5 5.5 12 3z',
+  flame:  'M12 22c3.9 0 7-2.9 7-7 0-3.2-2.2-5.6-3.6-7.1-.4 1.1-1.2 2.2-2.4 2.6.1-3-1.3-5.9-4-7.5.3 2.9-.9 4.4-2 5.9C5.8 10.4 5 12.2 5 15c0 4.1 3.1 7 7 7z',
+  scan:   'M4 8V6a2 2 0 012-2h2M16 4h2a2 2 0 012 2v2M20 16v2a2 2 0 01-2 2h-2M8 20H6a2 2 0 01-2-2v-2M3 12h18',
+  target: 'M12 21a9 9 0 100-18 9 9 0 000 18zM12 16.5a4.5 4.5 0 100-9 4.5 4.5 0 000 9zM12 12.8a.8.8 0 100-1.6.8.8 0 000 1.6z',
+  coin:   'M12 21a9 9 0 100-18 9 9 0 000 18zM15 9.5c0-1.4-1.3-2.5-3-2.5s-3 1.1-3 2.5c0 3 6 2 6 5 0 1.4-1.3 2.5-3 2.5s-3-1.1-3-2.5M12 5.5v13',
+  flow:   'M7 4L3 8l4 4M3 8h13M17 12l4 4-4 4M21 16H8',
+  star:   'M12 3l2.7 5.6 6.1.9-4.4 4.3 1 6.1-5.4-2.8L6.6 20l1-6.1L3.2 9.5l6.1-.9L12 3z',
+  layers: 'M12 3l9 5-9 5-9-5 9-5zM3.5 13L12 17.5 20.5 13',
+  flask:  'M9 3h6M10 3v5.2L4.7 17a2.5 2.5 0 002.2 3.7h10.2a2.5 2.5 0 002.2-3.7L14 8.2V3',
+  arrow:  'M5 12h14M13 6l6 6-6 6',
+  upload: 'M12 16V4M7 9l5-5 5 5M4 20h16',
+};
+
+function Icon({ p, s = 14 }: { p: string; s?: number }) {
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink:0 }} aria-hidden="true">
+      <path d={p} />
+    </svg>
+  );
+}
+
+/** Icon chip + title header used by every section card on the page */
+function SectionHead({ icon, tint, title, sub, right }: {
+  icon: string; tint: { bg: string; bdr: string; fg: string };
+  title: string; sub?: string; right?: React.ReactNode;
+}) {
+  return (
+    <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:12 }}>
+      <span style={{ width:28, height:28, borderRadius:8, background:tint.bg, border:`1px solid ${tint.bdr}`, display:'flex', alignItems:'center', justifyContent:'center', color:tint.fg, flexShrink:0 }}>
+        <Icon p={icon} s={14} />
+      </span>
+      <div style={{ minWidth:0 }}>
+        <div style={{ fontSize:13, fontWeight:800, letterSpacing:-0.2 }}>{title}</div>
+        {sub && <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>{sub}</div>}
+      </div>
+      {right && <div style={{ marginLeft:'auto', flexShrink:0 }}>{right}</div>}
+    </div>
+  );
+}
+
 function DonutChart({ segments }: { segments: Array<{ label: string; value: number; color: string }> }) {
   const total = segments.reduce((s, d) => s + d.value, 0);
   if (total === 0) return null;
@@ -123,9 +167,9 @@ function DonutChart({ segments }: { segments: Array<{ label: string; value: numb
   let cum = 0;
   const slices = segments.map(d => { const dash = (d.value / total) * C; const s = { ...d, dash, offset: cum }; cum += dash; return s; });
   return (
-    <svg viewBox="0 0 100 100" style={{ width:130, height:130, transform:'rotate(-90deg)', flexShrink:0 }}>
-      {slices.map(s => <circle key={s.label} cx={50} cy={50} r={R} fill="none" stroke={s.color} strokeWidth="22" strokeDasharray={`${s.dash} ${C}`} strokeDashoffset={-s.offset} />)}
-      <circle cx={50} cy={50} r={26} fill="var(--surf)" />
+    <svg viewBox="0 0 100 100" style={{ width:120, height:120, transform:'rotate(-90deg)', flexShrink:0 }}>
+      {slices.map(s => <circle key={s.label} cx={50} cy={50} r={R} fill="none" stroke={s.color} strokeWidth="20" strokeDasharray={`${s.dash} ${C}`} strokeDashoffset={-s.offset} />)}
+      <circle cx={50} cy={50} r={25} fill="var(--surf)" />
     </svg>
   );
 }
@@ -177,38 +221,53 @@ const MKT_INDICES = [
 type PriceMap = Record<string, { price: number | null; change_pct: number | null }>;
 type FiiRow   = { fii_net: number; dii_net: number; date: string };
 
-function MarketOverview({ data, loading }: { data: PriceMap; loading: boolean }) {
+const SIDEBAR_SECTORS = [
+  { name:'IT',      ticker:'^CNXIT'    },
+  { name:'Auto',    ticker:'^CNXAUTO'  },
+  { name:'Banking', ticker:'^NSEBANK'  },
+  { name:'Metal',   ticker:'^CNXMETAL' },
+];
+
+function ChangeTxt({ chg, size = 11 }: { chg: number | null; size?: number }) {
+  if (chg == null) return <span style={{ fontSize:size, color:'var(--dim2)' }}>—</span>;
+  const up = chg >= 0;
   return (
-    <div style={{ ...card, marginBottom:16 }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-        <div style={{ fontSize:13, fontWeight:700 }}>Market Overview</div>
-        {loading
-          ? <span style={{ fontSize:11, color:'var(--dim)' }}>loading…</span>
-          : <span style={{ fontSize:11, color:'var(--grn)', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span>}
-      </div>
-      <div className="g2" style={{ display:'grid', gap:8 }}>
-        {MKT_INDICES.map(m => {
-          const d   = data[m.ticker];
-          const chg = d?.change_pct ?? null;
-          const up  = chg == null ? true : chg >= 0;
-          return (
-            <div key={m.name} className="hover-lift" style={{
-              background: up ? 'linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,212,160,0.03))' : 'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.03))',
-              border: `1px solid ${up ? 'rgba(0,212,160,0.28)' : 'rgba(255,59,92,0.25)'}`,
-              borderLeft: `3px solid ${up ? 'var(--grn)' : 'var(--red)'}`,
-              borderRadius:10, padding:'10px 13px',
-            }}>
-              <div style={{ fontSize:11, color:'var(--dim)', marginBottom:2 }}>{m.name}</div>
-              {loading
-                ? <div style={{ width:80, height:22, borderRadius:5, background:'var(--surf2)', marginBottom:4 }}/>
-                : <div style={{ fontSize:17, fontWeight:900, letterSpacing:-0.5 }}>{d?.price != null ? d.price.toLocaleString('en-IN',{maximumFractionDigits:0}) : '—'}</div>}
-              <div style={{ fontSize:11, fontWeight:700, marginTop:2, color: up ? 'var(--grn)' : 'var(--red)' }}>
-                {!loading && (chg != null ? `${up?'▲':'▼'} ${chg>=0?'+':''}${chg.toFixed(2)}%` : '—')}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+    <span style={{ fontSize:size, fontWeight:700, fontFamily:MONO, color: up ? 'var(--grn)' : 'var(--red)' }}>
+      {up ? '▲' : '▼'} {chg >= 0 ? '+' : ''}{chg.toFixed(2)}%
+    </span>
+  );
+}
+
+/** Horizontal market ticker — indices with price, extra sectors with % only */
+function MarketStrip({ data, loading }: { data: PriceMap; loading: boolean }) {
+  const extraSectors = SIDEBAR_SECTORS.filter(s => !MKT_INDICES.find(m => m.ticker === s.ticker));
+  return (
+    <div className="idx-strip">
+      {!loading && <span style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:9, fontWeight:800, letterSpacing:0.8, color:'var(--grn)', flexShrink:0, paddingRight:2 }}><span className="live-dot"/>LIVE</span>}
+      {MKT_INDICES.map(m => {
+        const d = data[m.ticker];
+        return (
+          <div key={m.ticker} style={{ display:'flex', alignItems:'baseline', gap:8, background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, padding:'7px 12px', flexShrink:0 }}>
+            <span style={{ fontSize:9, fontWeight:800, letterSpacing:0.6, color:'var(--dim)' }}>{m.name}</span>
+            {loading
+              ? <span style={{ width:52, height:13, borderRadius:3, background:'var(--surf2)', display:'inline-block' }}/>
+              : <span style={{ fontSize:13, fontWeight:800, fontFamily:MONO, letterSpacing:-0.3 }}>{d?.price != null ? d.price.toLocaleString('en-IN', { maximumFractionDigits:0 }) : '—'}</span>}
+            {!loading && <ChangeTxt chg={d?.change_pct ?? null} size={10} />}
+          </div>
+        );
+      })}
+      <div style={{ width:1, alignSelf:'stretch', background:'var(--bdr)', margin:'2px 4px', flexShrink:0 }}/>
+      {extraSectors.map(s => {
+        const d = data[s.ticker];
+        return (
+          <div key={s.ticker} style={{ display:'flex', alignItems:'baseline', gap:7, border:'1px solid transparent', borderRadius:10, padding:'7px 6px', flexShrink:0 }}>
+            <span style={{ fontSize:9, fontWeight:800, letterSpacing:0.6, color:'var(--dim2)', textTransform:'uppercase' as const }}>{s.name}</span>
+            {loading
+              ? <span style={{ width:36, height:12, borderRadius:3, background:'var(--surf2)', display:'inline-block' }}/>
+              : <ChangeTxt chg={d?.change_pct ?? null} size={11} />}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -218,71 +277,88 @@ function HomeFIIDII({ today, loading }: { today: FiiRow | null; loading: boolean
   const maxAbs = today ? Math.max(Math.abs(today.fii_net), Math.abs(today.dii_net), 1) : 1;
   const rows = today
     ? [
-        { label:'FII (Foreign Inst.)', net:today.fii_net },
-        { label:'DII (Domestic Inst.)', net:today.dii_net },
+        { label:'FII · Foreign Inst.', net:today.fii_net },
+        { label:'DII · Domestic Inst.', net:today.dii_net },
       ]
     : [];
 
   return (
-    <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-        <div style={{ fontSize:13, fontWeight:700 }}>FII / DII Flow</div>
-        {loading
+    <div style={card}>
+      <SectionHead icon={I.flow} tint={{ bg:'rgba(79,111,250,0.14)', bdr:'rgba(79,111,250,0.28)', fg:'var(--bluL)' }} title="FII / DII Flow"
+        right={loading
           ? <span style={{ fontSize:11, color:'var(--dim)' }}>loading…</span>
           : today
-            ? <span style={{ fontSize:11, color:'var(--grn)', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span>
-            : <span style={{ fontSize:10, color:'var(--dim)', padding:'2px 8px', background:'var(--surf2)', borderRadius:6 }}>NSE unavailable</span>}
-      </div>
-      {loading && <div style={{ height:60, background:'var(--surf2)', borderRadius:8, marginBottom:10 }}/>}
+            ? <span style={{ fontSize:9, fontWeight:800, letterSpacing:0.8, color:'var(--grn)', display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span>
+            : <span style={{ fontSize:10, color:'var(--dim)', padding:'2px 8px', background:'var(--surf2)', borderRadius:6 }}>NSE unavailable</span>} />
+      {loading && <div style={{ height:56, background:'var(--surf2)', borderRadius:8, marginBottom:10 }}/>}
       {!loading && rows.map(f => (
         <div key={f.label} style={{ marginBottom:10 }}>
           <div style={{ display:'flex', justifyContent:'space-between', fontSize:12, marginBottom:5 }}>
-            <span style={{ fontWeight:600 }}>{f.label}</span>
-            <span style={{ fontWeight:800, color: f.net>=0 ? 'var(--grn)' : 'var(--red)' }}>{cr(f.net)}</span>
+            <span style={{ color:'var(--dim)', fontWeight:600 }}>{f.label}</span>
+            <span style={{ fontWeight:800, fontFamily:MONO, fontSize:12, color: f.net>=0 ? 'var(--grn)' : 'var(--red)' }}>{cr(f.net)}</span>
           </div>
-          <div style={{ height:5, background:'rgba(255,255,255,0.07)', borderRadius:3, overflow:'hidden' }}>
-            <div style={{ height:'100%', width:`${Math.round(Math.abs(f.net)/maxAbs*100)}%`, background: f.net>=0 ? 'var(--grn)' : 'var(--red)', borderRadius:3 }}/>
+          <div style={{ height:4, background:'var(--surf2)', borderRadius:2, overflow:'hidden' }}>
+            <div style={{ height:'100%', width:`${Math.round(Math.abs(f.net)/maxAbs*100)}%`, background: f.net>=0 ? 'var(--grn)' : 'var(--red)', borderRadius:2 }}/>
           </div>
         </div>
       ))}
       {!loading && !today && (
         <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', padding:'8px 0' }}>NSE data unavailable — check back after 6 PM IST</div>
       )}
-      <Link href="/dashboard/fii-dii" style={{ display:'block', marginTop:10, fontSize:12, color:'var(--bluL)', fontWeight:600 }}>Full FII/DII data →</Link>
+      <Link href="/dashboard/fii-dii" style={{ display:'inline-flex', alignItems:'center', gap:5, marginTop:6, fontSize:12, color:'var(--bluL)', fontWeight:600 }}>
+        Full FII/DII data <Icon p={I.arrow} s={11} />
+      </Link>
     </div>
   );
 }
 
-const SIDEBAR_SECTORS = [
-  { name:'IT',      ticker:'^CNXIT'    },
-  { name:'Auto',    ticker:'^CNXAUTO'  },
-  { name:'Banking', ticker:'^NSEBANK'  },
-  { name:'Metal',   ticker:'^CNXMETAL' },
-];
-
 function HomeSectorPerf({ data, loading }: { data: PriceMap; loading: boolean }) {
   return (
-    <div style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-        <div style={{ fontSize:13, fontWeight:700 }}>Sector Performance</div>
-        {!loading && <span style={{ fontSize:11, color:'var(--grn)', fontWeight:700, display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span>}
-      </div>
-      {SIDEBAR_SECTORS.map(s => {
+    <div style={card}>
+      <SectionHead icon={I.bars} tint={{ bg:'rgba(255,92,26,0.12)', bdr:'rgba(255,92,26,0.28)', fg:'var(--org)' }} title="Sector Performance"
+        right={!loading ? <span style={{ fontSize:9, fontWeight:800, letterSpacing:0.8, color:'var(--grn)', display:'flex', alignItems:'center', gap:4 }}><span className="live-dot"/>LIVE</span> : undefined} />
+      {SIDEBAR_SECTORS.map((s, i) => {
         const chg = data[s.ticker]?.change_pct ?? null;
-        const up  = chg == null ? null : chg >= 0;
         return (
-          <div key={s.name} style={{ display:'flex', justifyContent:'space-between', fontSize:12, padding:'5px 0', borderBottom:'1px solid rgba(28,46,74,0.3)' }}>
-            <span style={{ color:'var(--dim)' }}>{s.name}</span>
+          <div key={s.name} style={{ display:'flex', justifyContent:'space-between', alignItems:'center', fontSize:12, padding:'7px 0', borderBottom: i < SIDEBAR_SECTORS.length - 1 ? '1px solid var(--bdr)' : 'none' }}>
+            <span style={{ color:'var(--dim)', fontWeight:600 }}>{s.name}</span>
             {loading
               ? <span style={{ width:40, height:12, background:'var(--surf2)', borderRadius:3, display:'inline-block' }}/>
-              : <span style={{ fontWeight:700, color: up === null ? 'var(--dim)' : up ? 'var(--grn)' : 'var(--red)' }}>
-                  {chg != null ? `${chg>=0?'+':''}${chg.toFixed(2)}%` : '—'}
-                </span>}
+              : <ChangeTxt chg={chg} size={12} />}
           </div>
         );
       })}
-      <Link href="/dashboard/sectors" style={{ display:'block', marginTop:10, fontSize:12, color:'var(--bluL)', fontWeight:600 }}>Full heatmap →</Link>
+      <Link href="/dashboard/sectors" style={{ display:'inline-flex', alignItems:'center', gap:5, marginTop:10, fontSize:12, color:'var(--bluL)', fontWeight:600 }}>
+        Full heatmap <Icon p={I.arrow} s={11} />
+      </Link>
     </div>
+  );
+}
+
+/** Uniform asset-class tile — quiet card, accent only on icon + P&L */
+function AssetTile({ href, icon, tint, label, value, sub, pl }: {
+  href: string; icon: string; tint: { bg: string; bdr: string; fg: string };
+  label: string; value: string; sub: string; pl?: number | null;
+}) {
+  return (
+    <Link href={href} className="hover-lift" style={{ flex:'1 1 150px', background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'13px 14px', textDecoration:'none', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+        <span style={{ width:24, height:24, borderRadius:7, background:tint.bg, border:`1px solid ${tint.bdr}`, display:'flex', alignItems:'center', justifyContent:'center', color:tint.fg }}>
+          <Icon p={icon} s={12} />
+        </span>
+        <span style={{ fontSize:9.5, fontWeight:800, letterSpacing:0.7, textTransform:'uppercase' as const, color:'var(--dim)' }}>{label}</span>
+        <span style={{ marginLeft:'auto', color:'var(--dim2)' }}><Icon p={I.arrow} s={10} /></span>
+      </div>
+      <div style={{ fontSize:19, fontWeight:800, letterSpacing:-0.6, fontFamily:MONO, lineHeight:1 }}>{value}</div>
+      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:6, gap:6 }}>
+        <span style={{ fontSize:10.5, color:'var(--dim)', whiteSpace:'nowrap' as const, overflow:'hidden', textOverflow:'ellipsis' }}>{sub}</span>
+        {pl != null && (
+          <span style={{ fontSize:11, fontWeight:700, fontFamily:MONO, flexShrink:0, color: pl >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+            {pl >= 0 ? '+' : ''}{pl.toFixed(1)}%
+          </span>
+        )}
+      </div>
+    </Link>
   );
 }
 
@@ -290,15 +366,18 @@ function WelcomeEmpty({ name, email, mktData, mktLoading }: { name: string; emai
   return (
     <>
       <div style={{ display:'inline-flex', alignItems:'center', gap:8, background:'rgba(0,212,160,0.08)', border:'1px solid rgba(0,212,160,0.25)', borderRadius:30, padding:'6px 14px', marginBottom:20 }}>
-        <div style={{ width:8, height:8, borderRadius:'50%', background:'var(--grn)' }}/>
+        <span className="live-dot" />
         <span style={{ fontSize:12, color:'var(--grn)', fontWeight:600 }}>Signed in{email ? ` as ${email}` : ''}</span>
       </div>
       <div style={{ marginBottom:24 }}>
-        <div style={{ fontSize:26, fontWeight:800, letterSpacing:-0.5 }}>{greet()}, {name} 👋</div>
+        <div style={{ fontSize:26, fontWeight:800, letterSpacing:-0.5 }}>{greet()}, {name}</div>
         <div style={{ fontSize:13, color:'var(--dim)', marginTop:4 }}>Welcome to SignalGenie. Upload your portfolio to unlock technical scan results and P&L tracking.</div>
       </div>
       <div style={{ background:'linear-gradient(135deg,rgba(23,64,245,0.08),rgba(0,212,160,0.04))', border:'1px solid rgba(23,64,245,0.2)', borderRadius:16, padding:'28px 32px', marginBottom:20 }}>
-        <div style={{ fontSize:19, fontWeight:800, marginBottom:6 }}>📂 Upload your portfolio to get started</div>
+        <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:6 }}>
+          <span style={{ width:32, height:32, borderRadius:9, background:'rgba(79,111,250,0.14)', border:'1px solid rgba(79,111,250,0.3)', display:'flex', alignItems:'center', justifyContent:'center', color:'var(--bluL)' }}><Icon p={I.upload} s={15} /></span>
+          <div style={{ fontSize:19, fontWeight:800 }}>Upload your portfolio to get started</div>
+        </div>
         <div style={{ fontSize:13, color:'var(--dim)', marginBottom:24 }}>Add your holdings once — SignalGenie tracks P&L, scan results and risk metrics automatically.</div>
         <div className="g3" style={{ display:'grid', gap:16, marginBottom:28 }}>
           {[
@@ -316,23 +395,23 @@ function WelcomeEmpty({ name, email, mktData, mktLoading }: { name: string; emai
           ))}
         </div>
         <Link href="/dashboard/portfolio" style={{ height:42, padding:'0 28px', borderRadius:10, background:'var(--blu)', color:'#fff', fontSize:14, fontWeight:700, display:'inline-flex', alignItems:'center', gap:8 }}>
-          📤 Upload Portfolio →
+          <Icon p={I.upload} s={14} /> Upload Portfolio
         </Link>
       </div>
       <div className="g3" style={{ display:'grid', gap:12, marginBottom:24 }}>
         {[
-          { icon:'🤖', t:'ML Technical Scan', d:'RSI, EMA, volume screener on every holding. Technical output — you decide.' },
-          { icon:'📊', t:'Live P&L', d:'Unrealised gains, momentum zone distribution — updated daily.' },
-          { icon:'⚠️', t:'Risk Metrics', d:'Earnings proximity flags, concentration risk, sector exposure.' },
+          { icon:I.scan,   t:'ML Technical Scan', d:'RSI, EMA, volume screener on every holding. Technical output — you decide.', tint:{ bg:'rgba(79,111,250,0.12)', bdr:'rgba(79,111,250,0.28)', fg:'var(--bluL)' } },
+          { icon:I.bars,   t:'Live P&L',          d:'Unrealised gains, momentum zone distribution — updated daily.',              tint:{ bg:'rgba(0,212,160,0.12)',  bdr:'rgba(0,212,160,0.28)',  fg:'var(--grn)'  } },
+          { icon:I.target, t:'Risk Metrics',      d:'Earnings proximity flags, concentration risk, sector exposure.',             tint:{ bg:'rgba(255,92,26,0.12)',  bdr:'rgba(255,92,26,0.28)',  fg:'var(--org)'  } },
         ].map(f => (
           <div key={f.t} style={card}>
-            <div style={{ fontSize:22, marginBottom:8 }}>{f.icon}</div>
+            <span style={{ width:32, height:32, borderRadius:9, background:f.tint.bg, border:`1px solid ${f.tint.bdr}`, display:'inline-flex', alignItems:'center', justifyContent:'center', color:f.tint.fg, marginBottom:10 }}><Icon p={f.icon} s={15} /></span>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:5 }}>{f.t}</div>
             <div style={{ fontSize:12, color:'var(--dim)', lineHeight:1.6 }}>{f.d}</div>
           </div>
         ))}
       </div>
-      <MarketOverview data={mktData} loading={mktLoading} />
+      <MarketStrip data={mktData} loading={mktLoading} />
     </>
   );
 }
@@ -507,11 +586,12 @@ export default function DashboardPage() {
   if (loading || !user) {
     return (
       <div>
-        <div className="g3" style={{ display:'grid', gap:12, marginBottom:20 }}>
-          {[0,1,2].map(i => (
-            <div key={i} style={{ background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'18px 20px' }}>
-              <div style={{ width:80, height:11, background:'var(--surf2)', borderRadius:4, marginBottom:12 }}/>
-              <div style={{ width:120, height:28, background:'var(--surf2)', borderRadius:6 }}/>
+        <div style={{ ...card, height:96, marginBottom:12 }}><div className="shimmer" style={{ width:180, height:24, marginBottom:12 }}/><div className="shimmer" style={{ width:120, height:12 }}/></div>
+        <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+          {[0,1,2,3].map(i => (
+            <div key={i} style={{ flex:'1 1 150px', background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'13px 14px' }}>
+              <div className="shimmer" style={{ width:80, height:10, marginBottom:10 }}/>
+              <div className="shimmer" style={{ width:110, height:20 }}/>
             </div>
           ))}
         </div>
@@ -619,15 +699,19 @@ export default function DashboardPage() {
   const cmPLPct = cmInvestedINR > 0 ? (cmPL / cmInvestedINR) * 100 : 0;
 
   const combinedINR = invested + usInrEquiv + rsuValueINR + fxCurrentINR + cmCurrentINR;
+  // Combined all-time P&L across asset classes that have a live valuation
+  const combinedInvested = invested + (usdInr ? usInvestedUSD * usdInr : 0) + fxInvestedINR + cmInvestedINR;
+  const combinedPL       = totalPL + (usPL ?? 0) + fxPL + cmPL;
+  const combinedPLPct    = combinedInvested > 0 ? (combinedPL / combinedInvested) * 100 : null;
 
   const capDist = { large:0, mid:0, small:0, etf:0 };
   for (const h of mergedIndia) capDist[capCat(h.symbol)] += h.avg_price * h.qty;
   const capTotal = Object.values(capDist).reduce((s, v) => s + v, 0);
   const capSegments = [
-    { label:'Large Cap', value:capDist.large, color:'#4F6FFA' },
-    { label:'Mid Cap',   value:capDist.mid,   color:'#00D4A0' },
-    { label:'Small Cap', value:capDist.small, color:'#FF5C1A' },
-    { label:'ETF / MF',  value:capDist.etf,   color:'#8B5CF6' },
+    { label:'Large Cap', value:capDist.large, color:'var(--bluL)' },
+    { label:'Mid Cap',   value:capDist.mid,   color:'var(--grn)'  },
+    { label:'Small Cap', value:capDist.small, color:'var(--org)'  },
+    { label:'ETF / MF',  value:capDist.etf,   color:'var(--pur)'  },
   ].filter(s => s.value > 0);
 
   const insights    = buildInsights(mergedIndia);
@@ -637,342 +721,232 @@ export default function DashboardPage() {
   const heatTiles = activeHeatRegion === 'US' ? heatTilesUS : heatTilesIN;
   const heatPrices = activeHeatRegion === 'US' ? usPrices : prices;
 
+  // Net-worth composition rows (only asset classes with value)
+  const nwBreakdown = [
+    { label:'India',  value:invested,       color:'var(--grn)'  },
+    hasUSHoldings ? { label:'US',      value:usInrEquiv,   color:'var(--bluL)' } : null,
+    hasRSU        ? { label:'RSU',     value:rsuValueINR,  color:'var(--pur)'  } : null,
+    fxPos.length  ? { label:'Forex',   value:fxCurrentINR, color:'var(--ylw)'  } : null,
+    cmPos.length  ? { label:'Commod.', value:cmCurrentINR, color:'var(--org)'  } : null,
+  ].filter(Boolean) as { label:string; value:number; color:string }[];
+
+  const ghostBtn: React.CSSProperties = { height:32, padding:'0 12px', borderRadius:8, background:'var(--surf)', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'inline-flex', alignItems:'center', gap:6, textDecoration:'none' };
+
   return (
     <>
-      {/* Header */}
-      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:16, flexWrap:'wrap', gap:12 }}>
+      {/* ── Header ─────────────────────────────────────────── */}
+      <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14, flexWrap:'wrap', gap:10 }}>
         <div>
-          <div style={{ fontSize:22, fontWeight:800, letterSpacing:-0.5 }}>{greet()}, {name} 👋</div>
-          <div style={{ fontSize:13, color:'var(--dim)', marginTop:3 }}>{new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'short', year:'numeric' })}</div>
+          <div style={{ fontSize:20, fontWeight:800, letterSpacing:-0.5 }}>{greet()}, {name}</div>
+          <div style={{ fontSize:12, color:'var(--dim)', marginTop:2 }}>{new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'short', year:'numeric' })}</div>
         </div>
         <div style={{ display:'flex', gap:6, alignItems:'center' }}>
-          <Link href="/dashboard/portfolio"
-            style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
-            🇮🇳 India P&L →
-          </Link>
+          <Link href="/dashboard/portfolio" style={ghostBtn}>India P&L <Icon p={I.arrow} s={11} /></Link>
           {hasUSHoldings && (
-            <Link href="/dashboard/us-portfolio"
-              style={{ height:34, padding:'0 14px', borderRadius:9, background:'var(--surf2)', border:'1px solid var(--card-bdr)', color:'var(--txt)', fontSize:12, fontWeight:600, display:'flex', alignItems:'center', gap:5, textDecoration:'none' }}>
-              🇺🇸 US P&L →
-            </Link>
+            <Link href="/dashboard/us-portfolio" style={ghostBtn}>US P&L <Icon p={I.arrow} s={11} /></Link>
           )}
         </div>
       </div>
 
-
-      {/* KPI strip — India + Net Worth + US all in one row */}
-      <div className="g6" style={{ display:'grid', gap:12, marginBottom:14 }}>
-        {/* Equity */}
-        <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
-          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(79,111,250,0.18)';}}
-          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)'), height:'100%', boxSizing:'border-box' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-              <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(79,111,250,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>📈</div>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>Equity Stocks</div>
-            </div>
-            <div className="kpi-num" style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{equityH.length}</div>
-            <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{fmtL(equityInvested)} invested</div>
-            {hasPrices && equityInvested > 0 && (
-              <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: equityPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-                {equityPL >= 0 ? '▲' : '▼'} {equityPL >= 0 ? '+' : ''}{equityPLPct.toFixed(1)}%
-              </div>
-            )}
-          </div>
-        </Link>
-        {/* ETF & MF */}
-        <Link href="/dashboard/etf-mf" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
-          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(139,92,246,0.18)';}}
-          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))','rgba(139,92,246,0.3)'), height:'100%', boxSizing:'border-box' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-              <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(139,92,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🏦</div>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, textTransform:'uppercase' }}>ETF & MF</div>
-            </div>
-            <div className="kpi-num" style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{etfH.length}</div>
-            <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{etfInvested > 0 ? fmtL(etfInvested) : '—'} invested</div>
-            {hasPrices && etfInvested > 0 && (
-              <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: etfPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-                {etfPL >= 0 ? '▲' : '▼'} {etfPL >= 0 ? '+' : ''}{etfPLPct.toFixed(1)}%
-              </div>
-            )}
-          </div>
-        </Link>
-        {/* Total Invested */}
-        <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
-          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
-          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)'), height:'100%', boxSizing:'border-box' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-              <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(0,212,160,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>💼</div>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Total Invested</div>
-            </div>
-            <div className="kpi-num" style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{fmtL(invested)}</div>
-            <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
-              {portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''} · India
-            </div>
-          </div>
-        </Link>
-        {/* Combined Return */}
-        {(() => {
-          const up = !hasPrices || totalPLPct >= 0;
-          return (
-            <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
-              onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow=`0 6px 24px ${up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.18)'}`;}}
-              onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-              <div style={{ ...colorCard(
-                up ? 'linear-gradient(135deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))' : 'linear-gradient(135deg,rgba(255,59,92,0.12),rgba(255,59,92,0.03))',
-                up ? 'rgba(0,212,160,0.3)' : 'rgba(255,59,92,0.28)'
-              ), height:'100%', boxSizing:'border-box' }} className="kpi-card">
-                <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-                  <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.14)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>{up?'🚀':'📉'}</div>
-                  <div style={{ fontSize:10, fontWeight:700, color:up?'var(--grn)':'var(--red)', letterSpacing:0.5, textTransform:'uppercase' }}>Combined Return</div>
-                </div>
-                <div className="kpi-num" style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color: hasPrices ? (totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
-                  {hasPrices ? `${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(1)}%` : '—'}
-                </div>
-                <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
-                  {hasPrices && totalPL !== 0 ? `${totalPL >= 0 ? '+' : ''}${fmtL(Math.abs(totalPL))}` : pricesLoading ? 'loading…' : '—'}
-                </div>
-              </div>
-            </Link>
-          );
-        })()}
-
-        {/* Combined Net Worth */}
-        <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
-          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
-          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.16),rgba(23,64,245,0.07))','rgba(0,212,160,0.32)'), height:'100%' }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-              <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(0,212,160,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🌐</div>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Net Worth</div>
-            </div>
-            <div className="kpi-num" style={{ fontSize:28, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--grn)' }}>{fmtL(combinedINR)}</div>
-            <div style={{ fontSize:10, color:'var(--dim)', marginTop:5 }}>
-              🇮🇳{fmtL(invested)} + 🇺🇸{fmtL(usInrEquiv)}
-              {fxPos.length>0?` + 💱${fmtL(fxCurrentINR)}`:''}
-            </div>
-            {usdInr && <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>₹{usdInr.toFixed(1)} USD/INR{hasRSU ? ` · RSU ₹${(rsuValueINR/1e5).toFixed(1)}L` : ''}</div>}
-          </div>
-        </Link>
-
-        {/* US Stocks */}
-        <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
-          onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(79,111,250,0.18)';}}
-          onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          {hasUSHoldings ? (
-            <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.14),rgba(23,64,245,0.05))','rgba(79,111,250,0.30)'), height:'100%' }}>
-              <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-                <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(79,111,250,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🇺🇸</div>
-                <div style={{ fontSize:10, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>US Stocks</div>
-              </div>
-              <div className="kpi-num" style={{ fontSize:28, fontWeight:900, letterSpacing:-1, lineHeight:1 }}>{fmtL(usInrEquiv)}</div>
-              <div style={{ fontSize:10, color:'var(--dim)', marginTop:5 }}>{usHoldings.length} stocks · ${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})} invested</div>
-              {usPLPct!=null && (
-                <div style={{ fontSize:13, fontWeight:800, marginTop:4, color:usPLPct>=0?'var(--grn)':'var(--red)' }}>
-                  {usPLPct>=0?'▲':'▼'} {usPLPct>=0?'+':''}{usPLPct.toFixed(1)}%
-                </div>
-              )}
-            </div>
-          ) : (
-            <div style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.07),rgba(23,64,245,0.02))','rgba(79,111,250,0.2)'), height:'100%', display:'flex', flexDirection:'column', justifyContent:'center', alignItems:'center', textAlign:'center', gap:8 }}>
-              <div style={{ fontSize:22 }}>🇺🇸</div>
-              <div style={{ fontSize:12, fontWeight:700 }}>US Portfolio</div>
-              <div style={{ fontSize:11, color:'var(--dim)' }}>Add US stocks →</div>
-            </div>
-          )}
-        </Link>
+      {/* ── Market ticker strip ────────────────────────────── */}
+      <div style={{ marginBottom:14 }}>
+        <MarketStrip data={mktData} loading={mktLoading} />
       </div>
 
-      {/* Market brief + MMI — below KPIs */}
-      <div className="g-brief" style={{ display:'grid', gap:14, marginBottom:14, alignItems:'stretch' }}>
+      {/* ── Net worth hero ─────────────────────────────────── */}
+      <div style={{ ...card, padding:'18px 22px', marginBottom:12, display:'flex', flexWrap:'wrap', gap:16, alignItems:'center', justifyContent:'space-between' }}>
+        <div style={{ minWidth:220 }}>
+          <div style={{ fontSize:10, fontWeight:800, letterSpacing:1, textTransform:'uppercase' as const, color:'var(--dim)', marginBottom:6 }}>Combined Net Worth</div>
+          <div style={{ display:'flex', alignItems:'baseline', gap:10, flexWrap:'wrap' }}>
+            <span style={{ fontSize:34, fontWeight:900, letterSpacing:-1.2, fontFamily:MONO, lineHeight:1.05 }}>{fmtL(combinedINR)}</span>
+            {hasPrices && combinedPLPct != null && (
+              <span style={{ fontSize:12, fontWeight:800, fontFamily:MONO, padding:'3px 10px', borderRadius:20,
+                color: combinedPL >= 0 ? 'var(--grn)' : 'var(--red)',
+                background: combinedPL >= 0 ? 'rgba(0,212,160,0.10)' : 'rgba(255,59,92,0.10)',
+                border: `1px solid ${combinedPL >= 0 ? 'rgba(0,212,160,0.28)' : 'rgba(255,59,92,0.26)'}` }}>
+                {combinedPL >= 0 ? '▲' : '▼'} {fmtL(Math.abs(combinedPL))} · {combinedPL >= 0 ? '+' : ''}{combinedPLPct.toFixed(1)}%
+              </span>
+            )}
+          </div>
+          <div style={{ fontSize:11, color:'var(--dim)', marginTop:7 }}>
+            {portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''} · all-time P&L{usdInr ? ` · ₹${usdInr.toFixed(1)}/$` : ''}
+          </div>
+        </div>
+        {nwBreakdown.length > 1 && (
+          <div style={{ display:'flex', gap:16, flexWrap:'wrap' }}>
+            {nwBreakdown.map(b => (
+              <div key={b.label} style={{ borderLeft:`2px solid ${b.color}`, paddingLeft:10 }}>
+                <div style={{ fontSize:9, fontWeight:800, letterSpacing:0.8, textTransform:'uppercase' as const, color:'var(--dim)', marginBottom:3 }}>{b.label}</div>
+                <div style={{ fontSize:15, fontWeight:800, fontFamily:MONO, letterSpacing:-0.3 }}>{fmtL(b.value)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* ── Asset-class tiles ──────────────────────────────── */}
+      <div style={{ display:'flex', gap:10, flexWrap:'wrap', marginBottom:16 }}>
+        <AssetTile href="/dashboard/portfolio" icon={I.bars}   label="Equity Stocks" value={String(equityH.length)} sub={`${fmtL(equityInvested)} invested`}
+          pl={hasPrices && equityInvested > 0 ? equityPLPct : null}
+          tint={{ bg:'rgba(79,111,250,0.14)', bdr:'rgba(79,111,250,0.30)', fg:'var(--bluL)' }} />
+        <AssetTile href="/dashboard/etf-mf"    icon={I.bank}   label="ETF & MF"      value={String(etfH.length)}    sub={etfInvested > 0 ? `${fmtL(etfInvested)} invested` : 'No funds held'}
+          pl={hasPrices && etfInvested > 0 ? etfPLPct : null}
+          tint={{ bg:'rgba(139,92,246,0.14)', bdr:'rgba(139,92,246,0.30)', fg:'var(--pur)' }} />
+        {hasUSHoldings ? (
+          <AssetTile href="/dashboard/us-portfolio" icon={I.globe} label="US Stocks" value={fmtL(usInrEquiv)} sub={`${usHoldings.length} stocks · $${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})}`}
+            pl={usPLPct}
+            tint={{ bg:'rgba(0,212,160,0.14)', bdr:'rgba(0,212,160,0.30)', fg:'var(--grn)' }} />
+        ) : (
+          <AssetTile href="/dashboard/us-portfolio" icon={I.globe} label="US Stocks" value="—" sub="Add US stocks"
+            tint={{ bg:'rgba(0,212,160,0.08)', bdr:'rgba(0,212,160,0.20)', fg:'var(--grn)' }} />
+        )}
+        {fxPos.length > 0 && (
+          <AssetTile href="/dashboard/forex"       icon={I.flow}   label="Forex"       value={fmtL(fxCurrentINR)} sub={`${fxPos.length} position${fxPos.length > 1 ? 's' : ''}`}
+            pl={fxInvestedINR > 0 ? fxPLPct : null}
+            tint={{ bg:'rgba(255,184,0,0.12)', bdr:'rgba(255,184,0,0.30)', fg:'var(--ylw)' }} />
+        )}
+        {cmPos.length > 0 && (
+          <AssetTile href="/dashboard/commodities" icon={I.coin}   label="Commodities" value={fmtL(cmCurrentINR)} sub={`${cmPos.length} position${cmPos.length > 1 ? 's' : ''}`}
+            pl={cmInvestedINR > 0 ? cmPLPct : null}
+            tint={{ bg:'rgba(255,92,26,0.12)', bdr:'rgba(255,92,26,0.30)', fg:'var(--org)' }} />
+        )}
+      </div>
+
+      {/* ── Market brief + mood ────────────────────────────── */}
+      <div className="g-brief2" style={{ display:'grid', gap:14, marginBottom:16, alignItems:'stretch' }}>
         <MarketBrief />
         <MarketMoodIndex />
       </div>
 
-      {/* VIX + DXY explainers — raw fear-gauge and dollar-strength readings */}
-      <div className="g2" style={{ display:'grid', gap:14, marginBottom:14, alignItems:'start' }}>
-        <VixExplainer />
-        <DxyExplainer />
-      </div>
+      {/* ── Main 2-col: portfolio focus | market context rail ── */}
+      <div className="dash-main-grid">
+        <div style={{ display:'flex', flexDirection:'column', gap:16, minWidth:0 }}>
 
-      {/* Recent scan picks */}
-      {scanPicks.length > 0 && (
-        <div style={{ ...card, marginBottom:16, borderColor:'rgba(0,212,160,0.22)', background:'linear-gradient(135deg,rgba(0,212,160,0.06),var(--card-bg))' }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:12 }}>
-            <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-              <div style={{ width:30, height:30, borderRadius:9, background:'rgba(0,212,160,0.14)', border:'1px solid rgba(0,212,160,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🤖</div>
-              <div>
-                <div style={{ fontSize:13, fontWeight:800 }}>Recent Scan Picks</div>
-                <div style={{ fontSize:11, color:'var(--dim)' }}>Latest strong momentum · algorithmic scan output</div>
-              </div>
-            </div>
-            <Link href="/dashboard/signals" style={{ fontSize:11, color:'var(--grn)', fontWeight:700, textDecoration:'none', padding:'4px 12px', border:'1px solid rgba(0,212,160,0.3)', borderRadius:8 }}>Full Scan →</Link>
-          </div>
-          <div className="g3" style={{ display:'grid', gap:10, marginBottom:10 }}>
-            {scanPicks.slice(0, 3).map((p, i) => (
-              <div key={`${p.symbol}-${i}`} onClick={() => setDetailSym({ symbol: p.symbol, exchange: p.exchange })}
-                style={{ cursor:'pointer', background:'rgba(0,212,160,0.07)', border:'1px solid rgba(0,212,160,0.2)', borderRadius:12, padding:'14px 15px', display:'flex', flexDirection:'column', gap:5 }}>
-                <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
-                  <div style={{ fontSize:14, fontWeight:900, letterSpacing:-0.3 }}>{p.symbol}</div>
-                  <div style={{ fontSize:9, fontWeight:800, color:'var(--grn)', background:'rgba(0,212,160,0.12)', border:'1px solid rgba(0,212,160,0.3)', borderRadius:6, padding:'2px 7px', textTransform:'uppercase' as const, letterSpacing:0.5 }}>Strong</div>
-                </div>
-                <div style={{ fontSize:13, fontWeight:700 }}>₹{Number(p.price_at).toLocaleString('en-IN', { maximumFractionDigits:2 })}</div>
-                {p.rsi14 != null && (
-                  <div style={{ fontSize:10, color:'var(--dim)' }}>
-                    RSI <span style={{ color: p.rsi14 < 45 ? 'var(--grn)' : p.rsi14 > 65 ? 'var(--red)' : 'var(--ylw)', fontWeight:700 }}>{Number(p.rsi14).toFixed(0)}</span>
-                    <span style={{ marginLeft:6, color:'var(--dim2)' }}>· {p.exchange}</span>
+          {/* Portfolio heatmap */}
+          {(heatTilesIN.length > 0 || heatTilesUS.length > 0) && (
+            <div style={card}>
+              <SectionHead icon={I.flame} tint={{ bg:'rgba(0,212,160,0.12)', bdr:'rgba(0,212,160,0.28)', fg:'var(--grn)' }}
+                title="Portfolio Heatmap"
+                sub={`Size = weight · Color = daily Δ · ${pricesLoading ? 'loading…' : `${heatTiles.filter(h => heatPrices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}`}
+                right={
+                  <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                    {heatTilesUS.length > 0 && (
+                      <div style={{ display:'flex', background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:20, padding:2 }}>
+                        {(['IN','US'] as const).map(r => (
+                          <button key={r} onClick={() => setHeatRegion(r)}
+                            style={{ fontSize:10, fontWeight:800, padding:'4px 12px', borderRadius:18, border:'none', cursor:'pointer',
+                              background: activeHeatRegion === r ? 'rgba(0,212,160,0.18)' : 'transparent',
+                              color: activeHeatRegion === r ? 'var(--grn)' : 'var(--dim)' }}>
+                            {r === 'IN' ? 'India' : 'US'}
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                )}
-                <div style={{ fontSize:9, color:'var(--dim2)', marginTop:2 }}>{new Date(p.scanned_at).toLocaleDateString('en-IN', { day:'2-digit', month:'short' })}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ fontSize:10, color:'var(--dim2)' }}>⚠️ NOT SEBI REGISTERED · Algorithmic scan output — not investment advice · DYOR</div>
-        </div>
-      )}
+                } />
+              <TreemapHeatmap
+                height={420}
+                items={heatTiles.map(h => ({
+                  symbol:    h.symbol,
+                  value:     h.avg_price * h.qty,
+                  changePct: heatPrices[h.symbol]?.change_pct ?? null,
+                }))}
+              />
+            </div>
+          )}
 
-      {/* ETF & MF breakdown */}
-      {etfH.length > 0 && (
-        <div style={{ ...card, marginBottom:16 }}>
-          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
-            <div style={{ fontSize:13, fontWeight:700 }}>🏦 ETF & MF Holdings</div>
-            <Link href="/dashboard/etf-mf" style={{ fontSize:11, color:'var(--bluL)', fontWeight:600 }}>ETF / MF page →</Link>
-          </div>
-          <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
-            {[...etfH].sort((a, b) => b.avg_price * b.qty - a.avg_price * a.qty).map(h => {
-              const p    = prices[h.symbol]?.price;
-              const ratio = p != null ? p / h.avg_price : null;
-              const plPct = (p != null && ratio != null && ratio > 0.02 && ratio < 50)
-                ? (p - h.avg_price) / h.avg_price * 100 : null;
-              return (
-                <div key={h.symbol} style={{ background:'rgba(139,92,246,0.07)', border:'1px solid rgba(139,92,246,0.2)', borderRadius:10, padding:'8px 14px', minWidth:110 }}>
-                  <div style={{ fontSize:12, fontWeight:800, letterSpacing:0.3 }}>{h.symbol}</div>
-                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>{fmtL(h.avg_price * h.qty)}</div>
-                  {plPct != null ? (
-                    <div style={{ fontSize:11, fontWeight:700, marginTop:2, color: plPct >= 0 ? 'var(--grn)' : 'var(--red)' }}>
-                      {plPct >= 0 ? '+' : ''}{plPct.toFixed(1)}%
+          {/* Recent scan picks */}
+          {scanPicks.length > 0 && (
+            <div style={card}>
+              <SectionHead icon={I.scan} tint={{ bg:'rgba(79,111,250,0.14)', bdr:'rgba(79,111,250,0.28)', fg:'var(--bluL)' }}
+                title="Recent Scan Picks" sub="Latest strong momentum · algorithmic scan output"
+                right={<Link href="/dashboard/signals" style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:'var(--bluL)', fontWeight:700, textDecoration:'none', padding:'5px 12px', border:'1px solid rgba(79,111,250,0.3)', borderRadius:8 }}>Full Scan <Icon p={I.arrow} s={10} /></Link>} />
+              <div className="g3" style={{ display:'grid', gap:10, marginBottom:10 }}>
+                {scanPicks.slice(0, 3).map((p, i) => (
+                  <div key={`${p.symbol}-${i}`} onClick={() => setDetailSym({ symbol: p.symbol, exchange: p.exchange })}
+                    className="hover-lift"
+                    style={{ cursor:'pointer', background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'13px 14px', display:'flex', flexDirection:'column', gap:5 }}>
+                    <div style={{ display:'flex', justifyContent:'space-between', alignItems:'flex-start' }}>
+                      <div style={{ fontSize:14, fontWeight:900, letterSpacing:-0.3, fontFamily:MONO }}>{p.symbol}</div>
+                      <div style={{ fontSize:9, fontWeight:800, color:'var(--grn)', background:'rgba(0,212,160,0.12)', border:'1px solid rgba(0,212,160,0.3)', borderRadius:6, padding:'2px 7px', textTransform:'uppercase' as const, letterSpacing:0.5 }}>Strong</div>
                     </div>
-                  ) : <div style={{ fontSize:10, color:'var(--dim2)', marginTop:2 }}>—</div>}
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-
-      {/* Forex + Commodities mini strip (only if positions exist) */}
-      {(fxPos.length > 0 || cmPos.length > 0) && (
-        <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
-          {fxPos.length > 0 && (
-            <Link href="/dashboard/forex" style={{ textDecoration:'none', flex:1, minWidth:200 }}>
-              <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.09),rgba(0,212,160,0.02))', border:'1px solid rgba(0,212,160,0.24)', borderRadius:14, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
-                <span style={{ fontSize:20 }}>💱</span>
-                <div>
-                  <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', textTransform:'uppercase', letterSpacing:0.5 }}>Forex</div>
-                  <div style={{ fontSize:16, fontWeight:800 }}>{fmtL(fxCurrentINR)}</div>
-                  <div style={{ fontSize:10, color:fxPL>=0?'var(--grn)':'var(--red)', fontWeight:700 }}>{fxPL>=0?'+':''}{fmtL(Math.abs(fxPL))} ({fxPLPct.toFixed(1)}%)</div>
-                </div>
+                    <div style={{ fontSize:13, fontWeight:700, fontFamily:MONO }}>₹{Number(p.price_at).toLocaleString('en-IN', { maximumFractionDigits:2 })}</div>
+                    {p.rsi14 != null && (
+                      <div style={{ fontSize:10, color:'var(--dim)' }}>
+                        RSI <span style={{ fontFamily:MONO, color: p.rsi14 < 45 ? 'var(--grn)' : p.rsi14 > 65 ? 'var(--red)' : 'var(--ylw)', fontWeight:700 }}>{Number(p.rsi14).toFixed(0)}</span>
+                        <span style={{ marginLeft:6, color:'var(--dim2)' }}>· {p.exchange}</span>
+                      </div>
+                    )}
+                    <div style={{ fontSize:9, color:'var(--dim2)', marginTop:2 }}>{new Date(p.scanned_at).toLocaleDateString('en-IN', { day:'2-digit', month:'short' })}</div>
+                  </div>
+                ))}
               </div>
-            </Link>
-          )}
-          {cmPos.length > 0 && (
-            <Link href="/dashboard/commodities" style={{ textDecoration:'none', flex:1, minWidth:200 }}>
-              <div style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.09),rgba(255,184,0,0.02))', border:'1px solid rgba(255,184,0,0.24)', borderRadius:14, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
-                <span style={{ fontSize:20 }}>🥇</span>
-                <div>
-                  <div style={{ fontSize:10, fontWeight:700, color:'var(--ylw)', textTransform:'uppercase', letterSpacing:0.5 }}>Commodities</div>
-                  <div style={{ fontSize:16, fontWeight:800 }}>{fmtL(cmCurrentINR)}</div>
-                  <div style={{ fontSize:10, color:cmPL>=0?'var(--grn)':'var(--red)', fontWeight:700 }}>{cmPL>=0?'+':''}{fmtL(Math.abs(cmPL))} ({cmPLPct.toFixed(1)}%)</div>
-                </div>
-              </div>
-            </Link>
-          )}
-        </div>
-      )}
-
-      {/* Analyst commentary */}
-      {insights.length > 0 && (
-        <div style={{ ...card, marginBottom:16, borderColor:'rgba(255,92,26,0.22)', background:'linear-gradient(135deg,rgba(255,92,26,0.05),var(--card-bg))' }}>
-          <div style={{ display:'flex', alignItems:'center', gap:10, marginBottom:14 }}>
-            <div style={{ width:34, height:34, borderRadius:10, background:'linear-gradient(135deg,rgba(255,92,26,0.18),rgba(255,184,0,0.12))', border:'1px solid rgba(255,92,26,0.3)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, flexShrink:0 }}>🎯</div>
-            <div>
-              <div style={{ fontSize:14, fontWeight:800, letterSpacing:-0.2 }}>Portfolio Composition Metrics</div>
-              <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>Computed from your holdings · statistical observations only</div>
+              <div style={{ fontSize:10, color:'var(--dim2)' }}>⚠️ NOT SEBI REGISTERED · Algorithmic scan output — not investment advice · DYOR</div>
             </div>
-            <div style={{ marginLeft:'auto', fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(255,92,26,0.1)', border:'1px solid rgba(255,92,26,0.25)', color:'var(--org)' }}>Screener</div>
-          </div>
-          <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
-            {insights.map((ins, i) => (
-              <div key={i} style={{ display:'flex', gap:12, padding:'11px 14px', background:'var(--surf2)', borderRadius:10, borderLeft:`3px solid ${ins.accent}` }}>
-                <span style={{ fontSize:15, flexShrink:0 }}>{ins.icon}</span>
-                <div style={{ fontSize:12.5, color:'var(--txt)', lineHeight:1.65 }}>{ins.text}</div>
-              </div>
-            ))}
-          </div>
-          <div style={{ fontSize:10, color:'var(--dim2)', marginTop:10 }}>⚠️ NOT SEBI REGISTERED · These are statistical observations on your holdings composition, not financial advice · DYOR</div>
-        </div>
-      )}
+          )}
 
-      <div style={{ marginBottom:16 }}>
-        <HomeFIIDII today={fiiData} loading={fiiLoading} />
-      </div>
-      <div style={{ marginBottom:16 }}>
-        <HomeSectorPerf data={mktData} loading={mktLoading} />
-      </div>
-      {/* Analytics: treemap heatmap + cap donut */}
-      {(heatTilesIN.length > 0 || heatTilesUS.length > 0) && (
-        <div className="g-analytics" style={{ display:'grid', gap:16, marginBottom:16, alignItems:'start' }}>
-          {/* Treemap heatmap */}
-          <div style={{ ...card, padding:'16px', borderColor:'rgba(0,212,160,0.2)', background:'linear-gradient(160deg,rgba(0,212,160,0.05),var(--card-bg))' }}>
-            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10, flexWrap:'wrap', gap:8 }}>
-              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                <div style={{ width:30, height:30, borderRadius:9, background:'rgba(0,212,160,0.14)', border:'1px solid rgba(0,212,160,0.28)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:15 }}>🔥</div>
-                <div>
-                  <div style={{ fontSize:13, fontWeight:800 }}>Portfolio Heatmap</div>
-                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:1 }}>
-                    Size = weight · Color = daily Δ · {pricesLoading ? 'loading…' : `${heatTiles.filter(h => heatPrices[h.symbol]?.change_pct != null).length}/${heatTiles.length} live`}
+          {/* Portfolio composition insights */}
+          {insights.length > 0 && (
+            <div style={card}>
+              <SectionHead icon={I.target} tint={{ bg:'rgba(255,92,26,0.12)', bdr:'rgba(255,92,26,0.28)', fg:'var(--org)' }}
+                title="Portfolio Composition Metrics" sub="Computed from your holdings · statistical observations only"
+                right={<span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(255,92,26,0.1)', border:'1px solid rgba(255,92,26,0.25)', color:'var(--org)' }}>Screener</span>} />
+              <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+                {insights.map((ins, i) => (
+                  <div key={i} style={{ display:'flex', gap:12, padding:'11px 14px', background:'var(--surf2)', borderRadius:10, borderLeft:`3px solid ${ins.accent}` }}>
+                    <span style={{ fontSize:14, flexShrink:0 }}>{ins.icon}</span>
+                    <div style={{ fontSize:12.5, color:'var(--txt)', lineHeight:1.65 }}>{ins.text}</div>
                   </div>
-                </div>
+                ))}
               </div>
-              <div style={{ display:'flex', alignItems:'center', gap:8 }}>
-                {heatTilesUS.length > 0 && (
-                  <div style={{ display:'flex', background:'var(--surf2)', border:'1px solid var(--bdr)', borderRadius:20, padding:2 }}>
-                    {(['IN','US'] as const).map(r => (
-                      <button key={r} onClick={() => setHeatRegion(r)}
-                        style={{ fontSize:10, fontWeight:800, padding:'4px 12px', borderRadius:18, border:'none', cursor:'pointer',
-                          background: activeHeatRegion === r ? 'rgba(0,212,160,0.18)' : 'transparent',
-                          color: activeHeatRegion === r ? 'var(--grn)' : 'var(--dim)' }}>
-                        {r === 'IN' ? '🇮🇳 India' : '🇺🇸 US'}
-                      </button>
-                    ))}
-                  </div>
-                )}
-                <span style={{ fontSize:10, fontWeight:700, padding:'3px 9px', borderRadius:20, background:'rgba(0,212,160,0.1)', border:'1px solid rgba(0,212,160,0.25)', color:'var(--grn)' }}>● LIVE</span>
+              <div style={{ fontSize:10, color:'var(--dim2)', marginTop:10 }}>⚠️ NOT SEBI REGISTERED · These are statistical observations on your holdings composition, not financial advice · DYOR</div>
+            </div>
+          )}
+
+          {/* ETF & MF breakdown */}
+          {etfH.length > 0 && (
+            <div style={card}>
+              <SectionHead icon={I.bank} tint={{ bg:'rgba(139,92,246,0.14)', bdr:'rgba(139,92,246,0.28)', fg:'var(--pur)' }}
+                title="ETF & MF Holdings"
+                right={<Link href="/dashboard/etf-mf" style={{ display:'inline-flex', alignItems:'center', gap:5, fontSize:11, color:'var(--bluL)', fontWeight:600 }}>ETF / MF page <Icon p={I.arrow} s={10} /></Link>} />
+              <div style={{ display:'flex', flexWrap:'wrap', gap:8 }}>
+                {[...etfH].sort((a, b) => b.avg_price * b.qty - a.avg_price * a.qty).map(h => {
+                  const p    = prices[h.symbol]?.price;
+                  const ratio = p != null ? p / h.avg_price : null;
+                  const plPct = (p != null && ratio != null && ratio > 0.02 && ratio < 50)
+                    ? (p - h.avg_price) / h.avg_price * 100 : null;
+                  return (
+                    <div key={h.symbol} style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:10, padding:'8px 14px', minWidth:110 }}>
+                      <div style={{ fontSize:12, fontWeight:800, letterSpacing:0.3, fontFamily:MONO }}>{h.symbol}</div>
+                      <div style={{ fontSize:11, color:'var(--dim)', marginTop:2, fontFamily:MONO }}>{fmtL(h.avg_price * h.qty)}</div>
+                      {plPct != null ? (
+                        <div style={{ fontSize:11, fontWeight:700, marginTop:2, fontFamily:MONO, color: plPct >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+                          {plPct >= 0 ? '+' : ''}{plPct.toFixed(1)}%
+                        </div>
+                      ) : <div style={{ fontSize:10, color:'var(--dim2)', marginTop:2 }}>—</div>}
+                    </div>
+                  );
+                })}
               </div>
             </div>
-            <TreemapHeatmap
-              height={420}
-              items={heatTiles.map(h => ({
-                symbol:    h.symbol,
-                value:     h.avg_price * h.qty,
-                changePct: heatPrices[h.symbol]?.change_pct ?? null,
-              }))}
-            />
-          </div>
+          )}
+        </div>
 
-          {/* Market cap donut */}
+        {/* ── Right rail — market context ── */}
+        <div className="rail-stack">
+          <HomeFIIDII today={fiiData} loading={fiiLoading} />
+          <HomeSectorPerf data={mktData} loading={mktLoading} />
+
+          {/* Market cap mix */}
           <div style={card}>
-            <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>Market Cap Mix</div>
+            <SectionHead icon={I.layers} tint={{ bg:'rgba(139,92,246,0.14)', bdr:'rgba(139,92,246,0.28)', fg:'var(--pur)' }} title="Market Cap Mix" />
             {capSegments.length === 0 ? (
               <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', padding:'20px 0' }}>—</div>
             ) : (
               <>
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:14 }}>
                   <DonutChart segments={capSegments} />
-                  <div style={{ fontSize:13, fontWeight:900, marginTop:-4 }}>{mergedIndia.length} holdings</div>
+                  <div style={{ fontSize:13, fontWeight:900, marginTop:2, fontFamily:MONO }}>{mergedIndia.length} holdings</div>
                   <div style={{ fontSize:11, color:'var(--dim)' }}>{portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''}</div>
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
@@ -985,9 +959,9 @@ export default function DashboardPage() {
                             <div style={{ width:8, height:8, borderRadius:2, background:s.color, flexShrink:0 }}/>
                             <span style={{ color:'var(--dim)' }}>{s.label}</span>
                           </div>
-                          <span style={{ fontWeight:700 }}>{pct.toFixed(0)}%</span>
+                          <span style={{ fontWeight:700, fontFamily:MONO }}>{pct.toFixed(0)}%</span>
                         </div>
-                        <div style={{ height:3, background:'rgba(255,255,255,0.06)', borderRadius:2, overflow:'hidden' }}>
+                        <div style={{ height:3, background:'var(--surf2)', borderRadius:2, overflow:'hidden' }}>
                           <div style={{ height:'100%', width:`${pct}%`, background:s.color, borderRadius:2 }}/>
                         </div>
                       </div>
@@ -997,33 +971,34 @@ export default function DashboardPage() {
               </>
             )}
           </div>
-        </div>
-      )}
 
-      <div style={{ ...card, marginBottom:16 }}>
-        <div style={{ fontSize:13, fontWeight:700, marginBottom:12 }}>Quick Links</div>
-        <div className="g4" style={{ display:'grid', gap:8 }}>
-          {[
-            { href:'/dashboard/signals',                 icon:'📈', label:'ML Scan',          sub:'RSI + EMA screener',   grad:'rgba(23,64,245,0.10)',  bdr:'rgba(23,64,245,0.28)' },
-            { href:'/dashboard/signals?tab=fundamental', icon:'📊', label:'Fundamentals',     sub:'PE · ROE · D/E screener', grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
-            { href:'/dashboard/portfolio',               icon:'💼', label:'India Portfolio',   sub:'P&L · signals',        grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
-            { href:'/dashboard/us-portfolio',            icon:'🇺🇸', label:'US Portfolio',    sub:'USD stocks',            grad:'rgba(79,111,250,0.09)', bdr:'rgba(79,111,250,0.28)' },
-            { href:'/dashboard/dividends',               icon:'💰', label:'Dividends',        sub:'Ex-dates · income',     grad:'rgba(0,212,160,0.09)',  bdr:'rgba(0,212,160,0.25)' },
-            { href:'/dashboard/paper-trading',           icon:'🧪', label:'Paper Trading',     sub:'Risk-free strategies', grad:'rgba(139,92,246,0.09)', bdr:'rgba(139,92,246,0.28)' },
-            { href:'/dashboard/sectors',                 icon:'🔥', label:'Sector Heatmap',    sub:'Hot sectors',          grad:'rgba(255,92,26,0.09)',  bdr:'rgba(255,92,26,0.28)' },
-            { href:'/dashboard/fii-dii',                 icon:'🌍', label:'FII / DII Flow',    sub:'Institutional flow',   grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
-            { href:'/dashboard/watchlist',                icon:'⭐', label:'Watchlist',        sub:'Saved stocks',          grad:'rgba(255,184,0,0.08)', bdr:'rgba(255,184,0,0.28)' },
-          ].map(l => (
-            <Link key={l.href} href={l.href} className="hover-lift" style={{ display:'flex', flexDirection:'column', gap:2, padding:'12px 13px', background:`linear-gradient(135deg,${l.grad},transparent)`, border:`1px solid ${l.bdr}`, borderRadius:11, textDecoration:'none' }}>
-              <span style={{ fontSize:18 }}>{l.icon}</span>
-              <span style={{ fontSize:12, fontWeight:700, color:'var(--txt)', marginTop:3 }}>{l.label}</span>
-              <span style={{ fontSize:10, color:'var(--dim)' }}>{l.sub}</span>
-            </Link>
-          ))}
+          <VixExplainer />
+          <DxyExplainer />
         </div>
       </div>
 
-      <div style={{ fontSize:11, color:'var(--dim2)', marginTop:14 }}>
+      {/* ── Explore — compact links ────────────────────────── */}
+      <div style={{ display:'flex', flexWrap:'wrap', gap:8, alignItems:'center', marginTop:18, marginBottom:14 }}>
+        <span style={{ fontSize:10, color:'var(--dim2)', fontWeight:800, letterSpacing:0.9, textTransform:'uppercase' as const, marginRight:2 }}>Explore</span>
+        {[
+          { href:'/dashboard/signals',                 icon:I.scan,   label:'ML Scan'        },
+          { href:'/dashboard/signals?tab=fundamental', icon:I.bars,   label:'Fundamentals'   },
+          { href:'/dashboard/dividends',               icon:I.coin,   label:'Dividends'      },
+          { href:'/dashboard/paper-trading',           icon:I.flask,  label:'Paper Trading'  },
+          { href:'/dashboard/sectors',                 icon:I.flame,  label:'Sectors'        },
+          { href:'/dashboard/fii-dii',                 icon:I.flow,   label:'FII / DII'      },
+          { href:'/dashboard/watchlist',               icon:I.star,   label:'Watchlist'      },
+          { href:'/dashboard/track-record',            icon:I.target, label:'Track Record'   },
+        ].map(l => (
+          <Link key={l.href} href={l.href}
+            style={{ display:'inline-flex', alignItems:'center', gap:6, height:30, padding:'0 12px', borderRadius:999, background:'var(--surf)', border:'1px solid var(--bdr)', fontSize:12, fontWeight:600, color:'var(--dim)', textDecoration:'none' }}>
+            <Icon p={l.icon} s={12} /> {l.label}
+          </Link>
+        ))}
+      </div>
+
+      {/* ── Compliance footer ──────────────────────────────── */}
+      <div style={{ fontSize:11, color:'var(--dim2)', borderTop:'1px solid var(--bdr)', paddingTop:12 }}>
         ⚠️ <strong style={{ color:'var(--ylw)' }}>NOT SEBI REGISTERED</strong> · This is a technical screening tool · Scan results are computed indicators, not investment advice · DYOR
       </div>
 

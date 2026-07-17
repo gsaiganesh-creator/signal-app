@@ -183,6 +183,27 @@ button:active:not(:disabled) { transform: scale(0.97); }
 /* Market Brief + MMI side-by-side on desktop, stacked on mobile */
 .g-brief { grid-template-columns: 1fr 1fr; }
 
+/* =====================================================
+   DASHBOARD HOME v2 — ticker strip, brief row, 2-col main
+   ===================================================== */
+/* Horizontal market ticker — scrolls on small screens */
+.idx-strip { display: flex; align-items: center; gap: 8px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.idx-strip::-webkit-scrollbar { display: none; }
+/* Market Brief (2fr) + Mood Index (1fr) — matches main grid proportions */
+.g-brief2 { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+/* Main content + market-context right rail */
+.dash-main-grid { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 16px; align-items: start; }
+.rail-stack { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+@media (max-width: 900px) {
+  .g-brief2 { grid-template-columns: 1fr; }
+  .dash-main-grid { grid-template-columns: 1fr; }
+  /* Rail cards pair up on tablet to keep the page from getting endless */
+  .rail-stack { display: grid; grid-template-columns: 1fr 1fr; align-items: start; }
+}
+@media (max-width: 600px) {
+  .rail-stack { grid-template-columns: 1fr; }
+}
+
 /* Table mobile-hide columns */
 .mob-hide { display: table-cell; }
 .paper-log-date, .paper-log-exit { display: table-cell; }
