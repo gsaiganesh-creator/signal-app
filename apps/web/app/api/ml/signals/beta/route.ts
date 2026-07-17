@@ -1,21 +1,19 @@
-// Live US momentum scan — mirrors api/ml/signals/route.ts (India). Durable
-// Supabase-backed cache (lib/scan-cache.ts), 15-minute TTL — see that file
-// for why the old module-level `let _cache` didn't actually survive between
-// requests on Vercel's serverless runtime.
+// "ML Beta" — volatility-ranked swing scan. See lib/india-scan.ts's
+// runBetaScan() for the actual criteria. Durable cache — lib/scan-cache.ts.
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-import { runUsScan, type USScanSignal } from '@/lib/us-scan';
+import { runBetaScan, type Signal } from '@/lib/india-scan';
 import { getCachedOrRun } from '@/lib/scan-cache';
 
-const CACHE_TTL = 15 * 60_000; // 15 minutes
+const CACHE_TTL = 15 * 60_000;
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') ?? '20')));
 
   try {
-    const { data: picks, computedAt, cached } = await getCachedOrRun<USScanSignal[]>('us_top20', CACHE_TTL, runUsScan);
+    const { data: picks, computedAt, cached } = await getCachedOrRun<Signal[]>('india_beta', CACHE_TTL, runBetaScan);
     return Response.json(
       { signals: picks.slice(0, limit), count: picks.slice(0, limit).length, cached, computed_at: computedAt, next_run_at: new Date(new Date(computedAt).getTime() + CACHE_TTL).toISOString() },
       { headers: { 'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=3600' } }

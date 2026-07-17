@@ -60,31 +60,54 @@ export function calcRsi(closes: number[], period = 14): number | null {
 interface YahooChart {
   chart?: { result?: Array<{
     meta?: { regularMarketPrice?: number; regularMarketChangePercent?: number };
-    indicators?: { quote?: Array<{ close?: (number | null)[]; volume?: (number | null)[] }> };
+    indicators?: { quote?: Array<{ close?: (number | null)[]; high?: (number | null)[]; low?: (number | null)[]; volume?: (number | null)[] }> };
   }> };
 }
 
-async function fetchCloses(symbol: string): Promise<{ closes: number[]; chg: number; vol: number; avgVol: number }> {
+async function fetchCloses(symbol: string): Promise<{ closes: number[]; highs: number[]; lows: number[]; chg: number; vol: number; avgVol: number }> {
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=2mo`;
   const res = await fetch(url, {
     headers: { 'User-Agent': 'Mozilla/5.0 (compatible; signal/1.0)' },
     signal: AbortSignal.timeout(6000),
   });
-  if (!res.ok) return { closes: [], chg: 0, vol: 0, avgVol: 0 };
+  if (!res.ok) return { closes: [], highs: [], lows: [], chg: 0, vol: 0, avgVol: 0 };
   const data = await res.json() as YahooChart;
   const result = data?.chart?.result?.[0];
-  const raw = result?.indicators?.quote?.[0]?.close ?? [];
-  const vols = result?.indicators?.quote?.[0]?.volume ?? [];
+  const quote = result?.indicators?.quote?.[0];
+  const raw = quote?.close ?? [];
+  const rawHigh = quote?.high ?? [];
+  const rawLow = quote?.low ?? [];
+  const vols = quote?.volume ?? [];
   const closes = raw.filter((c): c is number => c != null && isFinite(c));
+  const highs = rawHigh.filter((c): c is number => c != null && isFinite(c));
+  const lows = rawLow.filter((c): c is number => c != null && isFinite(c));
   const volNums = vols.filter((v): v is number => v != null && isFinite(v));
   const avgVol = volNums.length ? volNums.reduce((a, b) => a + b, 0) / volNums.length : 0;
   const lastVol = volNums[volNums.length - 1] ?? 0;
   return {
-    closes,
+    closes, highs, lows,
     chg: result?.meta?.regularMarketChangePercent ?? 0,
     vol: lastVol,
     avgVol,
   };
+}
+
+// Average True Range as % of price — a direct, honest "how much does this
+// stock actually move day to day" measure. Used for the Beta/swing scan
+// instead of statistical beta (covariance vs Nifty), which would need a
+// correlated benchmark-return series this codebase doesn't fetch anywhere.
+export function calcAtrPct(highs: number[], lows: number[], closes: number[], period = 14): number | null {
+  const n = Math.min(highs.length, lows.length, closes.length);
+  if (n < period + 1) return null;
+  const trueRanges: number[] = [];
+  for (let i = n - period; i < n; i++) {
+    const prevClose = closes[i - 1];
+    const tr = Math.max(highs[i] - lows[i], Math.abs(highs[i] - prevClose), Math.abs(lows[i] - prevClose));
+    trueRanges.push(tr);
+  }
+  const atr = trueRanges.reduce((a, b) => a + b, 0) / trueRanges.length;
+  const lastClose = closes[n - 1];
+  return lastClose > 0 ? (atr / lastClose) * 100 : null;
 }
 
 export interface Signal {
@@ -92,6 +115,7 @@ export interface Signal {
   cmp: number; chg: number; rsi: number; ema20: number;
   ema_dist_pct: number; entry_low: number; entry_high: number;
   target: number; sl: number; signal: string; confidence: number; score: number;
+  atr_pct?: number;
 }
 
 export async function runScan(): Promise<Signal[]> {
@@ -129,6 +153,62 @@ export async function runScan(): Promise<Signal[]> {
           ema_dist_pct: r(emaDist, 1), entry_low: entryLow, entry_high: entryHigh,
           target, sl, signal: 'BUY', confidence: Math.min(100, Math.round(50 + score * 3)),
           score: r(score),
+        } satisfies Signal;
+      })
+    );
+    for (const s of settled) {
+      if (s.status === 'fulfilled' && s.value) results.push(s.value);
+    }
+  }
+
+  return results.sort((a, b) => b.score - a.score);
+}
+
+// "ML Beta" — volatility-ranked swing scan. Wider RSI band than Top 20 (35-70
+// vs 42-62) since swing/beta plays are allowed more momentum extension, still
+// requires price above the 10-day EMA (short-term uptrend intact), then ranks
+// by ATR% (average daily range as % of price) descending — biggest, most
+// tradeable daily swings first. A liquidity floor (avgVol) keeps illiquid
+// stocks with artificially wide ranges out of the top results.
+export async function runBetaScan(): Promise<Signal[]> {
+  const BATCH = 10;
+  const results: Signal[] = [];
+
+  for (let i = 0; i < UNIVERSE.length; i += BATCH) {
+    const batch = UNIVERSE.slice(i, i + BATCH);
+    const settled = await Promise.allSettled(
+      batch.map(async (stock) => {
+        const { closes, highs, lows, chg, avgVol } = await fetchCloses(stock.symbol);
+        if (closes.length < 22) return null;
+        const cmp = closes[closes.length - 1];
+        if (cmp < 100) return null;
+        if (avgVol < 100_000) return null; // liquidity floor — swing entries/exits need real volume
+
+        const rsiVal = calcRsi(closes);
+        if (rsiVal == null || rsiVal < 35 || rsiVal > 70) return null;
+
+        const ema10 = calcEma(closes, 10);
+        const ema20 = calcEma(closes, 20);
+        if (cmp < ema10) return null; // short-term trend must still be up
+
+        const atrPct = calcAtrPct(highs, lows, closes);
+        if (atrPct == null) return null;
+
+        const emaDist = (cmp - ema20) / ema20 * 100;
+        const support = cmp > Math.max(ema10, ema20) ? Math.max(ema10, ema20) : Math.min(ema10, ema20);
+        const entryLow  = r(Math.min(cmp, support) * 0.99, 1);
+        const entryHigh = r(cmp * 1.005, 1);
+        const sl        = r(support * 0.95, 1);
+        // Target scales with the stock's own volatility instead of a flat
+        // +10% — a high-ATR stock swinging 6%/day can realistically hit a
+        // bigger target inside the same holding window than Top 20's flat pick.
+        const target    = r(cmp * (1 + Math.min(0.25, Math.max(0.08, atrPct / 100 * 3))), 1);
+        return {
+          symbol: stock.symbol, name: stock.name, sector: stock.sector,
+          cmp: r(cmp), chg: r(chg, 2), rsi: r(rsiVal, 1), ema20: r(ema20),
+          ema_dist_pct: r(emaDist, 1), entry_low: entryLow, entry_high: entryHigh,
+          target, sl, signal: 'BUY', confidence: Math.min(100, Math.round(50 + atrPct * 4)),
+          score: r(atrPct), atr_pct: r(atrPct, 2),
         } satisfies Signal;
       })
     );

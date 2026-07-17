@@ -3,29 +3,19 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 import { runScan, type Signal } from '@/lib/india-scan';
+import { getCachedOrRun } from '@/lib/scan-cache';
 
-// ─── Global in-memory cache ───────────────────────────────────────────────────
-let _cache: { data: Signal[]; ts: number } | null = null;
-const CACHE_TTL = 3_600_000; // 1 hour
+const CACHE_TTL = 15 * 60_000; // 15 minutes — durable across instances, see lib/scan-cache.ts
 
-// ─── Route handler ────────────────────────────────────────────────────────────
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const limit = Math.min(50, Math.max(1, parseInt(searchParams.get('limit') ?? '20')));
 
-  if (_cache && Date.now() - _cache.ts < CACHE_TTL) {
-    return Response.json(
-      { signals: _cache.data.slice(0, limit), count: _cache.data.slice(0, limit).length, cached: true },
-      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
-    );
-  }
-
   try {
-    const picks = await runScan();
-    _cache = { data: picks, ts: Date.now() };
+    const { data: picks, computedAt, cached } = await getCachedOrRun<Signal[]>('india_top20', CACHE_TTL, runScan);
     return Response.json(
-      { signals: picks.slice(0, limit), count: picks.slice(0, limit).length, cached: false },
-      { headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' } }
+      { signals: picks.slice(0, limit), count: picks.slice(0, limit).length, cached, computed_at: computedAt, next_run_at: new Date(new Date(computedAt).getTime() + CACHE_TTL).toISOString() },
+      { headers: { 'Cache-Control': 'public, s-maxage=900, stale-while-revalidate=3600' } }
     );
   } catch (e) {
     return Response.json({ error: String(e), signals: [], count: 0 }, { status: 500 });

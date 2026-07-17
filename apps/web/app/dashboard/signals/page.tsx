@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useIsNativePlatform } from '@/lib/use-is-native';
 import { SECTORS } from '@/lib/sectors';
+import type { FundamentalSignal as FundamentalTopSignal } from '@/lib/india-fundamental-scan';
 
 // Reverse symbol → sector lookup, built once. stock-detail doesn't return a
 // sector field, so the portfolio-universe scan (unlike the ML Top 20 scan,
@@ -87,13 +88,14 @@ interface USSignal extends USScanPick {
 }
 
 // ── India helpers ─────────────────────────────────────────────────────────────
-async function fetchMLSignals(): Promise<MLSignal[]> {
+export interface ScanMeta { computed_at: string | null; next_run_at: string | null }
+async function fetchScan<T>(url: string): Promise<{ signals: T[] } & ScanMeta> {
   try {
-    const r = await fetch('/api/ml/signals?limit=20', { next: { revalidate: 0 } });
-    if (!r.ok) return [];
+    const r = await fetch(url, { next: { revalidate: 0 } });
+    if (!r.ok) return { signals: [], computed_at: null, next_run_at: null };
     const d = await r.json();
-    return d.signals ?? [];
-  } catch { return []; }
+    return { signals: d.signals ?? [], computed_at: d.computed_at ?? null, next_run_at: d.next_run_at ?? null };
+  } catch { return { signals: [], computed_at: null, next_run_at: null }; }
 }
 async function fetchTA(symbol: string): Promise<TADetail | null> {
   try {
@@ -217,6 +219,29 @@ const ZONE_STYLE = {
   'N/A':              { color:'var(--dim)',  bg:'rgba(122,139,170,0.08)',bdr:'rgba(122,139,170,0.2)', grad:'linear-gradient(135deg,rgba(122,139,170,0.06),transparent)'           },
 };
 function zs(z: USSignal['zone']) { return ZONE_STYLE[z] ?? ZONE_STYLE['N/A']; }
+
+function relMins(iso: string): number { return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000)); }
+
+// Shows when a scan last ran and when it'll next refresh — the whole point
+// being visible proof the scan is NOT re-running on every tab click, it's
+// serving a cached result until the durable 15-min (or 1hr for fundamentals)
+// window elapses. See lib/scan-cache.ts.
+function ScanTimer({ meta }: { meta: ScanMeta | null }) {
+  const [, forceTick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => forceTick(t => t + 1), 30_000);
+    return () => clearInterval(id);
+  }, []);
+  if (!meta?.computed_at) return null;
+  const agoMin = relMins(meta.computed_at);
+  const nextMin = meta.next_run_at ? Math.max(0, Math.round((new Date(meta.next_run_at).getTime() - Date.now()) / 60_000)) : null;
+  return (
+    <span style={{ fontSize:11, color:'var(--dim)', display:'flex', alignItems:'center', gap:5 }}>
+      🕒 Ran {agoMin === 0 ? 'just now' : `${agoMin}m ago`}
+      {nextMin != null && ` · next refresh ${nextMin === 0 ? 'due now' : `in ${nextMin}m`}`}
+    </span>
+  );
+}
 
 // ── India Detail Drawer ───────────────────────────────────────────────────────
 function DetailDrawer({ sig, onClose, isElite, session }: { sig: MLSignal; onClose: () => void; isElite: boolean; session: ReturnType<typeof usePortfolio>['session'] }) {
@@ -917,6 +942,7 @@ export default function SignalsPage() {
   const [mlSignals, setMlSignals] = useState<MLSignal[]>([]);
   const [mlLoading, setMlLoading] = useState(false);
   const [mlError,   setMlError]   = useState(false);
+  const [mlMeta,    setMlMeta]    = useState<ScanMeta | null>(null);
   const [filter,    setFilter]    = useState('all');
   const [search,    setSearch]    = useState('');
   const [selected,  setSelected]  = useState<MLSignal | null>(null);
@@ -928,8 +954,21 @@ export default function SignalsPage() {
   const [advMinConf,setAdvMinConf]= useState('');
   const [advMaxEma, setAdvMaxEma] = useState(''); // max abs % from EMA20
 
+  // ML Beta — volatility-ranked swing scan (lib/india-scan.ts runBetaScan)
+  const [betaSignals, setBetaSignals] = useState<MLSignal[]>([]);
+  const [betaLoading, setBetaLoading] = useState(false);
+  const [betaLoaded,  setBetaLoaded]  = useState(false);
+  const [betaMeta,    setBetaMeta]    = useState<ScanMeta | null>(null);
+
+  // ML Fundamental Strong — auto-ranked quality/value scan (distinct from the
+  // manual-filter Fundamental Screener under the top-level market toggle)
+  const [fundTopSignals, setFundTopSignals] = useState<FundamentalTopSignal[]>([]);
+  const [fundTopLoading, setFundTopLoading] = useState(false);
+  const [fundTopLoaded,  setFundTopLoaded]  = useState(false);
+  const [fundTopMeta,    setFundTopMeta]    = useState<ScanMeta | null>(null);
+
   // Portfolio universe scan mode
-  const [portMode,        setPortMode]        = useState<'ml'|'portfolio'>('ml');
+  const [portMode,        setPortMode]        = useState<'ml'|'beta'|'fundamental_top'|'portfolio'>('ml');
   const [portScanResults, setPortScanResults] = useState<(MLSignal & {invested:number})[]>([]);
   const [portScanLoading, setPortScanLoading] = useState(false);
   const [portScanProgress,setPortScanProgress]= useState(0);
@@ -1020,12 +1059,32 @@ export default function SignalsPage() {
 
   const loadIndia = useCallback(async () => {
     setMlLoading(true); setMlError(false);
-    const sigs = await fetchMLSignals();
+    const { signals: sigs, computed_at, next_run_at } = await fetchScan<MLSignal>('/api/ml/signals?limit=20');
     if (sigs.length === 0) setMlError(true);
     const withBias = await attachBias(sigs);
     setMlSignals(withBias);
+    setMlMeta({ computed_at, next_run_at });
     setMlLoading(false);
     if (sigs.length > 0) void logScansAsync(sigs);
+  }, []);
+
+  const loadBeta = useCallback(async () => {
+    setBetaLoading(true);
+    const { signals: sigs, computed_at, next_run_at } = await fetchScan<MLSignal>('/api/ml/signals/beta?limit=20');
+    const withBias = await attachBias(sigs);
+    setBetaSignals(withBias);
+    setBetaMeta({ computed_at, next_run_at });
+    setBetaLoading(false);
+    setBetaLoaded(true);
+  }, []);
+
+  const loadFundTop = useCallback(async () => {
+    setFundTopLoading(true);
+    const { signals: sigs, computed_at, next_run_at } = await fetchScan<FundamentalTopSignal>('/api/ml/signals/fundamental?limit=20');
+    setFundTopSignals(sigs);
+    setFundTopMeta({ computed_at, next_run_at });
+    setFundTopLoading(false);
+    setFundTopLoaded(true);
   }, []);
 
   const loadUS = useCallback(async () => {
@@ -1133,7 +1192,8 @@ export default function SignalsPage() {
   }, [session, portfolios.length, isStarter, planLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // India derived — use portScanResults in portfolio mode, mlSignals in ml mode
-  const activeSignals = portMode === 'portfolio' ? portScanResults : mlSignals;
+  const activeSignals = portMode === 'portfolio' ? portScanResults : portMode === 'beta' ? betaSignals : portMode === 'fundamental_top' ? [] : mlSignals;
+  const activeMeta = portMode === 'beta' ? betaMeta : portMode === 'ml' ? mlMeta : null;
   const hasPortfolio  = portfolioSymbols.length > 0;
   const portfolioCnt  = mlSignals.filter(s => portfolioSymbols.includes(s.symbol.replace('.NS',''))).length;
   const buyCnt        = activeSignals.filter(s => scoreSig(s) === 'buy').length;
@@ -1248,6 +1308,22 @@ export default function SignalsPage() {
                 color: portMode==='ml' ? 'var(--ylw)' : 'var(--dim)' }}>
               📡 ML Top 20
             </button>
+            <button onClick={() => { setPortMode('beta'); if (!betaLoaded && !betaLoading) loadBeta(); }}
+              style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                background: portMode==='beta' ? 'rgba(255,92,26,0.12)' : 'var(--surf2)',
+                border: portMode==='beta' ? '1px solid rgba(255,92,26,0.35)' : '1px solid var(--bdr)',
+                color: portMode==='beta' ? 'var(--org)' : 'var(--dim)' }}>
+              ⚡ ML Beta{betaLoading ? ' — scanning…' : betaSignals.length > 0 && portMode==='beta' ? ` (${betaSignals.length})` : ''}
+            </button>
+            <button onClick={() => { setPortMode('fundamental_top'); if (!fundTopLoaded && !fundTopLoading) loadFundTop(); }}
+              style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                background: portMode==='fundamental_top' ? 'rgba(0,212,160,0.12)' : 'var(--surf2)',
+                border: portMode==='fundamental_top' ? '1px solid rgba(0,212,160,0.35)' : '1px solid var(--bdr)',
+                color: portMode==='fundamental_top' ? 'var(--grn)' : 'var(--dim)' }}>
+              💎 Fundamental Strong{fundTopLoading ? ' — scanning…' : fundTopSignals.length > 0 && portMode==='fundamental_top' ? ` (${fundTopSignals.length})` : ''}
+            </button>
+            {portMode !== 'portfolio' && portMode !== 'fundamental_top' && <ScanTimer meta={activeMeta} />}
+            {portMode === 'fundamental_top' && <ScanTimer meta={fundTopMeta} />}
             {/* Portfolio mode — locked for free users */}
             {isStarter ? (
               <>
@@ -1283,8 +1359,18 @@ export default function SignalsPage() {
             )}
           </div>
 
+          {/* Context — what each pill actually means, per user ask that these
+              needed explaining rather than just being unlabeled buttons */}
+          {portMode !== 'portfolio' && (
+            <div style={{ fontSize:11.5, color:'var(--dim)', lineHeight:1.6, marginBottom:14, padding:'8px 12px', background:'var(--surf2)', borderRadius:8, border:'1px solid var(--bdr)' }}>
+              {portMode === 'ml' && <>📡 <strong style={{ color:'var(--txt)' }}>ML Top 20</strong> — scans 100 curated NSE stocks across 25 sectors, filters for RSI 42–62 (room to move, not overbought/oversold) and price within 8% of the 20-day EMA (trend intact, not overextended), ranks by how close each stock is to the ideal momentum zone. These are the strongest all-round technical setups right now.</>}
+              {portMode === 'beta' && <>⚡ <strong style={{ color:'var(--txt)' }}>ML Beta</strong> — same universe, ranked by ATR% (average daily price range) instead of a balanced score: the stocks that actually move the most day to day, for shorter swing windows. Higher potential reward, higher volatility — not the same as statistical market beta.</>}
+              {portMode === 'fundamental_top' && <>💎 <strong style={{ color:'var(--txt)' }}>Fundamental Strong</strong> — ignores price action entirely. Ranks by valuation (lower P/E), efficiency (higher ROE), balance-sheet safety (lower debt/equity) and growth (revenue growth) — a composite quality score. A stock can top this list and be flat/red on the Top 20 scan, on purpose: different lens, longer horizon.</>}
+            </div>
+          )}
+
           {/* Zone KPIs */}
-          {!(portMode === 'portfolio' ? portScanLoading : mlLoading) && activeSignals.length > 0 && (
+          {portMode !== 'fundamental_top' && !(portMode === 'portfolio' ? portScanLoading : portMode === 'beta' ? betaLoading : mlLoading) && activeSignals.length > 0 && (
             <div className="g4" style={{ display:'grid', gap:12, marginBottom:18 }}>
               {[
                 { label:'Strong Momentum', cnt:buyCnt,        grad:'linear-gradient(135deg,rgba(0,212,160,0.13),rgba(0,212,160,0.03))',  bdr:'rgba(0,212,160,0.30)',  color:'var(--grn)' },
@@ -1325,6 +1411,7 @@ export default function SignalsPage() {
               </div>
             )}
           </div>
+          {portMode !== 'fundamental_top' && (
           <div className="signals-filters" style={{ display:'flex', gap:6, marginBottom:16, flexWrap:'wrap', alignItems:'center' }}>
             {FILTERS.map(f => (
               <button key={f.key} onClick={() => setFilter(f.key)}
@@ -1333,15 +1420,16 @@ export default function SignalsPage() {
                 <span className="pill-short">{f.shortLabel}</span>
               </button>
             ))}
-            <button onClick={loadIndia} style={{ height:34, padding:'0 12px', borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto', flexShrink:0 }}>🔄</button>
+            <button onClick={portMode === 'beta' ? loadBeta : loadIndia} style={{ height:34, padding:'0 12px', borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto', flexShrink:0 }}>🔄</button>
             <button onClick={() => setShowAdv(v => !v)}
               style={{ height:34, padding:'0 12px', borderRadius:9, border:`1px solid ${advActive ? 'var(--pur)' : 'var(--bdr)'}`, background: advActive ? 'rgba(139,92,246,0.12)' : 'var(--surf)', color: advActive ? 'var(--pur)' : 'var(--dim)', fontSize:12, fontWeight: advActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap', flexShrink:0 }}>
               ⚙{advActive ? ' •' : ''}
             </button>
           </div>
+          )}
 
           {/* Advanced filter panel */}
-          {showAdv && (
+          {portMode !== 'fundamental_top' && showAdv && (
             <div style={{ background:'var(--surf)', border:'1px solid var(--bdr)', borderRadius:12, padding:'14px 16px', marginBottom:14, display:'grid', gridTemplateColumns:'repeat(auto-fill,minmax(150px,1fr))', gap:10 }}>
               {/* Sector */}
               <div>
@@ -1392,7 +1480,7 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {(portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : mlLoading) && (
+          {portMode !== 'fundamental_top' && (portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : portMode === 'beta' ? betaLoading : mlLoading) && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {[1,2,3,4].map(i => <div key={i} style={{ height:88, borderRadius:14, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', animation:'pulse 1.5s infinite', opacity:0.7 }}/>)}
             </div>
@@ -1407,7 +1495,7 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {!(portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : mlLoading) && shown.length > 0 && (
+          {portMode !== 'fundamental_top' && !(portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : portMode === 'beta' ? betaLoading : mlLoading) && shown.length > 0 && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {shown.map((sig, sigIdx) => {
                 const locked = !isStarter && sigIdx >= FREE_LIMIT;
@@ -1496,11 +1584,51 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {!mlLoading && !mlError && shown.length === 0 && (
+          {portMode !== 'fundamental_top' && !mlLoading && !mlError && shown.length === 0 && (
             <div style={{ textAlign:'center', padding:'40px 24px', background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14 }}>
               <div style={{ fontSize:32, marginBottom:10 }}>🔍</div>
               <div style={{ fontSize:14, fontWeight:700, marginBottom:6 }}>No results for this filter</div>
               <button onClick={() => { setFilter('all'); setSearch(''); }} style={{ height:34, padding:'0 18px', borderRadius:9, background:'var(--blu)', border:'none', color:'#fff', fontSize:13, fontWeight:700, cursor:'pointer', fontFamily:'inherit' }}>Show All</button>
+            </div>
+          )}
+
+          {/* ── Fundamental Strong results — different shape than the technical
+              cards above (quality_score/PE/ROE/D:E, no RSI/EMA), own block */}
+          {portMode === 'fundamental_top' && fundTopLoading && (
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {[1,2,3,4].map(i => <div key={i} style={{ height:88, borderRadius:14, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', animation:'pulse 1.5s infinite', opacity:0.7 }}/>)}
+            </div>
+          )}
+          {portMode === 'fundamental_top' && !fundTopLoading && fundTopSignals.length === 0 && fundTopLoaded && (
+            <div style={{ textAlign:'center', padding:'40px 24px', background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14, color:'var(--dim)', fontSize:13 }}>
+              No results — Yahoo fundamentals may be rate-limited, try refreshing in a minute.
+            </div>
+          )}
+          {portMode === 'fundamental_top' && !fundTopLoading && fundTopSignals.length > 0 && (
+            <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
+              {fundTopSignals.map(s => (
+                <div key={s.symbol} style={{ background:'linear-gradient(160deg,rgba(0,212,160,0.06),var(--card-bg))', border:'1px solid var(--card-bdr)', borderRadius:14, padding:'11px 13px', display:'grid', gridTemplateColumns:'auto 1fr auto', gap:10, alignItems:'center' }}>
+                  <div style={{ width:40, height:40, borderRadius:10, background:'rgba(0,212,160,0.1)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:9, fontWeight:900, color:'var(--grn)', flexShrink:0, border:'1px solid rgba(0,212,160,0.2)' }}>
+                    {s.symbol.replace(/\.NS$/,'').slice(0,4)}
+                  </div>
+                  <div style={{ minWidth:0 }}>
+                    <div style={{ display:'flex', alignItems:'center', gap:6, marginBottom:3 }}>
+                      <span style={{ fontSize:13, fontWeight:800, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap' }}>{s.symbol.replace(/\.NS$/,'')}</span>
+                      <span style={{ fontSize:8, fontWeight:700, padding:'1px 6px', borderRadius:4, background:'rgba(0,212,160,0.12)', color:'var(--grn)', border:'1px solid rgba(0,212,160,0.25)', whiteSpace:'nowrap' }}>Quality {s.quality_score}</span>
+                    </div>
+                    <div style={{ display:'flex', gap:4, flexWrap:'wrap', alignItems:'center' }}>
+                      <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)', whiteSpace:'nowrap' }}>P/E {s.trailing_pe ?? '—'}</span>
+                      <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)', whiteSpace:'nowrap' }}>ROE {s.roe != null ? `${s.roe}%` : '—'}</span>
+                      <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)', whiteSpace:'nowrap' }}>D/E {s.debt_to_equity ?? '—'}</span>
+                      <span style={{ fontSize:8, padding:'1px 6px', borderRadius:4, background:'var(--surf2)', color:'var(--dim)', border:'1px solid var(--card-bdr)', whiteSpace:'nowrap' }}>Rev {s.revenue_growth != null ? `${s.revenue_growth}%` : '—'}</span>
+                    </div>
+                  </div>
+                  <div style={{ textAlign:'right', flexShrink:0 }}>
+                    <div style={{ fontSize:14, fontWeight:900 }}>{s.cmp ? `₹${s.cmp.toLocaleString('en-IN',{maximumFractionDigits:0})}` : '—'}</div>
+                    <div style={{ fontSize:10, fontWeight:700, marginTop:1, color: s.chg >= 0 ? 'var(--grn)' : 'var(--red)' }}>{s.chg >= 0 ? '+' : ''}{s.chg}%</div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </>
