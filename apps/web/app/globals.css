@@ -498,9 +498,6 @@ button:active:not(:disabled) { transform: scale(0.97); }
 @media (max-width: 1000px) { .lp-plans { grid-template-columns: repeat(2, 1fr); } }
 @media (max-width: 500px)  { .lp-plans { grid-template-columns: 1fr; } }
 
-/* PRO plan card — accent border carries the emphasis (inline), no glow animation */
-.lp-plan-pro { }
-
 /* Pricing card hover lift */
 .lp-plan-card { transition: transform 0.22s ease, border-color 0.22s ease; cursor: default; }
 .lp-plan-card:hover { transform: translateY(-4px); border-color: var(--dim2) !important; }
@@ -512,9 +509,92 @@ button:active:not(:disabled) { transform: scale(0.97); }
 .lp-btn { transition: transform 0.18s ease, filter 0.18s ease, border-color 0.18s ease; }
 .lp-btn:hover { transform: translateY(-1px); filter: brightness(1.06); }
 
-/* Index ticker strip — horizontally scrollable, scrollbar hidden */
-.lp-tick { scrollbar-width: none; -ms-overflow-style: none; }
-.lp-tick::-webkit-scrollbar { display: none; }
+/* Button shine sweep on hover */
+.lp-shine { position: relative; overflow: hidden; }
+.lp-shine::after { content:''; position:absolute; top:0; left:-90%; width:45%; height:100%; background:linear-gradient(100deg,transparent,rgba(255,255,255,0.35),transparent); transform:skewX(-20deg); transition:left 0.6s ease; pointer-events:none; }
+.lp-shine:hover::after { left:140%; }
+
+/* =====================================================
+   LANDING v3 — Genie / AI / signal animation layer
+   ===================================================== */
+
+/* Entrance */
+@keyframes lp-rise { from { opacity:0; transform:translateY(18px) } to { opacity:1; transform:translateY(0) } }
+
+/* Aurora backdrop */
+.lp-aurora { position:absolute; inset:0; overflow:hidden; pointer-events:none; }
+[data-theme="light"] .lp-aurora { opacity:0.55; }
+@keyframes lp-aur1 { 0%,100% { transform:translate(0,0) scale(1) } 50% { transform:translate(60px,30px) scale(1.12) } }
+@keyframes lp-aur2 { 0%,100% { transform:translate(0,0) scale(1) } 50% { transform:translate(-50px,40px) scale(1.15) } }
+@keyframes lp-aur3 { 0%,100% { transform:translate(0,0) scale(1) } 50% { transform:translate(40px,-35px) scale(1.08) } }
+
+/* Shimmering gradient headline */
+.lp-shimmer { background:linear-gradient(90deg,var(--blu) 0%,var(--pur) 25%,var(--grn) 50%,var(--blu) 75%); background-size:300% 100%; -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; animation:lp-shimmer 7s linear infinite; }
+@keyframes lp-shimmer { to { background-position:300% 0 } }
+
+/* The Genie orb */
+.lp-orb { width:120px; height:120px; margin:15px auto; border-radius:50%;
+  background: radial-gradient(circle at 35% 30%, #C7D4FF, #4F6BFF 42%, #7A4FF3 74%, #2A1670);
+  box-shadow: 0 0 60px rgba(99,120,255,0.55), 0 0 140px rgba(122,79,243,0.35), inset -12px -18px 40px rgba(20,10,60,0.5), inset 8px 10px 24px rgba(255,255,255,0.35);
+  animation: lp-breathe 5s ease-in-out infinite; }
+@keyframes lp-breathe { 0%,100% { transform:scale(1) } 50% { transform:scale(1.06) } }
+@keyframes lp-spin  { to { transform: rotate(360deg) } }
+@keyframes lp-spin-r{ to { transform: rotate(-360deg) } }
+@keyframes lp-twinkle { 0%,100% { opacity:0; transform:scale(0.4) } 50% { opacity:1; transform:scale(1.2) } }
+@keyframes lp-float-up { 0% { transform:translateY(0); opacity:0 } 15% { opacity:1 } 100% { transform:translateY(-110px); opacity:0 } }
+
+/* Pulsing live dot */
+.lp-livedot { display:inline-block; width:6px; height:6px; border-radius:50%; background:var(--grn); box-shadow:0 0 0 0 rgba(27,201,138,0.5); animation:lp-sonar 2s ease-out infinite; }
+@keyframes lp-sonar { 0% { box-shadow:0 0 0 0 rgba(27,201,138,0.5) } 70% { box-shadow:0 0 0 8px rgba(27,201,138,0) } 100% { box-shadow:0 0 0 0 rgba(27,201,138,0) } }
+
+/* Sparkline self-draw */
+@keyframes lp-draw { to { stroke-dashoffset:0 } }
+
+/* Meter fill transitions when values change */
+.lp-meter-fill { transition: width 0.8s ease; }
+
+/* Neural network — flowing edges + pulsing nodes */
+@keyframes lp-dash { to { stroke-dashoffset:-22 } }
+.lp-netflow { animation: lp-dash 1.4s linear infinite; }
+@keyframes lp-nodering { 0% { transform:scale(1); opacity:0.9 } 80%,100% { transform:scale(2.1); opacity:0 } }
+.lp-nodering { transform-box: fill-box; transform-origin: center; animation: lp-nodering 2.4s ease-out infinite; }
+
+/* Sticky scroll showcase */
+.lp-how { display:grid; grid-template-columns: 1fr 1fr; gap:72px; max-width:1200px; margin:0 auto; }
+.lp-how-visual { position:relative; }
+.lp-how-sticky { position:sticky; top:96px; }
+.lp-how-stack { position:relative; }
+.lp-how-panel { position:absolute; top:0; left:0; right:0; opacity:0; transform:translateY(16px) scale(0.985); transition:opacity 0.45s ease, transform 0.45s ease; pointer-events:none; }
+.lp-how-panel.on { position:relative; opacity:1; transform:none; pointer-events:auto; }
+.lp-step { min-height:82vh; display:flex; flex-direction:column; justify-content:center; padding:48px 0; }
+.lp-how-mob { display:none; margin-top:32px; }
+@media (max-width: 900px) {
+  .lp-how { grid-template-columns: minmax(0,1fr); gap:0; }
+  .lp-how-visual { display:none; }
+  .lp-how-mob { display:block; min-width:0; }
+  .lp-step { min-height:0; padding:44px 0; min-width:0; }
+}
+
+/* Pricing — price swap on period change */
+@keyframes lp-price { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
+
+/* Pro plan — rotating gradient ring */
+@property --lpa { syntax:'<angle>'; initial-value:0deg; inherits:false; }
+@keyframes lp-spin-angle { to { --lpa:360deg } }
+.lp-pro-ring { border:1px solid transparent !important; background:
+  linear-gradient(var(--surf), var(--surf)) padding-box,
+  conic-gradient(from var(--lpa), var(--blu) 0%, transparent 22%, transparent 48%, var(--pur) 62%, transparent 82%, var(--blu) 100%) border-box !important;
+  animation: lp-spin-angle 5s linear infinite; }
+
+/* Bento hover */
+.lp-bento > div { transition: transform 0.25s ease, border-color 0.25s ease; }
+.lp-bento > div:hover { transform: translateY(-4px); border-color: var(--dim2); }
+
+/* Respect reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .lp-orb, .lp-shimmer, .lp-netflow, .lp-nodering, .lp-pro-ring, .lp-aurora > div,
+  .mq-track-r, .mq-track-l, .lp-livedot { animation: none !important; }
+}
 
 /* Summary stat strip 4-col */
 .lp-stats-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
