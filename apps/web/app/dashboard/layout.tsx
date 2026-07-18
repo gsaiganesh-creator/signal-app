@@ -18,7 +18,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         <div style={{ background:'var(--bg)', color:'var(--txt)', fontFamily:'Inter,system-ui,sans-serif', minHeight:'100vh' }}>
 
           {/* Top Nav — 3-col grid: logo | tabs (centered) | controls */}
-          <nav className="dash-topnav" style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:58, padding:'0 clamp(12px,3vw,32px)', background:'var(--card-bg)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', borderBottom:'1px solid rgba(79,111,250,0.22)', boxShadow:'0 4px 40px rgba(0,0,0,0.22),0 0 60px rgba(23,64,245,0.08)', position:'sticky', top:0, zIndex:100, overflow:'visible' }}>
+          <nav className="dash-topnav" style={{ display:'grid', gridTemplateColumns:'1fr auto 1fr', alignItems:'center', height:58, padding:'0 clamp(12px,3vw,32px)', background:'var(--card-bg)', backdropFilter:'blur(24px)', WebkitBackdropFilter:'blur(24px)', borderBottom:'1px solid var(--bdr)', position:'sticky', top:0, zIndex:100, overflow:'visible' }}>
             <Link href="/dashboard" style={{ display:'flex', alignItems:'center', gap:8, fontSize:16, fontWeight:900, letterSpacing:-0.5, color:'var(--txt)', flexShrink:0, justifySelf:'start' }}>
               <BrandIcon size={22} />
               SignalGenie
