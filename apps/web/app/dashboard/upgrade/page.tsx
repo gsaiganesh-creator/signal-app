@@ -201,6 +201,20 @@ export default function UpgradePage() {
       .catch(() => {}); // stays INR on failure — see api/geo/route.ts's own fallback reasoning
   }, []);
 
+  // Return trip from Stripe Checkout — the webhook (not this redirect) is
+  // what actually grants access, this is just UI feedback. Reads
+  // window.location directly rather than useSearchParams to avoid a Suspense
+  // boundary requirement for one param read on an already-client-only page.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('stripe') === 'success') {
+      setSuccess('🎉 Payment received! Your plan updates within a few seconds — refresh if it doesn’t show yet.');
+      window.history.replaceState({}, '', '/dashboard/upgrade');
+    } else if (params.get('stripe') === 'cancelled') {
+      window.history.replaceState({}, '', '/dashboard/upgrade');
+    }
+  }, []);
+
   async function checkPromo() {
     const code = promoInput.trim().toUpperCase();
     if (!code) return;
@@ -225,12 +239,34 @@ export default function UpgradePage() {
     if (plan.isFree || !user) return;
     setLoading(plan.id); setError('');
 
+    // USD/international checkout goes through Stripe (hosted Checkout page,
+    // redirect-based — no client SDK needed). Razorpay stays India/INR-only.
+    if (currency === 'USD') {
+      try {
+        const res = await fetch('/api/stripe/create-checkout-session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ plan: plan.id, billing, user_token: session?.access_token, promo_code: promoApplied?.code }),
+        });
+        const data = await res.json() as { url?: string; error?: string };
+        if (data.error || !data.url) {
+          setError(data.error ?? 'Failed to start checkout.');
+          setLoading(null); return;
+        }
+        window.location.href = data.url; // Stripe-hosted page; webhook grants access on completion
+      } catch (e) {
+        setError(String(e));
+        setLoading(null);
+      }
+      return;
+    }
+
     try {
       // 1. Create Razorpay order
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: plan.id, billing, currency, user_token: session?.access_token, promo_code: promoApplied?.code }),
+        body: JSON.stringify({ plan: plan.id, billing, user_token: session?.access_token, promo_code: promoApplied?.code }),
       });
       const order = await orderRes.json() as {
         order_id: string; amount: number; currency: string; key_id: string;
