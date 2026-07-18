@@ -595,25 +595,6 @@ export default function DashboardPage() {
 
   const name = user?.user_metadata?.full_name?.split(' ')[0] || user?.user_metadata?.name?.split(' ')[0] || user?.email?.split('@')[0] || 'Trader';
 
-  if (loading || !user) {
-    return (
-      <div>
-        <div style={{ height:42, margin:'-24px calc(-1 * clamp(12px,3vw,32px)) 20px', borderBottom:'1px solid var(--bdr)', background:'var(--surf)' }}/>
-        <div style={{ ...panel, height:120, marginBottom:14 }}><div className="shimmer" style={{ width:200, height:30, marginBottom:14 }}/><div className="shimmer" style={{ width:140, height:12 }}/></div>
-        <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
-          {[0,1,2].map(i => (
-            <div key={i} style={{ flex:'1 1 150px', ...panel, padding:'14px 16px' }}>
-              <div className="shimmer" style={{ width:80, height:10, marginBottom:12 }}/>
-              <div className="shimmer" style={{ width:110, height:22 }}/>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (portfolios.length === 0) return <WelcomeEmpty name={name} email={user.email} mktData={mktData} mktLoading={mktLoading} />;
-
   const fmtL = (n: number) => n >= 1e7 ? `₹${(n/1e7).toFixed(2)}Cr` : n >= 1e5 ? `₹${(n/1e5).toFixed(2)}L` : `₹${n.toLocaleString('en-IN', { maximumFractionDigits:0 })}`;
 
   // Merge all India holdings by symbol (weighted avg across portfolios)
@@ -746,6 +727,26 @@ export default function DashboardPage() {
   const animatedNW = useAnimatedValue(combinedINR);
 
   const ghostBtn: React.CSSProperties = { height:30, padding:'0 12px', borderRadius:8, background:'transparent', border:'1px solid var(--bdr)', color:'var(--txt)', fontSize:11.5, fontWeight:600, display:'inline-flex', alignItems:'center', gap:6, textDecoration:'none' };
+
+  // Early returns live BELOW every hook — hook count must stay constant across renders
+  if (loading || !user) {
+    return (
+      <div>
+        <div style={{ height:42, margin:'-24px calc(-1 * clamp(12px,3vw,32px)) 20px', borderBottom:'1px solid var(--bdr)', background:'var(--surf)' }}/>
+        <div style={{ ...panel, height:120, marginBottom:14 }}><div className="shimmer" style={{ width:200, height:30, marginBottom:14 }}/><div className="shimmer" style={{ width:140, height:12 }}/></div>
+        <div style={{ display:'flex', gap:10, flexWrap:'wrap' }}>
+          {[0,1,2].map(i => (
+            <div key={i} style={{ flex:'1 1 150px', ...panel, padding:'14px 16px' }}>
+              <div className="shimmer" style={{ width:80, height:10, marginBottom:12 }}/>
+              <div className="shimmer" style={{ width:110, height:22 }}/>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (portfolios.length === 0) return <WelcomeEmpty name={name} email={user.email} mktData={mktData} mktLoading={mktLoading} />;
 
   return (
     <>
