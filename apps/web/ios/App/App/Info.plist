@@ -37,10 +37,6 @@
 	<false/>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
-	<key>NSFaceIDUsageDescription</key>
-	<string>SignalGenie uses Face ID to quickly and securely unlock the app.</string>
-	<key>NSUserTrackingUsageDescription</key>
-	<string>SignalGenie uses analytics to improve the app experience.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

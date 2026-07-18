@@ -55,8 +55,8 @@ class ShellViewController: UIViewController, UITabBarDelegate {
         selectedTag = item.tag
         let route = tabs[item.tag].route
         // Use Next.js client-side router (exposed by NativeNavBridge component) so
-        // the app does NOT do a full page reload on tab tap. A hard location.href
-        // change remounts BiometricLockGate and triggers Face ID on every tap.
+        // the app does NOT do a full page reload on tab tap — avoids losing
+        // client-side state and an unnecessary full re-fetch on every tab switch.
         let js = "if(typeof window.__navigateTo==='function'){window.__navigateTo('\(route)');}else{window.location.href='\(route)';};"
         bridgeVC.bridge?.webView?.evaluateJavaScript(js, completionHandler: nil)
     }

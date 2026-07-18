@@ -4,8 +4,8 @@ import { useEffect } from 'react';
 
 // Exposes window.__navigateTo(path) so the native ShellViewController tab bar
 // can trigger client-side Next.js navigation without a full page reload.
-// A hard href change (window.location.href) reloads the entire app, which
-// remounts BiometricLockGate and triggers Face ID on every tab tap.
+// A hard href change (window.location.href) reloads the entire app and loses
+// client-side state on every tab tap.
 export function NativeNavBridge() {
   const router = useRouter();
 
