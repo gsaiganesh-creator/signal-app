@@ -6,10 +6,21 @@ export const runtime = 'nodejs';
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-const PLANS: Record<string, { monthly: number; annual: number; name: string }> = {
+const PLANS_INR: Record<string, { monthly: number; annual: number; name: string }> = {
   starter: { monthly: 29900,  annual: 287040,  name: 'Starter' },  // ₹299/mo | ₹2392/yr (-20%)
   pro:     { monthly: 79900,  annual: 767040,  name: 'Pro'     },  // ₹799/mo | ₹6392/yr (-20%)
   elite:   { monthly: 199900, annual: 1919040, name: 'Elite'   },  // ₹1999/mo | ₹19192/yr (-20%)
+};
+// USD amounts in cents (Razorpay, like most gateways, wants the smallest
+// currency unit). Not a straight FX conversion of the INR prices — priced
+// to what US SaaS buyers actually expect at these tiers.
+// NOTE: charging USD requires Razorpay's "International Payments" to be
+// enabled on the account (not on by default) — see create-order's currency
+// branch below; until then this path returns whatever error Razorpay gives.
+const PLANS_USD: Record<string, { monthly: number; annual: number; name: string }> = {
+  starter: { monthly: 499,  annual: 4790,  name: 'Starter' },  // $4.99/mo | $47.90/yr (-20%)
+  pro:     { monthly: 1299, annual: 12470, name: 'Pro'     },  // $12.99/mo | $124.70/yr (-20%)
+  elite:   { monthly: 2999, annual: 28790, name: 'Elite'   },  // $29.99/mo | $287.90/yr (-20%)
 };
 
 export async function POST(req: Request) {
@@ -20,13 +31,14 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Payment gateway not configured' }, { status: 503 });
   }
 
-  let body: { plan?: string; billing?: string; user_token?: string; promo_code?: string };
+  let body: { plan?: string; billing?: string; user_token?: string; promo_code?: string; currency?: string };
   try { body = await req.json(); }
   catch { return Response.json({ error: 'Invalid request body' }, { status: 400 }); }
 
-  const plan    = (body.plan ?? '').toLowerCase();
-  const billing = body.billing === 'annual' ? 'annual' : 'monthly';
-  const planDef = PLANS[plan];
+  const plan     = (body.plan ?? '').toLowerCase();
+  const billing  = body.billing === 'annual' ? 'annual' : 'monthly';
+  const currency = body.currency === 'USD' ? 'USD' : 'INR';
+  const planDef  = (currency === 'USD' ? PLANS_USD : PLANS_INR)[plan];
 
   if (!planDef) {
     return Response.json({ error: `Unknown plan: ${plan}` }, { status: 400 });
@@ -89,7 +101,7 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         amount,
-        currency: 'INR',
+        currency,
         receipt: `signal_${plan}_${billing}_${Date.now()}`,
         notes: { plan, billing, promo_code: promoCode ?? '' },
       }),
@@ -97,6 +109,12 @@ export async function POST(req: Request) {
 
     if (!res.ok) {
       const err = await res.text();
+      // Razorpay's most likely rejection for a USD order: International
+      // Payments isn't enabled on the account. Surface a specific message
+      // instead of a raw Razorpay error string the user can't act on.
+      if (currency === 'USD' && (err.includes('international') || err.includes('currency') || res.status === 400)) {
+        return Response.json({ error: 'USD payments aren’t enabled on our account yet — please use the India (₹) pricing, or contact support@signalgenie.ai.' }, { status: 502 });
+      }
       return Response.json({ error: err }, { status: 502 });
     }
 

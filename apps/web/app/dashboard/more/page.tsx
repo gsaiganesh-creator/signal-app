@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { SECTION_TINT } from '@/components/MobileBottomNav';
+import { useIsNativePlatform } from '@/lib/use-is-native';
 
 const sections = [
   {
@@ -48,11 +49,19 @@ const sections = [
 export default function MorePage() {
   const router = useRouter();
   const supabase = createClient();
+  const isNative = useIsNativePlatform();
 
   async function handleSignOut() {
     await supabase.auth.signOut();
     router.replace('/sign-in');
   }
+
+  // Guideline 3.1.1 — /dashboard/upgrade itself is gated for native (see that
+  // page), but no point linking to a page that just tells you to use the web.
+  const visibleSections = sections.map(s => ({
+    ...s,
+    items: s.items.filter(i => !(isNative && i.href === '/dashboard/upgrade')),
+  }));
 
   return (
     <>
@@ -62,7 +71,7 @@ export default function MorePage() {
         <div style={{ fontSize: 13, color: 'var(--dim)' }}>Every SignalGenie tool and screen in one place</div>
       </div>
 
-      {sections.map(section => {
+      {visibleSections.map(section => {
         const t = SECTION_TINT[section.heading] ?? SECTION_TINT.Markets;
         return (
           <div key={section.heading} style={{ marginBottom: 22 }}>

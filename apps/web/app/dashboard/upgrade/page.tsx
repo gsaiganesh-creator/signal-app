@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
 import { usePlan } from '@/lib/use-plan';
+import { useIsNativePlatform } from '@/lib/use-is-native';
 
 // Razorpay window type
 declare global {
@@ -16,25 +17,28 @@ interface RazorpayOptions {
   handler(resp: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }): void;
 }
 
+// USD monthly-equivalent display prices — must stay in sync with PLANS_USD
+// in api/payment/create-order/route.ts (that file is the source of truth
+// for what's actually charged; these are display-only).
 const PLANS = [
   {
-    id: 'free', name: 'Free', monthly: 0, annual: 0, color: 'var(--dim)', border: 'var(--bdr)',
+    id: 'free', name: 'Free', monthly: 0, annual: 0, monthlyUSD: 0, annualUSD: 0, color: 'var(--dim)', border: 'var(--bdr)',
     features: ['5 signals / day','1 portfolio','Basic charts','Community access','ETF & MF guide'],
     cta: 'Current Plan', isFree: true,
   },
   {
-    id: 'starter', name: 'Starter', monthly: 299, annual: 239, color: 'var(--bluL)', border: 'rgba(23,64,245,0.4)',
+    id: 'starter', name: 'Starter', monthly: 299, annual: 239, monthlyUSD: 4.99, annualUSD: 3.99, color: 'var(--bluL)', border: 'rgba(23,64,245,0.4)',
     features: ['25 signals / day','3 portfolios','ML signal classification','Algo Builder (5 strategies)','Paper trading'],
     cta: 'Upgrade to Starter', isFree: false,
   },
   {
-    id: 'pro', name: 'Pro', monthly: 799, annual: 639, color: 'var(--org)', border: 'rgba(255,92,26,0.5)',
+    id: 'pro', name: 'Pro', monthly: 799, annual: 639, monthlyUSD: 12.99, annualUSD: 10.39, color: 'var(--org)', border: 'rgba(255,92,26,0.5)',
     badge: 'MOST POPULAR',
     features: ['Unlimited signals','10 portfolios','Priority signals','Backtest engine','1 broker connect','Earnings ML predictions','Sector heatmap + FII/DII'],
     cta: 'Upgrade to Pro', isFree: false,
   },
   {
-    id: 'elite', name: 'Elite', monthly: 1999, annual: 1599, color: 'var(--ylw)', border: 'rgba(255,184,0,0.5)',
+    id: 'elite', name: 'Elite', monthly: 1999, annual: 1599, monthlyUSD: 29.99, annualUSD: 23.99, color: 'var(--ylw)', border: 'rgba(255,184,0,0.5)',
     features: ['Everything in Pro','Unlimited broker connects','API access (500 req/day)','Dedicated support','White-glove onboarding','Early feature access'],
     cta: 'Upgrade to Elite', isFree: false,
   },
@@ -170,6 +174,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 export default function UpgradePage() {
   const { user, session } = usePortfolio();
   const { plan: currentPlan, isFounder } = usePlan();
+  const isNative = useIsNativePlatform();
   const [billing,      setBilling]      = useState<'monthly'|'annual'>('monthly');
   const [loading,      setLoading]      = useState<string | null>(null);
   const [success,      setSuccess]      = useState<string | null>(null);
@@ -179,6 +184,7 @@ export default function UpgradePage() {
   const [promoApplied, setPromoApplied] = useState<{ code: string; discount_pct: number; label: string | null } | null>(null);
   const [promoChecking, setPromoChecking] = useState(false);
   const [promoError,   setPromoError]   = useState('');
+  const [currency,     setCurrency]     = useState<'INR'|'USD'>('INR');
 
   useEffect(() => {
     if (!session?.access_token) return;
@@ -187,6 +193,13 @@ export default function UpgradePage() {
       .then(d => { if (d?.welcome_discount) setWelcomeDisc(d.welcome_discount); })
       .catch(() => {});
   }, [session?.access_token]);
+
+  useEffect(() => {
+    fetch('/api/geo')
+      .then(r => r.ok ? r.json() as Promise<{ currency: string }> : null)
+      .then(d => { if (d?.currency === 'USD') setCurrency('USD'); })
+      .catch(() => {}); // stays INR on failure — see api/geo/route.ts's own fallback reasoning
+  }, []);
 
   async function checkPromo() {
     const code = promoInput.trim().toUpperCase();
@@ -217,7 +230,7 @@ export default function UpgradePage() {
       const orderRes = await fetch('/api/payment/create-order', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ plan: plan.id, billing, user_token: session?.access_token, promo_code: promoApplied?.code }),
+        body: JSON.stringify({ plan: plan.id, billing, currency, user_token: session?.access_token, promo_code: promoApplied?.code }),
       });
       const order = await orderRes.json() as {
         order_id: string; amount: number; currency: string; key_id: string;
@@ -279,6 +292,29 @@ export default function UpgradePage() {
   }
 
   const annualSavingPct = 20;
+
+  // Apple Guideline 3.1.1 — the native iOS/Android build must not expose any
+  // purchase mechanism other than In-App Purchase. Rather than build full
+  // StoreKit IAP right now, this is the "reader app" pattern (same as how
+  // Netflix/Spotify's iOS apps behave): read-only plan info in the app,
+  // purchasing only happens in an actual web browser outside the app shell.
+  // Hiding the /dashboard/more link to this page isn't enough on its own —
+  // this page is a real route, reachable by deep link/back-button/typed URL
+  // regardless of what links to it, so the guard has to live here.
+  if (isNative) {
+    return (
+      <div style={{ textAlign:'center', padding:'60px 24px' }}>
+        <div style={{ fontSize:40, marginBottom:16 }}>⚡</div>
+        <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>
+          {currentPlan && currentPlan !== 'free' ? `You're on the ${currentPlan.charAt(0).toUpperCase()}${currentPlan.slice(1)} plan` : 'Upgrade Plan'}
+        </div>
+        <div style={{ fontSize:13, color:'var(--dim)', maxWidth:340, margin:'0 auto', lineHeight:1.7 }}>
+          Manage or change your subscription at{' '}
+          <span style={{ color:'var(--bluL)', fontWeight:700 }}>signalgenie.ai</span> in your browser.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -364,7 +400,11 @@ export default function UpgradePage() {
       {/* Plan cards */}
       <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(220px,1fr))', gap:14, marginBottom:28 }}>
         {PLANS.map(p => {
-          const price = billing === 'annual' ? p.annual : p.monthly;
+          const isUSD = currency === 'USD';
+          const price = isUSD ? (billing === 'annual' ? p.annualUSD : p.monthlyUSD) : (billing === 'annual' ? p.annual : p.monthly);
+          const monthlyPrice = isUSD ? p.monthlyUSD : p.monthly;
+          const sym = isUSD ? '$' : '₹';
+          const fmtPrice = (n: number) => isUSD ? n.toFixed(2) : n.toLocaleString('en-IN');
           const isLoading = loading === p.id;
           return (
             <div key={p.id} style={{ background:'var(--card-bg)', border:`2px solid ${p.id === currentPlan ? p.border : 'badge' in p && p.badge ? p.border : 'var(--bdr)'}`, borderRadius:18, padding:'22px 20px', position:'relative', display:'flex', flexDirection:'column', boxShadow: p.id === currentPlan ? `0 0 0 3px ${p.border}` : 'none' }}>
@@ -376,12 +416,12 @@ export default function UpgradePage() {
               )}
               <div style={{ fontSize:12, fontWeight:800, color:p.color, marginBottom:4, marginTop: ('badge' in p && p.badge) || p.id === currentPlan ? 12 : 0, textTransform:'uppercase', letterSpacing:0.5 }}>{p.name}</div>
               <div style={{ display:'flex', alignItems:'baseline', gap:3, marginBottom:4 }}>
-                <span style={{ fontSize:28, fontWeight:900 }}>{price === 0 ? '₹0' : `₹${price.toLocaleString('en-IN')}`}</span>
+                <span style={{ fontSize:28, fontWeight:900 }}>{price === 0 ? `${sym}0` : `${sym}${fmtPrice(price)}`}</span>
                 {price > 0 && <span style={{ fontSize:12, color:'var(--dim)' }}>/mo</span>}
               </div>
               {billing === 'annual' && price > 0 && (
                 <div style={{ fontSize:11, color:'var(--dim)', marginBottom:12 }}>
-                  ₹{(price * 12).toLocaleString('en-IN')}/year · <span style={{ color:'var(--grn)' }}>save ₹{((p.monthly - p.annual) * 12).toLocaleString('en-IN')}</span>
+                  {sym}{fmtPrice(price * 12)}/year · <span style={{ color:'var(--grn)' }}>save {sym}{fmtPrice((monthlyPrice - price) * 12)}</span>
                 </div>
               )}
               {(billing === 'monthly' || price === 0) && <div style={{ marginBottom:12 }}/>}
