@@ -175,6 +175,11 @@ export default function UpgradePage() {
   const { user, session } = usePortfolio();
   const { plan: currentPlan, isFounder } = usePlan();
   const isNative = useIsNativePlatform();
+  // mounted prevents the payment UI from flashing on the first render in native
+  // (isNative starts false, flips in useEffect — without this guard the full
+  // Razorpay UI is briefly visible before the native check fires).
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const [billing,      setBilling]      = useState<'monthly'|'annual'>('monthly');
   const [loading,      setLoading]      = useState<string | null>(null);
   const [success,      setSuccess]      = useState<string | null>(null);
@@ -329,24 +334,25 @@ export default function UpgradePage() {
 
   const annualSavingPct = 20;
 
-  // Apple Guideline 3.1.1 — the native iOS/Android build must not expose any
-  // purchase mechanism other than In-App Purchase. Rather than build full
-  // StoreKit IAP right now, this is the "reader app" pattern (same as how
-  // Netflix/Spotify's iOS apps behave): read-only plan info in the app,
-  // purchasing only happens in an actual web browser outside the app shell.
-  // Hiding the /dashboard/more link to this page isn't enough on its own —
-  // this page is a real route, reachable by deep link/back-button/typed URL
-  // regardless of what links to it, so the guard has to live here.
-  if (isNative) {
+  // Apple Guideline 3.1.1 — no purchase mechanism other than IAP may appear
+  // in the native build. Show plan status only; no pricing, no external links.
+  // mounted guard prevents the payment UI from flashing during the first render
+  // before isNative flips from its SSR-safe false initial value.
+  if (!mounted || isNative) {
+    if (!mounted) return null; // render nothing until we know platform
+    const planLabel = currentPlan && currentPlan !== 'free'
+      ? currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)
+      : 'Free';
     return (
       <div style={{ textAlign:'center', padding:'60px 24px' }}>
         <div style={{ fontSize:40, marginBottom:16 }}>⚡</div>
         <div style={{ fontSize:18, fontWeight:800, marginBottom:8 }}>
-          {currentPlan && currentPlan !== 'free' ? `You're on the ${currentPlan.charAt(0).toUpperCase()}${currentPlan.slice(1)} plan` : 'Upgrade Plan'}
+          {planLabel} Plan
         </div>
         <div style={{ fontSize:13, color:'var(--dim)', maxWidth:340, margin:'0 auto', lineHeight:1.7 }}>
-          Manage or change your subscription at{' '}
-          <span style={{ color:'var(--bluL)', fontWeight:700 }}>signalgenie.ai</span> in your browser.
+          {currentPlan && currentPlan !== 'free'
+            ? 'Your subscription is active. You have full access to your plan features.'
+            : 'You have access to all free tier features.'}
         </div>
       </div>
     );
