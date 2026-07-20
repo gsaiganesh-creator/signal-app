@@ -10,14 +10,21 @@ Needs ALPACA_API_KEY_ID + ALPACA_API_SECRET_KEY env vars -- set on this
 backend's own host (Railway/Render/etc), NOT the same place as Vercel's
 env vars, which only cover the Next.js side.
 """
+import json
 import logging
 import os
 import re
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 
 import pandas as pd
 
 logger = logging.getLogger(__name__)
+
+DATA_DIR = Path(__file__).parent.parent / "data"
+UNIVERSE_CACHE_FILE = DATA_DIR / "alpaca_full_universe.json"
+UNIVERSE_CACHE_TTL_HOURS = 24 * 7  # listings/delistings are rare
+_ALLOWED_EXCHANGES = {"NASDAQ", "NYSE", "AMEX"}
 
 # Share-class tickers (e.g. Berkshire's BRK-B) use a dash in this codebase's
 # convention (matching yfinance), but Alpaca expects a dot (BRK.B). Only
@@ -50,6 +57,44 @@ if _ALPACA_KEY and _ALPACA_SECRET:
 
 def has_alpaca_keys() -> bool:
     return _client is not None
+
+
+def fetch_full_us_universe() -> list[dict] | None:
+    """
+    Full tradable US equity list (NASDAQ+NYSE+AMEX, ~7000-8000 stocks) via
+    Alpaca's TradingClient asset list — disk-cached 7 days since
+    listings/delistings are rare. Returns None if keys aren't configured or
+    the request fails, so the caller can skip the full-market scan for that
+    run rather than iterate a curated fallback list.
+    """
+    if UNIVERSE_CACHE_FILE.exists():
+        try:
+            data = json.loads(UNIVERSE_CACHE_FILE.read_text())
+            if datetime.fromisoformat(data["_ts"]) > datetime.now() - timedelta(hours=UNIVERSE_CACHE_TTL_HOURS):
+                return data["stocks"]
+        except Exception:
+            pass
+
+    if not _ALPACA_KEY or not _ALPACA_SECRET:
+        return None
+    try:
+        from alpaca.trading.client import TradingClient
+        from alpaca.trading.requests import GetAssetsRequest
+        from alpaca.trading.enums import AssetClass, AssetStatus
+
+        trading = TradingClient(_ALPACA_KEY, _ALPACA_SECRET)
+        assets = trading.get_all_assets(GetAssetsRequest(asset_class=AssetClass.US_EQUITY, status=AssetStatus.ACTIVE))
+        stocks = [
+            {"symbol": _from_alpaca_symbol(a.symbol), "name": a.name or a.symbol, "exchange": str(a.exchange)}
+            for a in assets
+            if a.tradable and str(a.exchange) in _ALLOWED_EXCHANGES
+        ]
+        DATA_DIR.mkdir(exist_ok=True)
+        UNIVERSE_CACHE_FILE.write_text(json.dumps({"_ts": datetime.now().isoformat(), "stocks": stocks}))
+        return stocks
+    except Exception as e:
+        logger.warning("alpaca_client: full universe fetch failed -- %s", e)
+        return None
 
 
 def is_us_equity_symbol(symbol: str) -> bool:

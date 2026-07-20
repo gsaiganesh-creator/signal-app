@@ -15,6 +15,7 @@ from core.signal_cache_scan import run_signal_cache_prewarm
 from core.scan_log_writer import run_scan_log_writer
 from core.kite_auth import run_daily_login, run_health_check
 from core.full_market_scan import run_full_market_scan
+from core.full_market_scan_us import run_full_market_scan_us
 
 logger = logging.getLogger(__name__)
 
@@ -147,6 +148,14 @@ def _full_market_scan_job():
         run_full_market_scan()
     except Exception as e:
         logger.error("scheduler: full market scan failed: %s", e)
+
+
+def _full_market_scan_us_job():
+    logger.info("scheduler: starting US full market scan (~7-8k stocks)")
+    try:
+        run_full_market_scan_us()
+    except Exception as e:
+        logger.error("scheduler: US full market scan failed: %s", e)
 
 
 def start_scheduler():
@@ -317,11 +326,22 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # 8:20 PM IST, Mon–Fri — full NASDAQ/NYSE/AMEX market scan (~7-8k stocks),
+    # shortly after us_morning_scan (8:15 PM). Elite-only — see
+    # apps/web/app/api/ml/signals/us/full-market/route.ts.
+    scheduler.add_job(
+        _full_market_scan_us_job,
+        CronTrigger(day_of_week="mon-fri", hour=20, minute=20, timezone=IST),
+        id="full_market_scan_us",
+        name="Full Market Scan (US)",
+        replace_existing=True,
+    )
+
     scheduler.start()
     logger.info(
         "scheduler: started (morning_scan, us_morning_scan, intraday_check, eod_cleanup, "
         "sentiment_scan, sentiment_backfill, scan_log_backfill, price_alerts_check, "
         "paper_trading_scan, ml_shadow_log, ml_shadow_log_backfill, signal_cache_prewarm, "
-        "scan_log_writer, kite_daily_login, kite_health_check, full_market_scan)"
+        "scan_log_writer, kite_daily_login, kite_health_check, full_market_scan, full_market_scan_us)"
     )
     return scheduler

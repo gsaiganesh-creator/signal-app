@@ -992,6 +992,14 @@ export default function SignalsPage() {
   const [selectedUS,   setSelectedUS]   = useState<USSignal | null>(null);
   const [usPortSyms,   setUsPortSyms]   = useState<string[]>([]);
 
+  // US Full Market scan (~7-8k stocks) — Elite-only (whole US tab already
+  // is), no depth tiering needed since no lower tier can reach it.
+  const [usMode,               setUsMode]               = useState<'top20'|'full_market'>('top20');
+  const [usFullMarketSignals,  setUsFullMarketSignals]  = useState<USSignal[]>([]);
+  const [usFullMarketLoading,  setUsFullMarketLoading]  = useState(false);
+  const [usFullMarketLoaded,   setUsFullMarketLoaded]   = useState(false);
+  const [usFullMarketMeta,     setUsFullMarketMeta]     = useState<ScanMeta | null>(null);
+
   // Upgrade modal
   const [upgradeModal, setUpgradeModal] = useState<{ feature: string; minPlan: 'starter' | 'pro' | 'elite' } | null>(null);
 
@@ -1122,6 +1130,22 @@ export default function SignalsPage() {
     setUsLoading(false);
     setUsLoaded(true);
   }, [usLoaded]);
+
+  const loadUSFullMarket = useCallback(async () => {
+    if (!session) return;
+    setUsFullMarketLoading(true);
+    try {
+      const r = await fetch('/api/ml/signals/us/full-market', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const d = await r.json();
+      const picks: USScanPick[] = d.signals ?? [];
+      setUsFullMarketSignals(picks.map(p => ({ ...p, zone: usZoneFromConfidence(p.confidence), detail: null })));
+      setUsFullMarketMeta({ computed_at: d.computed_at ?? null, next_run_at: d.next_run_at ?? null });
+    } catch { /* leave whatever's already loaded */ }
+    setUsFullMarketLoading(false);
+    setUsFullMarketLoaded(true);
+  }, [session]);
 
   const loadFundamentals = useCallback(async () => {
     setFundLoading(true);
@@ -1258,23 +1282,26 @@ export default function SignalsPage() {
     .filter(s => !advMaxEma  || Math.abs(s.ema_dist_pct) <= parseFloat(advMaxEma));
 
   // US derived
+  const activeUSSignals = usMode === 'full_market' ? usFullMarketSignals : usSignals;
+  const activeUSLoading = usMode === 'full_market' ? usFullMarketLoading : usLoading;
+  const activeUSLoaded  = usMode === 'full_market' ? usFullMarketLoaded  : usLoaded;
   const usPortSet   = new Set(usPortSyms);
-  const usPortInSig = usSignals.filter(s => usPortSet.has(s.symbol)).length;
+  const usPortInSig = activeUSSignals.filter(s => usPortSet.has(s.symbol)).length;
   const US_ZONE_COUNTS = {
-    'Strong Momentum':  usSignals.filter(s => s.zone === 'Strong Momentum').length,
-    'Building':         usSignals.filter(s => s.zone === 'Building').length,
-    'Sideways':         usSignals.filter(s => s.zone === 'Sideways').length,
-    'Weak / Declining': usSignals.filter(s => s.zone === 'Weak / Declining').length,
+    'Strong Momentum':  activeUSSignals.filter(s => s.zone === 'Strong Momentum').length,
+    'Building':         activeUSSignals.filter(s => s.zone === 'Building').length,
+    'Sideways':         activeUSSignals.filter(s => s.zone === 'Sideways').length,
+    'Weak / Declining': activeUSSignals.filter(s => s.zone === 'Weak / Declining').length,
   };
   const US_FILTERS = [
-    { key:'all',              label:`All (${usSignals.length})` },
+    { key:'all',              label:`All (${activeUSSignals.length})` },
     ...(usPortSyms.length ? [{ key:'portfolio', label:`💼 My US Holdings (${usPortInSig})` }] : []),
     { key:'Strong Momentum',  label:`🟢 Strong (${US_ZONE_COUNTS['Strong Momentum']})` },
     { key:'Building',         label:`📈 Building (${US_ZONE_COUNTS['Building']})` },
     { key:'Sideways',         label:`⏸ Sideways (${US_ZONE_COUNTS['Sideways']})` },
     { key:'Weak / Declining', label:`🔴 Weak (${US_ZONE_COUNTS['Weak / Declining']})` },
   ];
-  const shownUS = usSignals
+  const shownUS = activeUSSignals
     .filter(s => {
       if (usFilter === 'portfolio') return usPortSet.has(s.symbol);
       if (usFilter === 'all') return true;
@@ -1685,8 +1712,31 @@ export default function SignalsPage() {
       {/* ── US CONTENT ───────────────────────────────────────────────────── */}
       {market === 'us' && (
         <>
+          {/* US scan mode toggle — Top 20 (curated) vs Full Market (~7-8k
+              stocks, Alpaca). Whole US tab is already Elite-only, so no
+              further depth gating needed on Full Market itself. */}
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
+            <button onClick={() => setUsMode('top20')}
+              style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                background: usMode==='top20' ? 'rgba(79,111,250,0.12)' : 'var(--surf2)',
+                border: usMode==='top20' ? '1px solid rgba(79,111,250,0.35)' : '1px solid var(--bdr)',
+                color: usMode==='top20' ? 'var(--bluL)' : 'var(--dim)' }}>
+              📡 Top 20
+            </button>
+            <button onClick={() => { setUsMode('full_market'); if (!usFullMarketLoaded && !usFullMarketLoading) loadUSFullMarket(); }}
+              style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                background: usMode==='full_market' ? 'rgba(139,92,246,0.12)' : 'var(--surf2)',
+                border: usMode==='full_market' ? '1px solid rgba(139,92,246,0.35)' : '1px solid var(--bdr)',
+                color: usMode==='full_market' ? 'var(--pur)' : 'var(--dim)' }}>
+              🌐 Full Market{usFullMarketLoading ? ' — scanning…' : usFullMarketSignals.length > 0 && usMode==='full_market' ? ` (${usFullMarketSignals.length})` : ''}
+            </button>
+          </div>
+          <div style={{ display:'flex', gap:10, alignItems:'center', minHeight:20, marginBottom:14 }}>
+            {usMode === 'full_market' && <ScanTimer meta={usFullMarketMeta} />}
+          </div>
+
           {/* Zone KPIs */}
-          {!usLoading && usSignals.length > 0 && (
+          {!activeUSLoading && activeUSSignals.length > 0 && (
             <div className="g4" style={{ display:'grid', gap:12, marginBottom:18 }}>
               {(['Strong Momentum','Building','Sideways','Weak / Declining'] as const).map(zone => {
                 const st = ZONE_STYLE[zone];
@@ -1712,16 +1762,16 @@ export default function SignalsPage() {
                 {f.label}
               </button>
             ))}
-            <button onClick={() => { setUsLoaded(false); loadUS(); }} style={{ height:36, padding:'0 14px', borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto' }}>🔄</button>
+            <button onClick={() => { if (usMode === 'full_market') { setUsFullMarketLoaded(false); loadUSFullMarket(); } else { setUsLoaded(false); loadUS(); } }} style={{ height:36, padding:'0 14px', borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto' }}>🔄</button>
           </div>
 
-          {usLoading && (
+          {activeUSLoading && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {[1,2,3,4,5].map(i => <div key={i} style={{ height:80, borderRadius:14, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', animation:'pulse 1.5s infinite', opacity:0.7 }}/>)}
             </div>
           )}
 
-          {!usLoading && shownUS.length > 0 && (
+          {!activeUSLoading && shownUS.length > 0 && (
             <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
               {shownUS.map(sig => {
                 const st = zs(sig.zone);
@@ -1767,14 +1817,14 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {!usLoading && !usLoaded && (
+          {!activeUSLoading && !activeUSLoaded && (
             <div style={{ textAlign:'center', padding:'40px 24px', background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14 }}>
               <div style={{ fontSize:32, marginBottom:10 }}>🇺🇸</div>
               <div style={{ fontSize:14, fontWeight:700, marginBottom:6 }}>Loading US market scan…</div>
             </div>
           )}
 
-          {!usLoading && usLoaded && shownUS.length === 0 && (
+          {!activeUSLoading && activeUSLoaded && shownUS.length === 0 && (
             <div style={{ textAlign:'center', padding:'40px 24px', background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:14 }}>
               <div style={{ fontSize:32, marginBottom:10 }}>🔍</div>
               <div style={{ fontSize:14, fontWeight:700, marginBottom:6 }}>No results</div>

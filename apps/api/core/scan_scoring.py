@@ -1,7 +1,8 @@
-"""Shared RSI/EMA scoring logic for India equity scans — used by both
-swing_scan.py's curated ~100-stock universe and full_market_scan.py's full
-NSE+BSE universe, so the two scans can never drift out of sync on what
-counts as a qualifying pick."""
+"""Shared RSI/EMA scoring logic for equity scans — used by India's
+swing_scan.py (curated ~100) and full_market_scan.py (full NSE+BSE), and by
+US's us_scan.py (curated ~100) and full_market_scan_us.py (full NYSE/
+NASDAQ/AMEX), so the curated and full-universe versions of each market can
+never drift out of sync on what counts as a qualifying pick."""
 
 
 def calc_rsi(closes, period: int = 14):
@@ -12,15 +13,18 @@ def calc_rsi(closes, period: int = 14):
     return 100 - (100 / (1 + rs))
 
 
-def score_symbol(sym: str, s_close, name: str = "", sector: str = "") -> dict | None:
-    """RSI 42-62, price near EMA, price >₹100. Returns None if the symbol
-    doesn't pass the screen."""
+def score_symbol(sym: str, s_close, name: str = "", sector: str = "", min_price: float = 100.0, price_decimals: int = 1) -> dict | None:
+    """RSI 42-62, price near EMA, price above min_price (₹100 for India's
+    default, callers pass $20 for US). price_decimals controls rounding on
+    the derived entry/target/stop prices (1 for India's larger rupee values,
+    2 for US's cents-precision quotes). Returns None if the symbol doesn't
+    pass the screen."""
     s_close = s_close.dropna()
     if len(s_close) < 21:
         return None
     cmp = float(s_close.iloc[-1])
     prev = float(s_close.iloc[-2])
-    if cmp < 100:
+    if cmp < min_price:
         return None
     intraday_chg = (cmp - prev) / prev * 100
     if intraday_chg > 3.0:
@@ -34,10 +38,10 @@ def score_symbol(sym: str, s_close, name: str = "", sector: str = "") -> dict | 
     if ema_dist > 8:
         return None
     support = max(ema10, ema20) if cmp > max(ema10, ema20) else min(ema10, ema20)
-    entry_low = round(min(cmp, support) * 0.99, 1)
-    entry_high = round(cmp * 1.005, 1)
-    sl = round(support * 0.95, 1)
-    target = round(cmp * 1.10, 1)
+    entry_low = round(min(cmp, support) * 0.99, price_decimals)
+    entry_high = round(cmp * 1.005, price_decimals)
+    sl = round(support * 0.95, price_decimals)
+    target = round(cmp * 1.10, price_decimals)
     score = (10 - abs(rsi - 52)) + (5 - abs(ema_dist))
     return {
         "symbol": sym,

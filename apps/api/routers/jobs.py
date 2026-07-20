@@ -13,6 +13,7 @@ from core.signal_cache_scan import run_signal_cache_prewarm
 from core.scan_log_writer import run_scan_log_writer
 from core.kite_auth import run_daily_login, run_health_check
 from core.full_market_scan import run_full_market_scan
+from core.full_market_scan_us import run_full_market_scan_us
 
 router = APIRouter(prefix="/jobs", tags=["jobs"])
 
@@ -31,6 +32,7 @@ _JOBS = {
     "kite-daily-login": run_daily_login,
     "kite-health-check": run_health_check,
     "full-market-scan": run_full_market_scan,
+    "full-market-scan-us": run_full_market_scan_us,
 }
 
 
