@@ -29,8 +29,8 @@ from core.notify import send_whatsapp
 
 logger = logging.getLogger(__name__)
 
-SUPA_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "")
-SRVC_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPA_URL = os.getenv("SUPABASE_URL", "")
+SRVC_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 
 KITE_BASE = "https://kite.zerodha.com"
 CONNECT_URL = "https://kite.zerodha.com/connect/login"

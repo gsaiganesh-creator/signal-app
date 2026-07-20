@@ -25,8 +25,8 @@ logger = logging.getLogger(__name__)
 DATA_DIR = Path(__file__).parent.parent / "data"
 TOKEN_CACHE_FILE = DATA_DIR / "kite_instrument_tokens.json"
 
-SUPA_URL = os.getenv("NEXT_PUBLIC_SUPABASE_URL", "")
-SRVC_KEY = os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPA_URL = os.getenv("SUPABASE_URL", "")
+SRVC_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
 
 _kite_client = None
 _cached_access_token: str | None = None
