@@ -1299,8 +1299,11 @@ export default function SignalsPage() {
       {/* ── INDIA CONTENT ────────────────────────────────────────────────── */}
       {market === 'india' && (
         <>
-          {/* Universe mode toggle */}
-          <div style={{ display:'flex', gap:6, alignItems:'center', marginBottom:14, flexWrap:'wrap' }}>
+          {/* Universe mode toggle — exactly 4 pills, same style tokens, nothing
+              else interleaved into this row (timer/hint/refresh moved to their
+              own row below) so the group always reads as one clean unit
+              instead of wrapping mid-group on narrow screens. */}
+          <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
             <button onClick={() => setPortMode('ml')}
               style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                 background: portMode==='ml' ? 'rgba(255,184,0,0.12)' : 'var(--surf2)',
@@ -1322,40 +1325,42 @@ export default function SignalsPage() {
                 color: portMode==='fundamental_top' ? 'var(--grn)' : 'var(--dim)' }}>
               💎 Fundamental Strong{fundTopLoading ? ' — scanning…' : fundTopSignals.length > 0 && portMode==='fundamental_top' ? ` (${fundTopSignals.length})` : ''}
             </button>
-            {portMode !== 'portfolio' && portMode !== 'fundamental_top' && <ScanTimer meta={activeMeta} />}
-            {portMode === 'fundamental_top' && <ScanTimer meta={fundTopMeta} />}
-            {/* Portfolio mode — locked for free users */}
             {isStarter ? (
-              <>
-                <button onClick={() => { setPortMode('portfolio'); if (!portScanLoaded && !portScanLoading) loadPortfolioScan(); }}
-                  style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                    background: portMode==='portfolio' ? 'rgba(23,64,245,0.12)' : 'var(--surf2)',
-                    border: portMode==='portfolio' ? '1px solid rgba(23,64,245,0.35)' : '1px solid var(--bdr)',
-                    color: portMode==='portfolio' ? 'var(--bluL)' : 'var(--dim)' }}>
-                  💼 My Portfolio{portScanLoading ? ` — scanning… ${portScanProgress}%` : portScanResults.length > 0 ? ` (${portScanResults.length})` : ''}
-                </button>
-                {portScanLoading && (
-                  <div style={{ flex:1, height:4, background:'var(--bdr)', borderRadius:99, overflow:'hidden', minWidth:80, maxWidth:200 }}>
-                    <div style={{ height:'100%', width:`${portScanProgress}%`, background:'var(--blu)', borderRadius:99, transition:'width 0.3s' }}/>
-                  </div>
-                )}
-                {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
-                  <span className="sig-sort-hint" style={{ fontSize:11, color:'var(--dim)' }}>sorted by ₹ invested · click to refresh</span>
-                )}
-                {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
-                  <button onClick={() => { setPortScanLoaded(false); loadPortfolioScan(); }}
-                    style={{ height:26, padding:'0 10px', borderRadius:7, fontSize:11, fontWeight:600, cursor:'pointer', fontFamily:'inherit',
-                      background:'transparent', border:'1px solid var(--bdr)', color:'var(--dim)' }}>
-                    ↺ Refresh
-                  </button>
-                )}
-              </>
+              <button onClick={() => { setPortMode('portfolio'); if (!portScanLoaded && !portScanLoading) loadPortfolioScan(); }}
+                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  background: portMode==='portfolio' ? 'rgba(23,64,245,0.12)' : 'var(--surf2)',
+                  border: portMode==='portfolio' ? '1px solid rgba(23,64,245,0.35)' : '1px solid var(--bdr)',
+                  color: portMode==='portfolio' ? 'var(--bluL)' : 'var(--dim)' }}>
+                💼 My Portfolio{portScanLoading ? ` — scanning… ${portScanProgress}%` : portScanResults.length > 0 ? ` (${portScanResults.length})` : ''}
+              </button>
             ) : (
               <button onClick={() => setUpgradeModal({ feature: 'Portfolio Universe — scan only your holdings', minPlan: 'starter' })}
                 style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', display:'flex', alignItems:'center', gap:6 }}>
                 🔒 My Portfolio <span style={{ fontSize:10, background:'rgba(23,64,245,0.15)', color:'var(--bluL)', borderRadius:4, padding:'1px 5px' }}>Starter</span>
               </button>
+            )}
+          </div>
+
+          {/* Secondary row — timer / progress / refresh, kept out of the pill
+              group above on purpose so it can't break that row's rhythm */}
+          <div style={{ display:'flex', gap:10, alignItems:'center', flexWrap:'wrap', minHeight:20, marginBottom:14 }}>
+            {portMode !== 'portfolio' && portMode !== 'fundamental_top' && <ScanTimer meta={activeMeta} />}
+            {portMode === 'fundamental_top' && <ScanTimer meta={fundTopMeta} />}
+            {portMode === 'portfolio' && portScanLoading && (
+              <div style={{ flex:1, height:4, background:'var(--bdr)', borderRadius:99, overflow:'hidden', minWidth:80, maxWidth:200 }}>
+                <div style={{ height:'100%', width:`${portScanProgress}%`, background:'var(--blu)', borderRadius:99, transition:'width 0.3s' }}/>
+              </div>
+            )}
+            {portMode === 'portfolio' && !portScanLoading && portScanLoaded && (
+              <>
+                <span className="sig-sort-hint" style={{ fontSize:11, color:'var(--dim)' }}>sorted by ₹ invested</span>
+                <button onClick={() => { setPortScanLoaded(false); loadPortfolioScan(); }}
+                  style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                    background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)' }}>
+                  ↺ Refresh
+                </button>
+              </>
             )}
           </div>
 
