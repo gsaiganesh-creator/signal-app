@@ -165,14 +165,16 @@ def verify_connection(access_token: str) -> bool:
         return False
 
 
-def run_daily_login() -> None:
+def run_daily_login() -> dict:
     """Scheduled entrypoint (~08:45 IST daily, before market open). Logs in,
-    verifies, persists to Supabase, alerts on any failure via WhatsApp."""
+    verifies, persists to Supabase, alerts on any failure via WhatsApp.
+    Returns a result dict — also callable via POST /api/jobs/kite-daily-login
+    for on-demand testing instead of waiting for the next 8:45 IST window."""
     token = auto_login()
     if not token:
         save_session(None, health_ok=False)
         send_whatsapp("🔴 SignalGenie: Kite daily login FAILED. India scans will fall back to yfinance until this is fixed.")
-        return
+        return {"ok": False, "step": "login"}
 
     ok = verify_connection(token)
     save_session(token, health_ok=ok)
@@ -182,3 +184,28 @@ def run_daily_login() -> None:
 
     if not ok:
         send_whatsapp("🔴 SignalGenie: Kite login succeeded but verification failed. Check the account manually.")
+        return {"ok": False, "step": "verify"}
+
+    return {"ok": True}
+
+
+def run_health_check() -> dict:
+    """
+    Periodic mid-day check (every 30 min during market hours via
+    core/scheduler.py), also callable via POST /api/jobs/kite-health-check.
+    Catches a token getting revoked or Kite having an outage after the
+    morning login already succeeded. Only sends a WhatsApp alert on a state
+    CHANGE (healthy -> unhealthy), not every failing check, so an outage
+    doesn't spam every 30 minutes for its whole duration.
+    """
+    token = get_stored_access_token()
+    healthy = bool(token) and verify_connection(token)
+    was_healthy = get_last_health_ok()
+
+    if was_healthy and not healthy:
+        send_whatsapp("🔴 SignalGenie: Kite health check just went RED mid-day. India scans are falling back to yfinance.")
+    elif not was_healthy and healthy:
+        send_whatsapp("🟢 SignalGenie: Kite health check recovered.")
+
+    save_session(token, health_ok=healthy)
+    return {"ok": healthy}

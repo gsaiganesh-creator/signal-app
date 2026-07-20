@@ -13,7 +13,7 @@ from core.shadow_log import run_shadow_log
 from core.ml_shadow_log_backfill import run_ml_shadow_log_backfill
 from core.signal_cache_scan import run_signal_cache_prewarm
 from core.scan_log_writer import run_scan_log_writer
-from core.kite_auth import run_daily_login
+from core.kite_auth import run_daily_login, run_health_check
 
 logger = logging.getLogger(__name__)
 
@@ -130,29 +130,10 @@ def _kite_daily_login_job():
 
 
 def _kite_health_check_job():
-    """
-    Periodic mid-day check, separate from the once-daily login — catches a
-    token getting revoked or Kite having an outage after the morning login
-    already succeeded. Only sends a WhatsApp alert on a state CHANGE
-    (healthy -> unhealthy), not every failing check, so a Kite outage
-    doesn't spam every 30 minutes for its whole duration.
-    """
     if not _is_market_day():
         return
     try:
-        from core.kite_auth import get_stored_access_token, get_last_health_ok, verify_connection, save_session
-        from core.notify import send_whatsapp
-
-        token = get_stored_access_token()
-        healthy = bool(token) and verify_connection(token)
-        was_healthy = get_last_health_ok()
-
-        if was_healthy and not healthy:
-            send_whatsapp("🔴 SignalGenie: Kite health check just went RED mid-day. India scans are falling back to yfinance.")
-        elif not was_healthy and healthy:
-            send_whatsapp("🟢 SignalGenie: Kite health check recovered.")
-
-        save_session(token, health_ok=healthy)
+        run_health_check()
     except Exception as e:
         logger.error("scheduler: Kite health check failed: %s", e)
 
