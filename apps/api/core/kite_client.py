@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 DATA_DIR = Path(__file__).parent.parent / "data"
 TOKEN_CACHE_FILE = DATA_DIR / "kite_instrument_tokens.json"
+UNIVERSE_CACHE_FILE = DATA_DIR / "kite_full_universe.json"
+UNIVERSE_CACHE_TTL_HOURS = 24 * 7  # instrument list changes rarely (new listings/delistings)
 
 SUPA_URL = os.getenv("SUPABASE_URL", "")
 SRVC_KEY = os.getenv("SUPABASE_SERVICE_KEY", "")
@@ -109,25 +111,88 @@ def _save_token_cache(cache: dict) -> None:
     TOKEN_CACHE_FILE.write_text(json.dumps(cache, indent=2))
 
 
-def _get_instrument_tokens(nse_symbols: list[str]) -> dict[str, int]:
-    cache = _load_token_cache()
-    missing = [s for s in nse_symbols if s not in cache]
-    if missing:
-        kite = _get_kite()
-        if kite:
-            try:
-                query = [f"NSE:{s}" for s in missing]
-                ltp = kite.ltp(query)
-                for key, val in ltp.items():
-                    cache[key.replace("NSE:", "")] = val["instrument_token"]
-                _save_token_cache(cache)
-            except Exception as e:
-                logger.warning("kite_client: instrument token fetch failed — %s", e)
-    return {s: cache[s] for s in nse_symbols if s in cache and s != "_ts"}
+_EXCHANGE_PREFIX = {"NS": "NSE", "BO": "BSE"}
 
 
 def _strip_suffix(symbol: str) -> str:
     return symbol[:-3] if symbol.endswith(".NS") or symbol.endswith(".BO") else symbol
+
+
+def _get_instrument_tokens(symbols: list[str]) -> dict[str, int]:
+    """
+    symbols carry the .NS/.BO suffix — cache is keyed on the suffixed
+    symbol (not the bare trading symbol) so an NSE and a BSE listing that
+    share the same trading symbol never collide, and the correct exchange
+    prefix is queried for each (previously hardcoded to "NSE:", which
+    silently failed to resolve any BSE-only symbol — undetected before
+    since the only caller was the NSE-only curated universe).
+    """
+    cache = _load_token_cache()
+    missing = [s for s in symbols if s not in cache]
+    if missing:
+        kite = _get_kite()
+        if kite:
+            try:
+                by_exchange: dict[str, list[str]] = {}
+                for s in missing:
+                    suffix = s.rsplit(".", 1)[-1] if "." in s else "NS"
+                    by_exchange.setdefault(_EXCHANGE_PREFIX.get(suffix, "NSE"), []).append(s)
+                for exch, syms in by_exchange.items():
+                    query = [f"{exch}:{_strip_suffix(s)}" for s in syms]
+                    ltp = kite.ltp(query)
+                    for key, val in ltp.items():
+                        tsym = key.split(":", 1)[1]
+                        matched = next((s for s in syms if _strip_suffix(s) == tsym), None)
+                        if matched:
+                            cache[matched] = val["instrument_token"]
+                _save_token_cache(cache)
+            except Exception as e:
+                logger.warning("kite_client: instrument token fetch failed — %s", e)
+    return {s: cache[s] for s in symbols if s in cache and s != "_ts"}
+
+
+def fetch_full_market_universe() -> list[dict] | None:
+    """
+    Full NSE+BSE equity list via Kite's instruments dump (~4000+ tradeable
+    stocks) — disk-cached 7 days since listings/delistings are rare. Returns
+    None if Kite isn't configured/logged in, so the caller can skip the
+    full-market scan for that run rather than fall back to yfinance for
+    thousands of symbols one at a time.
+    """
+    if UNIVERSE_CACHE_FILE.exists():
+        try:
+            data = json.loads(UNIVERSE_CACHE_FILE.read_text())
+            if datetime.fromisoformat(data["_ts"]) > datetime.now() - timedelta(hours=UNIVERSE_CACHE_TTL_HOURS):
+                return data["stocks"]
+        except Exception:
+            pass
+
+    kite = _get_kite()
+    if not kite:
+        return None
+    try:
+        seen: dict[str, dict] = {}
+        for exchange in ("NSE", "BSE"):
+            for inst in kite.instruments(exchange):
+                if inst.get("instrument_type") != "EQ":
+                    continue
+                tsym = inst.get("tradingsymbol", "")
+                if not tsym or "-RE" in tsym:
+                    continue
+                if tsym in seen and seen[tsym]["exchange"] == "NSE":
+                    continue  # prefer the NSE listing when a stock trades on both
+                seen[tsym] = {
+                    "symbol": f"{tsym}.{'NS' if exchange == 'NSE' else 'BO'}",
+                    "name": inst.get("name") or tsym,
+                    "exchange": exchange,
+                }
+        stocks = list(seen.values())
+        DATA_DIR.mkdir(exist_ok=True)
+        UNIVERSE_CACHE_FILE.write_text(json.dumps({"_ts": datetime.now().isoformat(), "stocks": stocks}))
+        return stocks
+    except Exception as e:
+        logger.warning("kite_client: full universe fetch failed — %s", e)
+        return None
 
 
 def fetch_kite_daily_bars(symbol: str, years: int = 2) -> pd.DataFrame | None:
@@ -139,9 +204,8 @@ def fetch_kite_daily_bars(symbol: str, years: int = 2) -> pd.DataFrame | None:
     kite = _get_kite()
     if not kite:
         return None
-    nse_symbol = _strip_suffix(symbol)
-    tokens = _get_instrument_tokens([nse_symbol])
-    token = tokens.get(nse_symbol)
+    tokens = _get_instrument_tokens([symbol])
+    token = tokens.get(symbol)
     if not token:
         return None
     try:
@@ -166,6 +230,34 @@ def fetch_kite_daily_bars(symbol: str, years: int = 2) -> pd.DataFrame | None:
         return None
 
 
+def fetch_kite_close_series(symbol: str, days: int = 35) -> pd.Series | None:
+    """
+    Daily Close series for one symbol — shorter lookback than
+    fetch_kite_daily_bars (which pulls years of OHLCV), used by
+    full_market_scan.py's per-symbol pass over ~4000 stocks where fetching
+    2 years of full OHLCV per symbol would be unnecessarily heavy.
+    """
+    kite = _get_kite()
+    if not kite:
+        return None
+    tokens = _get_instrument_tokens([symbol])
+    token = tokens.get(symbol)
+    if not token:
+        return None
+    try:
+        to_date = datetime.now()
+        from_date = to_date - timedelta(days=days)
+        candles = kite.historical_data(token, from_date=from_date.strftime("%Y-%m-%d"), to_date=to_date.strftime("%Y-%m-%d"), interval="day")
+        if not candles:
+            return None
+        df = pd.DataFrame(candles)
+        df["date"] = pd.to_datetime(df["date"])
+        return df.set_index("date")["close"]
+    except Exception as e:
+        logger.debug("kite_client: close series failed for %s — %s", symbol, e)
+        return None
+
+
 def fetch_kite_daily_closes_batch(symbols: list[str], days: int = 35) -> pd.DataFrame | None:
     """
     Wide-format Close price DataFrame (columns=symbols incl. .NS/.BO suffix,
@@ -177,14 +269,13 @@ def fetch_kite_daily_closes_batch(symbols: list[str], days: int = 35) -> pd.Data
     kite = _get_kite()
     if not kite or not symbols:
         return None
-    nse_symbols = [_strip_suffix(s) for s in symbols]
-    tokens = _get_instrument_tokens(nse_symbols)
+    tokens = _get_instrument_tokens(symbols)
     if not tokens:
         return None
     try:
         series = {}
-        for orig, nse_sym in zip(symbols, nse_symbols):
-            token = tokens.get(nse_sym)
+        for orig in symbols:
+            token = tokens.get(orig)
             if not token:
                 continue
             to_date = datetime.now()

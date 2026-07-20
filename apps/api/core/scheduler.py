@@ -14,6 +14,7 @@ from core.ml_shadow_log_backfill import run_ml_shadow_log_backfill
 from core.signal_cache_scan import run_signal_cache_prewarm
 from core.scan_log_writer import run_scan_log_writer
 from core.kite_auth import run_daily_login, run_health_check
+from core.full_market_scan import run_full_market_scan
 
 logger = logging.getLogger(__name__)
 
@@ -136,6 +137,16 @@ def _kite_health_check_job():
         run_health_check()
     except Exception as e:
         logger.error("scheduler: Kite health check failed: %s", e)
+
+
+def _full_market_scan_job():
+    if not _is_market_day():
+        return
+    logger.info("scheduler: starting full market scan (~4000 stocks, ~20+ min)")
+    try:
+        run_full_market_scan()
+    except Exception as e:
+        logger.error("scheduler: full market scan failed: %s", e)
 
 
 def start_scheduler():
@@ -295,11 +306,22 @@ def start_scheduler():
         replace_existing=True,
     )
 
+    # 9:30 AM IST, Mon–Fri — full NSE+BSE market scan (~4000 stocks, ~20+ min
+    # run, paced under Kite's rate limit). Depth differentiator between plan
+    # tiers — see apps/web/app/api/ml/signals/full-market/route.ts.
+    scheduler.add_job(
+        _full_market_scan_job,
+        CronTrigger(day_of_week="mon-fri", hour=9, minute=30, timezone=IST),
+        id="full_market_scan",
+        name="Full Market Scan (NSE+BSE)",
+        replace_existing=True,
+    )
+
     scheduler.start()
     logger.info(
         "scheduler: started (morning_scan, us_morning_scan, intraday_check, eod_cleanup, "
         "sentiment_scan, sentiment_backfill, scan_log_backfill, price_alerts_check, "
         "paper_trading_scan, ml_shadow_log, ml_shadow_log_backfill, signal_cache_prewarm, "
-        "scan_log_writer, kite_daily_login, kite_health_check)"
+        "scan_log_writer, kite_daily_login, kite_health_check, full_market_scan)"
     )
     return scheduler

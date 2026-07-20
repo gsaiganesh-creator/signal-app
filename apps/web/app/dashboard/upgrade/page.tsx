@@ -28,18 +28,18 @@ const PLANS = [
   },
   {
     id: 'starter', name: 'Starter', monthly: 299, annual: 239, monthlyUSD: 4.99, annualUSD: 3.99, color: 'var(--bluL)', border: 'rgba(23,64,245,0.4)',
-    features: ['25 signals / day','3 portfolios','ML signal classification','Algo Builder (5 strategies)','Paper trading'],
+    features: ['25 signals / day','3 portfolios','ML signal classification','Full Market Scan — top 100 of ~4,000 NSE+BSE stocks','Algo Builder (5 strategies)','Paper trading'],
     cta: 'Upgrade to Starter', isFree: false,
   },
   {
     id: 'pro', name: 'Pro', monthly: 799, annual: 639, monthlyUSD: 12.99, annualUSD: 10.39, color: 'var(--org)', border: 'rgba(255,92,26,0.5)',
     badge: 'MOST POPULAR',
-    features: ['Unlimited signals','10 portfolios','Priority signals','Backtest engine','1 broker connect','Earnings ML predictions','Sector heatmap + FII/DII'],
+    features: ['Unlimited signals','10 portfolios','Priority signals','Full Market Scan — top 500 of ~4,000 NSE+BSE stocks','Backtest engine','1 broker connect','Earnings ML predictions','Sector heatmap + FII/DII'],
     cta: 'Upgrade to Pro', isFree: false,
   },
   {
     id: 'elite', name: 'Elite', monthly: 1999, annual: 1599, monthlyUSD: 29.99, annualUSD: 23.99, color: 'var(--ylw)', border: 'rgba(255,184,0,0.5)',
-    features: ['Everything in Pro','Unlimited broker connects','API access (500 req/day)','Dedicated support','White-glove onboarding','Early feature access'],
+    features: ['Everything in Pro','Full Market Scan — every qualifying stock, no depth cap','Unlimited broker connects','API access (500 req/day)','Dedicated support','White-glove onboarding','Early feature access'],
     cta: 'Upgrade to Elite', isFree: false,
   },
 ];

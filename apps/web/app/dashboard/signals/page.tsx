@@ -870,17 +870,17 @@ const PLAN_DETAILS = {
   starter: {
     color:'var(--bluL)', bg:'rgba(23,64,245,0.12)', bdr:'rgba(23,64,245,0.3)',
     price:'₹299/mo',
-    perks:['All 20 ML signals + full detail','Entry range, targets, stop-loss','Portfolio universe scan','Signal track record'],
+    perks:['All 20 ML signals + full detail','Entry range, targets, stop-loss','Portfolio universe scan','🌐 Full Market Scan — top 100 of ~4,000 stocks','Signal track record'],
   },
   pro: {
     color:'var(--org)', bg:'rgba(255,92,26,0.12)', bdr:'rgba(255,92,26,0.3)',
     price:'₹799/mo',
-    perks:['Everything in Starter','Custom universe (any NSE stock)','Price alerts from signal rows','Export signals CSV'],
+    perks:['Everything in Starter','🌐 Full Market Scan — top 500 of ~4,000 stocks','Custom universe (any NSE stock)','Price alerts from signal rows','Export signals CSV'],
   },
   elite: {
     color:'var(--ylw)', bg:'rgba(255,184,0,0.10)', bdr:'rgba(255,184,0,0.28)',
     price:'₹1,999/mo',
-    perks:['Everything in Pro','🇺🇸 US market signals (NYSE/NASDAQ)','✨ AI narrative per signal — Grok-powered','Intraday scan refresh (coming soon)'],
+    perks:['Everything in Pro','🌐 Full Market Scan — every qualifying stock, no cap','🇺🇸 US market signals (NYSE/NASDAQ)','✨ AI narrative per signal — Grok-powered','Intraday scan refresh (coming soon)'],
   },
 } as const;
 
@@ -926,7 +926,7 @@ function UpgradeModal({ feature, minPlan, onClose }: { feature: string; minPlan:
 
 export default function SignalsPage() {
   const { symbols: portfolioSymbols, portfolios, session } = usePortfolio();
-  const { isStarter, isElite, loading: planLoading } = usePlan();
+  const { isStarter, isPro, isElite, loading: planLoading } = usePlan();
   const [market, setMarket] = useState<Market>('india');
   const isNative = useIsNativePlatform();
 
@@ -967,8 +967,17 @@ export default function SignalsPage() {
   const [fundTopLoaded,  setFundTopLoaded]  = useState(false);
   const [fundTopMeta,    setFundTopMeta]    = useState<ScanMeta | null>(null);
 
+  // Full NSE+BSE market scan (~4000 stocks) — depth-gated by plan, see
+  // /api/ml/signals/full-market. Same MLSignal shape as ml/beta, so it slots
+  // straight into activeSignals/activeMeta below and reuses their KPIs/table.
+  const [fullMarketSignals,   setFullMarketSignals]   = useState<MLSignal[]>([]);
+  const [fullMarketLoading,   setFullMarketLoading]   = useState(false);
+  const [fullMarketLoaded,    setFullMarketLoaded]    = useState(false);
+  const [fullMarketMeta,      setFullMarketMeta]      = useState<ScanMeta | null>(null);
+  const [fullMarketTotal,     setFullMarketTotal]     = useState(0); // total qualifying before tier depth slice
+
   // Portfolio universe scan mode
-  const [portMode,        setPortMode]        = useState<'ml'|'beta'|'fundamental_top'|'portfolio'>('ml');
+  const [portMode,        setPortMode]        = useState<'ml'|'beta'|'fundamental_top'|'portfolio'|'full_market'>('ml');
   const [portScanResults, setPortScanResults] = useState<(MLSignal & {invested:number})[]>([]);
   const [portScanLoading, setPortScanLoading] = useState(false);
   const [portScanProgress,setPortScanProgress]= useState(0);
@@ -1087,6 +1096,24 @@ export default function SignalsPage() {
     setFundTopLoaded(true);
   }, []);
 
+  const loadFullMarket = useCallback(async () => {
+    if (!session) return;
+    setFullMarketLoading(true);
+    try {
+      const r = await fetch('/api/ml/signals/full-market', {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const d = await r.json();
+      const sigs: MLSignal[] = d.signals ?? [];
+      const withBias = await attachBias(sigs);
+      setFullMarketSignals(withBias);
+      setFullMarketTotal(d.total_qualifying ?? sigs.length);
+      setFullMarketMeta({ computed_at: d.computed_at ?? null, next_run_at: d.next_run_at ?? null });
+    } catch { /* leave whatever's already loaded */ }
+    setFullMarketLoading(false);
+    setFullMarketLoaded(true);
+  }, [session]);
+
   const loadUS = useCallback(async () => {
     if (usLoaded) return;
     setUsLoading(true);
@@ -1192,8 +1219,8 @@ export default function SignalsPage() {
   }, [session, portfolios.length, isStarter, planLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // India derived — use portScanResults in portfolio mode, mlSignals in ml mode
-  const activeSignals = portMode === 'portfolio' ? portScanResults : portMode === 'beta' ? betaSignals : portMode === 'fundamental_top' ? [] : mlSignals;
-  const activeMeta = portMode === 'beta' ? betaMeta : portMode === 'ml' ? mlMeta : null;
+  const activeSignals = portMode === 'portfolio' ? portScanResults : portMode === 'beta' ? betaSignals : portMode === 'fundamental_top' ? [] : portMode === 'full_market' ? fullMarketSignals : mlSignals;
+  const activeMeta = portMode === 'beta' ? betaMeta : portMode === 'ml' ? mlMeta : portMode === 'full_market' ? fullMarketMeta : null;
   const hasPortfolio  = portfolioSymbols.length > 0;
   const portfolioCnt  = mlSignals.filter(s => portfolioSymbols.includes(s.symbol.replace('.NS',''))).length;
   const buyCnt        = activeSignals.filter(s => scoreSig(s) === 'buy').length;
@@ -1340,6 +1367,21 @@ export default function SignalsPage() {
                 🔒 My Portfolio <span style={{ fontSize:10, background:'rgba(23,64,245,0.15)', color:'var(--bluL)', borderRadius:4, padding:'1px 5px' }}>Starter</span>
               </button>
             )}
+            {isStarter ? (
+              <button onClick={() => { setPortMode('full_market'); if (!fullMarketLoaded && !fullMarketLoading) loadFullMarket(); }}
+                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  background: portMode==='full_market' ? 'rgba(139,92,246,0.12)' : 'var(--surf2)',
+                  border: portMode==='full_market' ? '1px solid rgba(139,92,246,0.35)' : '1px solid var(--bdr)',
+                  color: portMode==='full_market' ? 'var(--pur)' : 'var(--dim)' }}>
+                🌐 Full Market{fullMarketLoading ? ' — scanning…' : fullMarketSignals.length > 0 && portMode==='full_market' ? ` (${fullMarketSignals.length}${!isElite ? `/${fullMarketTotal}` : ''})` : ''}
+              </button>
+            ) : (
+              <button onClick={() => setUpgradeModal({ feature: 'Full Market Scan — all ~4,000 NSE+BSE stocks, not just the curated 100', minPlan: 'starter' })}
+                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', display:'flex', alignItems:'center', gap:6 }}>
+                🔒 Full Market <span style={{ fontSize:10, background:'rgba(139,92,246,0.15)', color:'var(--pur)', borderRadius:4, padding:'1px 5px' }}>Starter</span>
+              </button>
+            )}
           </div>
 
           {/* Secondary row — timer / progress / refresh, kept out of the pill
@@ -1371,11 +1413,12 @@ export default function SignalsPage() {
               {portMode === 'ml' && <>📡 <strong style={{ color:'var(--txt)' }}>ML Top 20</strong> — scans 100 curated NSE stocks across 25 sectors, filters for RSI 42–62 (room to move, not overbought/oversold) and price within 8% of the 20-day EMA (trend intact, not overextended), ranks by how close each stock is to the ideal momentum zone. These are the strongest all-round technical setups right now.</>}
               {portMode === 'beta' && <>⚡ <strong style={{ color:'var(--txt)' }}>ML Beta</strong> — same universe, ranked by ATR% (average daily price range) instead of a balanced score: the stocks that actually move the most day to day, for shorter swing windows. Higher potential reward, higher volatility — not the same as statistical market beta.</>}
               {portMode === 'fundamental_top' && <>💎 <strong style={{ color:'var(--txt)' }}>Fundamental Strong</strong> — ignores price action entirely. Ranks by valuation (lower P/E), efficiency (higher ROE), balance-sheet safety (lower debt/equity) and growth (revenue growth) — a composite quality score. A stock can top this list and be flat/red on the Top 20 scan, on purpose: different lens, longer horizon.</>}
+              {portMode === 'full_market' && <>🌐 <strong style={{ color:'var(--txt)' }}>Full Market</strong> — the same RSI/EMA screen as ML Top 20, run across all ~4,000 NSE+BSE stocks instead of a curated 100. Runs once daily, pre-market. {isElite ? 'Elite unlocks every qualifying stock.' : isPro ? `Pro shows the top 500 of ${fullMarketTotal} qualifying today — upgrade to Elite for the full list.` : `Starter shows the top 100 of ${fullMarketTotal} qualifying today — upgrade for deeper access.`}</>}
             </div>
           )}
 
           {/* Zone KPIs */}
-          {portMode !== 'fundamental_top' && !(portMode === 'portfolio' ? portScanLoading : portMode === 'beta' ? betaLoading : mlLoading) && activeSignals.length > 0 && (
+          {portMode !== 'fundamental_top' && !(portMode === 'portfolio' ? portScanLoading : portMode === 'beta' ? betaLoading : portMode === 'full_market' ? fullMarketLoading : mlLoading) && activeSignals.length > 0 && (
             <div className="g4" style={{ display:'grid', gap:12, marginBottom:18 }}>
               {[
                 { label:'Strong Momentum', cnt:buyCnt,        grad:'linear-gradient(135deg,rgba(0,212,160,0.13),rgba(0,212,160,0.03))',  bdr:'rgba(0,212,160,0.30)',  color:'var(--grn)' },
@@ -1425,7 +1468,7 @@ export default function SignalsPage() {
                 <span className="pill-short">{f.shortLabel}</span>
               </button>
             ))}
-            <button onClick={portMode === 'beta' ? loadBeta : loadIndia} style={{ height:34, padding:'0 12px', borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto', flexShrink:0 }}>🔄</button>
+            <button onClick={portMode === 'beta' ? loadBeta : portMode === 'full_market' ? loadFullMarket : loadIndia} style={{ height:34, padding:'0 12px', borderRadius:9, border:'1px solid var(--card-bdr)', background:'var(--card-bg)', color:'var(--dim)', fontSize:12, cursor:'pointer', fontFamily:'inherit', marginLeft:'auto', flexShrink:0 }}>🔄</button>
             <button onClick={() => setShowAdv(v => !v)}
               style={{ height:34, padding:'0 12px', borderRadius:9, border:`1px solid ${advActive ? 'var(--pur)' : 'var(--bdr)'}`, background: advActive ? 'rgba(139,92,246,0.12)' : 'var(--surf)', color: advActive ? 'var(--pur)' : 'var(--dim)', fontSize:12, fontWeight: advActive ? 700 : 500, cursor:'pointer', fontFamily:'inherit', whiteSpace:'nowrap', flexShrink:0 }}>
               ⚙{advActive ? ' •' : ''}
@@ -1485,7 +1528,7 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {portMode !== 'fundamental_top' && (portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : portMode === 'beta' ? betaLoading : mlLoading) && (
+          {portMode !== 'fundamental_top' && (portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : portMode === 'beta' ? betaLoading : portMode === 'full_market' ? fullMarketLoading : mlLoading) && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {[1,2,3,4].map(i => <div key={i} style={{ height:88, borderRadius:14, background:'var(--card-bg)', border:'1px solid var(--card-bdr)', animation:'pulse 1.5s infinite', opacity:0.7 }}/>)}
             </div>
@@ -1500,7 +1543,7 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {portMode !== 'fundamental_top' && !(portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : portMode === 'beta' ? betaLoading : mlLoading) && shown.length > 0 && (
+          {portMode !== 'fundamental_top' && !(portMode === 'portfolio' ? portScanLoading && portScanResults.length === 0 : portMode === 'beta' ? betaLoading : portMode === 'full_market' ? fullMarketLoading : mlLoading) && shown.length > 0 && (
             <div style={{ display:'flex', flexDirection:'column', gap:10 }}>
               {shown.map((sig, sigIdx) => {
                 const locked = !isStarter && sigIdx >= FREE_LIMIT;
