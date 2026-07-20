@@ -12,6 +12,7 @@ import ta
 
 from ml.features import FEATURE_COLUMNS
 from core.alpaca_client import fetch_alpaca_daily_bars, is_us_equity_symbol
+from core.kite_client import fetch_kite_daily_bars, is_india_equity_symbol
 
 logger = logging.getLogger(__name__)
 
@@ -29,6 +30,8 @@ def get_technical_analysis(symbol: str, name: str | None = None) -> dict | None:
         df = None
         if is_us_equity_symbol(symbol):
             df = fetch_alpaca_daily_bars(symbol, years=2)  # None if keys unset/request failed -- falls through to yfinance
+        elif is_india_equity_symbol(symbol):
+            df = fetch_kite_daily_bars(symbol, years=2)  # None if keys/session unset/request failed -- falls through to yfinance
         if df is None:
             tk = yf.Ticker(symbol)
             df = tk.history(period="2y", auto_adjust=True)

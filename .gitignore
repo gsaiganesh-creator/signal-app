@@ -45,3 +45,4 @@ npm-debug.log*
 .claude/worktrees/
 .superpowers/
 apps/api/ml/training_data.parquet
+apps/api/data/
