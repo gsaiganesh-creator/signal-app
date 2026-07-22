@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { usePortfolio } from '@/lib/portfolio-context';
 import { StockNews } from '@/components/StockNews';
 import { usePlan } from '@/lib/use-plan';
@@ -221,6 +221,52 @@ const ZONE_STYLE = {
 function zs(z: USSignal['zone']) { return ZONE_STYLE[z] ?? ZONE_STYLE['N/A']; }
 
 function relMins(iso: string): number { return Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60_000)); }
+
+// ── Visual FX (signals page only) ───────────────────────────────────────────
+// Continuous, slow gradient shimmer behind the "live" widgets — standing
+// behavior now (was piloted behind a ?fx= param against a one-time "sweep"
+// variant; founder picked shimmer, sweep was removed). CSS lives in
+// globals.css under "SIGNALS PAGE FX" — new keyframes/classes only, nothing
+// existing touched, so no other page is affected.
+const SIGFX_CLASS = 'sigfx-shimmer';
+// Staggers the shimmer's animation-delay per item in a row/grid so it reads
+// as a wave settling across the group rather than every widget firing in lockstep.
+function sigfxDelayStyle(index: number): Record<string, string> {
+  return { '--sigfx-delay': `${Math.min(index, 10) * 55}ms` };
+}
+
+// Rolling count-up — animates the displayed integer from its previous value
+// to `value` on every change (including first mount, from 0), ease-out cubic
+// so it starts fast and settles into the final number. Kept snappy (~650ms
+// default) for a scoreboard feel rather than a slow linear count.
+function AnimatedCount({ value, duration = 650, style }: { value: number; duration?: number; style?: React.CSSProperties }) {
+  const [display, setDisplay] = useState(0);
+  const fromRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = value;
+    if (from === to) return;
+    if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic: fast start, slows into the final number
+      setDisplay(Math.round(from + (to - from) * eased));
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        fromRef.current = to;
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, duration]);
+
+  return <span style={style}>{display.toLocaleString('en-IN')}</span>;
+}
 
 // Shows when a scan last ran and when it'll next refresh — the whole point
 // being visible proof the scan is NOT re-running on every tab click, it's
@@ -1356,56 +1402,61 @@ export default function SignalsPage() {
           {/* Universe mode toggle — exactly 4 pills, same style tokens, nothing
               else interleaved into this row (timer/hint/refresh moved to their
               own row below) so the group always reads as one clean unit
-              instead of wrapping mid-group on narrow screens. */}
+              instead of wrapping mid-group on narrow screens.
+              Compacted (height 30→28, padding 14→11px, font 12→11) per
+              founder ask to reduce widget footprint — 28px stays above the
+              ~28px minimum mobile tap-height floor. SIGFX_CLASS/sigfxDelayStyle
+              apply the standing shimmer fx, staggered per pill index so it
+              reads as a wave settling across the row. */}
           <div style={{ display:'flex', gap:6, flexWrap:'wrap', marginBottom:8 }}>
-            <button onClick={() => setPortMode('ml')}
-              style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+            <button onClick={() => setPortMode('ml')} className={SIGFX_CLASS}
+              style={{ height:28, padding:'0 11px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                 background: portMode==='ml' ? 'rgba(255,184,0,0.12)' : 'var(--surf2)',
                 border: portMode==='ml' ? '1px solid rgba(255,184,0,0.35)' : '1px solid var(--bdr)',
-                color: portMode==='ml' ? 'var(--ylw)' : 'var(--dim)' }}>
+                color: portMode==='ml' ? 'var(--ylw)' : 'var(--dim)', ...sigfxDelayStyle(0) }}>
               📡 ML Top 20
             </button>
-            <button onClick={() => { setPortMode('beta'); if (!betaLoaded && !betaLoading) loadBeta(); }}
-              style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+            <button onClick={() => { setPortMode('beta'); if (!betaLoaded && !betaLoading) loadBeta(); }} className={SIGFX_CLASS}
+              style={{ height:28, padding:'0 11px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                 background: portMode==='beta' ? 'rgba(255,92,26,0.12)' : 'var(--surf2)',
                 border: portMode==='beta' ? '1px solid rgba(255,92,26,0.35)' : '1px solid var(--bdr)',
-                color: portMode==='beta' ? 'var(--org)' : 'var(--dim)' }}>
+                color: portMode==='beta' ? 'var(--org)' : 'var(--dim)', ...sigfxDelayStyle(1) }}>
               ⚡ ML Beta{betaLoading ? ' — scanning…' : betaSignals.length > 0 && portMode==='beta' ? ` (${betaSignals.length})` : ''}
             </button>
-            <button onClick={() => { setPortMode('fundamental_top'); if (!fundTopLoaded && !fundTopLoading) loadFundTop(); }}
-              style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+            <button onClick={() => { setPortMode('fundamental_top'); if (!fundTopLoaded && !fundTopLoading) loadFundTop(); }} className={SIGFX_CLASS}
+              style={{ height:28, padding:'0 11px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                 background: portMode==='fundamental_top' ? 'rgba(0,212,160,0.12)' : 'var(--surf2)',
                 border: portMode==='fundamental_top' ? '1px solid rgba(0,212,160,0.35)' : '1px solid var(--bdr)',
-                color: portMode==='fundamental_top' ? 'var(--grn)' : 'var(--dim)' }}>
+                color: portMode==='fundamental_top' ? 'var(--grn)' : 'var(--dim)', ...sigfxDelayStyle(2) }}>
               💎 Fundamental Strong{fundTopLoading ? ' — scanning…' : fundTopSignals.length > 0 && portMode==='fundamental_top' ? ` (${fundTopSignals.length})` : ''}
             </button>
             {isStarter ? (
-              <button onClick={() => { setPortMode('portfolio'); if (!portScanLoaded && !portScanLoading) loadPortfolioScan(); }}
-                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+              <button onClick={() => { setPortMode('portfolio'); if (!portScanLoaded && !portScanLoading) loadPortfolioScan(); }} className={SIGFX_CLASS}
+                style={{ height:28, padding:'0 11px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   background: portMode==='portfolio' ? 'rgba(23,64,245,0.12)' : 'var(--surf2)',
                   border: portMode==='portfolio' ? '1px solid rgba(23,64,245,0.35)' : '1px solid var(--bdr)',
-                  color: portMode==='portfolio' ? 'var(--bluL)' : 'var(--dim)' }}>
+                  color: portMode==='portfolio' ? 'var(--bluL)' : 'var(--dim)', ...sigfxDelayStyle(3) }}>
                 💼 My Portfolio{portScanLoading ? ` — scanning… ${portScanProgress}%` : portScanResults.length > 0 ? ` (${portScanResults.length})` : ''}
               </button>
             ) : (
-              <button onClick={() => setUpgradeModal({ feature: 'Portfolio Universe — scan only your holdings', minPlan: 'starter' })}
-                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                  background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', display:'flex', alignItems:'center', gap:6 }}>
+              <button onClick={() => setUpgradeModal({ feature: 'Portfolio Universe — scan only your holdings', minPlan: 'starter' })} className={SIGFX_CLASS}
+                style={{ height:28, padding:'0 11px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', display:'flex', alignItems:'center', gap:6, ...sigfxDelayStyle(3) }}>
                 🔒 My Portfolio <span style={{ fontSize:10, background:'rgba(23,64,245,0.15)', color:'var(--bluL)', borderRadius:4, padding:'1px 5px' }}>Starter</span>
               </button>
             )}
             {isStarter ? (
-              <button onClick={() => { setPortMode('full_market'); if (!fullMarketLoaded && !fullMarketLoading) loadFullMarket(); }}
-                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+              <button onClick={() => { setPortMode('full_market'); if (!fullMarketLoaded && !fullMarketLoading) loadFullMarket(); }} className={SIGFX_CLASS}
+                style={{ height:28, padding:'0 11px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
                   background: portMode==='full_market' ? 'rgba(139,92,246,0.12)' : 'var(--surf2)',
                   border: portMode==='full_market' ? '1px solid rgba(139,92,246,0.35)' : '1px solid var(--bdr)',
-                  color: portMode==='full_market' ? 'var(--pur)' : 'var(--dim)' }}>
+                  color: portMode==='full_market' ? 'var(--pur)' : 'var(--dim)', ...sigfxDelayStyle(4) }}>
                 🌐 Full Market{fullMarketLoading ? ' — scanning…' : fullMarketSignals.length > 0 && portMode==='full_market' ? ` (${fullMarketSignals.length}${!isElite ? `/${fullMarketTotal}` : ''})` : ''}
               </button>
             ) : (
-              <button onClick={() => setUpgradeModal({ feature: 'Full Market Scan — all ~4,000 NSE+BSE stocks, not just the curated 100', minPlan: 'starter' })}
-                style={{ height:30, padding:'0 14px', borderRadius:8, fontSize:12, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
-                  background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', display:'flex', alignItems:'center', gap:6 }}>
+              <button onClick={() => setUpgradeModal({ feature: 'Full Market Scan — all ~4,000 NSE+BSE stocks, not just the curated 100', minPlan: 'starter' })} className={SIGFX_CLASS}
+                style={{ height:28, padding:'0 11px', borderRadius:7, fontSize:11, fontWeight:700, cursor:'pointer', fontFamily:'inherit',
+                  background:'var(--surf2)', border:'1px solid var(--bdr)', color:'var(--dim)', display:'flex', alignItems:'center', gap:6, ...sigfxDelayStyle(4) }}>
                 🔒 Full Market <span style={{ fontSize:10, background:'rgba(139,92,246,0.15)', color:'var(--pur)', borderRadius:4, padding:'1px 5px' }}>Starter</span>
               </button>
             )}
@@ -1444,19 +1495,24 @@ export default function SignalsPage() {
             </div>
           )}
 
-          {/* Zone KPIs */}
+          {/* Zone KPIs — compacted (padding 14/18→10/14, radius 16→14, number
+              44→22px, gap 12→8) since these were the founder's #1 example of
+              a widget eating too much space. Count now rolls up from 0 via
+              AnimatedCount instead of snapping to the final number, and the
+              card carries the standing shimmer fx class/stagger. */}
           {portMode !== 'fundamental_top' && !(portMode === 'portfolio' ? portScanLoading : portMode === 'beta' ? betaLoading : portMode === 'full_market' ? fullMarketLoading : mlLoading) && activeSignals.length > 0 && (
-            <div className="g4" style={{ display:'grid', gap:12, marginBottom:18 }}>
+            <div className="g4" style={{ display:'grid', gap:8, marginBottom:18 }}>
               {[
                 { label:'Strong Momentum', cnt:buyCnt,        grad:'linear-gradient(135deg,rgba(0,212,160,0.13),rgba(0,212,160,0.03))',  bdr:'rgba(0,212,160,0.30)',  color:'var(--grn)' },
                 { label:'Building',        cnt:accumulateCnt, grad:'linear-gradient(135deg,rgba(79,111,250,0.12),rgba(79,111,250,0.03))', bdr:'rgba(79,111,250,0.28)', color:'var(--bluL)' },
                 { label:'Sideways',        cnt:holdCnt,       grad:'linear-gradient(135deg,rgba(255,184,0,0.10),rgba(255,184,0,0.02))',   bdr:'rgba(255,184,0,0.27)',  color:'var(--ylw)' },
                 { label:'Weak / Declining',cnt:sellCnt,       grad:'linear-gradient(135deg,rgba(255,59,92,0.10),rgba(255,59,92,0.02))',   bdr:'rgba(255,59,92,0.25)',  color:'var(--red)' },
-              ].map(m => (
-                <div key={m.label} style={{ background:m.grad, border:`1px solid ${m.bdr}`, borderRadius:16, padding:'14px 18px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)' }}>
-                  <div style={{ fontSize:9.5, fontWeight:800, color:m.color, letterSpacing:1.5, textTransform:'uppercase', marginBottom:5 }}>{m.label}</div>
-                  <div style={{ fontSize:30, fontWeight:900, letterSpacing:-1, color:m.color }}>{m.cnt}</div>
-                  <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>signals</div>
+              ].map((m, i) => (
+                <div key={m.label} className={SIGFX_CLASS}
+                  style={{ background:m.grad, border:`1px solid ${m.bdr}`, borderRadius:14, padding:'10px 14px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', ...sigfxDelayStyle(i) }}>
+                  <div style={{ fontSize:9, fontWeight:800, color:m.color, letterSpacing:1.3, textTransform:'uppercase', marginBottom:4 }}>{m.label}</div>
+                  <div style={{ fontSize:22, fontWeight:900, letterSpacing:-0.5, color:m.color }}><AnimatedCount value={m.cnt} /></div>
+                  <div style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>signals</div>
                 </div>
               ))}
             </div>
@@ -1577,7 +1633,7 @@ export default function SignalsPage() {
                 const inPortfolio = portfolioSymbols.includes(sig.symbol.replace(/\.(NS|BO)$/, ''));
                 const secBg = sectorColor(sig.sector);
                 return (
-                  <div key={sig.symbol} style={{ position:'relative' }}
+                  <div key={sig.symbol} className={SIGFX_CLASS} style={{ position:'relative', borderRadius:14, ...sigfxDelayStyle(sigIdx) }}
                     onClick={() => {
                       if (!isStarter) {
                         setUpgradeModal({ feature: 'ML signal detail — entry range, targets, stop-loss', minPlan: 'starter' });
@@ -1735,16 +1791,19 @@ export default function SignalsPage() {
             {usMode === 'full_market' && <ScanTimer meta={usFullMarketMeta} />}
           </div>
 
-          {/* Zone KPIs */}
+          {/* Zone KPIs — same size/space compaction as the India tab above.
+              No shimmer fx wired here: the finalized target groups (universe
+              pills / KPI cards / signal rows) are the India tab only, per
+              the original pilot scope. */}
           {!activeUSLoading && activeUSSignals.length > 0 && (
-            <div className="g4" style={{ display:'grid', gap:12, marginBottom:18 }}>
+            <div className="g4" style={{ display:'grid', gap:8, marginBottom:18 }}>
               {(['Strong Momentum','Building','Sideways','Weak / Declining'] as const).map(zone => {
                 const st = ZONE_STYLE[zone];
                 return (
-                  <div key={zone} style={{ background:st.grad, border:`1px solid ${st.bdr}`, borderRadius:16, padding:'14px 18px' }}>
-                    <div style={{ fontSize:9.5, fontWeight:800, color:st.color, letterSpacing:1.5, textTransform:'uppercase', marginBottom:5 }}>{zone}</div>
-                    <div style={{ fontSize:30, fontWeight:900, color:st.color }}>{US_ZONE_COUNTS[zone]}</div>
-                    <div style={{ fontSize:11, color:'var(--dim)', marginTop:2 }}>stocks</div>
+                  <div key={zone} style={{ background:st.grad, border:`1px solid ${st.bdr}`, borderRadius:14, padding:'10px 14px' }}>
+                    <div style={{ fontSize:9, fontWeight:800, color:st.color, letterSpacing:1.3, textTransform:'uppercase', marginBottom:4 }}>{zone}</div>
+                    <div style={{ fontSize:22, fontWeight:900, color:st.color }}><AnimatedCount value={US_ZONE_COUNTS[zone]} /></div>
+                    <div style={{ fontSize:10, color:'var(--dim)', marginTop:1 }}>stocks</div>
                   </div>
                 );
               })}

@@ -91,6 +91,48 @@ button { font-family: inherit; }
   100% { background-position:  200% 0; }
 }
 
+/* =====================================================
+   SIGNALS PAGE FX (one page only)
+   /dashboard/signals/page.tsx — standing shimmer behind the universe
+   pills, Zone KPI cards, and signal rows. Not used by any other page.
+   Started as a pilot with a second "sweep" (one-time gradient sweep)
+   variant toggled via a ?fx= query param; the founder picked shimmer
+   to standardize on, so sweep and the param were removed and this is
+   now the default, always-on behavior. Host element must also carry
+   `position:relative` (set inline where used) so the pseudo-element
+   positions against the right box, and rely on `border-radius:inherit`
+   — the host's own inline borderRadius must be set for the fx layer to
+   clip to the same rounded corners.
+   ===================================================== */
+@keyframes sigfx-shimmer-bg {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+/* Continuous, slow, low-opacity gradient shimmer behind the widget
+   content ("live" state, always-on — no market-hours gating).
+   z-index:-1 + isolation:isolate on the host keeps it strictly behind
+   that widget's own content, contained to this element, so it can't
+   bleed into stacking elsewhere on the page. */
+.sigfx-shimmer { position: relative; overflow: hidden; isolation: isolate; }
+.sigfx-shimmer::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(120deg,
+    rgba(23,64,245,0.18) 0%,
+    rgba(0,212,160,0.15) 25%,
+    rgba(139,92,246,0.18) 50%,
+    rgba(79,111,250,0.15) 75%,
+    rgba(23,64,245,0.18) 100%);
+  background-size: 250% 250%;
+  animation: sigfx-shimmer-bg 6s linear infinite;
+  animation-delay: var(--sigfx-delay, 0ms);
+  pointer-events: none;
+  z-index: -1;
+  border-radius: inherit;
+}
+
 /* Theme switch — smooth transition on all color props */
 .theme-switching, .theme-switching * {
   transition:
