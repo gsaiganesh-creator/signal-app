@@ -98,13 +98,29 @@ button { font-family: inherit; }
    via a ?fx= query param; the founder picked shimmer to standardize on, so
    sweep and the param were removed and this is now the default, always-on
    behavior. Since then also adopted by /dashboard/page.tsx for its KPI
-   strip + Forex/Commodities totals + Market Cap Mix card. Scope rule (learned
-   from a correction after the Signals pilot): only ever apply this to
-   aggregate/summary tiles — never to per-item list rows (holdings, sectors,
-   stock picks, etc). Host element must also carry `position:relative` (set
-   inline where used) so the pseudo-element positions against the right box,
-   and rely on `border-radius:inherit` — the host's own inline borderRadius
-   must be set for the fx layer to clip to the same rounded corners.
+   strip + Forex/Commodities totals + Market Cap Mix card, and by
+   MarketMoodIndex.tsx. Scope rule (learned from a correction after the
+   Signals pilot): only ever apply this to aggregate/summary tiles — never
+   to per-item list rows (holdings, sectors, stock picks, etc). Host element
+   must also carry `position:relative` (set inline where used) so the
+   pseudo-element positions against the right box, and rely on
+   `border-radius:inherit` — the host's own inline borderRadius must be set
+   for the fx layer to clip to the same rounded corners.
+
+   Per-widget color ("nail polish color injection per widget", founder
+   feedback round 3 — originally every widget shared one fixed violet/blue
+   gradient, which read as one wash flowing in parallel across the whole
+   page instead of each widget having its own identity): the gradient below
+   is driven entirely by `--sigfx-color`, set inline per widget from that
+   widget's own existing accent color (e.g. `--grn` for Total Invested,
+   the up/down red-or-green for Combined Return, the MMI zone color for
+   Signal-MMI). Each of the 5 gradient stops gives `var(--sigfx-color, ...)`
+   its OWN distinct fallback hex (matching what that stop used to be
+   hardcoded to) — so any host that does NOT set --sigfx-color (the Signals
+   page pilot, untouched by this pass) still reconstructs the exact original
+   multi-color blend with zero visual change, while any host that DOES set
+   --sigfx-color gets every stop pinned to that one color at varying
+   opacity — a single-hue sweep instead of a rainbow.
    ===================================================== */
 @keyframes sigfx-shimmer-bg {
   0%   { background-position: 0% 50%; }
@@ -122,11 +138,11 @@ button { font-family: inherit; }
   position: absolute;
   inset: 0;
   background: linear-gradient(120deg,
-    rgba(23,64,245,0.18) 0%,
-    rgba(0,212,160,0.15) 25%,
-    rgba(139,92,246,0.18) 50%,
-    rgba(79,111,250,0.15) 75%,
-    rgba(23,64,245,0.18) 100%);
+    color-mix(in srgb, var(--sigfx-color, #1740F5) 18%, transparent) 0%,
+    color-mix(in srgb, var(--sigfx-color, #00D4A0) 15%, transparent) 25%,
+    color-mix(in srgb, var(--sigfx-color, #8B5CF6) 18%, transparent) 50%,
+    color-mix(in srgb, var(--sigfx-color, #4F6FFA) 15%, transparent) 75%,
+    color-mix(in srgb, var(--sigfx-color, #1740F5) 18%, transparent) 100%);
   background-size: 250% 250%;
   animation: sigfx-shimmer-bg 6s linear infinite;
   animation-delay: var(--sigfx-delay, 0ms);

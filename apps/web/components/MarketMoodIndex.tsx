@@ -139,14 +139,18 @@ export function MarketMoodIndex() {
   return (
     /* BENTO CARD — genuine summary tile (5 inputs rolled into one score),
        so it carries the same standing shimmer fx as the other summary
-       widgets (dashboard/page.tsx KPI strip, Market Cap Mix). */
+       widgets (dashboard/page.tsx KPI strip, Market Cap Mix). --sigfx-color
+       is pinned to the SAME zone color driving the score/gauge/zone label
+       just below (bearish red / neutral gold / bullish green, from the API's
+       zoneColor) — "nail polish" per-widget color, not the shared violet. */
     <div className="sigfx-shimmer" style={{
       background: 'linear-gradient(145deg,rgba(23,64,245,0.06),var(--surf))',
       border: '1px solid rgba(23,64,245,0.18)',
       borderRadius: 18, padding: '18px 22px',
       height: '100%', boxSizing: 'border-box',
       position: 'relative', overflow: 'hidden',
-    }}>
+      '--sigfx-color': color,
+    } as React.CSSProperties}>
       {/* subtle glow orb */}
       <div style={{ position:'absolute', top:-60, right:-60, width:200, height:200, borderRadius:'50%', background:'radial-gradient(circle,rgba(23,64,245,0.10) 0%,transparent 65%)', pointerEvents:'none' }}/>
 

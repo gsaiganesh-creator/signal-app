@@ -98,6 +98,15 @@ const SIGFX_CLASS = 'sigfx-shimmer';
 function sigfxDelayStyle(index: number): Record<string, string> {
   return { '--sigfx-delay': `${Math.min(index, 10) * 55}ms` };
 }
+// Per-widget shimmer color ("nail polish color injection per widget" —
+// founder correction, round 3: every widget was flowing the same shared
+// violet/blue wash). `color` should be that widget's OWN existing accent
+// (e.g. 'var(--grn)' for Total Invested, the up/down red-or-green for
+// Combined Return) — see the --sigfx-color fallback trick documented in
+// globals.css for why widgets that don't call this keep their old look.
+function sigfxColorStyle(index: number, color: string): Record<string, string> {
+  return { ...sigfxDelayStyle(index), '--sigfx-color': color };
+}
 
 // AnimatedCount now lives in lib/animated-count.tsx (imported above) so
 // MarketMoodIndex.tsx can reuse the exact same roll-up instead of a second
@@ -750,7 +759,7 @@ export default function DashboardPage() {
         <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(79,111,250,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)', isNative), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(0) }}>
+          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)', isNative), height:'100%', boxSizing:'border-box', ...sigfxColorStyle(0, 'var(--bluL)') }}>
             <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
               <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(79,111,250,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>📈</div>
               <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>Equity Stocks</div>
@@ -768,7 +777,7 @@ export default function DashboardPage() {
         <Link href="/dashboard/etf-mf" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(139,92,246,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))','rgba(139,92,246,0.3)', isNative), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(1) }}>
+          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))','rgba(139,92,246,0.3)', isNative), height:'100%', boxSizing:'border-box', ...sigfxColorStyle(1, 'var(--pur)') }}>
             <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
               <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(139,92,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>🏦</div>
               <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, textTransform:'uppercase' }}>ETF & MF</div>
@@ -786,7 +795,7 @@ export default function DashboardPage() {
         <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)', isNative), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(2) }}>
+          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)', isNative), height:'100%', boxSizing:'border-box', ...sigfxColorStyle(2, 'var(--grn)') }}>
             <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
               <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(0,212,160,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>💼</div>
               <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Total Invested</div>
@@ -808,7 +817,7 @@ export default function DashboardPage() {
                 up ? 'linear-gradient(135deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))' : 'linear-gradient(135deg,rgba(255,59,92,0.12),rgba(255,59,92,0.03))',
                 up ? 'rgba(0,212,160,0.3)' : 'rgba(255,59,92,0.28)',
                 isNative
-              ), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(3) }} className={`kpi-card ${SIGFX_CLASS}`}>
+              ), height:'100%', boxSizing:'border-box', ...sigfxColorStyle(3, up ? 'var(--grn)' : 'var(--red)') }} className={`kpi-card ${SIGFX_CLASS}`}>
                 <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
                   <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.14)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>{up?'🚀':'📉'}</div>
                   <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:up?'var(--grn)':'var(--red)', letterSpacing:0.5, textTransform:'uppercase' }}>Combined Return</div>
@@ -828,7 +837,7 @@ export default function DashboardPage() {
         <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.16),rgba(23,64,245,0.07))','rgba(0,212,160,0.32)', isNative), height:'100%', ...sigfxDelayStyle(4) }}>
+          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.16),rgba(23,64,245,0.07))','rgba(0,212,160,0.32)', isNative), height:'100%', ...sigfxColorStyle(4, 'var(--grn)') }}>
             <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
               <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(0,212,160,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>🌐</div>
               <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Net Worth</div>
@@ -847,7 +856,7 @@ export default function DashboardPage() {
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(79,111,250,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
           {hasUSHoldings ? (
-            <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.14),rgba(23,64,245,0.05))','rgba(79,111,250,0.30)', isNative), height:'100%', ...sigfxDelayStyle(5) }}>
+            <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.14),rgba(23,64,245,0.05))','rgba(79,111,250,0.30)', isNative), height:'100%', ...sigfxColorStyle(5, 'var(--bluL)') }}>
               <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
                 <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(79,111,250,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>🇺🇸</div>
                 <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>US Stocks</div>
@@ -955,7 +964,7 @@ export default function DashboardPage() {
         <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
           {fxPos.length > 0 && (
             <Link href="/dashboard/forex" style={{ textDecoration:'none', flex:1, minWidth:200 }}>
-              <div className={SIGFX_CLASS} style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.09),rgba(0,212,160,0.02))', border:'1px solid rgba(0,212,160,0.24)', borderRadius: isNative ? 12 : 14, padding: isNative ? '9px 12px' : '12px 16px', display:'flex', alignItems:'center', gap: isNative ? 9 : 12, ...sigfxDelayStyle(6) }}>
+              <div className={SIGFX_CLASS} style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.09),rgba(0,212,160,0.02))', border:'1px solid rgba(0,212,160,0.24)', borderRadius: isNative ? 12 : 14, padding: isNative ? '9px 12px' : '12px 16px', display:'flex', alignItems:'center', gap: isNative ? 9 : 12, ...sigfxColorStyle(6, 'var(--grn)') }}>
                 <span style={{ fontSize: isNative ? 16 : 20 }}>💱</span>
                 <div>
                   <div style={{ fontSize: isNative ? 9 : 10, fontWeight:700, color:'var(--grn)', textTransform:'uppercase', letterSpacing:0.5 }}>Forex</div>
@@ -967,7 +976,7 @@ export default function DashboardPage() {
           )}
           {cmPos.length > 0 && (
             <Link href="/dashboard/commodities" style={{ textDecoration:'none', flex:1, minWidth:200 }}>
-              <div className={SIGFX_CLASS} style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.09),rgba(255,184,0,0.02))', border:'1px solid rgba(255,184,0,0.24)', borderRadius: isNative ? 12 : 14, padding: isNative ? '9px 12px' : '12px 16px', display:'flex', alignItems:'center', gap: isNative ? 9 : 12, ...sigfxDelayStyle(7) }}>
+              <div className={SIGFX_CLASS} style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.09),rgba(255,184,0,0.02))', border:'1px solid rgba(255,184,0,0.24)', borderRadius: isNative ? 12 : 14, padding: isNative ? '9px 12px' : '12px 16px', display:'flex', alignItems:'center', gap: isNative ? 9 : 12, ...sigfxColorStyle(7, 'var(--ylw)') }}>
                 <span style={{ fontSize: isNative ? 16 : 20 }}>🥇</span>
                 <div>
                   <div style={{ fontSize: isNative ? 9 : 10, fontWeight:700, color:'var(--ylw)', textTransform:'uppercase', letterSpacing:0.5 }}>Commodities</div>
@@ -1054,7 +1063,7 @@ export default function DashboardPage() {
               rolled up into cap-tier %s + a total count), same category as
               the founder's "diversification score" example, so it gets the
               same fx/roll-up/native-compact treatment as the KPI strip. */}
-          <div className={SIGFX_CLASS} style={{ ...card, ...(isNative ? { padding:'10px 12px', borderRadius:14 } : {}), ...sigfxDelayStyle(8) }}>
+          <div className={SIGFX_CLASS} style={{ ...card, ...(isNative ? { padding:'10px 12px', borderRadius:14 } : {}), ...sigfxColorStyle(8, 'var(--bluL)') }}>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>Market Cap Mix</div>
             {capSegments.length === 0 ? (
               <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', padding:'20px 0' }}>—</div>
