@@ -92,17 +92,19 @@ button { font-family: inherit; }
 }
 
 /* =====================================================
-   SIGNALS PAGE FX (one page only)
-   /dashboard/signals/page.tsx — standing shimmer behind the universe
-   pills, Zone KPI cards, and signal rows. Not used by any other page.
-   Started as a pilot with a second "sweep" (one-time gradient sweep)
-   variant toggled via a ?fx= query param; the founder picked shimmer
-   to standardize on, so sweep and the param were removed and this is
-   now the default, always-on behavior. Host element must also carry
-   `position:relative` (set inline where used) so the pseudo-element
-   positions against the right box, and rely on `border-radius:inherit`
-   — the host's own inline borderRadius must be set for the fx layer to
-   clip to the same rounded corners.
+   SUMMARY/KPI WIDGET FX
+   Started as a pilot on /dashboard/signals/page.tsx (universe pills, Zone
+   KPI cards) with a second "sweep" (one-time gradient sweep) variant toggled
+   via a ?fx= query param; the founder picked shimmer to standardize on, so
+   sweep and the param were removed and this is now the default, always-on
+   behavior. Since then also adopted by /dashboard/page.tsx for its KPI
+   strip + Forex/Commodities totals + Market Cap Mix card. Scope rule (learned
+   from a correction after the Signals pilot): only ever apply this to
+   aggregate/summary tiles — never to per-item list rows (holdings, sectors,
+   stock picks, etc). Host element must also carry `position:relative` (set
+   inline where used) so the pseudo-element positions against the right box,
+   and rely on `border-radius:inherit` — the host's own inline borderRadius
+   must be set for the fx layer to clip to the same rounded corners.
    ===================================================== */
 @keyframes sigfx-shimmer-bg {
   0%   { background-position: 0% 50%; }

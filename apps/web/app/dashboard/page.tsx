@@ -2,13 +2,14 @@
 import Link from 'next/link';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { TreemapHeatmap } from '@/components/TreemapHeatmap';
 import { MarketBrief } from '@/components/MarketBrief';
 import { MarketMoodIndex } from '@/components/MarketMoodIndex';
 import { VixExplainer } from '@/components/VixExplainer';
 import { DxyExplainer } from '@/components/DxyExplainer';
 import { StockDetailSheet } from '@/components/StockDetailSheet';
+import { useIsNativePlatform } from '@/lib/use-is-native';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -72,10 +73,61 @@ function greet() {
 }
 
 const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px solid var(--card-bdr)', borderRadius:16, padding:'18px 20px', backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)' };
-const colorCard = (grad: string, bdr: string): React.CSSProperties => ({
-  background: grad, border:`1px solid ${bdr}`, borderRadius:16, padding:'18px 20px',
+// `compact` (native-app-only) tightens padding/radius for the KPI strip cards —
+// web keeps the original 18/20px padding + 16px radius always. See DashboardPage
+// for the useIsNativePlatform() gate that decides which value gets passed in.
+const colorCard = (grad: string, bdr: string, compact = false): React.CSSProperties => ({
+  background: grad, border:`1px solid ${bdr}`, borderRadius: compact ? 14 : 16, padding: compact ? '10px 12px' : '18px 20px',
   backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)',
 });
+
+// ── Visual FX (dashboard home summary widgets only) ─────────────────────────
+// Same standing shimmer + roll-up-count pattern shipped on the Signals page
+// (see SIGFX_CLASS/sigfxDelayStyle/AnimatedCount there). Reused here, scoped
+// to the small set of genuine aggregate/summary tiles on this page — the KPI
+// strip, the Forex/Commodities mini totals, and the Market Cap Mix donut's
+// holdings count. Deliberately NOT applied to any per-item list (holdings,
+// sectors, scan picks, ETF chips) per the founder's correction after the
+// Signals page pilot: shimmer/roll-up is for widgets that summarize MANY
+// things into one number, never for one-row-per-item content.
+const SIGFX_CLASS = 'sigfx-shimmer';
+function sigfxDelayStyle(index: number): Record<string, string> {
+  return { '--sigfx-delay': `${Math.min(index, 10) * 55}ms` };
+}
+
+// Rolling count-up, generalized from the Signals page version to accept an
+// optional `format` so it can animate currency strings (fmtL) and percentages,
+// not just plain integers. Animates from 0 on mount, and from the previous
+// value on every subsequent change, ease-out cubic ~650ms.
+function AnimatedCount({ value, duration = 650, format, style }: { value: number; duration?: number; format?: (n: number) => string; style?: React.CSSProperties }) {
+  const [display, setDisplay] = useState(0);
+  const fromRef = useRef(0);
+  const rafRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = value;
+    if (from === to) return;
+    if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
+    const start = performance.now();
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration);
+      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic: fast start, slows into the final number
+      setDisplay(from + (to - from) * eased);
+      if (t < 1) {
+        rafRef.current = requestAnimationFrame(tick);
+      } else {
+        fromRef.current = to;
+      }
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value, duration]);
+
+  const fmt = format ?? ((n: number) => Math.round(n).toLocaleString('en-IN'));
+  return <span style={style}>{fmt(display)}</span>;
+}
 
 const LARGE_CAP = new Set([
   'RELIANCE','INFY','TCS','HDFCBANK','ICICIBANK','SBIN','WIPRO','HINDUNILVR','ITC',
@@ -339,6 +391,11 @@ function WelcomeEmpty({ name, email, mktData, mktLoading }: { name: string; emai
 
 export default function DashboardPage() {
   const { user, session, portfolios, loading } = usePortfolio();
+  // Native-app-only compact sizing for the summary/KPI widgets — web stays at
+  // its current (already comfortable) sizing regardless of this flag. See
+  // colorCard()'s `compact` param and the inline isNative checks in the KPI
+  // strip / Forex+Commodities strip / Market Cap Mix card below.
+  const isNative = useIsNativePlatform();
   const [prices, setPrices]           = useState<Record<string, PriceData>>({});
   const [pricesLoading, setPricesLoading] = useState(false);
   const [allIndiaRaw, setAllIndiaRaw] = useState<RawHolding[]>([]);
@@ -522,6 +579,17 @@ export default function DashboardPage() {
   if (portfolios.length === 0) return <WelcomeEmpty name={name} email={user.email} mktData={mktData} mktLoading={mktLoading} />;
 
   const fmtL = (n: number) => n >= 1e7 ? `₹${(n/1e7).toFixed(2)}Cr` : n >= 1e5 ? `₹${(n/1e5).toFixed(2)}L` : `₹${n.toLocaleString('en-IN', { maximumFractionDigits:0 })}`;
+  const fmtPct = (n: number) => `${n >= 0 ? '+' : ''}${n.toFixed(1)}%`;
+
+  // Native-only compact sizing for the summary widgets below (KPI strip,
+  // Forex+Commodities mini totals, Market Cap Mix). Web values (right side
+  // of each ternary) are the pre-existing sizes, untouched.
+  const kpiGap      = isNative ? 8  : 12;
+  const kpiNumBig    = isNative ? 22 : 32; // Equity / ETF / Total Invested / Combined Return
+  const kpiNumSmall  = isNative ? 18 : 28; // Net Worth / US Stocks
+  const kpiIconBox   = isNative ? 20 : 26;
+  const kpiIconFont  = isNative ? 11 : 13;
+  const kpiLabelSize = isNative ? 9  : 10;
 
   // Merge all India holdings by symbol (weighted avg across portfolios)
   const mergedMap = new Map<string, RawHolding>();
@@ -660,18 +728,21 @@ export default function DashboardPage() {
       </div>
 
 
-      {/* KPI strip — India + Net Worth + US all in one row */}
-      <div className="g6" style={{ display:'grid', gap:12, marginBottom:14 }}>
+      {/* KPI strip — India + Net Worth + US all in one row. These 6 cards are
+          the page's genuine aggregate/summary tiles (each rolls up N holdings
+          / N positions into one number), so they carry the standing shimmer
+          fx + AnimatedCount roll-up, and (native app only) compact sizing. */}
+      <div className="g6" style={{ display:'grid', gap:kpiGap, marginBottom:14 }}>
         {/* Equity */}
         <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(79,111,250,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)'), height:'100%', boxSizing:'border-box' }}>
+          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)', isNative), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(0) }}>
             <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-              <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(79,111,250,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>📈</div>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>Equity Stocks</div>
+              <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(79,111,250,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>📈</div>
+              <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>Equity Stocks</div>
             </div>
-            <div className="kpi-num" style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{equityH.length}</div>
+            <div className="kpi-num" style={{ fontSize:kpiNumBig, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}><AnimatedCount value={equityH.length} /></div>
             <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{fmtL(equityInvested)} invested</div>
             {hasPrices && equityInvested > 0 && (
               <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: equityPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
@@ -684,12 +755,12 @@ export default function DashboardPage() {
         <Link href="/dashboard/etf-mf" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(139,92,246,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))','rgba(139,92,246,0.3)'), height:'100%', boxSizing:'border-box' }}>
+          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))','rgba(139,92,246,0.3)', isNative), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(1) }}>
             <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-              <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(139,92,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🏦</div>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, textTransform:'uppercase' }}>ETF & MF</div>
+              <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(139,92,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>🏦</div>
+              <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, textTransform:'uppercase' }}>ETF & MF</div>
             </div>
-            <div className="kpi-num" style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{etfH.length}</div>
+            <div className="kpi-num" style={{ fontSize:kpiNumBig, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}><AnimatedCount value={etfH.length} /></div>
             <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{etfInvested > 0 ? fmtL(etfInvested) : '—'} invested</div>
             {hasPrices && etfInvested > 0 && (
               <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: etfPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
@@ -702,12 +773,12 @@ export default function DashboardPage() {
         <Link href="/dashboard/portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)'), height:'100%', boxSizing:'border-box' }}>
+          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)', isNative), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(2) }}>
             <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-              <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(0,212,160,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>💼</div>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Total Invested</div>
+              <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(0,212,160,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>💼</div>
+              <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Total Invested</div>
             </div>
-            <div className="kpi-num" style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}>{fmtL(invested)}</div>
+            <div className="kpi-num" style={{ fontSize:kpiNumBig, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}><AnimatedCount value={invested} format={fmtL} /></div>
             <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
               {portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''} · India
             </div>
@@ -722,14 +793,15 @@ export default function DashboardPage() {
               onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
               <div style={{ ...colorCard(
                 up ? 'linear-gradient(135deg,rgba(0,212,160,0.14),rgba(0,212,160,0.04))' : 'linear-gradient(135deg,rgba(255,59,92,0.12),rgba(255,59,92,0.03))',
-                up ? 'rgba(0,212,160,0.3)' : 'rgba(255,59,92,0.28)'
-              ), height:'100%', boxSizing:'border-box' }} className="kpi-card">
+                up ? 'rgba(0,212,160,0.3)' : 'rgba(255,59,92,0.28)',
+                isNative
+              ), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(3) }} className={`kpi-card ${SIGFX_CLASS}`}>
                 <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-                  <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.14)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>{up?'🚀':'📉'}</div>
-                  <div style={{ fontSize:10, fontWeight:700, color:up?'var(--grn)':'var(--red)', letterSpacing:0.5, textTransform:'uppercase' }}>Combined Return</div>
+                  <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.14)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>{up?'🚀':'📉'}</div>
+                  <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:up?'var(--grn)':'var(--red)', letterSpacing:0.5, textTransform:'uppercase' }}>Combined Return</div>
                 </div>
-                <div className="kpi-num" style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color: hasPrices ? (totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
-                  {hasPrices ? `${totalPLPct >= 0 ? '+' : ''}${totalPLPct.toFixed(1)}%` : '—'}
+                <div className="kpi-num" style={{ fontSize:kpiNumBig, fontWeight:900, letterSpacing:-1, lineHeight:1, color: hasPrices ? (totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
+                  {hasPrices ? <AnimatedCount value={totalPLPct} format={fmtPct} /> : '—'}
                 </div>
                 <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
                   {hasPrices && totalPL !== 0 ? `${totalPL >= 0 ? '+' : ''}${fmtL(Math.abs(totalPL))}` : pricesLoading ? 'loading…' : '—'}
@@ -743,12 +815,12 @@ export default function DashboardPage() {
         <Link href="/dashboard/us-portfolio" style={{ textDecoration:'none', display:'block', borderRadius:16, transition:'transform 0.15s,box-shadow 0.15s' }}
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
-          <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.16),rgba(23,64,245,0.07))','rgba(0,212,160,0.32)'), height:'100%' }}>
+          <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.16),rgba(23,64,245,0.07))','rgba(0,212,160,0.32)', isNative), height:'100%', ...sigfxDelayStyle(4) }}>
             <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-              <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(0,212,160,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🌐</div>
-              <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Net Worth</div>
+              <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(0,212,160,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>🌐</div>
+              <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Net Worth</div>
             </div>
-            <div className="kpi-num" style={{ fontSize:28, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--grn)' }}>{fmtL(combinedINR)}</div>
+            <div className="kpi-num" style={{ fontSize:kpiNumSmall, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--grn)' }}><AnimatedCount value={combinedINR} format={fmtL} /></div>
             <div style={{ fontSize:10, color:'var(--dim)', marginTop:5 }}>
               🇮🇳{fmtL(invested)} + 🇺🇸{fmtL(usInrEquiv)}
               {fxPos.length>0?` + 💱${fmtL(fxCurrentINR)}`:''}
@@ -762,12 +834,12 @@ export default function DashboardPage() {
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(79,111,250,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
           {hasUSHoldings ? (
-            <div className="kpi-card" style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.14),rgba(23,64,245,0.05))','rgba(79,111,250,0.30)'), height:'100%' }}>
+            <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.14),rgba(23,64,245,0.05))','rgba(79,111,250,0.30)', isNative), height:'100%', ...sigfxDelayStyle(5) }}>
               <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
-                <div className="kpi-icon" style={{ width:26, height:26, borderRadius:7, background:'rgba(79,111,250,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:13 }}>🇺🇸</div>
-                <div style={{ fontSize:10, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>US Stocks</div>
+                <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(79,111,250,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>🇺🇸</div>
+                <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>US Stocks</div>
               </div>
-              <div className="kpi-num" style={{ fontSize:28, fontWeight:900, letterSpacing:-1, lineHeight:1 }}>{fmtL(usInrEquiv)}</div>
+              <div className="kpi-num" style={{ fontSize:kpiNumSmall, fontWeight:900, letterSpacing:-1, lineHeight:1 }}><AnimatedCount value={usInrEquiv} format={fmtL} /></div>
               <div style={{ fontSize:10, color:'var(--dim)', marginTop:5 }}>{usHoldings.length} stocks · ${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})} invested</div>
               {usPLPct!=null && (
                 <div style={{ fontSize:13, fontWeight:800, marginTop:4, color:usPLPct>=0?'var(--grn)':'var(--red)' }}>
@@ -863,16 +935,18 @@ export default function DashboardPage() {
       )}
 
 
-      {/* Forex + Commodities mini strip (only if positions exist) */}
+      {/* Forex + Commodities mini strip (only if positions exist) — each tile
+          sums N positions into one total, same "aggregate" shape as the KPI
+          strip above, so it gets the same shimmer + roll-up + native-compact treatment. */}
       {(fxPos.length > 0 || cmPos.length > 0) && (
         <div style={{ display:'flex', gap:10, marginBottom:16, flexWrap:'wrap' }}>
           {fxPos.length > 0 && (
             <Link href="/dashboard/forex" style={{ textDecoration:'none', flex:1, minWidth:200 }}>
-              <div style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.09),rgba(0,212,160,0.02))', border:'1px solid rgba(0,212,160,0.24)', borderRadius:14, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
-                <span style={{ fontSize:20 }}>💱</span>
+              <div className={SIGFX_CLASS} style={{ background:'linear-gradient(135deg,rgba(0,212,160,0.09),rgba(0,212,160,0.02))', border:'1px solid rgba(0,212,160,0.24)', borderRadius: isNative ? 12 : 14, padding: isNative ? '9px 12px' : '12px 16px', display:'flex', alignItems:'center', gap: isNative ? 9 : 12, ...sigfxDelayStyle(6) }}>
+                <span style={{ fontSize: isNative ? 16 : 20 }}>💱</span>
                 <div>
-                  <div style={{ fontSize:10, fontWeight:700, color:'var(--grn)', textTransform:'uppercase', letterSpacing:0.5 }}>Forex</div>
-                  <div style={{ fontSize:16, fontWeight:800 }}>{fmtL(fxCurrentINR)}</div>
+                  <div style={{ fontSize: isNative ? 9 : 10, fontWeight:700, color:'var(--grn)', textTransform:'uppercase', letterSpacing:0.5 }}>Forex</div>
+                  <div style={{ fontSize: isNative ? 13 : 16, fontWeight:800 }}><AnimatedCount value={fxCurrentINR} format={fmtL} /></div>
                   <div style={{ fontSize:10, color:fxPL>=0?'var(--grn)':'var(--red)', fontWeight:700 }}>{fxPL>=0?'+':''}{fmtL(Math.abs(fxPL))} ({fxPLPct.toFixed(1)}%)</div>
                 </div>
               </div>
@@ -880,11 +954,11 @@ export default function DashboardPage() {
           )}
           {cmPos.length > 0 && (
             <Link href="/dashboard/commodities" style={{ textDecoration:'none', flex:1, minWidth:200 }}>
-              <div style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.09),rgba(255,184,0,0.02))', border:'1px solid rgba(255,184,0,0.24)', borderRadius:14, padding:'12px 16px', display:'flex', alignItems:'center', gap:12 }}>
-                <span style={{ fontSize:20 }}>🥇</span>
+              <div className={SIGFX_CLASS} style={{ background:'linear-gradient(135deg,rgba(255,184,0,0.09),rgba(255,184,0,0.02))', border:'1px solid rgba(255,184,0,0.24)', borderRadius: isNative ? 12 : 14, padding: isNative ? '9px 12px' : '12px 16px', display:'flex', alignItems:'center', gap: isNative ? 9 : 12, ...sigfxDelayStyle(7) }}>
+                <span style={{ fontSize: isNative ? 16 : 20 }}>🥇</span>
                 <div>
-                  <div style={{ fontSize:10, fontWeight:700, color:'var(--ylw)', textTransform:'uppercase', letterSpacing:0.5 }}>Commodities</div>
-                  <div style={{ fontSize:16, fontWeight:800 }}>{fmtL(cmCurrentINR)}</div>
+                  <div style={{ fontSize: isNative ? 9 : 10, fontWeight:700, color:'var(--ylw)', textTransform:'uppercase', letterSpacing:0.5 }}>Commodities</div>
+                  <div style={{ fontSize: isNative ? 13 : 16, fontWeight:800 }}><AnimatedCount value={cmCurrentINR} format={fmtL} /></div>
                   <div style={{ fontSize:10, color:cmPL>=0?'var(--grn)':'var(--red)', fontWeight:700 }}>{cmPL>=0?'+':''}{fmtL(Math.abs(cmPL))} ({cmPLPct.toFixed(1)}%)</div>
                 </div>
               </div>
@@ -963,8 +1037,11 @@ export default function DashboardPage() {
             />
           </div>
 
-          {/* Market cap donut */}
-          <div style={card}>
+          {/* Market cap donut — a genuine summary tile (all India holdings
+              rolled up into cap-tier %s + a total count), same category as
+              the founder's "diversification score" example, so it gets the
+              same fx/roll-up/native-compact treatment as the KPI strip. */}
+          <div className={SIGFX_CLASS} style={{ ...card, ...(isNative ? { padding:'10px 12px', borderRadius:14 } : {}), ...sigfxDelayStyle(8) }}>
             <div style={{ fontSize:13, fontWeight:700, marginBottom:14 }}>Market Cap Mix</div>
             {capSegments.length === 0 ? (
               <div style={{ fontSize:12, color:'var(--dim)', textAlign:'center', padding:'20px 0' }}>—</div>
@@ -972,7 +1049,7 @@ export default function DashboardPage() {
               <>
                 <div style={{ display:'flex', flexDirection:'column', alignItems:'center', marginBottom:14 }}>
                   <DonutChart segments={capSegments} />
-                  <div style={{ fontSize:13, fontWeight:900, marginTop:-4 }}>{mergedIndia.length} holdings</div>
+                  <div style={{ fontSize:13, fontWeight:900, marginTop:-4 }}><AnimatedCount value={mergedIndia.length} /> holdings</div>
                   <div style={{ fontSize:11, color:'var(--dim)' }}>{portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''}</div>
                 </div>
                 <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
