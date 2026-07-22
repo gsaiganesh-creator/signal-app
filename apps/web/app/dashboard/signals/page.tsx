@@ -1633,7 +1633,7 @@ export default function SignalsPage() {
                 const inPortfolio = portfolioSymbols.includes(sig.symbol.replace(/\.(NS|BO)$/, ''));
                 const secBg = sectorColor(sig.sector);
                 return (
-                  <div key={sig.symbol} className={SIGFX_CLASS} style={{ position:'relative', borderRadius:14, ...sigfxDelayStyle(sigIdx) }}
+                  <div key={sig.symbol} style={{ position:'relative', borderRadius:14 }}
                     onClick={() => {
                       if (!isStarter) {
                         setUpgradeModal({ feature: 'ML signal detail — entry range, targets, stop-loss', minPlan: 'starter' });
