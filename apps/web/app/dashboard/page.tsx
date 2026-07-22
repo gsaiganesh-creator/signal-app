@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { usePortfolio } from '@/lib/portfolio-context';
 import type { RawHolding } from '@/lib/portfolio-context';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { TreemapHeatmap } from '@/components/TreemapHeatmap';
 import { MarketBrief } from '@/components/MarketBrief';
 import { MarketMoodIndex } from '@/components/MarketMoodIndex';
@@ -10,6 +10,7 @@ import { VixExplainer } from '@/components/VixExplainer';
 import { DxyExplainer } from '@/components/DxyExplainer';
 import { StockDetailSheet } from '@/components/StockDetailSheet';
 import { useIsNativePlatform } from '@/lib/use-is-native';
+import { AnimatedCount } from '@/lib/animated-count';
 
 const SUPA_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const SUPA_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
@@ -76,8 +77,11 @@ const card: React.CSSProperties = { background:'var(--card-bg)', border:'1px sol
 // `compact` (native-app-only) tightens padding/radius for the KPI strip cards —
 // web keeps the original 18/20px padding + 16px radius always. See DashboardPage
 // for the useIsNativePlatform() gate that decides which value gets passed in.
+// v2: pushed to real trading-app tile density (7/8px padding, 10px radius)
+// per founder feedback on an actual device — v1's 10/12px was still too
+// close to a shrunk desktop card.
 const colorCard = (grad: string, bdr: string, compact = false): React.CSSProperties => ({
-  background: grad, border:`1px solid ${bdr}`, borderRadius: compact ? 14 : 16, padding: compact ? '10px 12px' : '18px 20px',
+  background: grad, border:`1px solid ${bdr}`, borderRadius: compact ? 10 : 16, padding: compact ? '7px 8px' : '18px 20px',
   backdropFilter:'blur(20px)', WebkitBackdropFilter:'blur(20px)', boxShadow:'var(--card-shadow)',
 });
 
@@ -95,38 +99,33 @@ function sigfxDelayStyle(index: number): Record<string, string> {
   return { '--sigfx-delay': `${Math.min(index, 10) * 55}ms` };
 }
 
-// Rolling count-up, generalized from the Signals page version to accept an
-// optional `format` so it can animate currency strings (fmtL) and percentages,
-// not just plain integers. Animates from 0 on mount, and from the previous
-// value on every subsequent change, ease-out cubic ~650ms.
-function AnimatedCount({ value, duration = 650, format, style }: { value: number; duration?: number; format?: (n: number) => string; style?: React.CSSProperties }) {
-  const [display, setDisplay] = useState(0);
-  const fromRef = useRef(0);
-  const rafRef = useRef<number | null>(null);
+// AnimatedCount now lives in lib/animated-count.tsx (imported above) so
+// MarketMoodIndex.tsx can reuse the exact same roll-up instead of a second
+// reimplementation — this file used to define it locally.
 
-  useEffect(() => {
-    const from = fromRef.current;
-    const to = value;
-    if (from === to) return;
-    if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
-    const start = performance.now();
-    const tick = (now: number) => {
-      const t = Math.min(1, (now - start) / duration);
-      const eased = 1 - Math.pow(1 - t, 3); // ease-out cubic: fast start, slows into the final number
-      setDisplay(from + (to - from) * eased);
-      if (t < 1) {
-        rafRef.current = requestAnimationFrame(tick);
-      } else {
-        fromRef.current = to;
-      }
-    };
-    rafRef.current = requestAnimationFrame(tick);
-    return () => { if (rafRef.current != null) cancelAnimationFrame(rafRef.current); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [value, duration]);
-
-  const fmt = format ?? ((n: number) => Math.round(n).toLocaleString('en-IN'));
-  return <span style={style}>{fmt(display)}</span>;
+// Small animated currency badge — a coin that drops/settles in on mount, then
+// spins gently on its Y-axis forever (a real 3D `rotateY`, not a scale trick —
+// see .coin-badge-outer/.coin-badge-spin in globals.css). Gold for ₹ (India
+// cards), green "greenback" for $ (US Stocks card), so the currency reads at
+// a glance even before the number next to it registers. Two nested spans:
+// the outer plays the one-shot drop-in bounce (translateY), the inner plays
+// the continuous spin (rotateY) — kept on separate elements because CSS
+// doesn't compose two `transform` keyframe animations on the same property.
+function CoinBadge({ cur, native, small }: { cur: 'INR' | 'USD'; native?: boolean; small?: boolean }) {
+  const symbol = cur === 'INR' ? '₹' : '$';
+  const size = native ? (small ? 9 : 12) : (small ? 12 : 15);
+  const grad = cur === 'INR'
+    ? 'linear-gradient(145deg,#FFE9A8,#FFB800 55%,#C98A00)'
+    : 'linear-gradient(145deg,#B9F5D8,#00D4A0 55%,#00916E)';
+  const faceStyle: React.CSSProperties = { background:grad, fontSize:size*0.62 };
+  return (
+    <span className="coin-badge-outer" style={{ width:size, height:size, marginRight: native ? 3 : 5 }} aria-hidden="true">
+      <span className="coin-badge-spin" style={{ width:size, height:size }}>
+        <span className="coin-badge-face coin-badge-face--front" style={faceStyle}>{symbol}</span>
+        <span className="coin-badge-face coin-badge-face--back" style={faceStyle}>{symbol}</span>
+      </span>
+    </span>
+  );
 }
 
 const LARGE_CAP = new Set([
@@ -583,13 +582,27 @@ export default function DashboardPage() {
 
   // Native-only compact sizing for the summary widgets below (KPI strip,
   // Forex+Commodities mini totals, Market Cap Mix). Web values (right side
-  // of each ternary) are the pre-existing sizes, untouched.
-  const kpiGap      = isNative ? 8  : 12;
-  const kpiNumBig    = isNative ? 22 : 32; // Equity / ETF / Total Invested / Combined Return
-  const kpiNumSmall  = isNative ? 18 : 28; // Net Worth / US Stocks
-  const kpiIconBox   = isNative ? 20 : 26;
-  const kpiIconFont  = isNative ? 11 : 13;
-  const kpiLabelSize = isNative ? 9  : 10;
+  // of each ternary) are the pre-existing sizes, untouched — this rule does
+  // not move. v2 (round 2, per founder feedback on a real device: "can we
+  // have the widgets/pills smaller, this is what i was asking from long
+  // time") pushes the native branch to actual trading-app tile density
+  // (Kite/Groww KPI-tile scale) instead of a lightly-shrunk desktop card —
+  // every dimension in the KPI card (padding, radius, icon, headline number,
+  // label, subtitle, % badge, inter-element margins) now has its own native
+  // value, not just the three that got a v1 pass.
+  const kpiGap        = isNative ? 5      : 12;
+  const kpiNumBig      = isNative ? 16     : 32; // Equity / ETF / Total Invested / Combined Return
+  const kpiNumSmall    = isNative ? 13     : 28; // Net Worth / US Stocks
+  const kpiIconBox     = isNative ? 14     : 26;
+  const kpiIconFont    = isNative ? 8      : 13;
+  const kpiLabelSize   = isNative ? 7      : 10;
+  const kpiSubSize     = isNative ? 8      : 11; // "invested" / "portfolios" subtitle line
+  const kpiBadgeSize   = isNative ? 9      : 13; // ▲/▼ % change badge
+  const kpiSmallSub    = isNative ? 7      : 10; // Net Worth / US Stocks secondary lines
+  const kpiIconRowGap  = isNative ? 4      : 7;
+  const kpiIconRowMB   = isNative ? 5      : 10;
+  const kpiSubMT       = isNative ? 2      : 5;
+  const kpiBadgeMT     = isNative ? 2      : 4;
 
   // Merge all India holdings by symbol (weighted avg across portfolios)
   const mergedMap = new Map<string, RawHolding>();
@@ -738,14 +751,14 @@ export default function DashboardPage() {
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(79,111,250,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
           <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(23,64,245,0.13),rgba(79,111,250,0.06))','rgba(79,111,250,0.28)', isNative), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(0) }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
               <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(79,111,250,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>📈</div>
               <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>Equity Stocks</div>
             </div>
             <div className="kpi-num" style={{ fontSize:kpiNumBig, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}><AnimatedCount value={equityH.length} /></div>
-            <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{fmtL(equityInvested)} invested</div>
+            <div style={{ fontSize:kpiSubSize, color:'var(--dim)', marginTop:kpiSubMT }}><CoinBadge cur="INR" native={isNative} />{fmtL(equityInvested)} invested</div>
             {hasPrices && equityInvested > 0 && (
-              <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: equityPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+              <div style={{ fontSize:kpiBadgeSize, fontWeight:800, marginTop:kpiBadgeMT, color: equityPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
                 {equityPL >= 0 ? '▲' : '▼'} {equityPL >= 0 ? '+' : ''}{equityPLPct.toFixed(1)}%
               </div>
             )}
@@ -756,14 +769,14 @@ export default function DashboardPage() {
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(139,92,246,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
           <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(139,92,246,0.14),rgba(139,92,246,0.04))','rgba(139,92,246,0.3)', isNative), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(1) }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
               <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(139,92,246,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>🏦</div>
               <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--pur)', letterSpacing:0.5, textTransform:'uppercase' }}>ETF & MF</div>
             </div>
             <div className="kpi-num" style={{ fontSize:kpiNumBig, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}><AnimatedCount value={etfH.length} /></div>
-            <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>{etfInvested > 0 ? fmtL(etfInvested) : '—'} invested</div>
+            <div style={{ fontSize:kpiSubSize, color:'var(--dim)', marginTop:kpiSubMT }}><CoinBadge cur="INR" native={isNative} />{etfInvested > 0 ? fmtL(etfInvested) : '—'} invested</div>
             {hasPrices && etfInvested > 0 && (
-              <div style={{ fontSize:13, fontWeight:800, marginTop:4, color: etfPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
+              <div style={{ fontSize:kpiBadgeSize, fontWeight:800, marginTop:kpiBadgeMT, color: etfPL >= 0 ? 'var(--grn)' : 'var(--red)' }}>
                 {etfPL >= 0 ? '▲' : '▼'} {etfPL >= 0 ? '+' : ''}{etfPLPct.toFixed(1)}%
               </div>
             )}
@@ -774,12 +787,12 @@ export default function DashboardPage() {
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
           <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.10),rgba(0,180,130,0.04))','rgba(0,212,160,0.28)', isNative), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(2) }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
               <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(0,212,160,0.18)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>💼</div>
               <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Total Invested</div>
             </div>
-            <div className="kpi-num" style={{ fontSize:kpiNumBig, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}><AnimatedCount value={invested} format={fmtL} /></div>
-            <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
+            <div className="kpi-num" style={{ fontSize:kpiNumBig, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--txt)' }}><CoinBadge cur="INR" native={isNative} /><AnimatedCount value={invested} format={fmtL} /></div>
+            <div style={{ fontSize:kpiSubSize, color:'var(--dim)', marginTop:kpiSubMT }}>
               {portfolios.length} portfolio{portfolios.length > 1 ? 's' : ''} · India
             </div>
           </div>
@@ -796,14 +809,14 @@ export default function DashboardPage() {
                 up ? 'rgba(0,212,160,0.3)' : 'rgba(255,59,92,0.28)',
                 isNative
               ), height:'100%', boxSizing:'border-box', ...sigfxDelayStyle(3) }} className={`kpi-card ${SIGFX_CLASS}`}>
-                <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+                <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
                   <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:up?'rgba(0,212,160,0.18)':'rgba(255,59,92,0.14)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>{up?'🚀':'📉'}</div>
                   <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:up?'var(--grn)':'var(--red)', letterSpacing:0.5, textTransform:'uppercase' }}>Combined Return</div>
                 </div>
                 <div className="kpi-num" style={{ fontSize:kpiNumBig, fontWeight:900, letterSpacing:-1, lineHeight:1, color: hasPrices ? (totalPLPct >= 0 ? 'var(--grn)' : 'var(--red)') : 'var(--txt)' }}>
                   {hasPrices ? <AnimatedCount value={totalPLPct} format={fmtPct} /> : '—'}
                 </div>
-                <div style={{ fontSize:11, color:'var(--dim)', marginTop:5 }}>
+                <div style={{ fontSize:kpiSubSize, color:'var(--dim)', marginTop:kpiSubMT }}>
                   {hasPrices && totalPL !== 0 ? `${totalPL >= 0 ? '+' : ''}${fmtL(Math.abs(totalPL))}` : pricesLoading ? 'loading…' : '—'}
                 </div>
               </div>
@@ -816,16 +829,16 @@ export default function DashboardPage() {
           onMouseEnter={e=>{(e.currentTarget as HTMLElement).style.transform='translateY(-2px)';(e.currentTarget as HTMLElement).style.boxShadow='0 6px 24px rgba(0,212,160,0.18)';}}
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
           <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(0,212,160,0.16),rgba(23,64,245,0.07))','rgba(0,212,160,0.32)', isNative), height:'100%', ...sigfxDelayStyle(4) }}>
-            <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+            <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
               <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(0,212,160,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>🌐</div>
               <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--grn)', letterSpacing:0.5, textTransform:'uppercase' }}>Net Worth</div>
             </div>
-            <div className="kpi-num" style={{ fontSize:kpiNumSmall, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--grn)' }}><AnimatedCount value={combinedINR} format={fmtL} /></div>
-            <div style={{ fontSize:10, color:'var(--dim)', marginTop:5 }}>
+            <div className="kpi-num" style={{ fontSize:kpiNumSmall, fontWeight:900, letterSpacing:-1, lineHeight:1, color:'var(--grn)' }}><CoinBadge cur="INR" native={isNative} /><AnimatedCount value={combinedINR} format={fmtL} /></div>
+            <div style={{ fontSize:kpiSmallSub, color:'var(--dim)', marginTop:kpiSubMT }}>
               🇮🇳{fmtL(invested)} + 🇺🇸{fmtL(usInrEquiv)}
               {fxPos.length>0?` + 💱${fmtL(fxCurrentINR)}`:''}
             </div>
-            {usdInr && <div style={{ fontSize:10, color:'var(--dim)', marginTop:2 }}>₹{usdInr.toFixed(1)} USD/INR{hasRSU ? ` · RSU ₹${(rsuValueINR/1e5).toFixed(1)}L` : ''}</div>}
+            {usdInr && <div style={{ fontSize:kpiSmallSub, color:'var(--dim)', marginTop:2 }}>₹{usdInr.toFixed(1)} USD/INR{hasRSU ? ` · RSU ₹${(rsuValueINR/1e5).toFixed(1)}L` : ''}</div>}
           </div>
         </Link>
 
@@ -835,14 +848,14 @@ export default function DashboardPage() {
           onMouseLeave={e=>{(e.currentTarget as HTMLElement).style.transform='';(e.currentTarget as HTMLElement).style.boxShadow='';}}>
           {hasUSHoldings ? (
             <div className={`kpi-card ${SIGFX_CLASS}`} style={{ ...colorCard('linear-gradient(135deg,rgba(79,111,250,0.14),rgba(23,64,245,0.05))','rgba(79,111,250,0.30)', isNative), height:'100%', ...sigfxDelayStyle(5) }}>
-              <div style={{ display:'flex', alignItems:'center', gap:7, marginBottom:10 }}>
+              <div style={{ display:'flex', alignItems:'center', gap:kpiIconRowGap, marginBottom:kpiIconRowMB }}>
                 <div className="kpi-icon" style={{ width:kpiIconBox, height:kpiIconBox, borderRadius:7, background:'rgba(79,111,250,0.2)', display:'flex', alignItems:'center', justifyContent:'center', fontSize:kpiIconFont }}>🇺🇸</div>
                 <div style={{ fontSize:kpiLabelSize, fontWeight:700, color:'var(--bluL)', letterSpacing:0.5, textTransform:'uppercase' }}>US Stocks</div>
               </div>
-              <div className="kpi-num" style={{ fontSize:kpiNumSmall, fontWeight:900, letterSpacing:-1, lineHeight:1 }}><AnimatedCount value={usInrEquiv} format={fmtL} /></div>
-              <div style={{ fontSize:10, color:'var(--dim)', marginTop:5 }}>{usHoldings.length} stocks · ${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})} invested</div>
+              <div className="kpi-num" style={{ fontSize:kpiNumSmall, fontWeight:900, letterSpacing:-1, lineHeight:1 }}><CoinBadge cur="USD" native={isNative} /><AnimatedCount value={usInrEquiv} format={fmtL} /></div>
+              <div style={{ fontSize:kpiSmallSub, color:'var(--dim)', marginTop:kpiSubMT }}><CoinBadge cur="USD" native={isNative} small />${usInvestedUSD.toLocaleString('en-US',{maximumFractionDigits:0})} invested · {usHoldings.length} stocks</div>
               {usPLPct!=null && (
-                <div style={{ fontSize:13, fontWeight:800, marginTop:4, color:usPLPct>=0?'var(--grn)':'var(--red)' }}>
+                <div style={{ fontSize:kpiBadgeSize, fontWeight:800, marginTop:kpiBadgeMT, color:usPLPct>=0?'var(--grn)':'var(--red)' }}>
                   {usPLPct>=0?'▲':'▼'} {usPLPct>=0?'+':''}{usPLPct.toFixed(1)}%
                 </div>
               )}

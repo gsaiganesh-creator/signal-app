@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState, useCallback } from 'react';
+import { AnimatedCount } from '@/lib/animated-count';
 
 interface Sub {
   key: string; label: string; score: number; weight: number;
@@ -67,7 +68,13 @@ function Gauge({ score, color }: { score: number; color: string }) {
   );
 }
 
-// Horizontal bars — one row per signal
+// Horizontal bars — one row per signal. Fill animates 0 → target% with a
+// springy overshoot-then-settle (.mmi-bar-fill + --mmi-target custom prop,
+// see globals.css "SIGNAL-MMI BOUNCY BAR FILL") instead of a flat linear
+// fill — founder's ask for the bars to feel "bouncy (horizontally)".
+// `key={s.key}-${pct}` forces a fresh element (and therefore a fresh
+// animation run) whenever the underlying score changes on refresh, not just
+// on first mount.
 function HBar({ subs }: { subs: Sub[] }) {
   return (
     <div style={{ display:'flex', flexDirection:'column', gap:9 }}>
@@ -87,13 +94,17 @@ function HBar({ subs }: { subs: Sub[] }) {
             </div>
             {/* bar track */}
             <div style={{ height:8, background:'var(--bdr)', borderRadius:99, overflow:'hidden' }}>
-              <div style={{
-                height:'100%', width:`${pct}%`, borderRadius:99,
-                background: s.ok
-                  ? `linear-gradient(90deg, ${col}99, ${col})`
-                  : 'var(--dim2)',
-                transition:'width 0.7s ease',
-              }}/>
+              <div
+                key={`${s.key}-${pct}`}
+                className="mmi-bar-fill"
+                style={{
+                  '--mmi-target': `${pct}%`,
+                  height:'100%', borderRadius:99,
+                  background: s.ok
+                    ? `linear-gradient(90deg, ${col}99, ${col})`
+                    : 'var(--dim2)',
+                } as React.CSSProperties}
+              />
             </div>
           </div>
         );
@@ -126,8 +137,10 @@ export function MarketMoodIndex() {
   const color = data?.zoneColor ?? '#FFB800';
 
   return (
-    /* BENTO CARD */
-    <div style={{
+    /* BENTO CARD — genuine summary tile (5 inputs rolled into one score),
+       so it carries the same standing shimmer fx as the other summary
+       widgets (dashboard/page.tsx KPI strip, Market Cap Mix). */
+    <div className="sigfx-shimmer" style={{
       background: 'linear-gradient(145deg,rgba(23,64,245,0.06),var(--surf))',
       border: '1px solid rgba(23,64,245,0.18)',
       borderRadius: 18, padding: '18px 22px',
@@ -154,7 +167,9 @@ export function MarketMoodIndex() {
           <div style={{ display:'flex', alignItems:'center', gap:14, marginBottom:14 }}>
             <Gauge score={score} color={color}/>
             <div>
-              <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color }}>{score}</div>
+              <div style={{ fontSize:32, fontWeight:900, letterSpacing:-1, lineHeight:1, color }}>
+                <AnimatedCount value={score} format={n => n.toFixed(1)} />
+              </div>
               <div style={{ fontSize:14, fontWeight:800, color, marginTop:2 }}>{data?.zone}</div>
               <div style={{ fontSize:11, color:'var(--dim)', marginTop:4, lineHeight:1.5 }}>{data?.hint}</div>
             </div>
